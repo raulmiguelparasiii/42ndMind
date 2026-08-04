@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>42ndMind</title>
+  <style>
+    :root { color-scheme: light; --ink:#111; --faint:#a6a6a6; --line:#e8e8e8; }
+    * { box-sizing: border-box; }
+    html, body { width:100%; min-height:100%; margin:0; background:#fff; color:var(--ink); }
+    body { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    button, textarea { font:inherit; color:inherit; }
+    button { background:none; border:0; padding:0; }
+    main { min-height:100dvh; display:grid; place-items:center; padding:clamp(24px,5vw,72px); }
+    .shell { width:min(860px,100%); display:grid; gap:clamp(22px,4vh,42px); justify-items:center; }
+    .kernel { position:relative; display:flex; align-items:center; justify-content:center; gap:.42em; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; font-size:clamp(30px,6vw,62px); font-weight:400; letter-spacing:.01em; cursor:default; user-select:none; }
+    .logic { cursor:pointer; border-bottom:1px solid transparent; }
+    .logic:focus-visible, .logic:hover { border-bottom-color:var(--ink); outline:none; }
+    .math-toggle { cursor:pointer; }
+    .logic-menu { position:absolute; top:calc(100% + 14px); left:0; min-width:100%; padding:8px 0; background:#fff; border:1px solid var(--line); z-index:5; display:none; font-family:inherit; font-size:14px; }
+    .logic-menu.open { display:block; }
+    .logic-option { display:block; width:100%; text-align:left; padding:8px 12px; cursor:pointer; white-space:nowrap; }
+    .logic-option:hover, .logic-option:focus-visible { background:#f7f7f7; outline:none; }
+    .logic-option small { color:var(--faint); margin-left:10px; }
+    .entry { width:100%; display:grid; gap:12px; }
+    textarea { width:100%; resize:none; overflow:hidden; border:0; border-bottom:1px solid var(--line); outline:none; background:transparent; text-align:center; line-height:1.55; padding:10px 8px; min-height:48px; }
+    textarea:focus { border-bottom-color:var(--ink); }
+    textarea::placeholder { color:#b8b8b8; opacity:1; }
+    #input { font-size:clamp(16px,2.4vw,23px); min-height:58px; }
+    #filters { font-size:14px; color:#555; min-height:42px; }
+    .result { min-height:1.1em; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; font-size:clamp(66px,14vw,148px); line-height:.85; font-variant-numeric:tabular-nums; }
+    .paths { width:100%; display:grid; gap:16px; }
+    .path { display:grid; grid-template-columns:minmax(90px,auto) 1fr; gap:18px; border-top:1px solid var(--line); padding-top:12px; font-size:13px; line-height:1.55; }
+    .path-name { color:var(--faint); overflow-wrap:anywhere; }
+    .path-value { white-space:pre-wrap; overflow-wrap:anywhere; }
+    .math { width:100%; display:none; border-top:1px solid var(--line); padding-top:18px; gap:16px; }
+    .math.open { display:grid; }
+    .equations { display:grid; gap:8px; text-align:center; font-family:"Cambria Math","STIX Two Math","Times New Roman",serif; font-size:clamp(14px,2vw,19px); }
+    .state { max-height:34vh; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; font-size:11px; line-height:1.55; color:#555; }
+    @media (max-width:600px) {
+      .path { grid-template-columns:1fr; gap:5px; }
+      main { align-items:start; padding-top:18vh; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="shell" aria-label="42ndMind">
+      <div class="kernel" id="kernel-line">
+        <button class="logic" id="logic" type="button" aria-label="logic">𝕂</button>
+        <span class="math-toggle" id="math-toggle">+ x → {0,1}</span>
+        <div class="logic-menu" id="logic-menu" role="menu"></div>
+      </div>
+
+      <div class="entry">
+        <textarea id="input" rows="1" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="formal input" placeholder="x"></textarea>
+        <textarea id="filters" rows="1" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="filters" placeholder="φ"></textarea>
+      </div>
+
+      <output class="result" id="result">1</output>
+      <div class="paths" id="paths"></div>
+
+      <section class="math" id="math">
+        <div class="equations" id="equations"></div>
+        <pre class="state" id="state"></pre>
+      </section>
+    </section>
+  </main>
+  <script src="kernel.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const K = new FortySecondMind.Kernel();
+      const input = document.getElementById('input');
+      const filters = document.getElementById('filters');
+      const result = document.getElementById('result');
+      const paths = document.getElementById('paths');
+      const logic = document.getElementById('logic');
+      const menu = document.getElementById('logic-menu');
+      const math = document.getElementById('math');
+      const mathToggle = document.getElementById('math-toggle');
+      const equations = document.getElementById('equations');
+      const state = document.getElementById('state');
+      let view = 'kernel';
+      let timer = null;
+
+      const escapeText = (value) => {
+        if (typeof value === 'string') return value;
+        return JSON.stringify(value, null, 2);
+      };
+
+      function grow(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(Math.max(el.scrollHeight, 42), innerHeight * .35) + 'px';
+      }
+
+      function renderMenu() {
+        menu.replaceChildren();
+        K.logicViews().forEach((item) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'logic-option';
+          button.dataset.view = item.id;
+          button.textContent = item.id === 'kernel' ? '42ndMind' : item.id === 'raw' ? '∅' : item.title;
+          if (item.status) {
+            const small = document.createElement('small');
+            small.textContent = item.status;
+            button.appendChild(small);
+          }
+          button.addEventListener('click', () => {
+            view = item.id;
+            logic.textContent = item.label;
+            logic.title = item.title;
+            menu.classList.remove('open');
+            compute();
+          });
+          menu.appendChild(button);
+        });
+      }
+
+      function renderPaths(items) {
+        paths.replaceChildren();
+        items.forEach((item) => {
+          const row = document.createElement('div');
+          row.className = 'path';
+          const name = document.createElement('div');
+          name.className = 'path-name';
+          name.textContent = item.name;
+          const value = document.createElement('div');
+          value.className = 'path-value';
+          value.textContent = escapeText(item.value);
+          row.append(name, value);
+          paths.appendChild(row);
+        });
+      }
+
+      function compute() {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          const evaluated = K.evaluate(input.value, filters.value, view);
+          result.textContent = String(evaluated.align);
+          renderPaths(evaluated.projections.filter((x) => x.value !== null));
+          state.textContent = JSON.stringify(evaluated.solution, null, 2);
+          renderMenu();
+        }, 35);
+      }
+
+      input.addEventListener('input', () => { grow(input); compute(); });
+      filters.addEventListener('input', () => { grow(filters); compute(); });
+      logic.addEventListener('click', () => { renderMenu(); menu.classList.toggle('open'); });
+      mathToggle.addEventListener('click', () => math.classList.toggle('open'));
+      document.addEventListener('click', (event) => {
+        if (!document.getElementById('kernel-line').contains(event.target)) menu.classList.remove('open');
+      });
+
+      equations.replaceChildren(...K.equations().map((line) => {
+        const div = document.createElement('div');
+        div.textContent = line;
+        return div;
+      }));
+      grow(input); grow(filters); renderMenu(); compute();
+    })();
+  </script>
+</body>
+</html>
