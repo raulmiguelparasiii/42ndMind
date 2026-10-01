@@ -33,3 +33,10 @@ It does **not** by itself prove the corresponding theorem over arbitrary infinit
 python -m unittest discover -s tests -v
 PYTHONPATH=formal python -m one_logic.falsifier
 ```
+
+
+## Proof checking
+
+The general theorem statements in `formal/lean/OneLogic.lean` are checked by Lean and rechecked in CI with Lean's `leanchecker`. CI also runs an axiom audit so hidden `sorry` placeholders or unapproved axioms cannot silently certify a theorem.
+
+An additional nanoda external-checker experiment was attempted against Lean 4.34.1 and 4.28.0. In both environments the current `lean-action` nanoda integration exported the module successfully but the nanoda executable aborted before checking it with `invalid digit found in string`. Because this is a checker-tool/integration failure rather than a theorem failure, nanoda is not a required gate in this branch. It should be re-enabled if that toolchain issue is resolved.
