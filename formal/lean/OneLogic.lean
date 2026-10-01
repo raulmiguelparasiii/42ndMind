@@ -193,4 +193,150 @@ theorem modelClassFailureForcesExpansion
   intro hK
   exact hOutside (hConfined actual hK)
 
+
+/-- A candidate deletes a possibility that the objective ideal still permits. -/
+def UnsupportedExclusion
+    {World : Type u} (ideal candidate : Live World) : Live World :=
+  fun w => ideal w ∧ ¬ candidate w
+
+/-- A candidate retains a possibility that the objective ideal has eliminated. -/
+def UnsupportedRetention
+    {World : Type u} (ideal candidate : Live World) : Live World :=
+  fun w => candidate w ∧ ¬ ideal w
+
+/-- Pareto comparison on the two objective directions of set-level deviation. -/
+def WeaklyDominates
+    {World : Type u} (ideal better worse : Live World) : Prop :=
+  Subset (UnsupportedExclusion ideal better) (UnsupportedExclusion ideal worse) ∧
+  Subset (UnsupportedRetention ideal better) (UnsupportedRetention ideal worse)
+
+def StrictlyDominates
+    {World : Type u} (ideal better worse : Live World) : Prop :=
+  WeaklyDominates ideal better worse ∧
+  ((∃ w, UnsupportedExclusion ideal worse w ∧ ¬ UnsupportedExclusion ideal better w) ∨
+   (∃ w, UnsupportedRetention ideal worse w ∧ ¬ UnsupportedRetention ideal better w))
+
+def HasMaterialDeviation
+    {World : Type u} (ideal candidate : Live World) : Prop :=
+  NonemptyLive (UnsupportedExclusion ideal candidate) ∨
+  NonemptyLive (UnsupportedRetention ideal candidate)
+
+/-- T8a. The independently defined ideal has zero deviation and weakly dominates every alternative. -/
+theorem idealWeaklyDominates
+    {World : Type u}
+    (ideal candidate : Live World) :
+    WeaklyDominates ideal ideal candidate := by
+  constructor
+  · intro w h
+    exact False.elim (h.2 h.1)
+  · intro w h
+    exact False.elim (h.2 h.1)
+
+/-- T8b. Any materially deviant alternative is strictly dominated by the exact ideal. -/
+theorem idealStrictlyDominatesMaterialDeviation
+    {World : Type u}
+    (ideal candidate : Live World)
+    (hDeviation : HasMaterialDeviation ideal candidate) :
+    StrictlyDominates ideal ideal candidate := by
+  constructor
+  · exact idealWeaklyDominates ideal candidate
+  · cases hDeviation with
+    | inl hEx =>
+        rcases hEx with ⟨w, hw⟩
+        left
+        refine ⟨w, hw, ?_⟩
+        intro hImpossible
+        exact hImpossible.2 hImpossible.1
+    | inr hRet =>
+        rcases hRet with ⟨w, hw⟩
+        right
+        refine ⟨w, hw, ?_⟩
+        intro hImpossible
+        exact hImpossible.2 hImpossible.1
+
+/--
+T8c. A sound update cannot commit unsupported exclusion relative to SharpUpdate.
+Its only possible set-level inferiority is retaining states the sharp update has ruled out.
+-/
+theorem soundUpdateHasNoUnsupportedExclusion
+    {World : Type u} {Outcome : Type o}
+    (K : Live World) (T : Transition World Outcome) (outcome : Outcome)
+    (posterior : Live World)
+    (hSound : UpdateSound K T outcome posterior) :
+    ∀ w, ¬ UnsupportedExclusion (SharpUpdate K T outcome) posterior w := by
+  intro w hError
+  exact hError.2 (sharpUpdateSubsetOfEverySoundPosterior K T outcome posterior hSound w hError.1)
+
+/-- Any unsupported exclusion relative to SharpUpdate is enough to prove the update unsound. -/
+theorem unsupportedExclusionMakesUpdateUnsound
+    {World : Type u} {Outcome : Type o}
+    (K : Live World) (T : Transition World Outcome) (outcome : Outcome)
+    (posterior : Live World) (w : World)
+    (hError : UnsupportedExclusion (SharpUpdate K T outcome) posterior w) :
+    ¬ UpdateSound K T outcome posterior := by
+  intro hSound
+  exact hError.2 (sharpUpdateSubsetOfEverySoundPosterior K T outcome posterior hSound w hError.1)
+
+/-- The sharp update strictly dominates every materially deviant posterior. -/
+theorem sharpUpdateStrictlyDominatesMaterialDeviation
+    {World : Type u} {Outcome : Type o}
+    (K : Live World) (T : Transition World Outcome) (outcome : Outcome)
+    (posterior : Live World)
+    (hDeviation : HasMaterialDeviation (SharpUpdate K T outcome) posterior) :
+    StrictlyDominates (SharpUpdate K T outcome) (SharpUpdate K T outcome) posterior := by
+  exact idealStrictlyDominatesMaterialDeviation (SharpUpdate K T outcome) posterior hDeviation
+
+/-- A categorical rule overreaches when it asserts a value not forced by the live state. -/
+def InferenceOverreach
+    {World : Type u} {Value : Type v}
+    (K : Live World) (query : Query World Value) (R : Value → Prop) (value : Value) : Prop :=
+  R value ∧ ¬ Categorical K query value
+
+/-- A categorical rule omits information when it fails to assert a value that is forced. -/
+def InferenceOmission
+    {World : Type u} {Value : Type v}
+    (K : Live World) (query : Query World Value) (R : Value → Prop) (value : Value) : Prop :=
+  Categorical K query value ∧ ¬ R value
+
+/-- T9. A universally sound categorical rule has no inferential overreach. -/
+theorem soundCategoricalRuleHasNoOverreach
+    {World : Type u} {Value : Type v}
+    (K : Live World) (query : Query World Value)
+    (R : Value → Prop)
+    (hNonempty : NonemptyLive K)
+    (hSound : ∀ value, R value → ∀ w, K w → query w = some value) :
+    ∀ value, ¬ InferenceOverreach K query R value := by
+  intro value hOver
+  exact hOver.2 (greatestSoundCategorical K query R hNonempty hSound value hOver.1)
+
+/--
+A premise-to-conclusion bridge is valid only if the premise is live-realizable and
+every live realization of the premise carries the conclusion.
+-/
+def BridgeValid
+    {World : Type u} {Value : Type v}
+    (K : Live World)
+    (premise conclusion : Query World Value)
+    (premiseValue conclusionValue : Value) : Prop :=
+  NonemptyLive (fun w => K w ∧ premise w = some premiseValue) ∧
+  ∀ w, K w → premise w = some premiseValue → conclusion w = some conclusionValue
+
+/--
+T10. One live counterexample is sufficient to defeat a categorical bridge. This is the
+generic failure form behind many named fallacies; the wording or tone of the premise is
+irrelevant unless it actually supplies a valid bridge to the conclusion.
+-/
+theorem liveCounterexampleDefeatsBridge
+    {World : Type u} {Value : Type v}
+    (K : Live World)
+    (premise conclusion : Query World Value)
+    (premiseValue conclusionValue : Value)
+    (w : World)
+    (hLive : K w)
+    (hPremise : premise w = some premiseValue)
+    (hConclusionFails : conclusion w ≠ some conclusionValue) :
+    ¬ BridgeValid K premise conclusion premiseValue conclusionValue := by
+  intro hBridge
+  exact hConclusionFails (hBridge.2 w hLive hPremise)
+
 end OneLogic
