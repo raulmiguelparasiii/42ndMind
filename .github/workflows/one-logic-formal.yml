@@ -40,7 +40,6 @@ jobs:
           use-mathlib-cache: false
           leanchecker: true
           leanchecker-args: OneLogic
-          nanoda: true
-          nanoda-allow-sorry: false
+          nanoda: false
           axiom-audit: true
           axiom-audit-root: OneLogic
