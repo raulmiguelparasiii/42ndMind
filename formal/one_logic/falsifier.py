@@ -13,6 +13,7 @@ from .core import (
     UNDEFINED,
     assertion_sound_over,
     categorical_consequences,
+    deviation_from_ideal,
     inquiry_identifies,
     needs_ontology_expansion,
     observation_update,
@@ -21,7 +22,10 @@ from .core import (
     representation_preserves_queries,
     sharp_update,
     sound,
+    strictly_dominates,
+    update_deviation,
     update_is_sound,
+    weakly_dominates,
 )
 
 
@@ -127,18 +131,15 @@ def attack_quotient_minimality(max_worlds: int, r: Report) -> None:
     for n in range(1, max_worlds + 1):
         worlds = tuple(range(n))
         query_maps = list(all_query_maps(worlds, values=(0, 1)))
-        # Test all single queries and selected pairs to control combinatorics.
         qsets = [(q,) for q in query_maps]
         qsets += list(itertools.islice(itertools.combinations(query_maps, 2), 64))
         for qs in qsets:
             quotient = query_quotient(worlds, qs)
-            # Quotient itself must preserve all queries.
             rep = {}
             for idx, block in enumerate(quotient):
                 for w in block:
                     rep[w] = idx
             r.ok(representation_preserves_queries(worlds, qs, rep), "quotient failed to preserve Q")
-            # Every representation that merges two different signatures must be inadequate.
             for a in worlds:
                 for b in worlds:
                     if a >= b:
@@ -149,19 +150,39 @@ def attack_quotient_minimality(max_worlds: int, r: Report) -> None:
                         r.ok(not representation_preserves_queries(worlds, qs, merged), "inadequate merge was accepted")
 
 
+def attack_fallacy_dominance(max_worlds: int, r: Report) -> None:
+    """Attack the claim that the exact ideal has zero deviation and dominates every alternative."""
+    for n in range(max_worlds + 1):
+        worlds = tuple(range(n))
+        all_sets = list(subsets(worlds))
+        for ideal in all_sets:
+            exact = deviation_from_ideal(ideal, ideal)
+            r.ok(exact.exact, f"ideal deviated from itself n={n} ideal={ideal}")
+            for candidate in all_sets:
+                d = deviation_from_ideal(ideal, candidate)
+                r.ok(weakly_dominates(ideal, ideal, candidate), f"ideal failed weak dominance n={n}")
+                r.ok(strictly_dominates(ideal, ideal, candidate) == (candidate != ideal), f"strict dominance mismatch n={n}")
+                r.ok(d.exact == (candidate == ideal), f"zero deviation did not characterize equality n={n}")
+
+
 def attack_dynamic_updates_exhaustive_two_worlds(r: Report) -> None:
     worlds = (0, 1)
     outcomes = (0, 1)
     triples = [Transition(a, o, b) for a in worlds for o in outcomes for b in worlds]
-    # 2^8 transition relations: exhaustive.
     for mask in range(1 << len(triples)):
         relation = [triples[i] for i in range(len(triples)) if mask & (1 << i)]
         for k in nonempty_subsets(worlds):
             for o in outcomes:
                 star = sharp_update(k, o, relation)
-                # Every superset of star is sound; every proposed posterior omitting a member is unsound.
                 for proposed in subsets(worlds):
-                    r.ok(update_is_sound(k, o, relation, proposed) == star.issubset(proposed), "sharp update theorem mismatch")
+                    is_sound = update_is_sound(k, o, relation, proposed)
+                    r.ok(is_sound == star.issubset(proposed), "sharp update theorem mismatch")
+                    d = update_deviation(k, o, relation, proposed)
+                    # Sound alternatives may be less sharp, but may not delete a reachable state.
+                    r.ok((not d.unsupported_exclusion) == is_sound, "soundness/exclusion equivalence failed")
+                    if is_sound and proposed != star:
+                        r.ok(bool(d.unsupported_retention), "non-exact sound update had no retained defeated state")
+                        r.ok(strictly_dominates(star, star, proposed), "sharp update failed strict dominance")
 
 
 def attack_dynamic_updates_random(seed: int, trials: int, r: Report) -> None:
@@ -198,6 +219,7 @@ def run(max_worlds: int = 4, random_trials: int = 5000, seed: int = 42) -> Repor
     attack_observation(max_worlds, r)
     attack_identifiability(max_worlds, r)
     attack_quotient_minimality(max_worlds, r)
+    attack_fallacy_dominance(max_worlds, r)
     attack_dynamic_updates_exhaustive_two_worlds(r)
     attack_dynamic_updates_random(seed, random_trials, r)
     attack_ontology_failure(max_worlds, r)
