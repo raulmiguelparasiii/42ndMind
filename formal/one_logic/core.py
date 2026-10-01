@@ -48,6 +48,18 @@ class Transition:
     after: World
 
 
+@dataclass(frozen=True)
+class Deviation:
+    """Two objective directions of departure from an independently defined ideal set."""
+
+    unsupported_exclusion: FrozenSet[Hashable]
+    unsupported_retention: FrozenSet[Hashable]
+
+    @property
+    def exact(self) -> bool:
+        return not self.unsupported_exclusion and not self.unsupported_retention
+
+
 def normalize_live(live: Iterable[World]) -> FrozenSet[World]:
     return frozenset(live)
 
@@ -111,6 +123,69 @@ def sharp_update(live: Iterable[World], outcome: Outcome, transitions: Iterable[
 def update_is_sound(live: Iterable[World], outcome: Outcome, transitions: Iterable[Transition], proposed: Iterable[World]) -> bool:
     """A proposed posterior is sound iff it contains every objectively possible posterior."""
     return sharp_update(live, outcome, transitions).issubset(normalize_live(proposed))
+
+
+def deviation_from_ideal(ideal: Iterable[Hashable], proposed: Iterable[Hashable]) -> Deviation:
+    """Return both objective directions of set-level reasoning error.
+
+    unsupported_exclusion: the proposal deletes something the ideal still permits.
+    unsupported_retention: the proposal keeps something the ideal has eliminated.
+    """
+    i = frozenset(ideal)
+    p = frozenset(proposed)
+    return Deviation(i - p, p - i)
+
+
+def weakly_dominates(ideal: Iterable[Hashable], a: Iterable[Hashable], b: Iterable[Hashable]) -> bool:
+    """Pareto dominance by inclusion of the two deviation sets."""
+    da = deviation_from_ideal(ideal, a)
+    db = deviation_from_ideal(ideal, b)
+    return (
+        da.unsupported_exclusion.issubset(db.unsupported_exclusion)
+        and da.unsupported_retention.issubset(db.unsupported_retention)
+    )
+
+
+def strictly_dominates(ideal: Iterable[Hashable], a: Iterable[Hashable], b: Iterable[Hashable]) -> bool:
+    da = deviation_from_ideal(ideal, a)
+    db = deviation_from_ideal(ideal, b)
+    return weakly_dominates(ideal, a, b) and (
+        da.unsupported_exclusion != db.unsupported_exclusion
+        or da.unsupported_retention != db.unsupported_retention
+    )
+
+
+def update_deviation(live: Iterable[World], outcome: Outcome, transitions: Iterable[Transition], proposed: Iterable[World]) -> Deviation:
+    return deviation_from_ideal(sharp_update(live, outcome, transitions), proposed)
+
+
+def inference_deviation(live: Iterable[World], queries: Sequence[Query], asserted: Iterable[Assertion]) -> Deviation:
+    """Compare asserted categorical claims with the maximal sound categorical closure.
+
+    Unsupported exclusions correspond to omitted forced conclusions.
+    Unsupported retentions correspond to asserted conclusions not forced by K.
+    """
+    ideal = categorical_consequences(live, queries)
+    return deviation_from_ideal(ideal, asserted)
+
+
+def bridge_valid(
+    live: Iterable[World],
+    premise: Query,
+    premise_value: object,
+    conclusion: Query,
+    conclusion_value: object,
+) -> bool:
+    """Whether a categorical premise->conclusion bridge holds across live possibilities.
+
+    The premise must be realizable in at least one live possibility; this avoids treating
+    an empty premise class as substantive support.
+    """
+    k = normalize_live(live)
+    relevant = [w for w in k if premise.value(w) == premise_value]
+    if not relevant:
+        return False
+    return all(conclusion.value(w) == conclusion_value for w in relevant)
 
 
 def observation_update(live: Iterable[World], observed: Outcome, observation: Mapping[World, Outcome]) -> FrozenSet[World]:
