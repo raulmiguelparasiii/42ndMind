@@ -3,4 +3,6 @@ open Lake DSL
 
 package «one_logic_formal» where
 
-lean_lib «OneLogic»
+@[default_target]
+lean_lib OneLogic where
+  roots := #[`OneLogic]
