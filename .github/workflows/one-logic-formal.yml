@@ -13,7 +13,7 @@ on:
       - '.github/workflows/one-logic-formal.yml'
 
 jobs:
-  test:
+  python-falsifier:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,3 +24,20 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Full bounded falsifier
         run: PYTHONPATH=formal python -m one_logic.falsifier
+
+  lean-proof-kernel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kernel-check formal theorems
+        uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: formal/lean
+          build: true
+          test: false
+          lint: false
+          use-mathlib-cache: false
+          leanchecker: true
+          nanoda: true
+          nanoda-allow-sorry: false
+          axiom-audit: true
