@@ -33,6 +33,7 @@ jobs:
         uses: leanprover/lean-action@v1
         with:
           lake-package-directory: formal/lean
+          auto-config: false
           build: true
           test: false
           lint: false
