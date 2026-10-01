@@ -1,7 +1,7 @@
 import Lake
 open Lake DSL
 
-package «one_logic_formal» where
+package OneLogic where
 
 @[default_target]
 lean_lib OneLogic where
