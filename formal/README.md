@@ -20,12 +20,14 @@ The lab tests these claims:
 8. **Query-relative minimality.** The quotient by complete query-signature is adequate, and any representation merging different signatures is inadequate.
 9. **Open ontology.** If actuality is absent from the current model class, no correction confined to subsets of that class can recover actuality.
 10. **Undefined is not false.** Partial/self-reference-sensitive queries are not automatically forced into Boolean truth values.
+11. **Fallacy dominance.** Relative to an independently defined ideal inference/update, deviations split into unsupported exclusion and unsupported retention. The exact ideal has zero deviation and dominates any materially deviant alternative.
+12. **Bridge validity.** A claimed premise-to-conclusion bridge fails when one live counterexample satisfies the premise and defeats the conclusion. This separates bad inference from mere insult, tone, or genuinely held but irrelevant belief.
 
 ## What the executable tests establish
 
 `formal/one_logic/falsifier.py` exhaustively enumerates finite countermodels for the tractable bounded cases and also performs deterministic seeded attacks on larger dynamic transition systems. A passing run establishes that no counterexample exists inside the enumerated finite search space.
 
-It does **not** by itself prove the corresponding theorem over arbitrary infinite structures. The general mathematical proofs are short set-theoretic arguments and should eventually be ported to a small external proof assistant kernel. Until then, the executable lab is a counterexample engine and implementation audit, not a substitute for a universal proof checker.
+It does **not** by itself prove the corresponding theorem over arbitrary infinite structures. The general theorem statements are formalized in `formal/lean/OneLogic.lean` and kernel-checked by Lean in CI. The executable lab remains a separate counterexample engine and implementation audit.
 
 ## Run
 
