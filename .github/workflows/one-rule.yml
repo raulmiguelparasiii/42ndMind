@@ -20,4 +20,5 @@ jobs:
       - run: node one-rule.test.js
       - run: node recursive-recompression.test.js
       - run: node temporal-recompression.test.js
+      - run: node sequence-recompression.test.js
       - run: node one-rule.stress.js
