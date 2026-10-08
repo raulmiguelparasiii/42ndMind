@@ -10,7 +10,7 @@ const step = (state, id, domains, relation, extra = {}) => Mind.integrate(state,
   const m = Mind.one();
   assert.strictEqual(m.whole, 1);
   assert.strictEqual(m.simplex.normalization, 1);
-  assert.strictEqual(m.simplex.representation, 'exact_factored');
+  assert.strictEqual(m.simplex.representation, 'exact_factored_self_compressing');
   assert.strictEqual(m.simplex.worlds_materialized, false);
   assert.strictEqual(m.chunks.length, 0);
   assert.deepStrictEqual(Mind.materialize(m), [{}]);
@@ -122,6 +122,95 @@ const step = (state, id, domains, relation, extra = {}) => Mind.integrate(state,
   assert.strictEqual(q.status, 'unresolved');
   assert.strictEqual(q.expanded_variables, 1);
   assert.throws(() => Mind.materialize(m, 1000), /materialization limit exceeded/);
+})();
+
+(function repeatedRealitySelfCompressesIntoAHeuristicWithoutBeingProgrammedAsOne() {
+  let m = Mind.one();
+
+  // The learner is never told a rule. It receives only bounded cases.
+  for (let i = 0; i < 20; i++) {
+    m = Mind.integrate(m, { id: `early-positive-${i}`, sample: { attentive_early: true, controlling_later: true } });
+  }
+  for (let i = 0; i < 20; i++) {
+    m = Mind.integrate(m, { id: `early-contrast-${i}`, sample: { attentive_early: false, controlling_later: false } });
+  }
+
+  const learned = m.learned_patterns.find(p =>
+    p.target === 'controlling_later' && p.expected === true &&
+    p.conditions.length === 1 && p.conditions[0].feature === 'attentive_early' && p.conditions[0].value === true
+  );
+  assert.ok(learned, 'repeated cases should induce the reusable relation automatically');
+  assert.strictEqual(learned.reliability, 1);
+  assert.ok(learned.bits_saved > 0);
+
+  const prediction = Mind.predict(m, { attentive_early: true });
+  assert.strictEqual(prediction.best_by_target.controlling_later.expected, true);
+  assert.strictEqual(prediction.authority, 'defeasible_attention_only');
+})();
+
+(function counterCasesCauseAutomaticConditionalRefinementRatherThanDogmaticPersistence() {
+  let m = Mind.one();
+  for (let i = 0; i < 20; i++) {
+    m = Mind.integrate(m, { id: `base-positive-${i}`, sample: { attentive_early: true, controlling_later: true } });
+  }
+  for (let i = 0; i < 20; i++) {
+    m = Mind.integrate(m, { id: `base-contrast-${i}`, sample: { attentive_early: false, controlling_later: false } });
+  }
+
+  const before = Mind.predict(m, { attentive_early: true });
+  assert.strictEqual(before.best_by_target.controlling_later.expected, true);
+
+  // Later experience reveals a differentiating condition. Nothing tells the
+  // kernel to prefer this feature; it competes under the same compression law.
+  for (let i = 0; i < 10; i++) {
+    m = Mind.integrate(m, { id: `detail-risk-${i}`, sample: {
+      attentive_early: true, respects_boundaries: false, controlling_later: true,
+    }});
+  }
+  for (let i = 0; i < 10; i++) {
+    m = Mind.integrate(m, { id: `detail-exception-${i}`, sample: {
+      attentive_early: true, respects_boundaries: true, controlling_later: false,
+    }});
+  }
+  for (let i = 0; i < 10; i++) {
+    m = Mind.integrate(m, { id: `detail-outside-a-${i}`, sample: {
+      attentive_early: false, respects_boundaries: false, controlling_later: false,
+    }});
+  }
+  for (let i = 0; i < 10; i++) {
+    m = Mind.integrate(m, { id: `detail-outside-b-${i}`, sample: {
+      attentive_early: false, respects_boundaries: true, controlling_later: false,
+    }});
+  }
+
+  const refined = m.learned_patterns.find(p =>
+    p.target === 'controlling_later' && p.expected === true &&
+    p.conditions.some(c => c.feature === 'attentive_early' && c.value === true) &&
+    p.conditions.some(c => c.feature === 'respects_boundaries' && c.value === false)
+  );
+  assert.ok(refined, 'a deeper condition should emerge from the counter-cases');
+  assert.strictEqual(refined.reliability, 1);
+  assert.strictEqual(refined.exceptions, 0);
+
+  const crude = m.learned_patterns.find(p =>
+    p.target === 'controlling_later' && p.expected === true &&
+    p.conditions.length === 1 && p.conditions[0].feature === 'attentive_early' && p.conditions[0].value === true
+  );
+  assert.ok(crude, 'the older coarse pattern remains reconstructible from history');
+  assert.ok(crude.exceptions > 0, 'the new reality must register against the coarse pattern');
+  assert.ok(refined.bits_saved > crude.bits_saved, 'the better conditional structure should outrank the crude shortcut');
+
+  const risky = Mind.predict(m, { attentive_early: true, respects_boundaries: false });
+  assert.strictEqual(risky.best_by_target.controlling_later.expected, true);
+  const safer = Mind.predict(m, { attentive_early: true, respects_boundaries: true });
+  assert.strictEqual(safer.best_by_target.controlling_later.expected, false);
+
+  // Learned compression does not manufacture truth. A fresh current referent
+  // remains unresolved until reality constrains it.
+  m = step(m, 'fresh-control', { fresh_control: [false, true] }, R(['fresh_control'], [[false], [true]]));
+  assert.strictEqual(Mind.query(m, R(['fresh_control'], [[true]])).status, 'unresolved');
+  assert.strictEqual(m.whole, 1);
+  assert.strictEqual(m.ledger.length, 81, 'all cases and the fresh referent remain in one history');
 })();
 
 console.log('42ndMind one-rule tests: PASS');
