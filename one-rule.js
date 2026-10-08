@@ -5,7 +5,7 @@
 })(globalThis, function () {
   'use strict';
 
-  const VERSION = '0.3.0';
+  const VERSION = '0.3.1';
 
   // ONE DEVELOPMENT LAW
   //
@@ -346,8 +346,6 @@
       return { samples: samples.length, features, patterns: [], search: { max_conditions: 0, candidates: 0 } };
     }
 
-    // This is a computation throttle, not a semantic restriction. Small
-    // referents are searched exhaustively; larger ones cap active conjunctions.
     const maxConditions = Math.min(features.length - 1, features.length <= 8 ? features.length - 1 : 3);
     const atomCount = features.reduce((n, f) => n + featureValues[f].length, 0);
     const modelUnit = Math.log2(Math.max(2, atomCount + features.length));
@@ -397,6 +395,13 @@
       const savings = baseBits - residualBits - modelBits;
       if (!(savings > 0)) continue;
 
+      // Current-case use is itself referent-relative compression. A broad rule
+      // may save more bits globally merely because it covers more history, while
+      // a narrower rule can encode the present case more efficiently. Laplace
+      // smoothing prevents a tiny perfect sample from becoming certainty.
+      const smoothed = (matchedExpected + 1) / (matched.length + 2);
+      const predictiveCodeBits = -Math.log2(smoothed) + modelBits / eligible.length;
+
       patterns.push({
         id: '',
         conditions: candidate.conditions.slice().sort((a, b) => atomKey(a).localeCompare(atomKey(b))),
@@ -407,8 +412,10 @@
         covered: matched.length,
         eligible: eligible.length,
         reliability: matchedRate,
+        smoothed_reliability: smoothed,
         base_rate: baseRate,
         bits_saved: savings,
+        predictive_code_bits: predictiveCodeBits,
         model_bits: modelBits,
         residual_bits: residualBits,
         status: 'defeasible',
@@ -417,15 +424,12 @@
 
     patterns.sort((a, b) =>
       b.bits_saved - a.bits_saved ||
-      b.reliability - a.reliability ||
+      a.predictive_code_bits - b.predictive_code_bits ||
       a.conditions.length - b.conditions.length ||
       conditionKey(a.conditions).localeCompare(conditionKey(b.conditions)) ||
       a.target.localeCompare(b.target)
     );
 
-    // Keep a compact non-authoritative repertoire. This does not discard
-    // evidence; every sample remains in the ledger and all patterns can be
-    // recomputed from it after the next experience.
     const kept = patterns.slice(0, 64).map((pattern, i) => Object.assign({}, pattern, { id: `h${i + 1}` }));
     return {
       samples: samples.length,
@@ -537,18 +541,20 @@
     };
   }
 
-  // Learned compression can guide attention without becoming evidence. A
-  // prediction is therefore explicitly defeasible and never changes query().
   function predict(state, partialSample) {
     const values = normalizeSample(partialSample) || {};
     const active = state.learned_patterns.filter(pattern =>
       !Object.prototype.hasOwnProperty.call(values, pattern.target) &&
       pattern.conditions.every(atom => sampleHas(values, atom))
     );
+
+    // Same compression law, now relative to the current bounded referent: use
+    // the applicable description with the shortest predictive code, rather than
+    // blindly favoring the historically broadest shortcut.
     active.sort((a, b) =>
+      a.predictive_code_bits - b.predictive_code_bits ||
       b.bits_saved - a.bits_saved ||
-      b.reliability - a.reliability ||
-      b.conditions.length - a.conditions.length ||
+      b.covered - a.covered ||
       a.id.localeCompare(b.id)
     );
     const best = {};
