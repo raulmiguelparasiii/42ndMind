@@ -128,16 +128,59 @@ The corrected one-rule implementation therefore applies the **same description-l
 
 Laplace smoothing prevents a tiny perfect sample from being treated as certainty.
 
+## Recursive self-development
+
+The same compression operator is now tested recursively.
+
+The rule is not extended with a separate "concept formation" or "promotion" mechanism. Instead, the shortest learned description for a bounded referent becomes part of the current mind-state. On the next compression pass, `C` can use that description exactly as it uses any other available relation:
+
+```text
+D_1 = C(E)
+D_2 = C(E ∪ D_1)
+D_3 = C(E ∪ D_1 ∪ D_2)
+...
+```
+
+Equivalently, recursive development seeks the fixed point of the same operator over its own output:
+
+```text
+C*(E) = fixed-point reuse of C-produced descriptions as later C-input
+```
+
+The implementation prevents hidden circular prediction: a learned description cannot be used to predict a target when that description already depends on the same target.
+
+The recursive test deliberately limits every learned rule to at most three active conditions.
+
+Stage 1 presents repeated cases from which the system discovers a reusable two-condition description.
+
+Stage 2 introduces a new four-condition regularity. Because the earlier learned description is already part of the mind, the same three-condition search can express the new relation by using the learned description as one condition. That higher relation then becomes reusable vocabulary itself.
+
+Stage 3 introduces a six-condition regularity. The raw six-way conjunction is outside the search language by construction, but the system succeeds by using its own level-2 learned description plus two new conditions.
+
+Thus the tested path is:
+
+```text
+raw experience
+    -> learned relation D1
+    -> D1 reused inside learned relation D2
+    -> D2 reused inside learned relation D3
+```
+
+No rule was widened and no level-specific reasoning function was inserted between those stages.
+
+This is the first computational demonstration in the repository that the one developmental law can make its own prior products into the representational material of later learning.
+
 ## Mature-heuristic interpretation
 
-This now matches the Stone's mature-heuristic logic structurally:
+This matches the Stone's mature-heuristic logic structurally:
 
 - accumulated experience need not be recomputed from zero;
 - stable structure can be compressed and reused;
 - materially relevant exceptions remain governing;
 - a broader shortcut remains defeasible by a better-fitting conditional structure;
 - the learned pattern does not become truth merely because it is efficient;
-- exact unresolvedness remains unresolved until reality constrains it.
+- exact unresolvedness remains unresolved until reality constrains it;
+- prior learned structure can reduce the complexity of later judgment without becoming immune to correction.
 
 So "mature heuristic" is not a manually inserted faculty in 42ndMind. It is a possible emergent form of reality-preserving compression under the one developmental law.
 
@@ -158,7 +201,7 @@ If incompatible interpretations enter the ledger, the mind remains `1` while the
 
 ## Verified results
 
-GitHub Actions now verifies the original exact kernel, the self-learning cases, and the scaling stress suite.
+GitHub Actions now verifies the original exact kernel, self-learning and refinement, recursive self-recompression, and the scaling stress suite.
 
 Current verified behaviors include:
 
@@ -167,6 +210,10 @@ Current verified behaviors include:
 - a newly relevant condition is automatically discovered as a refined pattern;
 - current-case prediction chooses the referent-relative shorter description rather than the historically broadest shortcut;
 - heuristic prediction does not convert an unresolved fresh variable into exact truth;
+- learned descriptions become inputs to later applications of the same compression law;
+- a level-2 description was learned from a level-1 description;
+- a higher relation requiring six raw conditions was learned despite a three-condition search limit by reusing the level-2 representation;
+- circular self-prediction through learned symbols is rejected;
 - all original contradiction/recovery tests continue to pass;
 - 500 randomized exact-growth trials continue to pass;
 - the factored kernel still avoids explicit `2^1000` independent-world enumeration;
@@ -190,10 +237,12 @@ specific dating rule
 exception handling rule
 schema authority
 attention authority
+concept level
+higher-order concept
 conviction
 empathy
 ```
 
-The implementation does contain finite engineering search limits and a generic representation vocabulary for observed feature/value relations. Those are computational interfaces and bounds, not learned conclusions.
+The implementation still contains finite engineering search limits and a generic representation vocabulary for observed feature/value relations. Those are computational interfaces and bounds, not learned conclusions.
 
-The next legitimate test is therefore not to add another faculty. It is to see how far the same self-compression law can build higher-order representations whose own learned structures become the features of still higher relations, recursively, without changing the developmental law.
+The next legitimate tests should continue in the same direction: do not add faculties. Increase the diversity and temporal depth of experience, then test what structures repeated recursive recompression can discover on its own and where the one law actually fails.
