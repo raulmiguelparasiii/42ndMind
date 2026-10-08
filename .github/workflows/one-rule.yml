@@ -18,4 +18,5 @@ jobs:
         with:
           node-version: '24'
       - run: node one-rule.test.js
+      - run: node recursive-recompression.test.js
       - run: node one-rule.stress.js
