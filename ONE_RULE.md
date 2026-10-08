@@ -1,18 +1,47 @@
 # 42ndMind — tested one-rule kernel
 
-## The rule
+## One developmental law
 
-Let `L_t` be the complete ledger of experienced relations up to time `t`.
-After one new reality-bearing relation `R_(t+1)`:
+The kernel now uses one developmental law:
 
 ```text
-L_(t+1) = L_t ∪ {R_(t+1)}
+M_(t+1) = C(M_t ∪ {R_(t+1)})
+```
 
-W_(t+1) = {
-  w : every undefeated relation in L_(t+1) is satisfied by w
+`R_(t+1)` is the next reality-contact. `C` is reality-preserving recompression of the one accumulated mind.
+
+The finite implementation realizes `C` as a minimum-description search:
+
+```text
+choose reusable relational descriptions that minimize
+
+    description(patterns) + description(experience | patterns)
+
+while retaining every undefeated experienced case and every residual exception.
+```
+
+In compact mathematical form:
+
+```text
+C(E) = argmin_D [ L(D) + L(E | D) ]
+```
+
+subject to the requirement that `D` plus its residuals reconstruct the experienced record rather than deleting inconvenient cases.
+
+This is the important architectural point: the kernel is **not** given a separate rule saying "form a heuristic", "refine a heuristic", or "be mature". Repetition becomes a reusable pattern only when representing it that way compresses accumulated reality-contact. A deviation remains in the residual history. If an additional condition explains the deviation well enough, the more specific conditional description becomes the cheaper representation relative to that referent.
+
+## Exact truth remains separate from heuristic compression
+
+Compression does not become a second source of truth.
+
+Let `L_t` be the undefeated reality-relation ledger. Exact truth conditions remain:
+
+```text
+W_t = {
+  w : every undefeated relation in L_t is satisfied by w
 }
 
-M_(t+1) = Δ(W_(t+1))
+M_t = Δ(W_t)
 ```
 
 Initial state:
@@ -25,50 +54,94 @@ M_0 = Δ({∅}) = {[1]}
 
 So the mind begins literally at numerical unit `1`.
 
-`Δ(W)` is the full unit simplex over the complete states still compatible with experience. The kernel does not invent a probability distribution over unresolved alternatives.
+A learned pattern may guide attention or expectation, but it cannot remove a compatible possibility from `W_t`. Only reality-bearing relations can do that.
 
-## The numerical invariant
+This prevents a frequent shortcut from turning itself into certainty merely because it is familiar.
+
+## Numerical invariant
 
 The tested invariant is not that every heterogeneous mental relation globally adds to `1`. Relations overlap and can describe the same reality at different resolutions, so that would double-count them.
 
 The invariant is:
 
-> Every admissible complete realization of the one mind has total mass `1`; uncertainty is represented by retaining the compatible unit-normalized solution space rather than inventing weights.
+> Every admissible complete realization of the one mind has total mass `1`; unresolvedness is represented by retaining the compatible unit-normalized solution space rather than inventing weights.
 
-The whole remains `1` even while its internal relations become finer, conflict, or are corrected.
+The whole remains `1` while its internal relations become finer, conflict, compress, reopen, or are corrected.
 
 ## Throttled exact representation
 
-The semantic set `W` is no longer enumerated in memory.
+The semantic set `W` is not enumerated in memory.
 
 The implementation stores one factored relational state:
 
-- variables and their still-admissible values;
+- variables and still-admissible values;
 - undefeated experienced relations;
 - conservative domain reductions;
 - connected relational chunks;
-- the correction/history ledger.
+- the correction/history ledger;
+- automatically learned reusable descriptions of repeated bounded cases.
 
-Disconnected chunks factor exactly. If
+Disconnected exact chunks factor. Queries reopen only connected structure that can affect the answer.
+
+The heuristic learner follows the same throttle principle. For small bounded referents it searches conjunctions exhaustively; larger feature spaces cap active conjunction size as a computational search budget. That cap changes search coverage, not the meaning or authority of a learned pattern.
+
+## Self-learned heuristic emergence
+
+A bounded historical case can enter as a sample such as:
 
 ```text
-W = W_1 × W_2 × ... × W_n
+{ attentive_early: true, controlling_later: true }
 ```
 
-and a query touches only chunks in `J`, unrelated chunks do not need to be expanded. The query reopens only the connected relational structure capable of changing that answer.
+The code is not told a dating rule. Each sample is translated into the same relation ledger as a bounded namespaced referent.
 
-This is the implemented throttling rule:
+When repeated positive cases are contrasted with repeated negative cases, the compression search can discover:
 
-> Keep unrelated structure coarse; reopen the smallest connected structure required by the active relation; propagate constraints through that structure; leave the rest of the one mind unexpanded.
+```text
+attentive_early = true
+    -> controlling_later = true
+```
 
-This changes representation, not truth conditions. A relation is still:
+because that reusable conditional description encodes the observed history more cheaply than treating every case independently.
 
-- `resolved_true` when every compatible complete state satisfies it;
-- `resolved_false` when none satisfies it;
-- `unresolved` when both satisfying and falsifying compatible states remain;
-- `conflict` when the current undefeated relations admit no complete state.
+The learned relation is explicitly defeasible. It is an expectation/attention structure, not an exact truth constraint.
 
-## Emergence and reopening
+## Automatic refinement under counter-cases
+
+The tests then introduce counter-cases and an additional observed condition:
+
+```text
+attentive_early = true
+respects_boundaries = false
+    -> controlling_later = true
+
+attentive_early = true
+respects_boundaries = true
+    -> controlling_later = false
+```
+
+The original coarse pattern remains reconstructible and now records exceptions. The kernel independently discovers the more specific condition because it compresses the detailed cases better.
+
+A first attempt ranked patterns only by total historical bits saved. That failed a test: a broad old pattern could remain globally popular even when a narrower pattern described the present referent better.
+
+The corrected one-rule implementation therefore applies the **same description-length law relative to the current bounded referent**. Among patterns that actually match the present case, it prefers the description with the shorter predictive code. This lets a sufficiently grounded conditional refinement defeat a broader shortcut without installing a separate "specificity" authority.
+
+Laplace smoothing prevents a tiny perfect sample from being treated as certainty.
+
+## Mature-heuristic interpretation
+
+This now matches the Stone's mature-heuristic logic structurally:
+
+- accumulated experience need not be recomputed from zero;
+- stable structure can be compressed and reused;
+- materially relevant exceptions remain governing;
+- a broader shortcut remains defeasible by a better-fitting conditional structure;
+- the learned pattern does not become truth merely because it is efficient;
+- exact unresolvedness remains unresolved until reality constrains it.
+
+So "mature heuristic" is not a manually inserted faculty in 42ndMind. It is a possible emergent form of reality-preserving compression under the one developmental law.
+
+## Existing exact emergence and correction
 
 No transitivity module is inserted.
 
@@ -79,48 +152,48 @@ x = y
 y = z
 ```
 
-then querying `x = z` resolves true because no compatible state can make the endpoints differ. A later reality contact such as `x = 1` propagates through the same shared relational chunk and resolves `y` and `z` accordingly.
+then querying `x = z` resolves true because no compatible state can make the endpoints differ.
 
-If an incompatible interpretation enters the ledger, the one remains `1` but the active state becomes conflicting. A later correction may explicitly defeat that interpretation without deleting the original event; the event and the correction remain in the same history.
+If incompatible interpretations enter the ledger, the mind remains `1` while the exact state becomes conflicting. A later correction may defeat an interpretation without deleting the original event; both the event and correction remain in history.
 
-## Verified scaling result
+## Verified results
 
-GitHub Actions runs deterministic tests plus randomized and large-scale stress tests.
+GitHub Actions now verifies the original exact kernel, the self-learning cases, and the scaling stress suite.
 
-Latest verified run:
+Current verified behaviors include:
+
+- repeated cases automatically induce a reusable conditional pattern without that pattern being named in code;
+- later counter-cases reduce the authority of the coarse pattern rather than being discarded;
+- a newly relevant condition is automatically discovered as a refined pattern;
+- current-case prediction chooses the referent-relative shorter description rather than the historically broadest shortcut;
+- heuristic prediction does not convert an unresolved fresh variable into exact truth;
+- all original contradiction/recovery tests continue to pass;
+- 500 randomized exact-growth trials continue to pass;
+- the factored kernel still avoids explicit `2^1000` independent-world enumeration;
+- the 160-variable connected-chain inference still works without raw `2^160` pre-filter enumeration.
+
+## What is and is not hand-coded
+
+Hand-coded primitive:
 
 ```text
-random trials=500
-derived checks=3050
-locality checks=501
-conflict/recovery checks=500
-implicit worlds avoided=2^1000 independent + 2^160 pre-filter chain
+preserve reality-contact and recompress the accumulated relational history under one description-length objective
 ```
 
-All passed.
+Not hand-coded as cognitive authorities:
 
-The `2^1000` test introduces 1,000 independent binary distinctions. The kernel keeps 1,000 coarse chunks; a one-variable query opens one variable and one chunk instead of enumerating the complete world space.
+```text
+memory
+heuristic
+mature heuristic
+specific dating rule
+exception handling rule
+schema authority
+attention authority
+conviction
+empathy
+```
 
-The 160-variable test links the variables through equality relations. The kernel derives equality between the first and last variables without an endpoint rule and without constructing the `2^160` raw assignments the original enumerating prototype would have generated before filtering.
+The implementation does contain finite engineering search limits and a generic representation vocabulary for observed feature/value relations. Those are computational interfaces and bounds, not learned conclusions.
 
-## What this establishes
-
-The tested finite kernel now has:
-
-- one accepted mind state;
-- one reality-update rule;
-- numerical unit preserved;
-- unresolved relations without invented probabilities;
-- exact factoring of unrelated structure;
-- query-relative reopening of relevant structure;
-- implicit multi-step relational consequence;
-- contradiction without identity loss;
-- correction without erasing history.
-
-No separate memory, empathy, conviction, language, attention, or reasoning authority is part of the kernel. If those phenomena belong in 42ndMind, they must be expressible as structures or recurrent organizations inside the same relational law.
-
-## Remaining construction problem
-
-The scaling bottleneck demonstrated by explicit world enumeration is removed for factorizable structure and locally queried finite constraint systems.
-
-What is not yet constructed is automatic formation of reusable higher-order concepts from repeated lower-level relational patterns — the equivalent of learning a new chunk or schema rather than merely discovering which existing relations are connected. That next layer must preserve the same one-rule semantics; it cannot become a second cognitive authority.
+The next legitimate test is therefore not to add another faculty. It is to see how far the same self-compression law can build higher-order representations whose own learned structures become the features of still higher relations, recursively, without changing the developmental law.
