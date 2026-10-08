@@ -126,8 +126,6 @@ const step = (state, id, domains, relation, extra = {}) => Mind.integrate(state,
 
 (function repeatedRealitySelfCompressesIntoAHeuristicWithoutBeingProgrammedAsOne() {
   let m = Mind.one();
-
-  // The learner is never told a rule. It receives only bounded cases.
   for (let i = 0; i < 20; i++) {
     m = Mind.integrate(m, { id: `early-positive-${i}`, sample: { attentive_early: true, controlling_later: true } });
   }
@@ -160,8 +158,6 @@ const step = (state, id, domains, relation, extra = {}) => Mind.integrate(state,
   const before = Mind.predict(m, { attentive_early: true });
   assert.strictEqual(before.best_by_target.controlling_later.expected, true);
 
-  // Later experience reveals a differentiating condition. Nothing tells the
-  // kernel to prefer this feature; it competes under the same compression law.
   for (let i = 0; i < 10; i++) {
     m = Mind.integrate(m, { id: `detail-risk-${i}`, sample: {
       attentive_early: true, respects_boundaries: false, controlling_later: true,
@@ -198,15 +194,14 @@ const step = (state, id, domains, relation, extra = {}) => Mind.integrate(state,
   );
   assert.ok(crude, 'the older coarse pattern remains reconstructible from history');
   assert.ok(crude.exceptions > 0, 'the new reality must register against the coarse pattern');
-  assert.ok(refined.bits_saved > crude.bits_saved, 'the better conditional structure should outrank the crude shortcut');
+  assert.ok(refined.predictive_code_bits < crude.predictive_code_bits,
+    'relative to a case where the deeper condition is known, the refined description should be cheaper than the crude shortcut');
 
   const risky = Mind.predict(m, { attentive_early: true, respects_boundaries: false });
   assert.strictEqual(risky.best_by_target.controlling_later.expected, true);
   const safer = Mind.predict(m, { attentive_early: true, respects_boundaries: true });
   assert.strictEqual(safer.best_by_target.controlling_later.expected, false);
 
-  // Learned compression does not manufacture truth. A fresh current referent
-  // remains unresolved until reality constrains it.
   m = step(m, 'fresh-control', { fresh_control: [false, true] }, R(['fresh_control'], [[false], [true]]));
   assert.strictEqual(Mind.query(m, R(['fresh_control'], [[true]])).status, 'unresolved');
   assert.strictEqual(m.whole, 1);
