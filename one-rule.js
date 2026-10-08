@@ -5,17 +5,23 @@
 })(globalThis, function () {
   'use strict';
 
-  const VERSION = '0.2.1';
+  const VERSION = '0.3.0';
 
-  // ONE RULE, unchanged in meaning:
+  // ONE DEVELOPMENT LAW
   //
-  //   L(t+1) = L(t) ∪ {R(t+1)}
-  //   W(t+1) = {w : every undefeated relation in L(t+1) holds in w}
-  //   M(t+1) = Δ(W(t+1))
+  //   M(t+1) = C(M(t) ∪ {R(t+1)})
   //
-  // W is represented exactly but factored: independent relation-components are
-  // coarse chunks. No complete worlds are materialized unless a diagnostic asks
-  // for them. A query reopens only the chunks containing its variables.
+  // C is reality-preserving recompression: retain every undefeated experience
+  // and represent the accumulated history with the shortest reusable relational
+  // descriptions found within the finite search budget. Residual cases are not
+  // deleted. Learned descriptions are therefore heuristics, never truth-makers.
+  // Exact truth remains:
+  //
+  //   W(t) = { w : every undefeated reality-relation in L(t) holds in w }
+  //   M(t) denotes Δ(W(t)), represented in factored form with total unit 1.
+  //
+  // Repetition, chunking, refinement and defeasibility are consequences of the
+  // same recompression after reality-contact, not separate cognitive modules.
 
   function stable(value) {
     if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
@@ -44,22 +50,63 @@
     return { vars, allowed };
   }
 
+  function normalizeSample(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+    const out = {};
+    for (const key of Object.keys(input).sort()) {
+      const value = input[key];
+      if (value !== undefined) out[String(key)] = value;
+    }
+    return Object.keys(out).length ? out : null;
+  }
+
   function normalizeExperience(input, index) {
     const id = String(input.id || `r${index + 1}`);
-    const domains = {};
+    let domains = {};
     for (const [name, values] of Object.entries(input.domains || {})) {
       const domain = unique(values);
       if (!domain.length) throw new Error(`empty domain: ${name}`);
       domains[String(name)] = domain;
     }
+    let relation = normalizeRelation(input.relation);
+    const sample = normalizeSample(input.sample);
+
+    // A sample is simply a bounded historical referent. It is translated into
+    // the same relation language using namespaced variables, so learning from
+    // cases does not require a second storage or update mechanism.
+    if (sample) {
+      if (relation || Object.keys(domains).length) throw new Error('sample experience cannot also declare relation/domains');
+      const roles = Object.keys(sample).sort();
+      const vars = roles.map(role => `@${id}:${role}`);
+      domains = Object.fromEntries(vars.map((name, i) => [name, [sample[roles[i]]]]));
+      relation = { vars, allowed: [roles.map(role => sample[role])] };
+    }
+
     return {
       id,
       domains,
-      relation: normalizeRelation(input.relation),
+      relation,
+      sample,
       supersedes: [...new Set((input.supersedes || []).map(String))].sort(),
       provenance: input.provenance == null ? null : input.provenance,
       raw: input.raw == null ? null : input.raw,
     };
+  }
+
+  function defeatedIds(ledger) {
+    const defeated = new Set();
+    for (const entry of ledger) for (const id of entry.supersedes) defeated.add(id);
+    return defeated;
+  }
+
+  function activeRelations(ledger) {
+    const defeated = defeatedIds(ledger);
+    return ledger.filter(entry => entry.relation && !defeated.has(entry.id));
+  }
+
+  function activeSamples(ledger) {
+    const defeated = defeatedIds(ledger);
+    return ledger.filter(entry => entry.sample && !defeated.has(entry.id));
   }
 
   function collectDomains(ledger) {
@@ -72,12 +119,6 @@
     return domains;
   }
 
-  function activeRelations(ledger) {
-    const defeated = new Set();
-    for (const entry of ledger) for (const id of entry.supersedes) defeated.add(id);
-    return ledger.filter(entry => entry.relation && !defeated.has(entry.id));
-  }
-
   function tupleSupported(tuple, relation, domains, fixedIndex, fixedValue) {
     if (fixedIndex != null && !same(tuple[fixedIndex], fixedValue)) return false;
     for (let i = 0; i < relation.vars.length; i++) {
@@ -87,8 +128,6 @@
     return true;
   }
 
-  // Conservative coarse compression. Generalized arc consistency removes only
-  // values that cannot participate in any tuple of an undefeated relation.
   function reduceDomains(domainsInput, active) {
     const domains = Object.fromEntries(Object.entries(domainsInput).map(([k, v]) => [k, v.slice()]));
     let changed = true, pruned = 0, passes = 0;
@@ -260,6 +299,142 @@
     return witness ? { witness, nodes } : null;
   }
 
+  function entropyBinary(successes, total) {
+    if (!total || successes <= 0 || successes >= total) return 0;
+    const p = successes / total, q = 1 - p;
+    return -p * Math.log2(p) - q * Math.log2(q);
+  }
+
+  function atomKey(atom) { return `${atom.feature}=${stable(atom.value)}`; }
+
+  function conditionKey(conditions) {
+    return conditions.slice().sort((a, b) => atomKey(a).localeCompare(atomKey(b))).map(atomKey).join('&');
+  }
+
+  function combinations(items, maxSize) {
+    const out = [];
+    function visit(start, chosen) {
+      if (chosen.length) out.push(chosen.slice());
+      if (chosen.length >= maxSize) return;
+      for (let i = start; i < items.length; i++) {
+        chosen.push(items[i]);
+        visit(i + 1, chosen);
+        chosen.pop();
+      }
+    }
+    visit(0, []);
+    return out;
+  }
+
+  function sampleHas(sample, atom) {
+    return Object.prototype.hasOwnProperty.call(sample, atom.feature) && same(sample[atom.feature], atom.value);
+  }
+
+  // Finite MDL search. The objective itself is generic: prefer a reusable
+  // conditional description only when it shortens the coding of observed cases
+  // after paying for the description. Exceptions remain as residual code.
+  function learnPatterns(ledger) {
+    const samples = activeSamples(ledger).map(entry => ({ id: entry.id, values: entry.sample }));
+    const featureValues = {};
+    for (const { values } of samples) {
+      for (const [feature, value] of Object.entries(values)) {
+        featureValues[feature] = unique([...(featureValues[feature] || []), value]);
+      }
+    }
+    const features = Object.keys(featureValues).sort();
+    if (samples.length < 4 || features.length < 2) {
+      return { samples: samples.length, features, patterns: [], search: { max_conditions: 0, candidates: 0 } };
+    }
+
+    // This is a computation throttle, not a semantic restriction. Small
+    // referents are searched exhaustively; larger ones cap active conjunctions.
+    const maxConditions = Math.min(features.length - 1, features.length <= 8 ? features.length - 1 : 3);
+    const atomCount = features.reduce((n, f) => n + featureValues[f].length, 0);
+    const modelUnit = Math.log2(Math.max(2, atomCount + features.length));
+    const candidates = new Map();
+
+    for (const target of features) {
+      const targetValues = featureValues[target];
+      for (const expected of targetValues) {
+        for (const { values } of samples) {
+          if (!Object.prototype.hasOwnProperty.call(values, target)) continue;
+          const atoms = Object.keys(values)
+            .filter(feature => feature !== target)
+            .sort()
+            .map(feature => ({ feature, value: values[feature] }));
+          for (const conditions of combinations(atoms, maxConditions)) {
+            const key = `${target}=>${stable(expected)}|${conditionKey(conditions)}`;
+            if (!candidates.has(key)) candidates.set(key, { target, expected, conditions });
+          }
+        }
+      }
+    }
+
+    const patterns = [];
+    for (const candidate of candidates.values()) {
+      const conditionFeatures = candidate.conditions.map(x => x.feature);
+      const eligible = samples.filter(({ values }) =>
+        Object.prototype.hasOwnProperty.call(values, candidate.target) &&
+        conditionFeatures.every(feature => Object.prototype.hasOwnProperty.call(values, feature))
+      );
+      if (eligible.length < 4) continue;
+      const matched = eligible.filter(({ values }) => candidate.conditions.every(atom => sampleHas(values, atom)));
+      const unmatched = eligible.filter(({ values }) => !candidate.conditions.every(atom => sampleHas(values, atom)));
+      if (matched.length < 2 || unmatched.length < 2) continue;
+
+      const totalExpected = eligible.filter(({ values }) => same(values[candidate.target], candidate.expected)).length;
+      const matchedExpected = matched.filter(({ values }) => same(values[candidate.target], candidate.expected)).length;
+      const unmatchedExpected = unmatched.filter(({ values }) => same(values[candidate.target], candidate.expected)).length;
+      const baseRate = totalExpected / eligible.length;
+      const matchedRate = matchedExpected / matched.length;
+      if (matchedRate <= baseRate) continue;
+
+      const baseBits = eligible.length * entropyBinary(totalExpected, eligible.length);
+      const residualBits =
+        matched.length * entropyBinary(matchedExpected, matched.length) +
+        unmatched.length * entropyBinary(unmatchedExpected, unmatched.length);
+      const modelBits = (candidate.conditions.length + 1) * modelUnit;
+      const savings = baseBits - residualBits - modelBits;
+      if (!(savings > 0)) continue;
+
+      patterns.push({
+        id: '',
+        conditions: candidate.conditions.slice().sort((a, b) => atomKey(a).localeCompare(atomKey(b))),
+        target: candidate.target,
+        expected: candidate.expected,
+        support: matchedExpected,
+        exceptions: matched.length - matchedExpected,
+        covered: matched.length,
+        eligible: eligible.length,
+        reliability: matchedRate,
+        base_rate: baseRate,
+        bits_saved: savings,
+        model_bits: modelBits,
+        residual_bits: residualBits,
+        status: 'defeasible',
+      });
+    }
+
+    patterns.sort((a, b) =>
+      b.bits_saved - a.bits_saved ||
+      b.reliability - a.reliability ||
+      a.conditions.length - b.conditions.length ||
+      conditionKey(a.conditions).localeCompare(conditionKey(b.conditions)) ||
+      a.target.localeCompare(b.target)
+    );
+
+    // Keep a compact non-authoritative repertoire. This does not discard
+    // evidence; every sample remains in the ledger and all patterns can be
+    // recomputed from it after the next experience.
+    const kept = patterns.slice(0, 64).map((pattern, i) => Object.assign({}, pattern, { id: `h${i + 1}` }));
+    return {
+      samples: samples.length,
+      features,
+      patterns: kept,
+      search: { max_conditions: maxConditions, candidates: candidates.size },
+    };
+  }
+
   function compile(ledger) {
     const domains = collectDomains(ledger);
     const active = activeRelations(ledger);
@@ -280,6 +455,7 @@
       }
     }
 
+    const learning = learnPatterns(ledger);
     return {
       version: VERSION,
       whole: 1,
@@ -289,9 +465,16 @@
       active_relation_ids: active.map(x => x.id),
       chunks,
       conflict,
+      learned_patterns: learning.patterns,
+      learning: {
+        samples: learning.samples,
+        features: learning.features,
+        search: learning.search,
+        best_bits_saved: learning.patterns.length ? learning.patterns[0].bits_saved : 0,
+      },
       simplex: {
         normalization: 1,
-        representation: 'exact_factored',
+        representation: 'exact_factored_self_compressing',
         worlds_materialized: false,
         selected_distribution: null,
       },
@@ -302,14 +485,13 @@
         largest_chunk_variables: chunks.reduce((m, c) => Math.max(m, c.variables.length), 0),
         domain_values_pruned: reduced.pruned,
         propagation_passes: reduced.passes,
+        learned_patterns: learning.patterns.length,
       },
     };
   }
 
   function one() { return compile([]); }
 
-  // The sole mutation: experience enters the one ledger. Everything else is a
-  // canonical exact representation or query of what that ledger permits.
   function integrate(state, experience) {
     const prior = state || one();
     const entry = normalizeExperience(experience || {}, prior.ledger.length);
@@ -355,6 +537,29 @@
     };
   }
 
+  // Learned compression can guide attention without becoming evidence. A
+  // prediction is therefore explicitly defeasible and never changes query().
+  function predict(state, partialSample) {
+    const values = normalizeSample(partialSample) || {};
+    const active = state.learned_patterns.filter(pattern =>
+      !Object.prototype.hasOwnProperty.call(values, pattern.target) &&
+      pattern.conditions.every(atom => sampleHas(values, atom))
+    );
+    active.sort((a, b) =>
+      b.bits_saved - a.bits_saved ||
+      b.reliability - a.reliability ||
+      b.conditions.length - a.conditions.length ||
+      a.id.localeCompare(b.id)
+    );
+    const best = {};
+    for (const pattern of active) if (!(pattern.target in best)) best[pattern.target] = pattern;
+    return {
+      active_heuristics: active,
+      best_by_target: best,
+      authority: 'defeasible_attention_only',
+    };
+  }
+
   function product(values) { return values.reduce((n, x) => n * x, 1); }
 
   function project(state, vars, maxAssignments = 65536) {
@@ -376,7 +581,6 @@
     return out;
   }
 
-  // Optional diagnostic enumeration. The kernel itself never calls this.
   function materialize(state, maxWorlds = 4096) {
     if (state.conflict) return [];
     const active = activeRelations(state.ledger);
@@ -407,5 +611,5 @@
 
   function sum(vector) { return vector.reduce((a, b) => a + b, 0); }
 
-  return { VERSION, one, integrate, query, project, materialize, relationHolds, simplexVertices, sum };
+  return { VERSION, one, integrate, query, predict, project, materialize, relationHolds, simplexVertices, sum };
 });
