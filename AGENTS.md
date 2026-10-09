@@ -21,6 +21,19 @@ The mind is **not** philosophically blank. Two discovered/formalized pieces of g
 
 Practicality is treated as reality's finite constraints: time/runway, distance, energy, irreversibility, and opportunity cost make exhaustive firsthand trial impossible. It is not a separate planner or utility module.
 
+## Success criterion
+The intended endpoint is a self-growing human-like mind whose structure develops from the one law and whose reasoning can exceed ordinary human judgment by remaining consistently answerable to reality through the Stone and OneLogic.
+
+The Stone is available to the mind itself as the structure of reality-relative judgment, not merely as an external evaluator. OneLogic is the Wisdom relation of that structure: it governs what may be concluded, what must remain unresolved, when correction is required, and when further reality-contact is warranted. Inquiry provides informational grounding where Knowledge is insufficient. Purposive relations must arise within the same Stone structure from embodied concern under real constraint, so increasingly distant continuation, foresight, and other higher capacities can emerge from learned relations rather than from a separate planner.
+
+Memory, concepts, categories, attention, causality, foresight, planning-like behavior, curiosity, language, social understanding, and other recognizable faculties are expected descriptions of structures that may emerge inside `M`; they are not separate authorities to add beside `C`.
+
+The micro-world is a falsification arena for this claim. Strong or eventually dominant performance should arise because the mind developed better reality-grounded structure. Do not improve scores by adding world-specific survival knowledge, semantic action rules, reward shaping, privileged state labels, or a hand-written cognitive shortcut.
+
+The final mind must be standalone. No LLM, external reasoner, hidden cognitive controller, or human intervention may supply its live reasoning once it is running.
+
+Current hand-authored distinctions in the embodied prototype, including scene signatures, fixed pressure bands, named outcome classes, fixed consequence horizons, and explicit behavioral modes, are temporary scaffolding. Treat them as targets for removal or replacement by structure learned through the same developmental law as soon as `C` can support the required distinction itself.
+
 ## Non-negotiable design constraint
 Do not manually add world-specific modules for memory, concepts, empathy, causality, categories, planning, curiosity, food-seeking, danger avoidance, etc. Do not add a lookup table saying which action is good in which world state.
 
