@@ -135,15 +135,35 @@ function augment(rawSamples, symbols) {
   return samples;
 }
 
+function addIndex(index, key, sampleIndex) {
+  if (!index.has(key)) index.set(key, new Set());
+  index.get(key).add(sampleIndex);
+}
+function intersectionCount(sets) {
+  if (!sets.length || sets.some(set => !set || set.size === 0)) return 0;
+  const ordered = sets.slice().sort((a, b) => a.size - b.size);
+  let count = 0;
+  outer: for (const value of ordered[0]) {
+    for (let i = 1; i < ordered.length; i++) if (!ordered[i].has(value)) continue outer;
+    count++;
+  }
+  return count;
+}
+
 function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   const samples = normalizeSamples(samplesInput);
   const featureValues = {};
   const atomSupport = new Map();
-  for (const { values } of samples) {
+  const featureIndex = new Map();
+  const atomIndex = new Map();
+  for (let sampleIndex = 0; sampleIndex < samples.length; sampleIndex++) {
+    const values = samples[sampleIndex].values;
     for (const [feature, value] of Object.entries(values)) {
       featureValues[feature] = unique([...(featureValues[feature] || []), value]);
       const key = atomKey({ feature, value });
       atomSupport.set(key, (atomSupport.get(key) || 0) + 1);
+      addIndex(featureIndex, feature, sampleIndex);
+      addIndex(atomIndex, key, sampleIndex);
     }
   }
   const features = Object.keys(featureValues).sort();
@@ -195,45 +215,46 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
 
   const patterns = [];
   for (const candidate of candidates.values()) {
-    const conditionFeatures = candidate.conditions.map(x => x.feature);
-    const eligible = samples.filter(({ values }) =>
-      Object.prototype.hasOwnProperty.call(values, candidate.target) &&
-      conditionFeatures.every(feature => Object.prototype.hasOwnProperty.call(values, feature))
-    );
-    if (eligible.length < 4) continue;
-    const matched = eligible.filter(({ values }) => candidate.conditions.every(atom => sampleHas(values, atom)));
-    const unmatched = eligible.filter(({ values }) => !candidate.conditions.every(atom => sampleHas(values, atom)));
-    if (matched.length < 2 || unmatched.length < 2) continue;
+    const targetPresence = featureIndex.get(candidate.target);
+    const conditionFeatureSets = candidate.conditions.map(atom => featureIndex.get(atom.feature));
+    const conditionAtomSets = candidate.conditions.map(atom => atomIndex.get(atomKey(atom)));
+    const targetExpectedSet = atomIndex.get(atomKey({ feature: candidate.target, value: candidate.expected }));
 
-    const totalExpected = eligible.filter(({ values }) => same(values[candidate.target], candidate.expected)).length;
-    const matchedExpected = matched.filter(({ values }) => same(values[candidate.target], candidate.expected)).length;
-    const unmatchedExpected = unmatched.filter(({ values }) => same(values[candidate.target], candidate.expected)).length;
-    const baseRate = totalExpected / eligible.length;
-    const matchedRate = matchedExpected / matched.length;
+    // These counts are exactly the same sets the former implementation obtained
+    // by re-scanning all samples for each candidate. Indexing changes only cost.
+    const eligible = intersectionCount([targetPresence, ...conditionFeatureSets]);
+    if (eligible < 4) continue;
+    const matched = intersectionCount([targetPresence, ...conditionAtomSets]);
+    const unmatched = eligible - matched;
+    if (matched < 2 || unmatched < 2) continue;
+
+    const totalExpected = intersectionCount([targetExpectedSet, ...conditionFeatureSets]);
+    const matchedExpected = intersectionCount([targetExpectedSet, ...conditionAtomSets]);
+    const unmatchedExpected = totalExpected - matchedExpected;
+    const baseRate = totalExpected / eligible;
+    const matchedRate = matchedExpected / matched;
     if (matchedRate <= baseRate) continue;
 
-    const baseBits = eligible.length * entropyBinary(totalExpected, eligible.length);
-    const residualBits =
-      matched.length * entropyBinary(matchedExpected, matched.length) +
-      unmatched.length * entropyBinary(unmatchedExpected, unmatched.length);
+    const baseBits = eligible * entropyBinary(totalExpected, eligible);
+    const residualBits = matched * entropyBinary(matchedExpected, matched) + unmatched * entropyBinary(unmatchedExpected, unmatched);
     const modelBits = (candidate.conditions.length + 1) * modelUnit;
     const bitsSaved = baseBits - residualBits - modelBits;
     if (!(bitsSaved > 0)) continue;
 
-    const smoothed = (matchedExpected + 1) / (matched.length + 2);
+    const smoothed = (matchedExpected + 1) / (matched + 2);
     patterns.push({
       conditions: candidate.conditions.slice().sort((a, b) => atomKey(a).localeCompare(atomKey(b))),
       target: candidate.target,
       expected: candidate.expected,
       support: matchedExpected,
-      exceptions: matched.length - matchedExpected,
-      covered: matched.length,
-      eligible: eligible.length,
+      exceptions: matched - matchedExpected,
+      covered: matched,
+      eligible,
       reliability: matchedRate,
       smoothed_reliability: smoothed,
       base_rate: baseRate,
       bits_saved: bitsSaved,
-      predictive_code_bits: -Math.log2(smoothed) + modelBits / eligible.length,
+      predictive_code_bits: -Math.log2(smoothed) + modelBits / eligible,
     });
   }
 
