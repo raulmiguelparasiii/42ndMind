@@ -270,7 +270,49 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     conditionKey(a.conditions).localeCompare(conditionKey(b.conditions)) ||
     a.target.localeCompare(b.target)
   );
-  return patterns.slice(0, 96);
+
+  // Description authority is referent-relative. A relation about one target must
+  // not disappear merely because unrelated targets happen to have many cheaper
+  // descriptions. The finite storage/search budget is therefore applied within
+  // each target, while first preserving the shortest grounded description for
+  // every distinct value that target actually took. This is representation
+  // throttling, not a preference over any world meaning or action.
+  const perTarget = Math.max(8, Math.ceil(Math.sqrt(samples.length)));
+  const groups = new Map();
+  for (const pattern of patterns) {
+    if (!groups.has(pattern.target)) groups.set(pattern.target, []);
+    groups.get(pattern.target).push(pattern);
+  }
+  const kept = [];
+  for (const target of [...groups.keys()].sort()) {
+    const group = groups.get(target);
+    const chosen = [];
+    const expectedSeen = new Set();
+    for (const pattern of group) {
+      const key = stable(pattern.expected);
+      if (expectedSeen.has(key)) continue;
+      expectedSeen.add(key);
+      chosen.push(pattern);
+      if (chosen.length >= perTarget) break;
+    }
+    if (chosen.length < perTarget) {
+      const chosenSet = new Set(chosen);
+      for (const pattern of group) {
+        if (chosenSet.has(pattern)) continue;
+        chosen.push(pattern);
+        if (chosen.length >= perTarget) break;
+      }
+    }
+    kept.push(...chosen);
+  }
+  kept.sort((a, b) =>
+    a.predictive_code_bits - b.predictive_code_bits ||
+    b.bits_saved - a.bits_saved ||
+    a.conditions.length - b.conditions.length ||
+    conditionKey(a.conditions).localeCompare(conditionKey(b.conditions)) ||
+    a.target.localeCompare(b.target)
+  );
+  return kept;
 }
 
 function recompressRelations(rawSamples) {
