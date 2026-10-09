@@ -26,6 +26,16 @@ function runMind(seed){
   let frame=World.sense(world),steps=0,frictionSum=0,maxFriction=World.bodyFriction(world);
   const actions=Array(World.ACTIONS).fill(0);
   let groundedMotorSteps=0,groundedAutonomousSteps=0;
+  const communication={
+    signal_1_total:0,signal_2_total:0,
+    grounded_signal_1:0,grounded_signal_2:0,
+    grounded_signal_1_autonomous:0,grounded_signal_2_autonomous:0,
+    signal_1_near_other:0,signal_2_near_other:0,
+    grounded_signal_1_near_other:0,grounded_signal_2_near_other:0,
+    help_events_after_any_signal:0,
+    help_events_total:0,
+    final_affinity:0,
+  };
 
   // This is external instrumentation only. `spontaneousMotor` advances the
   // embodiment's variation state; a cognition-grounded completion does not. The
@@ -34,17 +44,39 @@ function runMind(seed){
   let variationBefore=mind.motor_variation;
   Mind.C(mind,frame);
   let groundedCurrent=mind.motor_variation===variationBefore;
+  let previousWasSignal=false;
 
   while(steps<TOTAL_STEPS&&world.agent.alive){
     const action=mind.motor;
     assert.ok(Number.isInteger(action)&&action>=0&&action<World.ACTIONS);
     actions[action]++;
+    const autonomous=steps>=DEVELOPMENT_STEPS;
+    const distBefore=Math.abs(world.other.x-world.agent.x)+Math.abs(world.other.y-world.agent.y);
+    const nearOther=distBefore<=1;
+
     if(groundedCurrent){
       groundedMotorSteps++;
-      if(steps>=DEVELOPMENT_STEPS)groundedAutonomousSteps++;
+      if(autonomous)groundedAutonomousSteps++;
+    }
+    if(action===5||action===6){
+      const which=action===5?'1':'2';
+      communication[`signal_${which}_total`]++;
+      if(nearOther)communication[`signal_${which}_near_other`]++;
+      if(groundedCurrent){
+        communication[`grounded_signal_${which}`]++;
+        if(autonomous)communication[`grounded_signal_${which}_autonomous`]++;
+        if(nearOther)communication[`grounded_signal_${which}_near_other`]++;
+      }
     }
 
+    const beforeEnergy=world.agent.energy;
     const after=World.act(world,action);
+    if(world.lastEffect===190 || world.agent.energy-beforeEnergy>10){
+      communication.help_events_total++;
+      if(previousWasSignal||action===5||action===6)communication.help_events_after_any_signal++;
+    }
+    previousWasSignal=action===5||action===6;
+
     variationBefore=mind.motor_variation;
     Mind.C(mind,after);
     groundedCurrent=mind.motor_variation===variationBefore;
@@ -54,6 +86,7 @@ function runMind(seed){
 
   assert.strictEqual(mind.whole,1);
   assert.strictEqual(mind.experiences.length,steps);
+  communication.final_affinity=world.other.affinity;
   const activePatterns=mind.structure.patterns.filter(p=>p.active!==false);
   const actionPatterns=activePatterns.filter(p=>p.target==='action');
   const purposiveActionPatterns=actionPatterns.filter(p=>p.conditions.some(c=>
@@ -68,12 +101,14 @@ function runMind(seed){
     action_kinds:actions.filter(Boolean).length,action_counts:actions,
     grounded_motor_steps:groundedMotorSteps,
     grounded_autonomous_steps:groundedAutonomousSteps,
+    communication,
     experiences:mind.experiences.length,
     learned_patterns:mind.structure.patterns.length,
     active_patterns:activePatterns.length,
     action_patterns:actionPatterns.length,
     purposive_action_patterns:purposiveActionPatterns.length,
     learned_symbols:mind.structure.symbols.length,
+    learned_symbol_definitions:mind.structure.symbols.map(s=>({symbol:s.feature,depth:s.depth,definition:s.definition})),
     ordered_rules:mind.structure.order_rules.length,
     ordered_max_depth:mind.structure.order_rules.reduce((n,r)=>Math.max(n,r.depth||0),0),
     fixed_point_passes:mind.structure.fixed_point_passes||0,
@@ -111,11 +146,13 @@ const summary={
   babble_mean_friction:Number(mean(babble.map(x=>x.avg_friction)).toFixed(2)),
   grounded_motor_steps:unified.reduce((n,x)=>n+x.grounded_motor_steps,0),
   grounded_autonomous_steps:unified.reduce((n,x)=>n+x.grounded_autonomous_steps,0),
+  grounded_signals:unified.reduce((n,x)=>n+x.communication.grounded_signal_1+x.communication.grounded_signal_2,0),
+  grounded_autonomous_signals:unified.reduce((n,x)=>n+x.communication.grounded_signal_1_autonomous+x.communication.grounded_signal_2_autonomous,0),
 };
 
 console.log('42ndMind one-mind single-life run: COMPLETE');
 console.log('M(t+1)=C(M(t)⊕R(t+1)); one self-contained C recursively redescribes exact lived contact');
-console.log('no planner, reward policy, scene labels, pressure bands, runway bands, success/failure labels, or fixed consequence horizon');
+console.log('no planner, reward policy, scene labels, pressure bands, runway bands, success/failure labels, fixed consequence horizon, or language module');
 console.log(`developmental protection=${DEVELOPMENT_STEPS} then autonomous survival=${AUTONOMOUS_STEPS}`);
 console.log('UNIFIED '+JSON.stringify(unified));
 console.log('BABBLE '+JSON.stringify(babble));
