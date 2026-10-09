@@ -4,50 +4,36 @@
 //
 //   M(t+1) = C(M(t) ⊕ R(t+1))
 //
-// This file contains embodiment, not an authored psychology. The body supplies
-// primitive motor possibilities, ordinary perception, and distinct interoceptive
-// concern magnitudes. Everything learned about what a motor does comes from
-// actual contact:
+// There is one cognitive authority: reality-preserving recompression. The two
+// helpers below are not planner/memory/policy faculties. They are already-tested
+// finite realizations of the same C objective over two structures that reality
+// supplies simultaneously: co-present relations and succession of contacts.
+// Their outputs are recursively fed back into the same present M.
 //
-//   perception_before -> motor -> perception_after
-//
-// The exact transition is retained in M as raw experience. A compact heuristic
-// view exposes only relations that can be reused without assigning world meaning:
-// the present percept, the motor, and ordinal relations between before/after
-// concern magnitudes. The raw record remains the grounding and can be recompressed
-// again as the generic developmental law improves.
-//
-// The important distinction is purpose versus reward. A non-zero interoceptive
-// concern is an open bodily relation. Because the interface supplies a magnitude,
-// zero means absence of that pressure and numeric order is physically meaningful.
-// Therefore "after < before" is an ordinary relation between two experienced
-// magnitudes. It is not a Stone sign, success label, reward, or utility score.
-//
-// Past experience is integrated as one relation containing both the motor and its
-// experienced consequence. The same generic compressor can consequently use the
-// relation in either direction. When a concern is presently open, the unresolved
-// relation "this concern becomes less" may make an experienced motor relevant.
-// No candidate futures are simulated or scored. Once the concern is absent, that
-// purpose is absent too, so the same action loses that source of authority.
-//
-// If reality has not yet grounded a motor completion, M contains no warranted
-// preference. The body still has to continue physically, so it contributes
-// spontaneous motor variation. That variation has no cognitive authority and no
-// world semantics; it is merely the embodied source of new action/consequence
-// contact from which learned relations can develop.
+// Nothing here names food, water, danger, shelter, reward, success, curiosity,
+// plans, scenes, goals, or good actions. Exact lived transitions remain the
+// grounding. Learned structure can reorganize because it is rebuilt from that
+// grounding whenever reality changes.
 
-const Rel = require('./one-rule.js');
+const Sim = require('./recursive-recompression.js');
+const Order = require('./sequence-recompression.js');
 
 const LESS = 'less';
 const SAME = 'same';
 const GREATER = 'greater';
 
+function stable(value) {
+  if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + stable(value[k])).join(',') + '}';
+  }
+  return JSON.stringify(value);
+}
+function same(a, b) { return stable(a) === stable(b); }
+
 function splitContact(state, frame) {
   const cut = frame.length - state.concern_count;
-  return {
-    percept: frame.slice(0, cut),
-    concern: frame.slice(cut),
-  };
+  return { percept: frame.slice(0, cut), concern: frame.slice(cut) };
 }
 
 function magnitudeOrder(after, before) {
@@ -56,98 +42,194 @@ function magnitudeOrder(after, before) {
   return SAME;
 }
 
-function relationSample(state, beforeFrame, action, afterFrame) {
-  const before = splitContact(state, beforeFrame);
-  const after = splitContact(state, afterFrame);
-  const sample = {
-    percept_before: before.percept,
-    action,
-  };
-
-  // These are pure order relations on channels the embodiment explicitly says
-  // are magnitudes. They carry no good/bad interpretation by themselves.
-  for (let i = 0; i < state.concern_count; i++) {
-    sample[`concern_${i}_order`] = magnitudeOrder(after.concern[i], before.concern[i]);
+// Channel decomposition is not scene extraction. A body/sensor interface already
+// supplies distinct simultaneous channels. C is simply allowed to notice that a
+// relation can recur on one channel even when the rest of the percept differs.
+function presentFeatures(state, frame) {
+  const contact = splitContact(state, frame);
+  const values = {};
+  for (let i = 0; i < contact.percept.length; i++) values[`p${i}`] = contact.percept[i];
+  for (let i = 0; i < contact.concern.length; i++) {
+    values[`c${i}`] = contact.concern[i];
+    values[`c${i}_open`] = contact.concern[i] > 0;
   }
-  return sample;
+  return { contact, values };
 }
 
-function recordExperience(state, beforeFrame, action, afterFrame) {
-  const experience = {
-    before: beforeFrame.slice(),
-    action,
-    after: afterFrame.slice(),
-  };
-  state.experiences.push(experience);
-  state.kernel = Rel.integrate(state.kernel, {
-    id: `embodied:${state.experiences.length - 1}`,
-    sample: relationSample(state, beforeFrame, action, afterFrame),
-    provenance: 'actual sensorimotor relation',
-    raw: experience,
+function directSamples(state) {
+  return state.experiences.map((experience, index) => {
+    const start = presentFeatures(state, experience.before);
+    const end = splitContact(state, experience.after);
+    const values = { ...start.values, action: experience.action, relation_kind: 'direct', relation_depth: 0 };
+    for (let i = 0; i < state.concern_count; i++) {
+      const order = magnitudeOrder(end.concern[i], start.contact.concern[i]);
+      values[`immediate_c${i}_order`] = order;
+      values[`relation_c${i}_order`] = order;
+    }
+    return { id: `e${index}`, values };
   });
 }
 
-function presentRelation(state, frame) {
-  const contact = splitContact(state, frame);
-  return {
-    contact,
-    values: {
-      percept_before: contact.percept,
-    },
-  };
+function expandedSample(sim, sample) {
+  return Sim.predict(sim, sample.values).expanded_experience;
 }
 
-function livePurpose(state, frame) {
-  const present = presentRelation(state, frame);
+// The event token is a compressed description of an experienced transition.
+// Learned simultaneous symbols are included if C found them; action and the
+// directly experienced before/after concern orders remain as exact residual
+// structure. World-specific percept semantics never enter the token.
+function eventToken(state, sim, sample) {
+  const expanded = expandedSample(sim, sample);
+  const learned = Object.keys(expanded).filter(key => key.startsWith('§') && expanded[key] === true).sort();
+  const orders = [];
+  for (let i = 0; i < state.concern_count; i++) orders.push(sample.values[`immediate_c${i}_order`]);
+  return { action: sample.values.action, orders, learned };
+}
+
+function occurrenceAt(tokens, start, expansion) {
+  if (start + expansion.length > tokens.length) return false;
+  for (let j = 0; j < expansion.length; j++) if (!same(tokens[start + j], expansion[j])) return false;
+  return true;
+}
+
+function temporalDescriptions(state, samples, tokens, orderState) {
+  const descriptions = Array(samples.length).fill(null);
+  const expansions = Order.learnedExpansions(orderState);
+
+  // C itself decides which ordered description is reusable. When several learned
+  // descriptions start at the same lived contact, the one that saved more code
+  // has greater representational authority; depth/extent only break exact ties.
+  for (const learned of expansions) {
+    const length = learned.expansion.length;
+    if (length < 2) continue;
+    for (let i = 0; i + length <= tokens.length; i++) {
+      if (!occurrenceAt(tokens, i, learned.expansion)) continue;
+      const candidate = { symbol: learned.symbol, depth: learned.depth, length, savings: learned.savings };
+      const old = descriptions[i];
+      if (!old || candidate.savings > old.savings ||
+          (candidate.savings === old.savings && candidate.depth > old.depth) ||
+          (candidate.savings === old.savings && candidate.depth === old.depth && candidate.length > old.length)) {
+        descriptions[i] = candidate;
+      }
+    }
+  }
+  return descriptions;
+}
+
+function annotateTemporalRelations(state, baseSamples, descriptions) {
+  return baseSamples.map((sample, index) => {
+    const values = { ...sample.values };
+    const description = descriptions[index];
+    if (!description) return { id: sample.id, values };
+
+    const first = state.experiences[index];
+    const last = state.experiences[index + description.length - 1];
+    if (!first || !last) return { id: sample.id, values };
+    const before = splitContact(state, first.before).concern;
+    const after = splitContact(state, last.after).concern;
+
+    // This is not temporal credit assignment. The sequence already became one
+    // learned relation by exact order compression. We now expose ordinary endpoint
+    // relations of that learned whole so the same C can reuse it like any other
+    // relation. Intermediate adverse changes remain in the exact expansion.
+    values.relation_kind = 'ordered';
+    values.relation_depth = description.depth;
+    values.relation_symbol = description.symbol;
+    values.relation_extent = description.length;
+    for (let i = 0; i < state.concern_count; i++) {
+      values[`relation_c${i}_order`] = magnitudeOrder(after[i], before[i]);
+    }
+    return { id: sample.id, values };
+  });
+}
+
+function recompressWhole(state) {
+  if (state.experiences.length < 4) {
+    return {
+      simultaneous: Sim.one(),
+      ordered: Order.one(),
+      samples: directSamples(state),
+      tokens: [],
+      fixed_point_passes: 0,
+    };
+  }
+
+  let samples = directSamples(state);
+  let previousKey = '';
+  let simultaneous = Sim.one();
+  let ordered = Order.one();
+  let tokens = [];
+  let passes = 0;
+
+  // Reapply the same C to its own descriptions until this finite implementation
+  // stops changing, with a finite search guard. The guard limits computation, not
+  // semantic depth: later contacts can reopen the process and grow it further.
+  for (let pass = 0; pass < 3; pass++) {
+    simultaneous = Sim.recompress(Sim.one(), samples, {
+      maxConditions: 2,
+      maxPasses: 2,
+      maxSymbolsPerPass: 6,
+    });
+    tokens = samples.map(sample => eventToken(state, simultaneous, sample));
+    ordered = Order.recompress(Order.one(), tokens, { maxRules: 64 });
+    const descriptions = temporalDescriptions(state, samples, tokens, ordered);
+    const next = annotateTemporalRelations(state, directSamples(state), descriptions);
+    const key = stable(next.map(x => x.values));
+    passes = pass + 1;
+    samples = next;
+    if (key === previousKey) break;
+    previousKey = key;
+  }
+
+  // Final simultaneous C sees the current fixed-point temporal descriptions.
+  simultaneous = Sim.recompress(Sim.one(), samples, {
+    maxConditions: 2,
+    maxPasses: 2,
+    maxSymbolsPerPass: 6,
+  });
+  return { simultaneous, ordered, samples, tokens, fixed_point_passes: passes };
+}
+
+function groundedCompletion(state, frame) {
+  if (!state.structure || state.experiences.length < 4) return null;
+  const present = presentFeatures(state, frame);
+  const purpose = { ...present.values };
   let open = 0;
 
-  // A pressure magnitude greater than zero is literally an unresolved bodily
-  // concern in this primitive interface. Its most conservative closure relation
-  // is simply less of that same pressure. No scalar trade-off is introduced.
+  // For primitive bodily pressure, zero is absence by interface definition. A
+  // non-zero channel therefore leaves an open relation. Asking whether a learned
+  // relation completes with "less" is not assigning reward; it is completing the
+  // same magnitude relation the body currently presents.
   for (let i = 0; i < state.concern_count; i++) {
     if (present.contact.concern[i] > 0) {
-      present.values[`concern_${i}_order`] = LESS;
+      purpose[`relation_c${i}_order`] = LESS;
       open++;
     }
   }
-  return open ? present : null;
-}
+  if (!open) return null;
 
-function contradictsMaterialConcern(state, frame, action) {
-  const present = presentRelation(state, frame);
-  present.values.action = action;
-  const consequence = Rel.predict(state.kernel, present.values).best_by_target;
-
-  // If learned reality specifically says this continuation increases a distinct
-  // concern, OneLogic does not permit silently hiding that relation. We also do
-  // not invent a numerical exchange rate that would make the increase acceptable.
-  // A later learned higher relation may ground such a trade-off; until then it is
-  // unresolved rather than automatically justified.
-  for (let i = 0; i < state.concern_count; i++) {
-    const evidence = consequence[`concern_${i}_order`];
-    if (evidence && evidence.expected === GREATER) return true;
-  }
-  return false;
-}
-
-function groundedPurposeCompletion(state, frame) {
-  const purpose = livePurpose(state, frame);
-  if (!purpose) return null;
-
-  // `action` is just another missing term in the same learned relation. The
-  // compressor is not asked to run a planner or assign utility. It is asked what
-  // action, if any, its grounded relational descriptions complete here when the
-  // current open concern relation is included in the referent.
-  const completion = Rel.predict(state.kernel, purpose.values).best_by_target.action;
+  const prediction = Sim.predict(state.structure.simultaneous, purpose);
+  const completion = prediction.best_by_target.action;
   if (!completion || !Number.isInteger(completion.expected)) return null;
-  if (completion.expected < 0 || completion.expected >= state.action_count) return null;
-  if (contradictsMaterialConcern(state, frame, completion.expected)) return null;
-  return completion.expected;
+  const action = completion.expected;
+  if (action < 0 || action >= state.action_count) return null;
+
+  // Answerability check: do not preserve a purposive completion by insulating it
+  // from a separately grounded bodily consequence. This checks every concern,
+  // including one currently at zero, because an action may create a new pressure.
+  const consequenceQuery = { ...present.values, action };
+  const consequences = Sim.predict(state.structure.simultaneous, consequenceQuery).best_by_target;
+  for (let i = 0; i < state.concern_count; i++) {
+    const evidence = consequences[`relation_c${i}_order`];
+    if (evidence && evidence.expected === GREATER) return null;
+  }
+  return action;
 }
 
 function spontaneousMotor(state) {
-  // Physical motor variability when cognition has no warranted completion.
-  // This is intentionally non-semantic and does not seek a named outcome.
+  // Embodied variability supplies contact when cognition is genuinely unresolved.
+  // It is not an exploration policy: it has no access to uncertainty, counts,
+  // reward, pressure, world semantics, or predicted outcomes.
   state.motor_variation = (Math.imul(state.motor_variation, 1664525) + 1013904223) >>> 0;
   return state.motor_variation % state.action_count;
 }
@@ -157,7 +239,6 @@ function one(actionCount, concernCount = 1) {
   if (!Number.isInteger(concernCount) || concernCount < 1) throw new Error('concernCount must be positive');
   return {
     whole: 1,
-    kernel: Rel.one(),
     action_count: actionCount,
     concern_count: concernCount,
     contacts: [],
@@ -165,18 +246,18 @@ function one(actionCount, concernCount = 1) {
     previous_contact: null,
     motor: null,
     motor_variation: (0x9e3779b9 ^ actionCount ^ (concernCount << 8)) >>> 0,
+    structure: {
+      simultaneous: Sim.one(),
+      ordered: Order.one(),
+      samples: [],
+      tokens: [],
+      fixed_point_passes: 0,
+    },
     prior: {
-      stone: {
-        axes: {
-          x: { negative: 'Practicality', positive: 'Empathy' },
-          z: { negative: 'Knowledge', positive: 'Wisdom' },
-          y: { negative: 'Insulation', positive: 'Answerability' },
-        },
-        note: 'Stone signs describe cognition orientation relative to reality; they are not outcome valence or pressure direction.',
-        answerability: 'materially relevant relations remain jointly exposed; an inconvenient consequence cannot be hidden to preserve a preferred conclusion',
-      },
-      onelogic: 'preserve undefeated possibilities; conclude only what grounded relations force; unresolved remains unresolved and correction remains open',
-      embodiment: 'interoceptive pressure channels are bodily concern magnitudes; their numeric order is physical contact, not reward or a Stone coordinate',
+      stone: 'all materially relevant relations stay answerable to reality; signs are cognitive orientations, never outcome valence',
+      onelogic: 'preserve undefeated possibilities; conclude only what grounded relations force; correction reopens any description defeated by later reality',
+      embodiment: 'distinct perceptual channels, motor possibilities, and interoceptive pressure magnitudes are primitive physical interfaces, not learned world semantics',
+      law: 'M(t+1)=C(M(t)⊕R(t+1)); C recursively recompresses simultaneous and successive reality-contact while retaining exact grounding',
     },
   };
 }
@@ -188,13 +269,17 @@ function C(state, realityContact) {
 
   const frame = realityContact.slice();
   if (state.previous_contact && state.motor != null) {
-    recordExperience(state, state.previous_contact, state.motor, frame);
+    state.experiences.push({
+      before: state.previous_contact.slice(),
+      action: state.motor,
+      after: frame.slice(),
+    });
+    state.structure = recompressWhole(state);
   }
 
   state.contacts.push(frame.slice());
   state.previous_contact = frame;
-
-  const completion = groundedPurposeCompletion(state, frame);
+  const completion = groundedCompletion(state, frame);
   state.motor = completion == null ? spontaneousMotor(state) : completion;
   return state;
 }
