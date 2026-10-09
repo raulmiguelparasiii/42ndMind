@@ -12,11 +12,11 @@ const Prior=require('./innate-priors.js');
 function rng(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/0x100000000;};}
 function mean(xs){return xs.reduce((a,b)=>a+b,0)/Math.max(1,xs.length);}
 function runGuided(seed,steps=700){
-  const world=World.create(seed),mind=Prior.one(World.ACTIONS);let frame=World.sense(world),deaths=0,friction=0;
+  const world=World.create(seed),mind=Prior.one(World.ACTIONS,World.PRESSURE_CHANNELS);let frame=World.sense(world),deaths=0,friction=0;
   for(let step=0;step<steps;step++){
     const before=frame,d=Prior.chooseAction(mind,before);assert.ok(d.action>=0&&d.action<World.ACTIONS);
     let after=World.act(world,d.action);Prior.observe(mind,before,d.action,after);
-    if(!world.agent.alive){deaths++;World.revive(world);after=World.sense(world);} frame=after;friction+=frame.at(-1);
+    if(!world.agent.alive){deaths++;World.revive(world);after=World.sense(world);} frame=after;friction+=World.bodyFriction(world);
   }
   assert.strictEqual(mind.whole,1);return{seed,deaths,avg_friction:Number((friction/steps).toFixed(2))};
 }
@@ -24,7 +24,7 @@ function runBabble(seed,steps=700){
   const world=World.create(seed),random=rng(seed^0x5a5a5a5a);let frame=World.sense(world),deaths=0,friction=0;
   for(let step=0;step<steps;step++){
     frame=World.act(world,Math.floor(random()*World.ACTIONS));
-    if(!world.agent.alive){deaths++;World.revive(world);frame=World.sense(world);} friction+=frame.at(-1);
+    if(!world.agent.alive){deaths++;World.revive(world);frame=World.sense(world);} friction+=World.bodyFriction(world);
   }
   return{seed,deaths,avg_friction:Number((friction/steps).toFixed(2))};
 }
