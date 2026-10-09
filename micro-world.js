@@ -5,13 +5,13 @@
 // weather, day, or body need. It receives fixed primitive sensor channels and
 // can emit one of eight primitive motor commands.
 //
-// The final two sensor channels are primitive embodied contacts:
+// The tail of the sensor frame contains primitive embodied contacts:
 //   - continuity of reality-contact (255 while embodied contact remains, 0 when
 //     the body has failed);
-//   - interoceptive friction/pressure.
-// These are not action rewards. Stone guidance may know innately that pressure
-// should be answered and that continued reality-contact is a prerequisite for
-// answerability; the agent must still learn which worldly actions achieve that.
+//   - four distinct pressure channels. Their meanings are not named to the mind.
+//
+// Keeping the pressures separate is deliberate: one materially bad constraint
+// must not be hidden by improvement in another through a single aggregate score.
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -25,6 +25,7 @@ function key(x, y) { return `${x},${y}`; }
 
 const DIRS = [[0,-1],[1,0],[0,1],[-1,0]];
 const ACTIONS = 8;
+const PRESSURE_CHANNELS = 4;
 
 function create(seed = 420044) {
   const random = rng(seed);
@@ -75,13 +76,21 @@ function occupiedBits(w, x, y) {
   return bits;
 }
 
-function bodyFriction(w) {
+function bodyPressures(w) {
   const a = w.agent;
-  const energy = Math.max(0, 180 - a.energy) * 0.62;
-  const water = Math.max(0, 180 - a.water) * 0.72;
-  const thermal = Math.max(0, Math.abs(a.temp - 128) - 8) * 1.10;
-  const injury = a.injury * 0.90;
-  return clamp(Math.round(energy + water + thermal + injury), 0, 255);
+  // These are embodied contacts, not semantic reward labels. Each is scaled so
+  // approaching the corresponding physical limit approaches maximal pressure.
+  const p0 = clamp(Math.round(Math.max(0, 180 - a.energy) * 255 / 180), 0, 255);
+  const p1 = clamp(Math.round(Math.max(0, 180 - a.water) * 255 / 180), 0, 255);
+  const p2 = clamp(Math.round(Math.max(0, Math.abs(a.temp - 128) - 8) * 4), 0, 255);
+  const p3 = clamp(Math.round(a.injury), 0, 255);
+  return [p0, p1, p2, p3];
+}
+
+function bodyFriction(w) {
+  // Telemetry/backward-compatible scalar only. The controller does not optimize
+  // this aggregate; it receives and reasons over bodyPressures separately.
+  return Math.max(...bodyPressures(w));
 }
 
 function sense(w) {
@@ -102,7 +111,7 @@ function sense(w) {
   channels.push((a.dir & 3) * 64);
   channels.push(w.lastSignal * 85);
   channels.push(a.alive ? 255 : 0);
-  channels.push(bodyFriction(w));
+  channels.push(...bodyPressures(w));
   return channels;
 }
 
@@ -194,4 +203,4 @@ function revive(w) {
   w.lastEffect = 12;
 }
 
-module.exports = { create, sense, act, revive, bodyFriction, ACTIONS };
+module.exports = { create, sense, act, revive, bodyPressures, bodyFriction, ACTIONS, PRESSURE_CHANNELS };
