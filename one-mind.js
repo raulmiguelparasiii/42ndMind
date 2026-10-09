@@ -4,39 +4,37 @@
 //
 //   M(t+1) = C(M(t) ⊕ R(t+1))
 //
-// The embodied path intentionally has no scene recognizer, pressure bands,
-// urgency/runway bands, reward, success/failure labels, fixed consequence
-// horizon, sequence-replay rule, planner, policy, or future simulator.
-//
-// The body supplies only two primitive interfaces:
-//   1. a finite set of motor commands;
-//   2. reality-contact in which the final N channels are distinct interoceptive
-//      concern magnitudes. Their world meanings are unknown to the mind.
-//
-// Experience is the actual sensorimotor relation
+// This file contains embodiment, not an authored psychology. The body supplies
+// primitive motor possibilities, ordinary perception, and distinct interoceptive
+// concern magnitudes. Everything learned about what a motor does comes from
+// actual contact:
 //
 //   perception_before -> motor -> perception_after
 //
-// preserved exactly in M. The generic relational kernel may compress recurring
-// regularities in those experiences. Ordinary perceptual channels remain raw:
-// an integer code is not assumed to be a metric merely because it is numeric.
-// Arithmetic difference is used only on the explicitly magnitude-valued bodily
-// concern channels. That difference is NOT a Philosopher's Stone signed axis and
-// carries no success/failure valence by itself.
+// The important distinction is purpose versus reward. A non-zero interoceptive
+// concern is an open bodily relation. Because the interface supplies a magnitude,
+// zero means absence of that pressure and numeric order is physically meaningful.
+// Therefore "after < before" is an ordinary relation between two experienced
+// magnitudes. It is not a Stone sign, success label, reward, or utility score.
 //
-// The only motor-closing commitments made here are consequences of the admitted
-// priors rather than extra faculties:
-//   - OneLogic: an ungrounded continuation remains unresolved and is contacted
-//     rather than silently treated as false;
-//   - Stone answerability: distinct material concerns are not collapsed into an
-//     invented scalar utility. Grounded consequence vectors are compared only by
-//     component-wise dominance. If neither dominates, the relation stays open.
+// Past experience is integrated as one relation containing both the motor and its
+// experienced consequence. The same generic compressor can consequently use the
+// relation in either direction. When a concern is presently open, the unresolved
+// relation "this concern becomes less" may make an experienced motor relevant.
+// No candidate futures are simulated or scored. Once the concern is absent, that
+// purpose is absent too, so the same action loses that source of authority.
 //
-// This is deliberately conservative. If these priors are insufficient for useful
-// continuation, the failure belongs to the developmental law; do not patch it
-// with a task-specific decision rule.
+// If reality has not yet grounded a motor completion, M contains no warranted
+// preference. The body still has to continue physically, so it contributes
+// spontaneous motor variation. That variation has no cognitive authority and no
+// world semantics; it is merely the embodied source of new action/consequence
+// contact from which learned relations can develop.
 
 const Rel = require('./one-rule.js');
+
+const LESS = 'less';
+const SAME = 'same';
+const GREATER = 'greater';
 
 function splitContact(state, frame) {
   const cut = frame.length - state.concern_count;
@@ -46,103 +44,110 @@ function splitContact(state, frame) {
   };
 }
 
-function magnitudeDifference(after, before) {
-  return after.map((value, i) => value - before[i]);
+function magnitudeOrder(after, before) {
+  if (after < before) return LESS;
+  if (after > before) return GREATER;
+  return SAME;
+}
+
+function relationSample(state, beforeFrame, action, afterFrame) {
+  const before = splitContact(state, beforeFrame);
+  const after = splitContact(state, afterFrame);
+  const sample = {
+    percept_before: before.percept,
+    concern_before: before.concern,
+    action,
+    percept_after: after.percept,
+    concern_after: after.concern,
+  };
+
+  // These are pure order relations on channels the embodiment explicitly says
+  // are magnitudes. They carry no good/bad interpretation by themselves.
+  for (let i = 0; i < state.concern_count; i++) {
+    sample[`concern_${i}_order`] = magnitudeOrder(after.concern[i], before.concern[i]);
+  }
+  return sample;
 }
 
 function recordExperience(state, beforeFrame, action, afterFrame) {
-  const before = splitContact(state, beforeFrame);
-  const after = splitContact(state, afterFrame);
   const experience = {
     before: beforeFrame.slice(),
     action,
     after: afterFrame.slice(),
   };
   state.experiences.push(experience);
-  state.action_counts[action]++;
-
-  // The learned sample contains only relations available from the actual
-  // before/action/after contact. No outcome class or hand-selected scene exists.
-  // Exteroceptive contact remains categorical/raw; concern_change is a valid
-  // arithmetic relation because the body explicitly supplies those channels as
-  // magnitudes of distinct embodied pressures.
   state.kernel = Rel.integrate(state.kernel, {
     id: `embodied:${state.experiences.length - 1}`,
-    sample: {
-      percept_before: before.percept,
-      concern_before: before.concern,
-      action,
-      percept_after: after.percept,
-      concern_change: magnitudeDifference(after.concern, before.concern),
-    },
+    sample: relationSample(state, beforeFrame, action, afterFrame),
     provenance: 'actual sensorimotor relation',
     raw: experience,
   });
 }
 
-function consequenceFor(state, contact, action) {
-  const prediction = Rel.predict(state.kernel, {
-    percept_before: contact.percept,
-    concern_before: contact.concern,
-    action,
-  });
-  const evidence = prediction.best_by_target.concern_change || null;
-  if (!evidence || !Array.isArray(evidence.expected) || evidence.expected.length !== state.concern_count) return null;
-  if (!evidence.expected.every(Number.isFinite)) return null;
+function presentRelation(state, frame) {
+  const contact = splitContact(state, frame);
   return {
-    action,
-    change: evidence.expected.slice(),
-    after: contact.concern.map((value, i) => value + evidence.expected[i]),
-    evidence,
+    contact,
+    values: {
+      percept_before: contact.percept,
+      concern_before: contact.concern,
+    },
   };
 }
 
-function dominates(a, b) {
-  let strict = false;
-  for (let i = 0; i < a.after.length; i++) {
-    if (a.after[i] > b.after[i]) return false;
-    if (a.after[i] < b.after[i]) strict = true;
+function livePurpose(state, frame) {
+  const present = presentRelation(state, frame);
+  let open = 0;
+
+  // A pressure magnitude greater than zero is literally an unresolved bodily
+  // concern in this primitive interface. Its most conservative closure relation
+  // is simply less of that same pressure. No scalar trade-off is introduced.
+  for (let i = 0; i < state.concern_count; i++) {
+    if (present.contact.concern[i] > 0) {
+      present.values[`concern_${i}_order`] = LESS;
+      open++;
+    }
   }
-  return strict;
+  return open ? present : null;
 }
 
-function leastGrounded(state, candidates) {
-  let best = candidates[0];
-  for (const candidate of candidates.slice(1)) {
-    if (state.action_counts[candidate] < state.action_counts[best] ||
-        (state.action_counts[candidate] === state.action_counts[best] && candidate < best)) best = candidate;
+function contradictsMaterialConcern(state, frame, action) {
+  const present = presentRelation(state, frame);
+  present.values.action = action;
+  const consequence = Rel.predict(state.kernel, present.values).best_by_target;
+
+  // If learned reality specifically says this continuation increases a distinct
+  // concern, OneLogic does not permit silently hiding that relation. We also do
+  // not invent a numerical exchange rate that would make the increase acceptable.
+  // A later learned higher relation may ground such a trade-off; until then it is
+  // unresolved rather than automatically justified.
+  for (let i = 0; i < state.concern_count; i++) {
+    const evidence = consequence[`concern_${i}_order`];
+    if (evidence && evidence.expected === GREATER) return true;
   }
-  return best;
+  return false;
 }
 
-function closeMotorRelation(state, frame) {
-  const contact = splitContact(state, frame);
-  const known = [];
-  const unresolved = [];
+function groundedPurposeCompletion(state, frame) {
+  const purpose = livePurpose(state, frame);
+  if (!purpose) return null;
 
-  for (let action = 0; action < state.action_count; action++) {
-    const consequence = consequenceFor(state, contact, action);
-    if (consequence) known.push(consequence);
-    else unresolved.push(action);
-  }
+  // `action` is just another missing term in the same learned relation. The
+  // compressor is not asked to run a planner or assign utility. It is asked what
+  // action, if any, its grounded relational descriptions complete here when the
+  // current open concern relation is included in the referent.
+  const completion = Rel.predict(state.kernel, purpose.values).best_by_target.action;
+  if (!completion || !Number.isInteger(completion.expected)) return null;
+  if (completion.expected < 0 || completion.expected >= state.action_count) return null;
+  if (contradictsMaterialConcern(state, frame, completion.expected)) return null;
+  return completion.expected;
+}
 
-  // OneLogic: an available continuation that reality has not grounded remains a
-  // live possibility. Contact the least-grounded one rather than pretending that
-  // absence of evidence is negative evidence.
-  if (unresolved.length) return leastGrounded(state, unresolved);
-
-  // No concern may buy improvement by silently hiding damage to another. Pareto
-  // dominance is the strongest comparison available without inventing weights or
-  // trade-off preferences that reality has not supplied.
-  const frontier = known.filter(candidate =>
-    !known.some(other => other.action !== candidate.action && dominates(other, candidate))
-  );
-
-  if (frontier.length === 1) return frontier[0].action;
-
-  // If several grounded continuations remain non-dominated, OneLogic still does
-  // not force a conclusion. Further contact is the only warranted discriminator.
-  return leastGrounded(state, frontier.map(x => x.action));
+function spontaneousMotor(state) {
+  // Physical motor variability when cognition has no warranted completion.
+  // This is intentionally non-semantic and does not seek a named outcome.
+  state.motor_variation = (Math.imul(state.motor_variation, 1664525) + 1013904223) >>> 0;
+  return state.motor_variation % state.action_count;
 }
 
 function one(actionCount, concernCount = 1) {
@@ -157,7 +162,7 @@ function one(actionCount, concernCount = 1) {
     experiences: [],
     previous_contact: null,
     motor: null,
-    action_counts: Array(actionCount).fill(0),
+    motor_variation: (0x9e3779b9 ^ actionCount ^ (concernCount << 8)) >>> 0,
     prior: {
       stone: {
         axes: {
@@ -166,10 +171,10 @@ function one(actionCount, concernCount = 1) {
           y: { negative: 'Insulation', positive: 'Answerability' },
         },
         note: 'Stone signs describe cognition orientation relative to reality; they are not outcome valence or pressure direction.',
-        answerability: 'materially relevant relations remain jointly exposed to reality; one concern cannot be hidden by an invented scalar trade-off',
+        answerability: 'materially relevant relations remain jointly exposed; an inconvenient consequence cannot be hidden to preserve a preferred conclusion',
       },
-      onelogic: 'preserve undefeated possibilities; conclude only what grounded relations force; seek discriminating reality-contact when unresolved',
-      embodiment: 'interoceptive concern channels are perceived bodily magnitudes, not rewards and not Stone coordinates',
+      onelogic: 'preserve undefeated possibilities; conclude only what grounded relations force; unresolved remains unresolved and correction remains open',
+      embodiment: 'interoceptive pressure channels are bodily concern magnitudes; their numeric order is physical contact, not reward or a Stone coordinate',
     },
   };
 }
@@ -186,7 +191,9 @@ function C(state, realityContact) {
 
   state.contacts.push(frame.slice());
   state.previous_contact = frame;
-  state.motor = closeMotorRelation(state, frame);
+
+  const completion = groundedPurposeCompletion(state, frame);
+  state.motor = completion == null ? spontaneousMotor(state) : completion;
   return state;
 }
 
