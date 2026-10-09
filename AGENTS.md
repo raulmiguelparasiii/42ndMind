@@ -3,7 +3,7 @@
 Read this before changing the project.
 
 ## Goal
-Build one developing artificial mind from one compact reality-governed law rather than a collection of hand-written cognitive faculties.
+Build one developing artificial mind from one compact reality-governed developmental law rather than a collection of hand-written cognitive faculties.
 
 Core developmental form:
 
@@ -13,8 +13,18 @@ M_(t+1) = C(M_t ⊕ R_(t+1))
 
 `M` remains one whole (`whole = 1`). `R` is new reality-contact. `C` recompresses accumulated reality while preserving what grounds it. Learned structure may be reopened or reorganized when later reality makes a better description possible.
 
+## Foundational prior knowledge — intentional exception
+The mind is **not** philosophically blank anymore. The project owner explicitly wants two discovered/formalized pieces of guidance available from the start as a developmental leg-up rather than rediscovered from scratch:
+
+1. **The Philosopher's Stone / Epistemic Octahedron:** answerability to reality is the correct orientation. Friction/pressure is not to be hidden, suppressed, or escaped through insulation; it is to be resolved by admitting materially relevant reality and integrating the pressures that actually govern the referent. Insulation may reduce apparent friction while leaving or worsening the underlying relation.
+2. **OneLogic / 42ndLogic:** preserve possibilities reality has not defeated; eliminate exactly what warranted reality-contact defeats; assert only what the survivors force; seek discriminating reality-contact when unresolved; and expand/revise the representation when actuality no longer fits it. Undefined is not false. Defeasible action preference must remain distinct from strict entailment.
+
+Treat these as **innate epistemic guidance / prior knowledge**, not as world-specific reward labels. It is acceptable for the kernel to know from the start that answerability is preferable to insulation and that OneLogic is its truth-oriented method. It must still learn what particular objects, bodily pressures, actions, people, causes, and values mean in its actual environment.
+
 ## Non-negotiable design constraint
-Do not manually add modules for memory, concepts, heuristics, attention, empathy, causality, temporal reasoning, categorization, planning, curiosity, reward, survival, food-seeking, danger avoidance, etc. If those are legitimate, expose the same developmental law to richer reality and see whether they emerge. Engineering code may search/optimize the one objective, but it must not become a second cognitive authority.
+Do not manually add world-specific modules for memory, concepts, empathy, causality, categories, planning, curiosity, food-seeking, danger avoidance, etc. Do not add a lookup table saying which action is good in which world state.
+
+The Stone and OneLogic are the permitted foundational guidance. They should govern how learned reality is handled and how unresolved pressure is approached. Engineering code may realize those priors and search/optimize the one developmental objective, but it should not smuggle in domain answers.
 
 Prefer open developmental runs over deciding the next human-named capability in advance. Use isolated tests afterward to explain/falsify what emerged, and keep the regression suite to ensure later work does not break earlier invariants.
 
@@ -24,18 +34,18 @@ Prefer open developmental runs over deciding the next human-named capability in 
 - Learned descriptions recursively become material for higher learned descriptions.
 - Succession/order can be learned from update order itself; no `step1/step2` labels are required.
 - First open run: 6,000 unlabeled binary contacts. The grammar grew/reorganized under two hidden environmental changes; final exact description was 579 units for 6,000 contacts, with learned structures grounding spans up to 92 contacts. See `OPEN_DEVELOPMENT.md`.
-- Second open run: 9,000 unlabeled noisy scalar contacts. Reusable exact `basis + residual` descriptions spontaneously covered neighborhoods of multiple distinct readings and reorganized when hidden environmental bands shifted or a new band appeared. Final state had 23 active bases; all covered multiple values and 11 covered at least five. See `OPEN_SCALAR_DEVELOPMENT.md`.
-- Complete micro-world now exists in `micro-world.js`: spatial persistence, objects/resources, body needs, injury, shelter, gate/key dependency, day/night, weather, another agent, primitive signalling, delayed/changing consequences, and death/reset.
-- Embodied open run `micro-world-open.js` showed the existing learner forming repeated structures spanning primitive motor commands into subsequent sensory/body contacts. By step 200 all eight primitive actions were represented in learned action/consequence structure. See `MICRO_WORLD.md`.
+- Second open run: 9,000 unlabeled noisy scalar contacts. Reusable exact `basis + residual` descriptions spontaneously covered neighborhoods of multiple distinct readings and reorganized when hidden environmental bands shifted or a new band appeared. See `OPEN_SCALAR_DEVELOPMENT.md`.
+- Complete micro-world exists in `micro-world.js`: spatial persistence, objects/resources, body needs, injury, shelter, gate/key dependency, day/night, weather, another agent, primitive signalling, delayed/changing consequences, and death/reset.
+- Embodied open run `micro-world-open.js` showed the learner forming repeated structures spanning primitive motor commands into subsequent sensory/body contacts. See `MICRO_WORLD.md`.
 
 ## Current frontier
 This is still **not a working mind**.
 
-The decisive missing loop is endogenous agency. The embodied run used external motor babbling. The mind can organize what happened after actions, but does not yet use its own learned organization to decide what action/reality-contact to pursue next.
+The decisive loop is endogenous agency. The prior embodied run used external motor babbling. The next implementation should let Stone answerability + OneLogic use the mind's learned action/consequence experience to choose reality-contact/actions itself.
 
-Do not solve this by installing a reward table, explicit survival utility, planner, RL policy, curiosity module, or hand-written good/bad action labels. The next experiment is whether the same compression/developmental law can use its learned action/consequence structure to generate/select action on its own. If pure compression yields pathological repetition, passivity, or death, preserve that failure and treat it as evidence about the law rather than hiding it with an extra objective.
+The correct direction is not generic reward maximization. When unresolved pressure exists, the agent should prefer actions whose warranted/defeasible learned consequences genuinely resolve that pressure through reality-contact. When the relevant outcome is unresolved, OneLogic should favor discriminating contact rather than pretending certainty. If reality defeats the learned model, the representation must reopen or expand.
 
-The scalar tolerance frontier also remains: local tolerant descriptions often over-partition broad regions. Do not manually merge them. But agency is now the higher-priority milestone because it separates the developmental kernel from a primitive working mind.
+World-specific meanings remain learned. A bodily friction/interoceptive signal is acceptable as primitive embodied reality (analogous to pain/homeostatic contact); an explicit hidden table saying `food good`, `hazard bad`, etc. is not.
 
 ## User preference
 Keep chat updates focused on progress and conclusions. Put technical detail and experimental notes in the repo rather than explaining implementation minutiae unless asked.
