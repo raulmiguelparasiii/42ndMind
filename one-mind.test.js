@@ -9,6 +9,9 @@ assert.deepStrictEqual(Object.keys(Mind).sort(), ['C','one']);
 for (const name of ['chooseAction','plan','policy','reward','value']) assert.strictEqual(Mind[name], undefined);
 
 const source = fs.readFileSync(path.join(__dirname, 'one-mind.js'), 'utf8');
+assert.ok(!source.includes("require('./one-rule.js')"), 'active mind must not delegate cognition to one-rule.js');
+assert.ok(!source.includes("require('./recursive-recompression.js')"), 'active mind must not delegate cognition to recursive-recompression.js');
+assert.ok(!source.includes("require('./sequence-recompression.js')"), 'active mind must not delegate cognition to sequence-recompression.js');
 for (const forbidden of [
   'sceneSignature', 'pressureBand', 'runwayBand', 'signedEffect',
   'open_relief', 'open_worse', 'open_mixed', 'purposive_completion',
@@ -29,8 +32,6 @@ function advance(preferred) {
   p0 = Math.max(1, Math.min(220, p0));
   p1 = Math.max(1, Math.min(220, p1));
   const t = m.experiences.length;
-  // Two nuisance channels vary independently. Useful structure must survive
-  // superficial percept differences rather than memorizing the whole frame.
   frame = [t % 5, (t * 7) % 11, 255, p0, p1];
   Mind.C(m, frame);
   return action;
@@ -43,23 +44,22 @@ for (let i = 0; i < 44; i++) {
 }
 
 assert.strictEqual(m.whole, 1);
-assert.ok(m.structure.simultaneous.patterns.length > 0, 'no reusable simultaneous relations formed');
-assert.ok(m.structure.ordered.rules.length > 0, 'no reusable ordered relations formed');
-assert.ok(m.structure.samples.some(sample => sample.values.relation_kind === 'ordered'), 'ordered structure never became a reusable present relation');
+assert.ok(m.structure.patterns.length > 0, 'no reusable relations formed');
+assert.ok(m.structure.order_rules.length > 0, 'no reusable succession formed');
+assert.ok(m.structure.samples.some(sample => sample.values.relation_kind === 'ordered'), 'successive structure never became a reusable present relation');
 assert.ok(firstLate.includes(2), 'experienced concern-closing action never became available after learning');
 
-// Reverse reality. The old action is now counterevidence; action 1 is the one
-// whose experienced relation closes both concerns. No reset or semantic signal
-// announces the reversal. C must reorganize from continued reality-contact.
+// Reverse actuality without announcing the change. The old continuation must lose
+// authority through counterevidence and a newly grounded relation must be usable.
 const secondLate = [];
 for (let i = 0; i < 48; i++) {
   const action = advance(1);
   if (i >= 32) secondLate.push(action);
 }
-assert.ok(secondLate.includes(1), 'mind failed to reopen and discover a corrected continuation after reality reversed');
+assert.ok(secondLate.includes(1), 'mind failed to reorganize after reality reversed');
 
-// Satisfaction removes the purposive relation. A previously useful action must
-// not remain compulsory merely because it has historical support.
+// Once the concern relation is actually closed, historical usefulness does not
+// remain a compulsory goal or policy.
 const zeroMotors = new Set();
 for (let i = 0; i < 10; i++) {
   frame = [i % 3, (i * 2) % 5, 255, 0, 0];
@@ -72,13 +72,13 @@ assert.strictEqual(m.contacts.length, m.experiences.length + 1);
 assert.ok(m.experiences.every(x => Array.isArray(x.before) && Array.isArray(x.after) && Number.isInteger(x.action)));
 assert.ok(m.structure.fixed_point_passes >= 1);
 
-console.log('42ndMind self-growing unified relation: PASS');
+console.log('42ndMind one self-contained developmental authority: PASS');
 console.log(JSON.stringify({
   experiences: m.experiences.length,
-  simultaneous_patterns: m.structure.simultaneous.patterns.length,
-  simultaneous_symbols: m.structure.simultaneous.symbols.length,
-  ordered_rules: m.structure.ordered.rules.length,
-  ordered_max_depth: m.structure.ordered.rules.reduce((n, r) => Math.max(n, r.depth), 0),
+  patterns: m.structure.patterns.length,
+  symbols: m.structure.symbols.length,
+  order_rules: m.structure.order_rules.length,
+  order_max_depth: m.structure.order_rules.reduce((n, r) => Math.max(n, r.depth), 0),
   corrected_action_seen: secondLate.includes(1),
   zero_motor_variants: zeroMotors.size,
 }));
