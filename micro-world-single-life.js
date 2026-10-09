@@ -24,13 +24,12 @@ function runMind(seed){
   const world=World.create(seed,{developmentalProtectionUntil:DEVELOPMENT_STEPS});
   const mind=Mind.one(World.ACTIONS,World.PRESSURE_CHANNELS);
   let frame=World.sense(world),steps=0,frictionSum=0,maxFriction=World.bodyFriction(world);
-  const modes={},actions=Array(World.ACTIONS).fill(0);
+  const actions=Array(World.ACTIONS).fill(0);
   Mind.C(mind,frame);
 
   while(steps<TOTAL_STEPS&&world.agent.alive){
     const action=mind.motor;
     assert.ok(Number.isInteger(action)&&action>=0&&action<World.ACTIONS);
-    modes[mind.mode]=(modes[mind.mode]||0)+1;
     actions[action]++;
     const after=World.act(world,action);
     Mind.C(mind,after);
@@ -39,16 +38,17 @@ function runMind(seed){
   }
 
   assert.strictEqual(mind.whole,1);
-  assert.strictEqual(mind.transitions.length,steps);
+  assert.strictEqual(mind.experiences.length,steps);
   return{
     seed,steps,
     autonomous_steps_survived:Math.max(0,steps-DEVELOPMENT_STEPS),
     survived:world.agent.alive&&steps===TOTAL_STEPS,
     terminal_friction:World.bodyFriction(world),terminal_pressures:World.bodyPressures(world),
     avg_friction:Number((frictionSum/Math.max(1,steps)).toFixed(2)),max_friction:maxFriction,
-    action_kinds:actions.filter(Boolean).length,state_modes:modes,
-    learned_relations:mind.samples_integrated,
-    learned_consequences:mind.outcome_counts,
+    action_kinds:actions.filter(Boolean).length,action_counts:actions,
+    experiences:mind.experiences.length,
+    learned_patterns:mind.kernel.learned_patterns.length,
+    learned_pattern_targets:[...new Set(mind.kernel.learned_patterns.map(x=>x.target))].sort(),
   };
 }
 
@@ -73,22 +73,21 @@ const seeds=process.env.SEEDS
   : defaultSeeds;
 if(!seeds.length) throw new Error('at least one seed required');
 
-const guided=seeds.map(runMind),babble=seeds.map(runBabble);
+const unified=seeds.map(runMind),babble=seeds.map(runBabble);
 const summary={
   worlds:seeds.length,development_steps:DEVELOPMENT_STEPS,autonomous_horizon:AUTONOMOUS_STEPS,
-  unified_survivors:guided.filter(x=>x.survived).length,babble_survivors:babble.filter(x=>x.survived).length,
-  unified_mean_autonomous_life:Number(mean(guided.map(x=>x.autonomous_steps_survived)).toFixed(1)),
+  unified_survivors:unified.filter(x=>x.survived).length,babble_survivors:babble.filter(x=>x.survived).length,
+  unified_mean_autonomous_life:Number(mean(unified.map(x=>x.autonomous_steps_survived)).toFixed(1)),
   babble_mean_autonomous_life:Number(mean(babble.map(x=>x.autonomous_steps_survived)).toFixed(1)),
-  unified_mean_friction:Number(mean(guided.map(x=>x.avg_friction)).toFixed(2)),
+  unified_mean_friction:Number(mean(unified.map(x=>x.avg_friction)).toFixed(2)),
   babble_mean_friction:Number(mean(babble.map(x=>x.avg_friction)).toFixed(2)),
-  unified_completion_worlds:guided.filter(x=>(x.state_modes.answerable_completion||0)>0).length,
 };
 
-console.log('42ndMind unified single-life run: COMPLETE');
-console.log('M(t+1)=C(M(t)⊕R(t+1)); motor continuation is part of M');
-console.log('no planner, chooseAction, reward policy, reset, or cross-life learning');
+console.log('42ndMind scaffold-free single-life run: COMPLETE');
+console.log('M(t+1)=C(M(t)⊕R(t+1)); exact sensorimotor experience remains in the same M');
+console.log('no planner, reward policy, scene labels, pressure bands, runway bands, or success/failure labels');
 console.log(`developmental protection=${DEVELOPMENT_STEPS} then autonomous survival=${AUTONOMOUS_STEPS}`);
-console.log('UNIFIED '+JSON.stringify(guided));
+console.log('UNIFIED '+JSON.stringify(unified));
 console.log('BABBLE '+JSON.stringify(babble));
 console.log('SUMMARY '+JSON.stringify(summary));
 console.log('whole=1 lives_are_independent=true');
