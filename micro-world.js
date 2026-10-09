@@ -11,10 +11,12 @@
 // Internal physical variables are not duplicated as extra semantic sensor values;
 // their materially relevant contact is carried by the pressure channels.
 //
-// A run may request a finite protected developmental phase. This is not a reset,
-// reward, or semantic lesson. The same individual continues accumulating the same
-// pressure/contact history, but irreversible body failure is temporarily prevented
-// while pressure itself remains high. Once the phase ends, the protection is gone.
+// A run may request a finite protected developmental phase. The same individual
+// remains continuous throughout it. Protection is represented as external care:
+// bodily pressure is allowed to arise, but an external environmental process can
+// restore viability before irreversible failure. That restoration is visible as
+// ordinary reality-contact and is independent of the mind's motor command. When
+// development ends, care ends permanently. There is no reset or memory transfer.
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -130,6 +132,33 @@ function moveOther(w) {
   }
 }
 
+function developmentalCare(w) {
+  const a = w.agent;
+  if (w.developmentalProtectionUntil <= 0 || w.t > w.developmentalProtectionUntil) return;
+
+  // External care responds to embodied need, not to the current motor command.
+  // It restores enough capacity for continued development while still allowing
+  // substantial pressure to be experienced between interventions.
+  let cared = false;
+  if (a.energy < 82) { a.energy = clamp(a.energy + 82, 0, 255); cared = true; }
+  if (a.water < 82) { a.water = clamp(a.water + 96, 0, 255); cared = true; }
+  if (a.injury > 105) { a.injury = Math.max(20, a.injury - 72); cared = true; }
+  if (a.temp < 92 || a.temp > 166) { a.temp += (128-a.temp)*0.55; cared = true; }
+  if (cared) w.lastEffect = 174;
+
+  // The transition out of dependency must not begin from a terminal body state.
+  // This is the final ordinary act of care, not a reset: position, memory, world,
+  // and all accumulated experience remain exactly continuous.
+  if (w.t === w.developmentalProtectionUntil) {
+    a.energy = Math.max(a.energy, 160);
+    a.water = Math.max(a.water, 160);
+    a.injury = Math.min(a.injury, 36);
+    a.temp += (128-a.temp)*0.75;
+    w.lastEffect = 176;
+  }
+  a.alive = true;
+}
+
 function environmentTick(w) {
   const a = w.agent;
   w.t++;
@@ -153,17 +182,8 @@ function environmentTick(w) {
   if (w.resourceClock % 70 === 0) w.food.add(w.random()<0.5?'5,1':'1,5');
   if (w.resourceClock % 85 === 0) w.water.add(w.random()<0.5?'3,1':'5,5');
 
-  // Protected development prevents terminal failure without resolving the
-  // pressure. The floors/cap remain close to the lethal boundary, so the mind
-  // experiences the constraint rather than learning that protection is relief.
-  if (w.t <= w.developmentalProtectionUntil) {
-    a.energy = Math.max(a.energy, 20);
-    a.water = Math.max(a.water, 20);
-    a.injury = Math.min(a.injury, 220);
-    a.alive = true;
-  } else if (a.energy <= 0 || a.water <= 0 || a.injury >= 255) {
-    a.alive = false;
-  }
+  if (w.t <= w.developmentalProtectionUntil) developmentalCare(w);
+  else if (a.energy <= 0 || a.water <= 0 || a.injury >= 255) a.alive = false;
   moveOther(w);
 }
 
