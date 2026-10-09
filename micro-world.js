@@ -2,16 +2,14 @@
 
 // A tiny closed world for open development. World semantics live here only.
 // The mind is never given names such as food, water, danger, trust, shelter,
-// weather, day, or body need. It receives fixed primitive sensor channels and
-// can emit one of eight primitive motor commands.
+// weather, day, or body need. It receives primitive world-contact channels plus
+// distinct embodied pressure channels and can emit eight primitive motor commands.
 //
-// The tail of the sensor frame contains primitive embodied contacts:
-//   - continuity of reality-contact (255 while embodied contact remains, 0 when
-//     the body has failed);
-//   - four distinct pressure channels. Their meanings are not named to the mind.
-//
-// Keeping the pressures separate is deliberate: one materially bad constraint
-// must not be hidden by improvement in another through a single aggregate score.
+// The frame tail contains:
+//   - continuity of reality-contact;
+//   - four distinct embodied pressures whose meanings are not named to the mind.
+// Internal physical variables are not duplicated as extra semantic sensor values;
+// their materially relevant contact is carried by the pressure channels.
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -78,8 +76,6 @@ function occupiedBits(w, x, y) {
 
 function bodyPressures(w) {
   const a = w.agent;
-  // These are embodied contacts, not semantic reward labels. Each is scaled so
-  // approaching the corresponding physical limit approaches maximal pressure.
   const p0 = clamp(Math.round(Math.max(0, 180 - a.energy) * 255 / 180), 0, 255);
   const p1 = clamp(Math.round(Math.max(0, 180 - a.water) * 255 / 180), 0, 255);
   const p2 = clamp(Math.round(Math.max(0, Math.abs(a.temp - 128) - 8) * 4), 0, 255);
@@ -87,24 +83,14 @@ function bodyPressures(w) {
   return [p0, p1, p2, p3];
 }
 
-function bodyFriction(w) {
-  // Telemetry/backward-compatible scalar only. The controller does not optimize
-  // this aggregate; it receives and reasons over bodyPressures separately.
-  return Math.max(...bodyPressures(w));
-}
+function bodyFriction(w) { return Math.max(...bodyPressures(w)); }
 
 function sense(w) {
   const a = w.agent;
   const channels = [];
   for (let dy = -1; dy <= 1; dy++) {
-    for (let dx = -1; dx <= 1; dx++) {
-      channels.push(occupiedBits(w, a.x + dx, a.y + dy));
-    }
+    for (let dx = -1; dx <= 1; dx++) channels.push(occupiedBits(w, a.x + dx, a.y + dy));
   }
-  channels.push(clamp(Math.round(a.energy),0,255));
-  channels.push(clamp(Math.round(a.water),0,255));
-  channels.push(clamp(Math.round(a.temp),0,255));
-  channels.push(clamp(Math.round(a.injury),0,255));
   channels.push(w.light);
   channels.push(w.ambient);
   channels.push(w.lastEffect);
@@ -126,9 +112,7 @@ function moveOther(w) {
   if (w.random() < 0.45) {
     const d = DIRS[Math.floor(w.random()*4)];
     const nx = w.other.x + d[0], ny = w.other.y + d[1];
-    if (passable(w,nx,ny) && !(nx === w.agent.x && ny === w.agent.y)) {
-      w.other.x = nx; w.other.y = ny;
-    }
+    if (passable(w,nx,ny) && !(nx === w.agent.x && ny === w.agent.y)) { w.other.x = nx; w.other.y = ny; }
   }
   const dist = Math.abs(w.other.x-w.agent.x)+Math.abs(w.other.y-w.agent.y);
   if (w.lastSignal === 1) w.other.affinity = clamp(w.other.affinity + 1, -8, 8);
