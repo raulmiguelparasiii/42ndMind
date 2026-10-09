@@ -39,8 +39,6 @@ function runMind(seed){
 
   assert.strictEqual(mind.whole,1);
   assert.strictEqual(mind.experiences.length,steps);
-  const simultaneous=mind.structure?.simultaneous;
-  const ordered=mind.structure?.ordered;
   return{
     seed,steps,
     autonomous_steps_survived:Math.max(0,steps-DEVELOPMENT_STEPS),
@@ -49,11 +47,11 @@ function runMind(seed){
     avg_friction:Number((frictionSum/Math.max(1,steps)).toFixed(2)),max_friction:maxFriction,
     action_kinds:actions.filter(Boolean).length,action_counts:actions,
     experiences:mind.experiences.length,
-    learned_patterns:simultaneous?.patterns?.length||0,
-    learned_symbols:simultaneous?.symbols?.length||0,
-    ordered_rules:ordered?.rules?.length||0,
-    ordered_max_depth:(ordered?.rules||[]).reduce((n,r)=>Math.max(n,r.depth||0),0),
-    fixed_point_passes:mind.structure?.fixed_point_passes||0,
+    learned_patterns:mind.structure.patterns.length,
+    learned_symbols:mind.structure.symbols.length,
+    ordered_rules:mind.structure.order_rules.length,
+    ordered_max_depth:mind.structure.order_rules.reduce((n,r)=>Math.max(n,r.depth||0),0),
+    fixed_point_passes:mind.structure.fixed_point_passes||0,
   };
 }
 
@@ -88,8 +86,8 @@ const summary={
   babble_mean_friction:Number(mean(babble.map(x=>x.avg_friction)).toFixed(2)),
 };
 
-console.log('42ndMind recursive single-life run: COMPLETE');
-console.log('M(t+1)=C(M(t)⊕R(t+1)); exact contact grounds recursive simultaneous and ordered recompression');
+console.log('42ndMind one-mind single-life run: COMPLETE');
+console.log('M(t+1)=C(M(t)⊕R(t+1)); one self-contained C recursively redescribes exact lived contact');
 console.log('no planner, reward policy, scene labels, pressure bands, runway bands, success/failure labels, or fixed consequence horizon');
 console.log(`developmental protection=${DEVELOPMENT_STEPS} then autonomous survival=${AUTONOMOUS_STEPS}`);
 console.log('UNIFIED '+JSON.stringify(unified));
