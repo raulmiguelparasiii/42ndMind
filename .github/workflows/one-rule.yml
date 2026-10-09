@@ -24,4 +24,5 @@ jobs:
       - run: node open-development.js
       - run: node open-development-scalar.js
       - run: node micro-world-open.js
+      - run: node micro-world-guided.js
       - run: node one-rule.stress.js
