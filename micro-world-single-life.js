@@ -48,6 +48,7 @@ function runMind(seed){
     avg_friction:Number((frictionSum/Math.max(1,steps)).toFixed(2)),max_friction:maxFriction,
     action_kinds:actions.filter(Boolean).length,state_modes:modes,
     learned_relations:mind.samples_integrated,
+    learned_consequences:mind.outcome_counts,
   };
 }
 
@@ -75,6 +76,7 @@ const summary={
   babble_mean_autonomous_life:Number(mean(babble.map(x=>x.autonomous_steps_survived)).toFixed(1)),
   unified_mean_friction:Number(mean(guided.map(x=>x.avg_friction)).toFixed(2)),
   babble_mean_friction:Number(mean(babble.map(x=>x.avg_friction)).toFixed(2)),
+  unified_completion_worlds:guided.filter(x=>(x.state_modes.answerable_completion||0)>0).length,
 };
 
 console.log('42ndMind unified single-life run: COMPLETE');
