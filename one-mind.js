@@ -74,13 +74,41 @@ function expandedSample(sim, sample) {
   return Sim.predict(sim, sample.values).expanded_experience;
 }
 
+function baseDependencies(feature, byFeature, trail = new Set()) {
+  const symbol = byFeature.get(feature);
+  if (!symbol) return new Set([feature]);
+  if (trail.has(feature)) return new Set();
+  const nextTrail = new Set(trail); nextTrail.add(feature);
+  const out = new Set();
+  for (const atom of symbol.definition) {
+    for (const dependency of baseDependencies(atom.feature, byFeature, nextTrail)) out.add(dependency);
+  }
+  return out;
+}
+
+function groundedSimultaneousSymbols(sim) {
+  const byFeature = new Map(sim.symbols.map(symbol => [symbol.feature, symbol]));
+  const safe = new Set();
+  for (const symbol of sim.symbols) {
+    const dependencies = baseDependencies(symbol.feature, byFeature);
+    // Ordered descriptions are outputs of temporal C. They may be used by later
+    // judgment, but they may not be fed back as evidence for discovering their
+    // own temporal existence. Only direct percept/body/action/transition features
+    // may ground an event token used by order compression.
+    if ([...dependencies].every(feature => !feature.startsWith('relation_'))) safe.add(symbol.feature);
+  }
+  return safe;
+}
+
 // The event token is a compressed description of an experienced transition.
-// Learned simultaneous symbols are included if C found them; action and the
-// directly experienced before/after concern orders remain as exact residual
-// structure. World-specific percept semantics never enter the token.
+// Only simultaneous symbols whose definitions reduce entirely to directly
+// grounded features are admitted, preventing circular self-supporting foresight.
 function eventToken(state, sim, sample) {
   const expanded = expandedSample(sim, sample);
-  const learned = Object.keys(expanded).filter(key => key.startsWith('§') && expanded[key] === true).sort();
+  const grounded = groundedSimultaneousSymbols(sim);
+  const learned = Object.keys(expanded)
+    .filter(key => key.startsWith('§') && expanded[key] === true && grounded.has(key))
+    .sort();
   const orders = [];
   for (let i = 0; i < state.concern_count; i++) orders.push(sample.values[`immediate_c${i}_order`]);
   return { action: sample.values.action, orders, learned };
