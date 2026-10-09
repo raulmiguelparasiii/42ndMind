@@ -4,17 +4,16 @@
 //
 //   M(t+1) = C(M(t) ⊕ R(t+1))
 //
-// The running mind has no cognitive dependencies. Reality-contact is retained
-// exactly, and C repeatedly searches that one history for shorter reusable
-// relational descriptions. Co-presence and succession are not separate faculties;
-// they are two relations already present in the same lived record. Learned
-// descriptions are fed back into the same M and may disappear or reorganize when
-// later reality makes a different description cheaper.
+// Reality-contact is retained exactly. C repeatedly redescribes that one lived
+// record with shorter reusable relations. Co-presence and succession are not
+// separate faculties; both are relations already present in experience. Learned
+// descriptions feed back into the same M and can disappear or reorganize when
+// later reality makes another description shorter.
 //
 // Nothing here names food, water, danger, shelter, reward, success, curiosity,
 // scenes, goals, plans, or good actions. Motor continuation is a missing term of
 // the same current relation. If reality has not grounded a completion, cognition
-// remains unresolved and the physical embodiment supplies non-semantic variation.
+// remains unresolved and embodiment contributes non-semantic motor variation.
 
 const LESS = 'less';
 const SAME = 'same';
@@ -82,9 +81,9 @@ function magnitudeOrder(after, before) {
   return SAME;
 }
 
-// Distinct channels are part of the physical interface. Giving C access to each
-// channel separately is decomposition of supplied contact, not a human-authored
-// scene/category. Arbitrary percept codes are never subtracted or ordered here.
+// Channel boundaries are supplied by the physical interface. Exposing each
+// channel separately is decomposition of contact, not a human-authored scene.
+// Arbitrary percept codes are never subtracted or given metric meaning.
 function presentFeatures(state, frame) {
   const contact = splitContact(state, frame);
   const values = {};
@@ -110,7 +109,7 @@ function directSamples(state) {
   });
 }
 
-// ----- The one description search over co-present relations -----
+// ---------- one description search over simultaneous relations ----------
 
 function symbolDependencies(symbol, byFeature, trail = new Set()) {
   if (trail.has(symbol.feature)) return new Set();
@@ -139,9 +138,12 @@ function augment(rawSamples, symbols) {
 function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   const samples = normalizeSamples(samplesInput);
   const featureValues = {};
+  const atomSupport = new Map();
   for (const { values } of samples) {
     for (const [feature, value] of Object.entries(values)) {
       featureValues[feature] = unique([...(featureValues[feature] || []), value]);
+      const key = atomKey({ feature, value });
+      atomSupport.set(key, (atomSupport.get(key) || 0) + 1);
     }
   }
   const features = Object.keys(featureValues).sort();
@@ -155,23 +157,37 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     return dependencyCache.get(feature);
   }
 
+  // The learner itself requires at least two matching cases. An atom or
+  // conjunction occurring fewer than twice can therefore never survive. Count
+  // these exact occurrences once so impossible descriptions are never generated.
+  const reusableAtoms = samples.map(({ values }) => Object.keys(values).sort()
+    .map(feature => ({ feature, value: values[feature] }))
+    .filter(atom => (atomSupport.get(atomKey(atom)) || 0) >= 2));
+  const conditionSupport = new Map();
+  for (const atoms of reusableAtoms) {
+    for (const conditions of combinations(atoms, Math.min(maxConditions, atoms.length))) {
+      const key = conditionKey(conditions);
+      conditionSupport.set(key, (conditionSupport.get(key) || 0) + 1);
+    }
+  }
+
   const atomCount = features.reduce((n, f) => n + featureValues[f].length, 0);
   const modelUnit = Math.log2(Math.max(2, atomCount + features.length));
   const candidates = new Map();
 
   // A candidate target=value relation can only have support if that value and its
-  // conditions co-occurred in actual experience. Generate from those occurrences
-  // directly. This is evidence-equivalent to the exhaustive Cartesian loop but
-  // does not waste life recomputing candidates that reality never instantiated.
-  for (const { values } of samples) {
+  // conditions co-occurred in actual experience. This evidence-local generation,
+  // plus the exact support pruning above, removes only candidates that are
+  // mathematically incapable of passing the unchanged MDL criteria below.
+  for (let s = 0; s < samples.length; s++) {
+    const values = samples[s].values;
     for (const target of Object.keys(values).sort()) {
       const expected = values[target];
-      const atoms = Object.keys(values)
-        .filter(feature => feature !== target && !dependencies(feature).has(target))
-        .sort()
-        .map(feature => ({ feature, value: values[feature] }));
+      const atoms = reusableAtoms[s].filter(atom => atom.feature !== target && !dependencies(atom.feature).has(target));
       for (const conditions of combinations(atoms, Math.min(maxConditions, atoms.length))) {
-        const key = `${target}=>${stable(expected)}|${conditionKey(conditions)}`;
+        const ckey = conditionKey(conditions);
+        if ((conditionSupport.get(ckey) || 0) < 2) continue;
+        const key = `${target}=>${stable(expected)}|${ckey}`;
         if (!candidates.has(key)) candidates.set(key, { target, expected, conditions });
       }
     }
@@ -235,10 +251,6 @@ function recompressRelations(rawSamples) {
   let symbols = [];
   let patterns = [];
   const existingDefinitions = new Set();
-
-  // Repeated application of the same description search makes its own shorter
-  // descriptions available as later representational material. The finite pass
-  // bound is a computation guard; new reality reopens the search on every C.
   for (let pass = 0; pass < 2; pass++) {
     const samples = augment(rawSamples, symbols);
     patterns = learnPatterns(samples, symbols, 2);
@@ -278,10 +290,8 @@ function recompressRelations(rawSamples) {
 }
 
 function expandPartial(values, symbols) {
-  const sample = augment([{ id: 'query', values }], symbols)[0];
-  return sample.values;
+  return augment([{ id: 'query', values }], symbols)[0].values;
 }
-
 function predict(structure, partialValues) {
   const values = expandPartial(partialValues, structure.symbols);
   const active = structure.patterns.filter(pattern =>
@@ -298,7 +308,7 @@ function predict(structure, partialValues) {
   return { expanded: values, active, best_by_target: best };
 }
 
-// ----- The same description search over succession already present in M -----
+// ---------- the same description search over succession ----------
 
 function baseToken(event) { return `e:${stable(event)}`; }
 function nonOverlappingOccurrences(sequence, pair) {
@@ -312,9 +322,8 @@ function nonOverlappingOccurrences(sequence, pair) {
 function replacePair(sequence, pair, symbol) {
   const out = [];
   for (let i = 0; i < sequence.length;) {
-    if (i + 1 < sequence.length && sequence[i] === pair[0] && sequence[i + 1] === pair[1]) {
-      out.push(symbol); i += 2;
-    } else out.push(sequence[i++]);
+    if (i + 1 < sequence.length && sequence[i] === pair[0] && sequence[i + 1] === pair[1]) { out.push(symbol); i += 2; }
+    else out.push(sequence[i++]);
   }
   return out;
 }
@@ -325,9 +334,7 @@ function expandToken(token, bySymbol, trail = new Set()) {
   const next = new Set(trail); next.add(token);
   return rule.expansion.flatMap(part => expandToken(part, bySymbol, next));
 }
-function sequenceDescriptionLength(encodedLength, ruleCount) {
-  return encodedLength + ruleCount * 3;
-}
+function sequenceDescriptionLength(encodedLength, ruleCount) { return encodedLength + ruleCount * 3; }
 function bestPair(sequence, ruleCount) {
   const pairs = new Map();
   for (let i = 0; i < sequence.length - 1; i++) {
@@ -339,15 +346,12 @@ function bestPair(sequence, ruleCount) {
   for (const pair of pairs.values()) {
     const occurrences = nonOverlappingOccurrences(sequence, pair);
     if (occurrences < 2) continue;
-    const savings = sequenceDescriptionLength(sequence.length, ruleCount) -
-      sequenceDescriptionLength(sequence.length - occurrences, ruleCount + 1);
+    const savings = sequenceDescriptionLength(sequence.length, ruleCount) - sequenceDescriptionLength(sequence.length - occurrences, ruleCount + 1);
     if (!(savings > 0)) continue;
     const candidate = { pair, occurrences, savings };
     if (!best || candidate.savings > best.savings ||
         (candidate.savings === best.savings && candidate.occurrences > best.occurrences) ||
-        (candidate.savings === best.savings && candidate.occurrences === best.occurrences && stable(candidate.pair) < stable(best.pair))) {
-      best = candidate;
-    }
+        (candidate.savings === best.savings && candidate.occurrences === best.occurrences && stable(candidate.pair) < stable(best.pair))) best = candidate;
   }
   return best;
 }
@@ -379,6 +383,7 @@ function learnedExpansions(sequenceStructure) {
   }));
 }
 
+// Temporal output may guide later judgment but cannot ground its own existence.
 function baseDependencies(feature, byFeature, trail = new Set()) {
   const symbol = byFeature.get(feature);
   if (!symbol) return new Set([feature]);
@@ -402,9 +407,7 @@ function groundedSymbols(structure) {
 function eventToken(state, structure, sample) {
   const expanded = expandPartial(sample.values, structure.symbols);
   const grounded = groundedSymbols(structure);
-  const learned = Object.keys(expanded)
-    .filter(key => key.startsWith('§') && expanded[key] === true && grounded.has(key))
-    .sort();
+  const learned = Object.keys(expanded).filter(key => key.startsWith('§') && expanded[key] === true && grounded.has(key)).sort();
   const orders = [];
   for (let i = 0; i < state.concern_count; i++) orders.push(sample.values[`immediate_c${i}_order`]);
   return { action: sample.values.action, orders, learned };
@@ -425,9 +428,7 @@ function temporalDescriptions(samples, tokens, sequenceStructure) {
       const old = descriptions[i];
       if (!old || candidate.savings > old.savings ||
           (candidate.savings === old.savings && candidate.depth > old.depth) ||
-          (candidate.savings === old.savings && candidate.depth === old.depth && candidate.length > old.length)) {
-        descriptions[i] = candidate;
-      }
+          (candidate.savings === old.savings && candidate.depth === old.depth && candidate.length > old.length)) descriptions[i] = candidate;
     }
   }
   return descriptions;
@@ -451,15 +452,9 @@ function annotateTemporalRelations(state, baseSamples, descriptions) {
   });
 }
 
-// This is C's current finite realization. The same accumulated history is
-// redescribed until feeding the newly learned descriptions back into the search no
-// longer changes the bounded representation. Counterevidence causes a rebuild from
-// exact experience, so no learned description is protected from correction.
 function recompressWhole(state) {
   const base = directSamples(state);
-  if (base.length < 4) return {
-    samples: base, symbols: [], patterns: [], tokens: [], order_rules: [], encoded_order: [], fixed_point_passes: 0,
-  };
+  if (base.length < 4) return { samples: base, symbols: [], patterns: [], tokens: [], order_rules: [], encoded_order: [], fixed_point_passes: 0 };
 
   let samples = base;
   let learned = { symbols: [], patterns: [] };
@@ -467,30 +462,19 @@ function recompressWhole(state) {
   let sequence = { encoded_stream: [], rules: [] };
   let previousKey = '';
   let passes = 0;
-
   for (let pass = 0; pass < 3; pass++) {
     learned = recompressRelations(samples);
     tokens = samples.map(sample => eventToken(state, learned, sample));
     sequence = recompressSequence(tokens);
-    const descriptions = temporalDescriptions(samples, tokens, sequence);
-    const next = annotateTemporalRelations(state, base, descriptions);
+    const next = annotateTemporalRelations(state, base, temporalDescriptions(samples, tokens, sequence));
     const key = stable(next.map(x => x.values));
     samples = next;
     passes = pass + 1;
     if (key === previousKey) break;
     previousKey = key;
   }
-
   learned = recompressRelations(samples);
-  return {
-    samples,
-    symbols: learned.symbols,
-    patterns: learned.patterns,
-    tokens,
-    order_rules: sequence.rules,
-    encoded_order: sequence.encoded_stream,
-    fixed_point_passes: passes,
-  };
+  return { samples, symbols: learned.symbols, patterns: learned.patterns, tokens, order_rules: sequence.rules, encoded_order: sequence.encoded_stream, fixed_point_passes: passes };
 }
 
 function groundedCompletion(state, frame) {
@@ -499,43 +483,29 @@ function groundedCompletion(state, frame) {
   const purpose = { ...present.values };
   let open = 0;
   for (let i = 0; i < state.concern_count; i++) {
-    if (present.contact.concern[i] > 0) {
-      purpose[`relation_c${i}_order`] = LESS;
-      open++;
-    }
+    if (present.contact.concern[i] > 0) { purpose[`relation_c${i}_order`] = LESS; open++; }
   }
   if (!open) return null;
 
-  // Relational completion is allowed to recurse over its own grounded output to a
-  // fixed point. This is not planning: no candidate future is generated or scored.
-  // Missing terms are filled only when a currently applicable learned description
-  // warrants them. Competing incompatible completions leave the term unresolved.
+  // Missing terms of the current relation can expose further missing terms, but
+  // no candidate future is generated or scored. Equal-code rivals stay unresolved.
   const completed = { ...purpose };
   for (let pass = 0; pass < 4; pass++) {
     const prediction = predict(state.structure, completed);
     let changed = false;
     for (const [target, relation] of Object.entries(prediction.best_by_target)) {
       if (Object.prototype.hasOwnProperty.call(completed, target)) continue;
-      const rival = prediction.active.find(other =>
-        other.target === target && !same(other.expected, relation.expected) &&
-        Math.abs(other.predictive_code_bits - relation.predictive_code_bits) < 1e-9
-      );
+      const rival = prediction.active.find(other => other.target === target && !same(other.expected, relation.expected) && Math.abs(other.predictive_code_bits - relation.predictive_code_bits) < 1e-9);
       if (rival) continue;
       completed[target] = relation.expected;
       changed = true;
     }
     if (!changed) break;
   }
-
   const action = completed.action;
   if (!Number.isInteger(action) || action < 0 || action >= state.action_count) return null;
 
-  // Answerability: a continuation cannot gain authority by hiding another bodily
-  // relation that the same grounded structure says it worsens. No exchange rate is
-  // invented. If reality later grounds a higher relation that accommodates such a
-  // cost, recompression can represent it rather than this check silently trading it.
-  const consequenceQuery = { ...present.values, action };
-  const consequences = predict(state.structure, consequenceQuery).best_by_target;
+  const consequences = predict(state.structure, { ...present.values, action }).best_by_target;
   for (let i = 0; i < state.concern_count; i++) {
     const evidence = consequences[`relation_c${i}_order`];
     if (evidence && evidence.expected === GREATER) return null;
@@ -560,9 +530,7 @@ function one(actionCount, concernCount = 1) {
     previous_contact: null,
     motor: null,
     motor_variation: (0x9e3779b9 ^ actionCount ^ (concernCount << 8)) >>> 0,
-    structure: {
-      samples: [], symbols: [], patterns: [], tokens: [], order_rules: [], encoded_order: [], fixed_point_passes: 0,
-    },
+    structure: { samples: [], symbols: [], patterns: [], tokens: [], order_rules: [], encoded_order: [], fixed_point_passes: 0 },
     prior: {
       stone: 'materially relevant relations remain answerable to reality; Stone signs are cognitive orientations, never outcome valence',
       onelogic: 'preserve undefeated possibilities; complete only what grounded relations warrant; unresolved stays unresolved; counterevidence reopens descriptions',
@@ -576,13 +544,11 @@ function C(state, realityContact) {
   if (!state || state.whole !== 1) throw new Error('C requires one whole mind');
   if (!Array.isArray(realityContact) || realityContact.length <= state.concern_count) throw new Error('invalid reality-contact');
   if (!realityContact.every(Number.isFinite)) throw new Error('reality-contact must be finite numeric perception');
-
   const frame = realityContact.slice();
   if (state.previous_contact && state.motor != null) {
     state.experiences.push({ before: state.previous_contact.slice(), action: state.motor, after: frame.slice() });
     state.structure = recompressWhole(state);
   }
-
   state.contacts.push(frame.slice());
   state.previous_contact = frame;
   const completion = groundedCompletion(state, frame);
