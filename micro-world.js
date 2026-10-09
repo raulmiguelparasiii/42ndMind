@@ -10,6 +10,11 @@
 //   - four distinct embodied pressures whose meanings are not named to the mind.
 // Internal physical variables are not duplicated as extra semantic sensor values;
 // their materially relevant contact is carried by the pressure channels.
+//
+// A run may request a finite protected developmental phase. This is not a reset,
+// reward, or semantic lesson. The same individual continues accumulating the same
+// pressure/contact history, but irreversible body failure is temporarily prevented
+// while pressure itself remains high. Once the phase ends, the protection is gone.
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -25,13 +30,15 @@ const DIRS = [[0,-1],[1,0],[0,1],[-1,0]];
 const ACTIONS = 8;
 const PRESSURE_CHANNELS = 4;
 
-function create(seed = 420044) {
+function create(seed = 420044, options = {}) {
   const random = rng(seed);
+  const developmentalProtectionUntil = Math.max(0, Math.floor(options.developmentalProtectionUntil || 0));
   const world = {
     width: 7,
     height: 7,
     t: 0,
     random,
+    developmentalProtectionUntil,
     agent: { x: 1, y: 1, dir: 1, energy: 180, water: 180, temp: 128, injury: 0, alive: true },
     other: { x: 5, y: 5, dir: 3, affinity: 0, signal: 0 },
     walls: new Set(),
@@ -146,7 +153,17 @@ function environmentTick(w) {
   if (w.resourceClock % 70 === 0) w.food.add(w.random()<0.5?'5,1':'1,5');
   if (w.resourceClock % 85 === 0) w.water.add(w.random()<0.5?'3,1':'5,5');
 
-  if (a.energy <= 0 || a.water <= 0 || a.injury >= 255) a.alive = false;
+  // Protected development prevents terminal failure without resolving the
+  // pressure. The floors/cap remain close to the lethal boundary, so the mind
+  // experiences the constraint rather than learning that protection is relief.
+  if (w.t <= w.developmentalProtectionUntil) {
+    a.energy = Math.max(a.energy, 20);
+    a.water = Math.max(a.water, 20);
+    a.injury = Math.min(a.injury, 220);
+    a.alive = true;
+  } else if (a.energy <= 0 || a.water <= 0 || a.injury >= 255) {
+    a.alive = false;
+  }
   moveOther(w);
 }
 
