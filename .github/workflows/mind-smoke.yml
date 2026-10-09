@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: '24'
       - run: node one-mind.test.js
-      # This is only a fast architecture smoke test. The long single-life
-      # benchmark remains in micro-world-single-life.js / one-rule.yml and is not
-      # shortened to make the stripped mind look successful.
-      - run: SEEDS=420070 DEVELOPMENT_STEPS=16 AUTONOMOUS_STEPS=8 node micro-world-single-life.js
+      # One continuous individual: enough protected development to form reusable
+      # structure, followed immediately by autonomous life. This is diagnostic,
+      # not a pass/fail score threshold; poor behavior must remain visible.
+      - run: SEEDS=420070 DEVELOPMENT_STEPS=120 AUTONOMOUS_STEPS=80 node micro-world-single-life.js
