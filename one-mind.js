@@ -11,6 +11,12 @@
 //
 //   perception_before -> motor -> perception_after
 //
+// The exact transition is retained in M as raw experience. A compact heuristic
+// view exposes only relations that can be reused without assigning world meaning:
+// the present percept, the motor, and ordinal relations between before/after
+// concern magnitudes. The raw record remains the grounding and can be recompressed
+// again as the generic developmental law improves.
+//
 // The important distinction is purpose versus reward. A non-zero interoceptive
 // concern is an open bodily relation. Because the interface supplies a magnitude,
 // zero means absence of that pressure and numeric order is physically meaningful.
@@ -55,10 +61,7 @@ function relationSample(state, beforeFrame, action, afterFrame) {
   const after = splitContact(state, afterFrame);
   const sample = {
     percept_before: before.percept,
-    concern_before: before.concern,
     action,
-    percept_after: after.percept,
-    concern_after: after.concern,
   };
 
   // These are pure order relations on channels the embodiment explicitly says
@@ -90,7 +93,6 @@ function presentRelation(state, frame) {
     contact,
     values: {
       percept_before: contact.percept,
-      concern_before: contact.concern,
     },
   };
 }
