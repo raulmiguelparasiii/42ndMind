@@ -139,16 +139,17 @@ function addIndex(index, key, sampleIndex) {
   if (!index.has(key)) index.set(key, new Set());
   index.get(key).add(sampleIndex);
 }
-function intersectionCount(sets) {
-  if (!sets.length || sets.some(set => !set || set.size === 0)) return 0;
+function intersectionValues(sets) {
+  if (!sets.length || sets.some(set => !set || set.size === 0)) return [];
   const ordered = sets.slice().sort((a, b) => a.size - b.size);
-  let count = 0;
+  const out = [];
   outer: for (const value of ordered[0]) {
     for (let i = 1; i < ordered.length; i++) if (!ordered[i].has(value)) continue outer;
-    count++;
+    out.push(value);
   }
-  return count;
+  return out;
 }
+function intersectionCount(sets) { return intersectionValues(sets).length; }
 
 function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   const samples = normalizeSamples(samplesInput);
@@ -177,85 +178,83 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     return dependencyCache.get(feature);
   }
 
-  // The learner itself requires at least two matching cases. An atom or
-  // conjunction occurring fewer than twice can therefore never survive. Count
-  // these exact occurrences once so impossible descriptions are never generated.
+  // A reusable condition must occur at least twice because the unchanged learner
+  // below rejects matched sets smaller than two. Build each such condition once.
   const reusableAtoms = samples.map(({ values }) => Object.keys(values).sort()
     .map(feature => ({ feature, value: values[feature] }))
     .filter(atom => (atomSupport.get(atomKey(atom)) || 0) >= 2));
-  const conditionSupport = new Map();
+  const conditions = new Map();
   for (const atoms of reusableAtoms) {
-    for (const conditions of combinations(atoms, Math.min(maxConditions, atoms.length))) {
-      const key = conditionKey(conditions);
-      conditionSupport.set(key, (conditionSupport.get(key) || 0) + 1);
+    for (const condition of combinations(atoms, Math.min(maxConditions, atoms.length))) {
+      const key = conditionKey(condition);
+      if (!conditions.has(key)) conditions.set(key, condition.map(atom => ({ ...atom })));
     }
   }
 
   const atomCount = features.reduce((n, f) => n + featureValues[f].length, 0);
   const modelUnit = Math.log2(Math.max(2, atomCount + features.length));
-  const candidates = new Map();
+  const patterns = [];
 
-  // A candidate target=value relation can only have support if that value and its
-  // conditions co-occurred in actual experience. This evidence-local generation,
-  // plus the exact support pruning above, removes only candidates that are
-  // mathematically incapable of passing the unchanged MDL criteria below.
-  for (let s = 0; s < samples.length; s++) {
-    const values = samples[s].values;
-    for (const target of Object.keys(values).sort()) {
-      const expected = values[target];
-      const atoms = reusableAtoms[s].filter(atom => atom.feature !== target && !dependencies(atom.feature).has(target));
-      for (const conditions of combinations(atoms, Math.min(maxConditions, atoms.length))) {
-        const ckey = conditionKey(conditions);
-        if ((conditionSupport.get(ckey) || 0) < 2) continue;
-        const key = `${target}=>${stable(expected)}|${ckey}`;
-        if (!candidates.has(key)) candidates.set(key, { target, expected, conditions });
+  // A condition is evaluated once. Only target/value pairs actually present in
+  // the experiences matched by that condition can possibly gain support from it.
+  // This is exactly the candidate set of the former evidence-local generation,
+  // without regenerating the same condition for every target in every sample.
+  for (const condition of conditions.values()) {
+    const conditionAtomSets = condition.map(atom => atomIndex.get(atomKey(atom)));
+    const matchedIndices = intersectionValues(conditionAtomSets);
+    if (matchedIndices.length < 2) continue;
+
+    const possibleTargets = new Map();
+    for (const sampleIndex of matchedIndices) {
+      const values = samples[sampleIndex].values;
+      for (const [target, expected] of Object.entries(values)) {
+        if (condition.some(atom => atom.feature === target || dependencies(atom.feature).has(target))) continue;
+        const key = `${target}=>${stable(expected)}`;
+        if (!possibleTargets.has(key)) possibleTargets.set(key, { target, expected });
       }
     }
-  }
 
-  const patterns = [];
-  for (const candidate of candidates.values()) {
-    const targetPresence = featureIndex.get(candidate.target);
-    const conditionFeatureSets = candidate.conditions.map(atom => featureIndex.get(atom.feature));
-    const conditionAtomSets = candidate.conditions.map(atom => atomIndex.get(atomKey(atom)));
-    const targetExpectedSet = atomIndex.get(atomKey({ feature: candidate.target, value: candidate.expected }));
+    const conditionFeatures = condition.map(atom => atom.feature);
+    const conditionFeatureSets = conditionFeatures.map(feature => featureIndex.get(feature));
+    const modelBits = (condition.length + 1) * modelUnit;
 
-    // These counts are exactly the same sets the former implementation obtained
-    // by re-scanning all samples for each candidate. Indexing changes only cost.
-    const eligible = intersectionCount([targetPresence, ...conditionFeatureSets]);
-    if (eligible < 4) continue;
-    const matched = intersectionCount([targetPresence, ...conditionAtomSets]);
-    const unmatched = eligible - matched;
-    if (matched < 2 || unmatched < 2) continue;
+    for (const { target, expected } of possibleTargets.values()) {
+      const targetPresence = featureIndex.get(target);
+      const targetExpectedSet = atomIndex.get(atomKey({ feature: target, value: expected }));
+      const eligible = intersectionCount([targetPresence, ...conditionFeatureSets]);
+      if (eligible < 4) continue;
+      const matched = intersectionCount([targetPresence, ...conditionAtomSets]);
+      const unmatched = eligible - matched;
+      if (matched < 2 || unmatched < 2) continue;
 
-    const totalExpected = intersectionCount([targetExpectedSet, ...conditionFeatureSets]);
-    const matchedExpected = intersectionCount([targetExpectedSet, ...conditionAtomSets]);
-    const unmatchedExpected = totalExpected - matchedExpected;
-    const baseRate = totalExpected / eligible;
-    const matchedRate = matchedExpected / matched;
-    if (matchedRate <= baseRate) continue;
+      const totalExpected = intersectionCount([targetExpectedSet, ...conditionFeatureSets]);
+      const matchedExpected = intersectionCount([targetExpectedSet, ...conditionAtomSets]);
+      const unmatchedExpected = totalExpected - matchedExpected;
+      const baseRate = totalExpected / eligible;
+      const matchedRate = matchedExpected / matched;
+      if (matchedRate <= baseRate) continue;
 
-    const baseBits = eligible * entropyBinary(totalExpected, eligible);
-    const residualBits = matched * entropyBinary(matchedExpected, matched) + unmatched * entropyBinary(unmatchedExpected, unmatched);
-    const modelBits = (candidate.conditions.length + 1) * modelUnit;
-    const bitsSaved = baseBits - residualBits - modelBits;
-    if (!(bitsSaved > 0)) continue;
+      const baseBits = eligible * entropyBinary(totalExpected, eligible);
+      const residualBits = matched * entropyBinary(matchedExpected, matched) + unmatched * entropyBinary(unmatchedExpected, unmatched);
+      const bitsSaved = baseBits - residualBits - modelBits;
+      if (!(bitsSaved > 0)) continue;
 
-    const smoothed = (matchedExpected + 1) / (matched + 2);
-    patterns.push({
-      conditions: candidate.conditions.slice().sort((a, b) => atomKey(a).localeCompare(atomKey(b))),
-      target: candidate.target,
-      expected: candidate.expected,
-      support: matchedExpected,
-      exceptions: matched - matchedExpected,
-      covered: matched,
-      eligible,
-      reliability: matchedRate,
-      smoothed_reliability: smoothed,
-      base_rate: baseRate,
-      bits_saved: bitsSaved,
-      predictive_code_bits: -Math.log2(smoothed) + modelBits / eligible,
-    });
+      const smoothed = (matchedExpected + 1) / (matched + 2);
+      patterns.push({
+        conditions: condition.slice().sort((a, b) => atomKey(a).localeCompare(atomKey(b))),
+        target,
+        expected,
+        support: matchedExpected,
+        exceptions: matched - matchedExpected,
+        covered: matched,
+        eligible,
+        reliability: matchedRate,
+        smoothed_reliability: smoothed,
+        base_rate: baseRate,
+        bits_saved: bitsSaved,
+        predictive_code_bits: -Math.log2(smoothed) + modelBits / eligible,
+      });
+    }
   }
 
   patterns.sort((a, b) =>
