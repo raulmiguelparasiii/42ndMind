@@ -10,8 +10,7 @@ assert.strictEqual(Mind.chooseAction, undefined);
 assert.strictEqual(Mind.plan, undefined);
 assert.strictEqual(Mind.policy, undefined);
 
-// Regression against the authored psychology that was previously mistaken for
-// the mind. These concepts must not return under renamed helper functions.
+// Regression against authored psychology previously mistaken for the mind.
 const source = fs.readFileSync(path.join(__dirname, 'one-mind.js'), 'utf8');
 for (const forbidden of [
   'sceneSignature',
@@ -23,6 +22,10 @@ for (const forbidden of [
   'open_mixed',
   'purposive_completion',
   'HORIZON',
+  'dominates(',
+  'leastGrounded(',
+  'consequenceFor(',
+  'action_counts',
 ]) assert.ok(!source.includes(forbidden), `forbidden embodied scaffold returned: ${forbidden}`);
 
 const m = Mind.one(4, 2);
@@ -38,7 +41,8 @@ for (let t = 0; t < STEPS; t++) {
   if (a === 2) action2++;
 
   // Synthetic reality only. The mind is not told this rule: motor 2 repeatedly
-  // produces a different bodily consequence from the other primitive motors.
+  // makes both primitive concern magnitudes smaller; the other motors make them
+  // larger. There is no supplied success label or action preference.
   let p0 = frame.at(-2) + 2;
   let p1 = frame.at(-1) + 1;
   if (a === 2) { p0 -= 10; p1 -= 5; }
@@ -60,5 +64,28 @@ assert.strictEqual(m.context_uses, undefined);
 assert.ok(m.kernel.learned_patterns.length > 0);
 assert.ok(action2 > 0);
 
-console.log('42ndMind scaffold-free embodied relation: PASS');
-console.log(`experiences=${m.experiences.length} patterns=${m.kernel.learned_patterns.length} motor=${m.motor}`);
+// The learned structure must contain the reversible relation needed for purpose:
+// an experienced decrease can make the action that produced it recoverable. This
+// is not a policy table; `action` is simply another target in the same compressed
+// relation as the observed bodily consequence.
+assert.ok(m.kernel.learned_patterns.some(pattern =>
+  pattern.target === 'action' &&
+  pattern.expected === 2 &&
+  pattern.conditions.some(condition =>
+    condition.feature === 'concern_0_order' && condition.value === 'less'
+  )
+), 'experience did not form an outcome-to-action relation');
+
+// Once both primitive concerns are absent, the learned decrease relation no longer
+// has purposive authority. With no warranted completion, embodied motor variation
+// continues instead of compulsively repeating the formerly useful action.
+const zeroMotors = new Set();
+for (let i = 0; i < 8; i++) {
+  frame = [0, 0, 255, 0, 0];
+  Mind.C(m, frame);
+  zeroMotors.add(m.motor);
+}
+assert.ok(zeroMotors.size > 1, 'closed concern incorrectly kept a fixed motor purpose alive');
+
+console.log('42ndMind purpose-relative embodied relation: PASS');
+console.log(`experiences=${m.experiences.length} patterns=${m.kernel.learned_patterns.length} zero_motor_variants=${zeroMotors.size}`);
