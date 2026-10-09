@@ -21,7 +21,8 @@ jobs:
         with:
           node-version: '24'
       - run: node one-mind.test.js
-      # One continuous individual: enough protected development to form reusable
-      # structure, followed immediately by autonomous life. This is diagnostic,
-      # not a pass/fail score threshold; poor behavior must remain visible.
-      - run: SEEDS=420070 DEVELOPMENT_STEPS=120 AUTONOMOUS_STEPS=80 node micro-world-single-life.js
+      # One continuous individual. This bounded run is for falsifying whether C
+      # actually supplies any grounded motor continuation before paying the cost
+      # of a long-life benchmark. It is not a score threshold and does not alter
+      # the world or mind architecture.
+      - run: SEEDS=420070 DEVELOPMENT_STEPS=64 AUTONOMOUS_STEPS=32 node micro-world-single-life.js
