@@ -25,20 +25,40 @@ function runMind(seed){
   const mind=Mind.one(World.ACTIONS,World.PRESSURE_CHANNELS);
   let frame=World.sense(world),steps=0,frictionSum=0,maxFriction=World.bodyFriction(world);
   const actions=Array(World.ACTIONS).fill(0);
+  let groundedMotorSteps=0,groundedAutonomousSteps=0;
+
+  // This is external instrumentation only. `spontaneousMotor` advances the
+  // embodiment's variation state; a cognition-grounded completion does not. The
+  // benchmark can therefore observe whether C supplied the motor without giving
+  // that fact back to the mind or affecting the action.
+  let variationBefore=mind.motor_variation;
   Mind.C(mind,frame);
+  let groundedCurrent=mind.motor_variation===variationBefore;
 
   while(steps<TOTAL_STEPS&&world.agent.alive){
     const action=mind.motor;
     assert.ok(Number.isInteger(action)&&action>=0&&action<World.ACTIONS);
     actions[action]++;
+    if(groundedCurrent){
+      groundedMotorSteps++;
+      if(steps>=DEVELOPMENT_STEPS)groundedAutonomousSteps++;
+    }
+
     const after=World.act(world,action);
+    variationBefore=mind.motor_variation;
     Mind.C(mind,after);
+    groundedCurrent=mind.motor_variation===variationBefore;
     frame=after;steps++;
     const friction=World.bodyFriction(world);frictionSum+=friction;maxFriction=Math.max(maxFriction,friction);
   }
 
   assert.strictEqual(mind.whole,1);
   assert.strictEqual(mind.experiences.length,steps);
+  const activePatterns=mind.structure.patterns.filter(p=>p.active!==false);
+  const actionPatterns=activePatterns.filter(p=>p.target==='action');
+  const purposiveActionPatterns=actionPatterns.filter(p=>p.conditions.some(c=>
+    /^relation_c\d+_order$/.test(c.feature)&&c.value==='less'
+  ));
   return{
     seed,steps,
     autonomous_steps_survived:Math.max(0,steps-DEVELOPMENT_STEPS),
@@ -46,8 +66,13 @@ function runMind(seed){
     terminal_friction:World.bodyFriction(world),terminal_pressures:World.bodyPressures(world),
     avg_friction:Number((frictionSum/Math.max(1,steps)).toFixed(2)),max_friction:maxFriction,
     action_kinds:actions.filter(Boolean).length,action_counts:actions,
+    grounded_motor_steps:groundedMotorSteps,
+    grounded_autonomous_steps:groundedAutonomousSteps,
     experiences:mind.experiences.length,
     learned_patterns:mind.structure.patterns.length,
+    active_patterns:activePatterns.length,
+    action_patterns:actionPatterns.length,
+    purposive_action_patterns:purposiveActionPatterns.length,
     learned_symbols:mind.structure.symbols.length,
     ordered_rules:mind.structure.order_rules.length,
     ordered_max_depth:mind.structure.order_rules.reduce((n,r)=>Math.max(n,r.depth||0),0),
@@ -84,6 +109,8 @@ const summary={
   babble_mean_autonomous_life:Number(mean(babble.map(x=>x.autonomous_steps_survived)).toFixed(1)),
   unified_mean_friction:Number(mean(unified.map(x=>x.avg_friction)).toFixed(2)),
   babble_mean_friction:Number(mean(babble.map(x=>x.avg_friction)).toFixed(2)),
+  grounded_motor_steps:unified.reduce((n,x)=>n+x.grounded_motor_steps,0),
+  grounded_autonomous_steps:unified.reduce((n,x)=>n+x.grounded_autonomous_steps,0),
 };
 
 console.log('42ndMind one-mind single-life run: COMPLETE');
