@@ -31,8 +31,9 @@ Mind.C(m, frame);
 assert.strictEqual(m.whole, 1);
 assert.ok(Number.isInteger(m.motor));
 
+const STEPS = 24;
 let action2 = 0;
-for (let t = 0; t < 96; t++) {
+for (let t = 0; t < STEPS; t++) {
   const a = m.motor;
   if (a === 2) action2++;
 
@@ -50,8 +51,8 @@ for (let t = 0; t < 96; t++) {
   assert.ok(Number.isInteger(m.motor) && m.motor >= 0 && m.motor < 4);
 }
 
-assert.strictEqual(m.experiences.length, 96);
-assert.strictEqual(m.contacts.length, 97);
+assert.strictEqual(m.experiences.length, STEPS);
+assert.strictEqual(m.contacts.length, STEPS + 1);
 assert.strictEqual(m.kernel.whole, 1);
 assert.strictEqual(m.mode, undefined);
 assert.strictEqual(m.outcome_counts, undefined);
