@@ -21,14 +21,14 @@
 const Rel = require('./one-rule.js');
 
 const HORIZON = 12;
-const SAMPLE_EVERY = 8;
+const DELAYED_SAMPLE_EVERY = 8;
+const MATERIAL_PRESSURE_DELTA = 6;
 
 function maxIndex(xs) {
   let best = 0;
   for (let i = 1; i < xs.length; i++) if (xs[i] > xs[best]) best = i;
   return best;
 }
-function max(xs) { return xs.length ? Math.max(...xs) : 0; }
 function mean(xs) { return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : 0; }
 
 function pressureVector(state, frame) {
@@ -40,19 +40,22 @@ function continuity(state, frame) {
 function worldContact(state, frame) {
   return frame.slice(0, frame.length - state.pressure_count - 1);
 }
+
 function sceneSignature(state, frame) {
-  // A deliberately coarse structural contact class. C should discover reusable
-  // relations, not memorize nearly unique whole frames. No channel is given a
-  // semantic name: the summary uses only generic local density/diversity plus
-  // coarse variation in the remaining primitive contact.
+  // Preserve primitive distinctions that can materially change an intervention
+  // while still avoiding whole-frame memorization. The mind receives no labels
+  // for these values. In the current body/world interface the first nine contacts
+  // are local contact values and one later primitive contact carries orientation.
   const w = worldContact(state, frame);
   const local = w.slice(0, Math.min(9, w.length));
-  const nonzero = local.filter(x => x !== 0).length;
-  const distinct = new Set(local).size;
-  const rest = w.slice(9);
-  const restHigh = rest.filter(x => x >= 128).length;
-  return `${Math.min(3,Math.floor(nonzero/2))}:${Math.min(3,distinct-1)}:${Math.min(3,Math.floor(restHigh/2))}`;
+  const center = local[4] || 0;
+  const dir = Math.floor((w[12] || 0) / 64) & 3;
+  const frontIndex = [1,5,7,3][dir];
+  const front = local[frontIndex] || 0;
+  const lightBand = Math.floor((w[9] || 0) / 64);
+  return `${center}:${front}:${dir}:${lightBand}`;
 }
+
 function pressureBand(p) {
   if (p < 32) return 'low';
   if (p < 96) return 'present';
@@ -100,81 +103,131 @@ function outcomeOf(state, startFrame, endFrame, purposeIndex) {
   return 'open_mixed';
 }
 
-function sampleFromTrace(state, endFrame) {
+function contextOf(state, frame, action, lag) {
+  const pv = pressureVector(state, frame);
+  const purpose = maxIndex(pv);
+  return {
+    purpose,
+    pressure_band: pressureBand(pv[purpose]),
+    runway_band: runwayBand(learnedRunway(state, frame)),
+    scene: sceneSignature(state, frame),
+    action,
+    lag,
+  };
+}
+
+function sampleImmediate(state, before, action, after) {
+  const pv = pressureVector(state, before);
+  const purpose = maxIndex(pv);
+  return {
+    ...contextOf(state, before, action, 'immediate'),
+    outcome: outcomeOf(state, before, after, purpose),
+  };
+}
+
+function sampleDelayed(state, endFrame) {
   if (state.transitions.length < HORIZON) return null;
   const start = state.transitions[state.transitions.length - HORIZON];
   const pv = pressureVector(state, start.before);
   const purpose = maxIndex(pv);
   return {
-    purpose,
-    pressure_band: pressureBand(pv[purpose]),
-    runway_band: runwayBand(start.runway),
-    scene: sceneSignature(state, start.before),
-    action: start.action,
+    ...contextOf(state, start.before, start.action, 'delayed'),
     outcome: outcomeOf(state, start.before, endFrame, purpose),
   };
 }
 
-function relationFor(state, frame, action) {
-  const pv = pressureVector(state, frame);
-  const purpose = maxIndex(pv);
-  const runway = learnedRunway(state, frame);
-  const partial = {
-    purpose,
-    pressure_band: pressureBand(pv[purpose]),
-    runway_band: runwayBand(runway),
-    scene: sceneSignature(state, frame),
-    action,
-  };
-  const prediction = Rel.predict(state.kernel, partial);
-  return { action, partial, pattern: prediction.best_by_target.outcome || null };
+function materialImmediate(state, before, after) {
+  if (continuity(state,before) !== continuity(state,after)) return true;
+  const a = pressureVector(state,before), b = pressureVector(state,after);
+  return a.some((x,i)=>Math.abs(b[i]-x) >= MATERIAL_PRESSURE_DELTA);
 }
-function patternRank(pattern) { return pattern ? pattern.predictive_code_bits : Infinity; }
-function leastUsed(state, candidates) {
-  let best = candidates[0];
-  for (const a of candidates) if (state.uses[a] < state.uses[best]) best = a;
+
+function integrateSample(state, sample, provenance) {
+  state.kernel = Rel.integrate(state.kernel, {
+    id: `embodied:${state.samples_integrated}`,
+    sample,
+    provenance,
+  });
+  state.samples_integrated++;
+  const k = `${sample.lag}:${sample.outcome}`;
+  state.outcome_counts[k] = (state.outcome_counts[k] || 0) + 1;
+}
+
+function patternFor(state, frame, action) {
+  const candidates = [];
+  for (const lag of ['immediate','delayed']) {
+    const partial = contextOf(state, frame, action, lag);
+    const prediction = Rel.predict(state.kernel, partial);
+    const p = prediction.best_by_target.outcome || null;
+    if (p && !candidates.some(x=>x.pattern.id===p.id)) candidates.push({pattern:p,lag,partial});
+  }
+  candidates.sort((a,b)=>
+    a.pattern.predictive_code_bits-b.pattern.predictive_code_bits ||
+    b.pattern.bits_saved-a.pattern.bits_saved ||
+    b.pattern.covered-a.pattern.covered ||
+    (a.lag==='immediate'?-1:1)
+  );
+  return candidates[0] || null;
+}
+
+function relationFor(state, frame, action) {
+  return { action, evidence: patternFor(state,frame,action) };
+}
+function patternRank(evidence) { return evidence ? evidence.pattern.predictive_code_bits : Infinity; }
+
+function contextUseKey(state, frame, action) {
+  const pv=pressureVector(state,frame), purpose=maxIndex(pv);
+  return `${purpose}|${pressureBand(pv[purpose])}|${sceneSignature(state,frame)}|${action}`;
+}
+function leastObserved(state, frame, candidates) {
+  let best=candidates[0], n=state.context_uses[contextUseKey(state,frame,best)]||0;
+  for (const a of candidates.slice(1)) {
+    const m=state.context_uses[contextUseKey(state,frame,a)]||0;
+    if (m<n || (m===n && state.uses[a]<state.uses[best])) { best=a; n=m; }
+  }
   return best;
 }
 
 function closeMotorRelation(state, frame) {
-  const runway = learnedRunway(state, frame);
-  const rb = runwayBand(runway);
+  const rb = runwayBand(learnedRunway(state, frame));
   const relations = Array.from({length:state.action_count},(_,a)=>relationFor(state,frame,a));
 
-  // Stone orientation + the same compression criterion: learned open relief is
-  // a warranted completion relation; within the same status, the description
-  // with the shortest predictive code governs the continuation.
-  const relief = relations.filter(x => x.pattern && x.pattern.expected === 'open_relief');
+  const relief = relations.filter(x => x.evidence && x.evidence.pattern.expected === 'open_relief');
   if (relief.length) {
-    relief.sort((a,b)=>patternRank(a.pattern)-patternRank(b.pattern) || b.pattern.support-a.pattern.support || a.action-b.action);
+    relief.sort((a,b)=>patternRank(a.evidence)-patternRank(b.evidence) ||
+      b.evidence.pattern.support-a.evidence.pattern.support || a.action-b.action);
     state.mode = 'answerable_completion';
     return relief[0].action;
   }
 
-  const mixed = relations.filter(x => x.pattern && x.pattern.expected === 'open_mixed');
+  const mixed = relations.filter(x => x.evidence && x.evidence.pattern.expected === 'open_mixed');
   if ((rb === 'tight' || rb === 'immediate') && mixed.length) {
-    mixed.sort((a,b)=>patternRank(a.pattern)-patternRank(b.pattern) || b.pattern.support-a.pattern.support || a.action-b.action);
+    mixed.sort((a,b)=>patternRank(a.evidence)-patternRank(b.evidence) ||
+      b.evidence.pattern.support-a.evidence.pattern.support || a.action-b.action);
     state.mode = 'practical_completion';
     return mixed[0].action;
   }
 
-  // OneLogic leaves gaps open. Practical slack determines whether firsthand
-  // contact is still affordable; it does not manufacture a goal or reward.
-  const nonDefeated = relations.filter(x => !x.pattern || (x.pattern.expected !== 'closed' && x.pattern.expected !== 'open_worse'));
+  const nonDefeated = relations.filter(x => !x.evidence ||
+    (x.evidence.pattern.expected !== 'closed' && x.evidence.pattern.expected !== 'open_worse'));
+
+  // Inquiry is local to the current unresolved relation, not a global motor cycle.
+  // Practical slack makes firsthand discrimination affordable.
   if (rb === 'wide' || rb === 'bounded') {
     const pool = nonDefeated.length ? nonDefeated.map(x=>x.action) : relations.map(x=>x.action);
     state.mode = 'answerable_inquiry';
-    return leastUsed(state, pool);
+    return leastObserved(state,frame,pool);
   }
 
-  const known = nonDefeated.filter(x=>x.pattern);
+  const known = nonDefeated.filter(x=>x.evidence);
   if (known.length) {
-    known.sort((a,b)=>patternRank(a.pattern)-patternRank(b.pattern) || a.action-b.action);
+    known.sort((a,b)=>patternRank(a.evidence)-patternRank(b.evidence) || a.action-b.action);
     state.mode = 'practical_gap';
     return known[0].action;
   }
+
   state.mode = 'unresolved_gap';
-  return leastUsed(state, relations.map(x=>x.action));
+  return leastObserved(state,frame,relations.map(x=>x.action));
 }
 
 function one(actionCount, pressureCount=1) {
@@ -190,6 +243,8 @@ function one(actionCount, pressureCount=1) {
     previous_frame: null,
     motor: null,
     uses: Array(actionCount).fill(0),
+    context_uses: {},
+    outcome_counts: {},
     samples_integrated: 0,
     mode: 'uncontacted',
     prior: {
@@ -207,25 +262,29 @@ function C(state, realityContact) {
 
   if (state.previous_frame && state.motor != null) {
     const before = state.previous_frame;
-    state.transitions.push({ before: before.slice(), action: state.motor, after: frame.slice(), runway: learnedRunway(state, before) });
+    const transition = { before: before.slice(), action: state.motor, after: frame.slice(), runway: learnedRunway(state,before) };
+    state.transitions.push(transition);
     state.uses[state.motor]++;
+    const key=contextUseKey(state,before,state.motor);
+    state.context_uses[key]=(state.context_uses[key]||0)+1;
+
+    // Material immediate consequences must not be diluted inside a later window.
+    // They are reality-contact of the same kind as delayed consequences and are
+    // handed to the same generic compression law.
+    if (materialImmediate(state,before,frame)) {
+      integrateSample(state,sampleImmediate(state,before,state.motor,frame),'same-C immediate embodied consequence');
+    }
   }
+
   state.contacts.push(frame.slice());
   if (state.contacts.length > 4096) state.contacts.shift();
   if (state.transitions.length > 4096) state.transitions.shift();
 
-  // Empirical foresight is learned as a delayed action/consequence relation.
-  // No hypothetical future is generated: actuality supplies both endpoints.
-  if (state.transitions.length >= HORIZON && state.transitions.length % SAMPLE_EVERY === 0) {
-    const sample = sampleFromTrace(state, frame);
-    if (sample) {
-      state.kernel = Rel.integrate(state.kernel, {
-        id: `embodied:${state.samples_integrated}`,
-        sample,
-        provenance: 'same-C embodied action/consequence relation',
-      });
-      state.samples_integrated++;
-    }
+  // Delayed empirical consequence remains available as a second timescale. No
+  // hypothetical future is generated: both endpoints came from actuality.
+  if (state.transitions.length >= HORIZON && state.transitions.length % DELAYED_SAMPLE_EVERY === 0) {
+    const sample=sampleDelayed(state,frame);
+    if (sample) integrateSample(state,sample,'same-C delayed embodied consequence');
   }
 
   state.previous_frame = frame;
