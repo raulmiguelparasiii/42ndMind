@@ -1,255 +1,187 @@
 'use strict';
 
-// Unified embodied 42ndMind prototype.
-//
-// Public developmental law:
+// Unified embodied 42ndMind.
 //
 //   M(t+1) = C(M(t) ⊕ R(t+1))
 //
-// There is deliberately no planner, policy, reward function, chooseAction(),
-// graph search, future simulator, or hand-written success-sequence routine here.
-// New reality-contact closes the same evolving relational state. Motor
-// continuation is one component of M.
+// The embodied path intentionally has no scene recognizer, pressure bands,
+// urgency/runway bands, reward, success/failure labels, fixed consequence
+// horizon, sequence-replay rule, planner, policy, or future simulator.
 //
-// Stone prior used here: embodied concern is already a signed relation. When
-// reality-contact changes a live pressure, perception itself supplies the sign:
-// pressure reduced => +1, unchanged => 0, pressure increased => -1. Repeated
-// contacts accumulate as defeasible relational evidence through the same kernel.
-// No semantic label such as success/failure/food/water is supplied.
+// The body supplies only two primitive interfaces:
+//   1. a finite set of motor commands;
+//   2. reality-contact in which the final N channels are distinct interoceptive
+//      concern magnitudes. Their world meanings are unknown to the mind.
 //
-// The remaining scene reduction, pressure bands, and runway bands are temporary
-// finite representation scaffolds and remain explicit targets for later removal.
+// Experience is the actual sensorimotor relation
+//
+//   perception_before -> motor -> perception_after
+//
+// preserved exactly in M. The generic relational kernel may compress recurring
+// regularities in those experiences. Numeric change is ordinary subtraction
+// between two perceived states; it is NOT a Philosopher's Stone signed axis and
+// carries no success/failure valence by itself.
+//
+// The only motor-closing commitments made here are consequences of the admitted
+// priors rather than extra faculties:
+//   - OneLogic: an ungrounded continuation remains unresolved and is contacted
+//     rather than silently treated as false;
+//   - Stone answerability: distinct material concerns are not collapsed into an
+//     invented scalar utility. Grounded consequence vectors are compared only by
+//     component-wise dominance. If neither dominates, the relation stays open.
+//
+// This is deliberately conservative. If these priors are insufficient for useful
+// continuation, the failure belongs to the developmental law; do not patch it
+// with a task-specific decision rule.
 
 const Rel = require('./one-rule.js');
 
-function mean(xs) { return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : 0; }
-
-function pressureVector(state, frame) {
-  return frame.slice(frame.length - state.pressure_count);
-}
-function continuity(state, frame) {
-  return frame.at(-(state.pressure_count + 1));
-}
-function worldContact(state, frame) {
-  return frame.slice(0, frame.length - state.pressure_count - 1);
-}
-
-function sceneSignature(state, frame) {
-  // Temporary finite representation scaffold. It preserves a small reusable
-  // slice of primitive contact while C is not yet able to create this reduction
-  // from the full sensor field by itself.
-  const w = worldContact(state, frame);
-  const local = w.slice(0, Math.min(9, w.length));
-  const center = local[4] || 0;
-  const dir = Math.floor((w[12] || 0) / 64) & 3;
-  const frontIndex = [1,5,7,3][dir];
-  const front = local[frontIndex] || 0;
-  const lightBand = Math.floor((w[9] || 0) / 64);
-  return `${center}:${front}:${dir}:${lightBand}`;
-}
-
-function pressureBand(p) {
-  if (p < 32) return 'b0';
-  if (p < 96) return 'b1';
-  if (p < 160) return 'b2';
-  if (p < 224) return 'b3';
-  return 'b4';
-}
-
-function learnedRunway(state, frame) {
-  const current = pressureVector(state, frame);
-  const recent = state.contacts.slice(-20);
-  if (recent.length < 3) return Infinity;
-  const slopes = current.map((_, i) => {
-    const deltas = [];
-    for (let j = 1; j < recent.length; j++) {
-      const a = pressureVector(state, recent[j-1]);
-      const b = pressureVector(state, recent[j]);
-      const d = b[i] - a[i];
-      if (d > 0 && d < 48) deltas.push(d);
-    }
-    return deltas.length ? mean(deltas) : 0;
-  });
-  let runway = Infinity;
-  for (let i = 0; i < current.length; i++) {
-    if (slopes[i] > 0.05) runway = Math.min(runway, (255-current[i])/slopes[i]);
-  }
-  return runway;
-}
-function runwayBand(r) {
-  if (!Number.isFinite(r) || r > 80) return 'r0';
-  if (r > 32) return 'r1';
-  if (r > 14) return 'r2';
-  return 'r3';
-}
-
-function sign(x) { return x > 0 ? 1 : x < 0 ? -1 : 0; }
-
-function signedEffect(state, before, after) {
-  // Positive means actuality moved the embodied relation toward relief on that
-  // pressure dimension. Negative means it moved away. Nothing here names what
-  // the pressure is or what action ought to be taken.
-  const a = pressureVector(state, before);
-  const b = pressureVector(state, after);
-  return a.map((x,i)=>sign(x-b[i]));
-}
-
-function contextOf(state, frame, action) {
+function splitContact(state, frame) {
+  const cut = frame.length - state.concern_count;
   return {
-    scene: sceneSignature(state, frame),
-    pressures: pressureVector(state, frame).map(pressureBand).join(':'),
-    runway: runwayBand(learnedRunway(state, frame)),
+    percept: frame.slice(0, cut),
+    concern: frame.slice(cut),
+  };
+}
+
+function difference(after, before) {
+  return after.map((value, i) => value - before[i]);
+}
+
+function recordExperience(state, beforeFrame, action, afterFrame) {
+  const before = splitContact(state, beforeFrame);
+  const after = splitContact(state, afterFrame);
+  const experience = {
+    before: beforeFrame.slice(),
     action,
+    after: afterFrame.slice(),
   };
-}
+  state.experiences.push(experience);
+  state.action_counts[action]++;
 
-function integrateExperience(state, before, action, after) {
-  const effect = signedEffect(state, before, after);
-  const sample = {
-    ...contextOf(state, before, action),
-    effect,
-  };
+  // The learned sample contains only relations available from the actual
+  // before/action/after contact. No outcome class or hand-selected scene exists.
   state.kernel = Rel.integrate(state.kernel, {
-    id: `embodied:${state.samples_integrated}`,
-    sample,
-    provenance: 'same-C signed embodied relation from actual before/after contact',
+    id: `embodied:${state.experiences.length - 1}`,
+    sample: {
+      percept_before: before.percept,
+      concern_before: before.concern,
+      action,
+      percept_change: difference(after.percept, before.percept),
+      concern_change: difference(after.concern, before.concern),
+    },
+    provenance: 'actual sensorimotor relation',
+    raw: experience,
   });
-  state.samples_integrated++;
-  const key = effect.join(',');
-  state.outcome_counts[key] = (state.outcome_counts[key] || 0) + 1;
 }
 
-function evidenceFor(state, frame, action) {
-  const prediction = Rel.predict(state.kernel, contextOf(state, frame, action));
-  const p = prediction.best_by_target.effect || null;
-  if (!p || !Array.isArray(p.expected) || p.expected.length !== state.pressure_count) return null;
-  if (!p.expected.every(x => x === -1 || x === 0 || x === 1)) return null;
-  return p;
+function consequenceFor(state, contact, action) {
+  const prediction = Rel.predict(state.kernel, {
+    percept_before: contact.percept,
+    concern_before: contact.concern,
+    action,
+  });
+  const evidence = prediction.best_by_target.concern_change || null;
+  if (!evidence || !Array.isArray(evidence.expected) || evidence.expected.length !== state.concern_count) return null;
+  if (!evidence.expected.every(Number.isFinite)) return null;
+  return {
+    action,
+    change: evidence.expected.slice(),
+    after: contact.concern.map((value, i) => value + evidence.expected[i]),
+    evidence,
+  };
 }
 
-function signedAlignment(state, frame, pattern) {
-  if (!pattern) return null;
-  const pressures = pressureVector(state, frame);
-  const total = pressures.reduce((a,b)=>a+b,0);
-  if (!total) return 0;
-  const raw = pattern.expected.reduce((s,e,i)=>s + e * pressures[i], 0) / total;
-  // Reliability changes authority, not sign. Repeated experience therefore adds
-  // weight without converting a defeasible relation into truth.
-  return raw * pattern.smoothed_reliability;
+function dominates(a, b) {
+  let strict = false;
+  for (let i = 0; i < a.after.length; i++) {
+    if (a.after[i] > b.after[i]) return false;
+    if (a.after[i] < b.after[i]) strict = true;
+  }
+  return strict;
 }
 
-function contextUseKey(state, frame, action) {
-  return `${sceneSignature(state,frame)}|${pressureVector(state,frame).map(pressureBand).join(':')}|${action}`;
-}
-function leastObserved(state, frame, candidates) {
-  let best=candidates[0], n=state.context_uses[contextUseKey(state,frame,best)]||0;
-  for (const a of candidates.slice(1)) {
-    const m=state.context_uses[contextUseKey(state,frame,a)]||0;
-    if (m<n || (m===n && state.uses[a]<state.uses[best])) { best=a; n=m; }
+function leastContacted(state, candidates) {
+  let best = candidates[0];
+  for (const candidate of candidates.slice(1)) {
+    if (state.action_counts[candidate] < state.action_counts[best] ||
+        (state.action_counts[candidate] === state.action_counts[best] && candidate < best)) best = candidate;
   }
   return best;
 }
 
 function closeMotorRelation(state, frame) {
-  const relations = Array.from({length:state.action_count},(_,action)=>{
-    const evidence=evidenceFor(state,frame,action);
-    return {action,evidence,alignment:signedAlignment(state,frame,evidence)};
-  });
+  const contact = splitContact(state, frame);
+  const known = [];
+  const unresolved = [];
 
-  // A positive signed relation means accumulated experience says this available
-  // continuation has tended to move the currently pressured whole toward greater
-  // answerability. All pressure dimensions participate in the same comparison.
-  const answerable = relations.filter(x=>x.alignment != null && x.alignment > 0);
-  if (answerable.length) {
-    answerable.sort((a,b)=>
-      b.alignment-a.alignment ||
-      a.evidence.predictive_code_bits-b.evidence.predictive_code_bits ||
-      b.evidence.covered-a.evidence.covered ||
-      a.action-b.action
-    );
-    state.mode='answerable_completion';
-    return answerable[0].action;
+  for (let action = 0; action < state.action_count; action++) {
+    const consequence = consequenceFor(state, contact, action);
+    if (consequence) known.push(consequence);
+    else unresolved.push(action);
   }
 
-  const rb=runwayBand(learnedRunway(state,frame));
-  const unresolved=relations.filter(x=>!x.evidence);
+  // OneLogic: an available continuation that reality has not grounded remains a
+  // live possibility. Contact the least-grounded one rather than pretending that
+  // absence of evidence is negative evidence.
+  if (unresolved.length) return leastContacted(state, unresolved);
 
-  // When firsthand discrimination remains affordable, unresolved alternatives
-  // remain open and reality-contact is used to distinguish them.
-  if ((rb==='r0'||rb==='r1') && unresolved.length) {
-    state.mode='answerable_inquiry';
-    return leastObserved(state,frame,unresolved.map(x=>x.action));
-  }
+  // No concern may buy improvement by silently hiding damage to another. Pareto
+  // dominance is the strongest comparison available without inventing weights or
+  // trade-off preferences that reality has not supplied.
+  const frontier = known.filter(candidate =>
+    !known.some(other => other.action !== candidate.action && dominates(other, candidate))
+  );
 
-  const known=relations.filter(x=>x.evidence);
-  if (known.length) {
-    known.sort((a,b)=>
-      b.alignment-a.alignment ||
-      a.evidence.predictive_code_bits-b.evidence.predictive_code_bits ||
-      a.action-b.action
-    );
-    state.mode='practical_completion';
-    return known[0].action;
-  }
+  if (frontier.length === 1) return frontier[0].action;
 
-  state.mode='unresolved_gap';
-  return leastObserved(state,frame,relations.map(x=>x.action));
+  // If several grounded continuations remain non-dominated, OneLogic still does
+  // not force a conclusion. Further contact is the only warranted discriminator.
+  return leastContacted(state, frontier.map(x => x.action));
 }
 
-function one(actionCount, pressureCount=1) {
+function one(actionCount, concernCount = 1) {
   if (!Number.isInteger(actionCount) || actionCount < 1) throw new Error('actionCount must be positive');
-  if (!Number.isInteger(pressureCount) || pressureCount < 1) throw new Error('pressureCount must be positive');
+  if (!Number.isInteger(concernCount) || concernCount < 1) throw new Error('concernCount must be positive');
   return {
     whole: 1,
     kernel: Rel.one(),
     action_count: actionCount,
-    pressure_count: pressureCount,
+    concern_count: concernCount,
     contacts: [],
-    transitions: [],
-    previous_frame: null,
+    experiences: [],
+    previous_contact: null,
     motor: null,
-    uses: Array(actionCount).fill(0),
-    context_uses: {},
-    outcome_counts: {},
-    samples_integrated: 0,
-    mode: 'uncontacted',
+    action_counts: Array(actionCount).fill(0),
     prior: {
-      stone: 'embodied concern is signed; reality-contact that reduces pressure is positive relative to that concern, increase is negative, and all materially relevant pressures remain jointly answerable',
-      practicality: 'finite runway limits direct trial, so warranted learned relations gain authority when further discrimination would consume the possibility of correction',
-      onelogic: 'preserve undefeated possibilities, let repeated reality-contact accumulate defeasible authority, and keep unresolved alternatives open until actuality discriminates them',
+      stone: {
+        axes: {
+          x: ['Practicality', 'Empathy'],
+          z: ['Knowledge', 'Wisdom'],
+          y: ['Insulation', 'Answerability'],
+        },
+        note: 'Stone signs describe cognition orientation relative to reality; they are not outcome valence or pressure direction.',
+        answerability: 'materially relevant relations remain jointly exposed to reality; one concern cannot be hidden by an invented scalar trade-off',
+      },
+      onelogic: 'preserve undefeated possibilities; conclude only what grounded relations force; seek discriminating reality-contact when unresolved',
+      embodiment: 'interoceptive concern channels are perceived bodily magnitudes, not rewards and not Stone coordinates',
     },
   };
 }
 
 function C(state, realityContact) {
   if (!state || state.whole !== 1) throw new Error('C requires one whole mind');
-  if (!Array.isArray(realityContact) || realityContact.length < state.pressure_count + 1) throw new Error('invalid reality-contact');
+  if (!Array.isArray(realityContact) || realityContact.length <= state.concern_count) throw new Error('invalid reality-contact');
+  if (!realityContact.every(Number.isFinite)) throw new Error('reality-contact must be finite numeric perception');
+
   const frame = realityContact.slice();
-
-  if (state.previous_frame && state.motor != null) {
-    const before=state.previous_frame;
-    state.transitions.push({before:before.slice(),action:state.motor,after:frame.slice()});
-    state.uses[state.motor]++;
-    const key=contextUseKey(state,before,state.motor);
-    state.context_uses[key]=(state.context_uses[key]||0)+1;
-
-    // Every actual transition is experience. Its usefulness is not assigned by
-    // a reward label; it is already present in the signed change perceived by M.
-    integrateExperience(state,before,state.motor,frame);
+  if (state.previous_contact && state.motor != null) {
+    recordExperience(state, state.previous_contact, state.motor, frame);
   }
 
   state.contacts.push(frame.slice());
-  if (state.contacts.length > 4096) state.contacts.shift();
-  if (state.transitions.length > 4096) state.transitions.shift();
-
-  state.previous_frame=frame;
-  if (continuity(state,frame)<=0) {
-    state.motor=null;
-    state.mode='closed';
-    return state;
-  }
-
-  state.motor=closeMotorRelation(state,frame);
+  state.previous_contact = frame;
+  state.motor = closeMotorRelation(state, frame);
   return state;
 }
 
