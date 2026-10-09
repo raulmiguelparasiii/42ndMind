@@ -12,11 +12,17 @@
 //   not merely hidden/ignored while the pressure persists. Continued capacity
 //   for reality-contact is a prerequisite for answerability.
 //
+// Practicality prior:
+//   reality imposes finite time/capacity and some consequences are irreversible.
+//   Directly trying every live possibility is therefore not always available.
+//   When learned relations can project consequences, use them before committing;
+//   as embodied constraint rises, demand stronger warrant for risky inquiry.
+//
 // OneLogic prior:
 //   preserve undefeated outcome possibilities; do not turn undefined into false;
 //   distinguish strict consequence from defeasible preference; when unresolved,
-//   prefer discriminating reality-contact; when an observation defeats the model,
-//   keep the observation and reopen/expand the represented outcomes.
+//   prefer discriminating reality-contact that does not gratuitously destroy the
+//   capacity for further contact; reopen/expand the representation when defeated.
 
 function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
 function mean(xs) { return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : 0; }
@@ -43,8 +49,6 @@ function frameDistance(a, b) {
 }
 
 function sensoryChange(a, b) {
-  // Exclude continuity and friction so reality-contact cannot be faked merely by
-  // changing the two innate guidance contacts themselves.
   const n = Math.max(0, Math.min(a.length, b.length) - 2);
   if (!n) return 0;
   let sum = 0;
@@ -71,9 +75,13 @@ function one(actionCount) {
       defeasible_answerability: 0,
       discriminating_inquiry: 0,
       low_pressure_inquiry: 0,
+      foresight_strict: 0,
+      foresight_defeasible: 0,
+      practical_inquiry: 0,
     },
     prior: {
       stone: 'resolve real pressure through answerable reality-contact; do not prefer insulation merely because it hides friction; preserve the capacity for continued reality-contact',
+      practicality: 'finite time/capacity makes exhaustive direct trial impossible; use learned consequence structure to infer before irreversible commitment, with warrant proportional to constraint',
       onelogic: 'preserve undefeated possibilities; assert only forced consequence; seek discriminating contact when unresolved; reopen representation when defeated',
     },
   };
@@ -108,10 +116,6 @@ function nearestOutcomes(state, frame, action, limit = 24) {
 }
 
 function trajectoryOutcome(state, candidate, horizon = 6) {
-  // Follow the actually experienced continuation after this intervention. This
-  // is generic temporal consequence, not a world planner. A discontinuity in
-  // the experienced stream (for example a body reset after failed continuity)
-  // ends the trajectory rather than being treated as a beneficial pressure drop.
   const pressures = [pressure(candidate.after)];
   const contacts = [continuity(candidate.after)];
   let last = candidate.after;
@@ -177,11 +181,105 @@ function actionModel(state, frame, action) {
   };
 }
 
+function keepDiverse(nodes, limit) {
+  if (nodes.length <= limit) return nodes;
+  const chosen = [];
+  const seen = new Set();
+  function take(sorted, n) {
+    for (const x of sorted) {
+      const k = `${x.firstAction}|${x.depth}|${coarseSignature(x.frame)}|${x.unknown?1:0}|${x.minContinuity}`;
+      if (seen.has(k)) continue;
+      seen.add(k); chosen.push(x);
+      if (chosen.length >= n) break;
+    }
+  }
+  const q = Math.max(1, Math.floor(limit / 4));
+  take(nodes.slice().sort((a,b)=>a.minContinuity-b.minContinuity || b.maxPressure-a.maxPressure), q);
+  take(nodes.slice().sort((a,b)=>b.maxPressure-a.maxPressure || b.finalPressure-a.finalPressure), q*2);
+  take(nodes.slice().sort((a,b)=>a.finalPressure-b.finalPressure || b.support-a.support), q*3);
+  take(nodes.slice().sort((a,b)=>a.distance-b.distance || b.support-a.support), limit);
+  return chosen.slice(0, limit);
+}
+
+function prospectAction(state, frame, firstAction, horizon = 3, beam = 28) {
+  const initial = nearestOutcomes(state, frame, firstAction, 6);
+  const currentPressure = pressure(frame);
+  if (!initial.length) {
+    return {
+      action:firstAction, unknown:true, support:0, horizon,
+      contactPreservedFraction:1, anyContactLoss:false, forcedContactLoss:false,
+      improvementFraction:0, meanPressure:null, maxPressure:null, minPressure:null,
+      uncertainty:1, information:Infinity, forcedImprovement:false,
+    };
+  }
+
+  let nodes = initial.map(x => ({
+    firstAction,
+    frame:x.after.slice(),
+    minContinuity:continuity(x.after),
+    maxPressure:pressure(x.after),
+    finalPressure:pressure(x.after),
+    support:1,
+    distance:x.distance,
+    depth:1,
+    unknown:false,
+  }));
+
+  for (let depth = 1; depth < horizon; depth++) {
+    const expanded = [];
+    for (const node of nodes) {
+      if (node.minContinuity <= 0) { expanded.push(node); continue; }
+      let hadKnown = false;
+      for (let action = 0; action < state.action_count; action++) {
+        const outs = nearestOutcomes(state, node.frame, action, 3);
+        if (!outs.length) continue;
+        hadKnown = true;
+        for (const out of outs) {
+          expanded.push({
+            firstAction,
+            frame:out.after.slice(),
+            minContinuity:Math.min(node.minContinuity, continuity(out.after)),
+            maxPressure:Math.max(node.maxPressure, pressure(out.after)),
+            finalPressure:pressure(out.after),
+            support:node.support + 1,
+            distance:node.distance + out.distance,
+            depth:depth + 1,
+            unknown:false,
+          });
+        }
+      }
+      if (!hadKnown) expanded.push({ ...node, depth:depth+1, unknown:true });
+    }
+    nodes = keepDiverse(expanded, beam);
+  }
+
+  const preserved = nodes.filter(x=>x.minContinuity>0).length / nodes.length;
+  const finals = nodes.map(x=>x.finalPressure);
+  const unknownFraction = nodes.filter(x=>x.unknown).length / nodes.length;
+  const improvementFraction = finals.filter(p=>p<currentPressure).length / finals.length;
+  const signatures = nodes.map(x=>coarseSignature(x.frame));
+  return {
+    action:firstAction,
+    unknown:false,
+    support:initial.length,
+    horizon,
+    leaves:nodes.length,
+    contactPreservedFraction:preserved,
+    anyContactLoss:nodes.some(x=>x.minContinuity<=0),
+    forcedContactLoss:nodes.every(x=>x.minContinuity<=0),
+    improvementFraction,
+    meanPressure:mean(finals),
+    maxPressure:Math.max(...finals),
+    minPressure:Math.min(...finals),
+    uncertainty:unknownFraction,
+    information:entropy(signatures),
+    forcedImprovement:unknownFraction===0 && preserved===1 && Math.max(...finals)<currentPressure-0.5,
+  };
+}
+
 function leastUsed(state) {
   let best = 0;
-  for (let a = 1; a < state.action_count; a++) {
-    if (state.uses[a] < state.uses[best]) best = a;
-  }
+  for (let a = 1; a < state.action_count; a++) if (state.uses[a] < state.uses[best]) best = a;
   return best;
 }
 
@@ -198,75 +296,76 @@ function inquiryScore(state, model) {
 function chooseAction(state, frame) {
   if (!Array.isArray(frame) || frame.length < 2) throw new Error('guidance requires primitive contact, continuity, and friction');
 
-  if (state.transitions.length < state.action_count * 2) {
+  const currentPressure = pressure(frame);
+  const constraint = clamp(currentPressure / 255, 0, 1);
+
+  // Practicality changes bootstrap behavior: early inquiry is necessary, but as
+  // embodied constraint rises it is no longer rational to insist on exhaustively
+  // sampling every primitive intervention before using what has already been learned.
+  if (state.transitions.length < state.action_count * 2 && constraint < 0.35) {
     const action = leastUsed(state);
     state.decisions.bootstrap_inquiry++;
-    return { action, mode: 'bootstrap_inquiry', models: [] };
+    return { action, mode:'bootstrap_inquiry', models:[], prospects:[] };
   }
 
-  const models = Array.from({length: state.action_count}, (_, action) => actionModel(state, frame, action));
-  const currentPressure = pressure(frame);
-  const pressureActive = currentPressure >= 8;
+  const models = Array.from({length:state.action_count}, (_, action)=>actionModel(state, frame, action));
+  const horizon = constraint >= 0.55 ? 4 : constraint >= 0.25 ? 3 : 2;
+  const prospects = Array.from({length:state.action_count}, (_, action)=>prospectAction(state, frame, action, horizon));
 
-  // A known route that forces loss of reality-contact cannot be the preferred
-  // expression of answerability while an alternative remains live.
-  let continuityAdmissible = models.filter(m => !m.forcedContactLoss && (m.unknown || !m.anyContactLoss));
-  if (!continuityAdmissible.length) continuityAdmissible = models.filter(m => !m.forcedContactLoss);
-  if (!continuityAdmissible.length) continuityAdmissible = models.slice();
-
-  if (pressureActive) {
-    const strict = continuityAdmissible.filter(m =>
-      !m.unknown && m.support >= 2 && m.forcedImprovement && !m.insulating
-    );
+  // Under real constraint, infer before committing. Strict foresight means every
+  // represented continuation for the first action preserves contact and resolves
+  // pressure. This is not a reward maximum; it is a forced consequence claim over
+  // the currently represented live futures.
+  if (currentPressure >= 8) {
+    const strict = prospects.filter(p=>!p.unknown && p.support>=2 && p.forcedImprovement && !p.forcedContactLoss);
     if (strict.length) {
-      strict.sort((a,b) =>
-        (currentPressure - b.maxPressure) - (currentPressure - a.maxPressure) ||
-        b.contactPreservedFraction - a.contactPreservedFraction ||
-        b.support - a.support ||
-        b.contactGain - a.contactGain ||
-        a.action - b.action
-      );
-      state.decisions.strict_answerability++;
-      return { action: strict[0].action, mode: 'strict_answerability', models };
+      strict.sort((a,b)=>a.maxPressure-b.maxPressure || b.contactPreservedFraction-a.contactPreservedFraction || b.support-a.support || a.action-b.action);
+      state.decisions.foresight_strict++;
+      return { action:strict[0].action, mode:'foresight_strict', models, prospects };
     }
 
-    const plausible = continuityAdmissible.filter(m =>
-      !m.unknown && m.support >= 3 && !m.forcedWorsening && !m.insulating &&
-      m.contactPreservedFraction >= 0.90 &&
-      m.improvementFraction >= 0.60 && m.meanPressure < currentPressure - 0.25
+    // Defeasible foresight: choose the action whose currently live projected
+    // futures best preserve continued contact and resolve pressure, while making
+    // uncertainty increasingly costly as practical constraint rises.
+    const plausible = prospects.filter(p=>
+      !p.unknown && !p.forcedContactLoss && p.contactPreservedFraction >= 0.85 &&
+      p.improvementFraction >= 0.50
     );
     if (plausible.length) {
-      plausible.sort((a,b) => {
-        const ca = Math.min(1, a.support / 10);
-        const cb = Math.min(1, b.support / 10);
-        const sa = (currentPressure - a.meanPressure) * ca
-          - Math.max(0, a.maxPressure-currentPressure)*0.30
-          + a.contactGain*0.01
-          + a.contactPreservedFraction*4;
-        const sb = (currentPressure - b.meanPressure) * cb
-          - Math.max(0, b.maxPressure-currentPressure)*0.30
-          + b.contactGain*0.01
-          + b.contactPreservedFraction*4;
-        return sb - sa || b.support - a.support || a.action - b.action;
+      plausible.sort((a,b)=>{
+        const score = p =>
+          (p.contactPreservedFraction * 24)
+          + (currentPressure - p.meanPressure)
+          - Math.max(0,p.maxPressure-currentPressure)*0.45
+          - p.uncertainty*(8 + constraint*24)
+          + Math.min(6,p.information)*0.15;
+        return score(b)-score(a) || b.support-a.support || a.action-b.action;
       });
-      state.decisions.defeasible_answerability++;
-      return { action: plausible[0].action, mode: 'defeasible_answerability', models };
+      state.decisions.foresight_defeasible++;
+      return { action:plausible[0].action, mode:'foresight_defeasible', models, prospects };
     }
-
-    let admissible = continuityAdmissible.filter(m => !m.forcedWorsening && !m.insulating);
-    if (!admissible.length) admissible = continuityAdmissible.slice();
-    admissible.sort((a,b) => inquiryScore(state,b) - inquiryScore(state,a) || a.action - b.action);
-    state.decisions.discriminating_inquiry++;
-    return { action: admissible[0].action, mode: 'discriminating_inquiry', models };
   }
 
-  const inquiry = continuityAdmissible.slice().sort((a,b) => {
-    const sa = inquiryScore(state,a) - (a.unknown ? 0 : Math.max(0, a.meanPressure-currentPressure)/16);
-    const sb = inquiryScore(state,b) - (b.unknown ? 0 : Math.max(0, b.meanPressure-currentPressure)/16);
-    return sb - sa || a.action - b.action;
+  // If foresight cannot warrant a trajectory, inquiry remains legitimate, but
+  // Practicality forbids treating all experiments as equally affordable. As
+  // pressure rises, reject represented continuity loss and strongly prefer an
+  // informative intervention whose projected futures preserve capacity.
+  let admissible = prospects.filter(p=>!p.forcedContactLoss && p.contactPreservedFraction >= (constraint>0.5?0.9:0.65));
+  if (!admissible.length) admissible = prospects.filter(p=>!p.forcedContactLoss);
+  if (!admissible.length) admissible = prospects.slice();
+  admissible.sort((a,b)=>{
+    const score = p => {
+      if (p.unknown) return constraint < 0.25 ? 40 - state.uses[p.action] : -40 - state.uses[p.action];
+      return p.information*1.6 + p.contactPreservedFraction*12 - p.uncertainty*(6+constraint*20)
+        - Math.max(0,p.meanPressure-currentPressure)*(0.08+constraint*0.25);
+    };
+    return score(b)-score(a) || a.action-b.action;
   });
-  state.decisions.low_pressure_inquiry++;
-  return { action: inquiry[0].action, mode: 'low_pressure_inquiry', models };
+  state.decisions.practical_inquiry++;
+  return { action:admissible[0].action, mode:'practical_inquiry', models, prospects };
 }
 
-module.exports = { one, observe, chooseAction, actionModel, nearestOutcomes, frameDistance, trajectoryOutcome };
+module.exports = {
+  one, observe, chooseAction, actionModel, nearestOutcomes, frameDistance,
+  trajectoryOutcome, prospectAction,
+};
