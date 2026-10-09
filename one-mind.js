@@ -42,10 +42,9 @@ function worldContact(state, frame) {
 }
 
 function sceneSignature(state, frame) {
-  // Preserve primitive distinctions that can materially change an intervention
-  // while still avoiding whole-frame memorization. The mind receives no labels
-  // for these values. In the current body/world interface the first nine contacts
-  // are local contact values and one later primitive contact carries orientation.
+  // Temporary finite representation scaffold. It preserves a small reusable
+  // slice of primitive contact while C is not yet able to create this reduction
+  // from the full sensor field by itself.
   const w = worldContact(state, frame);
   const local = w.slice(0, Math.min(9, w.length));
   const center = local[4] || 0;
@@ -103,14 +102,24 @@ function outcomeOf(state, startFrame, endFrame, purposeIndex) {
   return 'open_mixed';
 }
 
-function contextOf(state, frame, action, lag) {
+function contextForPurpose(state, frame, purpose) {
   const pv = pressureVector(state, frame);
-  const purpose = maxIndex(pv);
   return {
     purpose,
     pressure_band: pressureBand(pv[purpose]),
     runway_band: runwayBand(learnedRunway(state, frame)),
     scene: sceneSignature(state, frame),
+  };
+}
+
+function presentContext(state, frame) {
+  const pv = pressureVector(state, frame);
+  return contextForPurpose(state, frame, maxIndex(pv));
+}
+
+function contextOf(state, frame, action, lag) {
+  return {
+    ...presentContext(state, frame),
     action,
     lag,
   };
@@ -149,8 +158,39 @@ function integrateSample(state, sample, provenance) {
     provenance,
   });
   state.samples_integrated++;
-  const k = `${sample.lag}:${sample.outcome}`;
-  state.outcome_counts[k] = (state.outcome_counts[k] || 0) + 1;
+  if (sample.lag != null && sample.outcome != null) {
+    const k = `${sample.lag}:${sample.outcome}`;
+    state.outcome_counts[k] = (state.outcome_counts[k] || 0) + 1;
+  }
+}
+
+// When actuality shows that a whole experienced span relieved one still-live
+// concern without closing reality-contact, preserve the motors inside that span
+// as parts of the same purposive relation. This is hindsight from actuality,
+// not a simulated future and not a planner. C may later compress those grounded
+// continuations and complete a similar relation directly from M.
+function integrateExperiencedContinuation(state, endFrame) {
+  if (state.transitions.length < HORIZON) return 0;
+  const startIndex = state.transitions.length - HORIZON;
+  const start = state.transitions[startIndex];
+  const purpose = maxIndex(pressureVector(state, start.before));
+  if (outcomeOf(state, start.before, endFrame, purpose) !== 'open_relief') return 0;
+
+  let added = 0;
+  for (let i = startIndex; i < state.transitions.length; i++) {
+    const tr = state.transitions[i];
+    const seenKey = `${tr.id}:${purpose}`;
+    if (state.continuation_seen.has(seenKey)) continue;
+    state.continuation_seen.add(seenKey);
+    integrateSample(state, {
+      ...contextForPurpose(state, tr.before, purpose),
+      outcome: 'open_relief',
+      motor: tr.action,
+    }, 'same-C experienced purposive continuation');
+    added++;
+  }
+  state.continuation_relations += added;
+  return added;
 }
 
 function patternFor(state, frame, action) {
@@ -168,6 +208,20 @@ function patternFor(state, frame, action) {
     (a.lag==='immediate'?-1:1)
   );
   return candidates[0] || null;
+}
+
+function continuationFor(state, frame) {
+  // Ask the same learned relation field to complete the motor component of a
+  // presently relevant relation whose grounded historical consequence was
+  // relief. The desired outcome is a purposive relation, not a truth claim that
+  // the future is already known.
+  const prediction = Rel.predict(state.kernel, {
+    ...presentContext(state, frame),
+    outcome: 'open_relief',
+  });
+  const p = prediction.best_by_target.motor || null;
+  if (!p || !Number.isInteger(p.expected) || p.expected < 0 || p.expected >= state.action_count) return null;
+  return p;
 }
 
 function relationFor(state, frame, action) {
@@ -189,6 +243,12 @@ function leastObserved(state, frame, candidates) {
 }
 
 function closeMotorRelation(state, frame) {
+  const continuation = continuationFor(state, frame);
+  if (continuation) {
+    state.mode = 'purposive_completion';
+    return continuation.expected;
+  }
+
   const rb = runwayBand(learnedRunway(state, frame));
   const relations = Array.from({length:state.action_count},(_,a)=>relationFor(state,frame,a));
 
@@ -246,6 +306,9 @@ function one(actionCount, pressureCount=1) {
     context_uses: {},
     outcome_counts: {},
     samples_integrated: 0,
+    continuation_relations: 0,
+    continuation_seen: new Set(),
+    next_transition_id: 0,
     mode: 'uncontacted',
     prior: {
       stone: 'answer every materially relevant pressure without insulating from another pressure; keep reality-contact open',
@@ -262,7 +325,13 @@ function C(state, realityContact) {
 
   if (state.previous_frame && state.motor != null) {
     const before = state.previous_frame;
-    const transition = { before: before.slice(), action: state.motor, after: frame.slice(), runway: learnedRunway(state,before) };
+    const transition = {
+      id: state.next_transition_id++,
+      before: before.slice(),
+      action: state.motor,
+      after: frame.slice(),
+      runway: learnedRunway(state,before),
+    };
     state.transitions.push(transition);
     state.uses[state.motor]++;
     const key=contextUseKey(state,before,state.motor);
@@ -284,7 +353,10 @@ function C(state, realityContact) {
   // hypothetical future is generated: both endpoints came from actuality.
   if (state.transitions.length >= HORIZON && state.transitions.length % DELAYED_SAMPLE_EVERY === 0) {
     const sample=sampleDelayed(state,frame);
-    if (sample) integrateSample(state,sample,'same-C delayed embodied consequence');
+    if (sample) {
+      integrateSample(state,sample,'same-C delayed embodied consequence');
+      if (sample.outcome === 'open_relief') integrateExperiencedContinuation(state,frame);
+    }
   }
 
   state.previous_frame = frame;
