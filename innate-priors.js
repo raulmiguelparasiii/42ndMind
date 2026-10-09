@@ -68,6 +68,7 @@ function one(actionCount) {
     whole: 1,
     action_count: actionCount,
     transitions: [],
+    by_action: Array.from({length:actionCount}, ()=>[]),
     uses: Array(actionCount).fill(0),
     decisions: {
       bootstrap_inquiry: 0,
@@ -94,278 +95,185 @@ function observe(state, before, action, after) {
   if (!Number.isInteger(action) || action < 0 || action >= state.action_count) {
     throw new Error('guidance observation received invalid primitive action');
   }
-  state.transitions.push({ before: before.slice(), action, after: after.slice() });
+  const t = { before:before.slice(), action, after:after.slice(), serial:state.transitions.length };
+  state.transitions.push(t);
+  state.by_action[action].push(t);
   state.uses[action]++;
-  if (state.transitions.length > 5000) state.transitions.splice(0, state.transitions.length - 5000);
+  // The bounded demonstrator keeps at most 5000 transitions. Remove the same
+  // discarded contacts from the per-action index; this is storage throttling,
+  // not epistemic deletion from a surviving single-life run at present scales.
+  if (state.transitions.length > 5000) {
+    const removed = state.transitions.splice(0, state.transitions.length-5000);
+    const ids = new Set(removed.map(x=>x.serial));
+    for (let a=0;a<state.action_count;a++) state.by_action[a] = state.by_action[a].filter(x=>!ids.has(x.serial));
+  }
 }
 
 function nearestOutcomes(state, frame, action, limit = 24) {
+  const source = state.by_action ? state.by_action[action] : state.transitions.filter(t=>t.action===action);
   const candidates = [];
-  for (let i = 0; i < state.transitions.length; i++) {
-    const t = state.transitions[i];
-    if (t.action !== action) continue;
-    candidates.push({ ...t, index: i, distance: frameDistance(frame, t.before), age: state.transitions.length - i });
+  for (let i = 0; i < source.length; i++) {
+    const t = source[i];
+    candidates.push({ ...t, distance:frameDistance(frame,t.before), age:state.transitions.length-t.serial });
   }
-  candidates.sort((a,b) => a.distance - b.distance || a.age - b.age);
+  candidates.sort((a,b) => a.distance-b.distance || a.age-b.age);
   if (!candidates.length) return [];
-
   const best = candidates[0].distance;
-  const radius = best * 1.35 + 10;
-  const local = candidates.filter(x => x.distance <= radius).slice(0, limit);
-  return local.length >= 3 ? local : candidates.slice(0, Math.min(limit, 3));
+  const radius = best*1.35 + 10;
+  const local = candidates.filter(x=>x.distance<=radius).slice(0,limit);
+  return local.length>=3 ? local : candidates.slice(0,Math.min(limit,3));
 }
 
 function trajectoryOutcome(state, candidate, horizon = 6) {
   const pressures = [pressure(candidate.after)];
   const contacts = [continuity(candidate.after)];
   let last = candidate.after;
-
-  for (let j = candidate.index + 1; j < state.transitions.length && pressures.length < horizon; j++) {
+  const start = state.transitions.findIndex(t=>t.serial===candidate.serial);
+  if (start < 0) return {finalPressure:pressure(candidate.after),minContinuity:continuity(candidate.after),length:1};
+  for (let j=start+1;j<state.transitions.length && pressures.length<horizon;j++) {
     const t = state.transitions[j];
-    if (frameDistance(last, t.before) > 1e-9) break;
-    pressures.push(pressure(t.after));
-    contacts.push(continuity(t.after));
-    last = t.after;
-    if (continuity(t.after) <= 0) break;
+    if (frameDistance(last,t.before)>1e-9) break;
+    pressures.push(pressure(t.after)); contacts.push(continuity(t.after)); last=t.after;
+    if (continuity(t.after)<=0) break;
   }
-
-  const tail = pressures.slice(-Math.min(2, pressures.length));
-  return {
-    finalPressure: mean(tail),
-    minContinuity: Math.min(...contacts),
-    length: pressures.length,
-  };
+  const tail = pressures.slice(-Math.min(2,pressures.length));
+  return { finalPressure:mean(tail), minContinuity:Math.min(...contacts), length:pressures.length };
 }
 
 function actionModel(state, frame, action) {
-  const live = nearestOutcomes(state, frame, action);
+  const live = nearestOutcomes(state,frame,action);
   const currentPressure = pressure(frame);
-  if (!live.length) {
-    return {
-      action, live, unknown: true, support: 0, currentPressure,
-      minPressure: null, meanPressure: null, maxPressure: null,
-      improvementFraction: 0, outcomeEntropy: Infinity,
-      contactGain: Infinity, contextDistance: Infinity,
-      contactPreservedFraction: 1, anyContactLoss: false, forcedContactLoss: false,
-      forcedImprovement: false, forcedWorsening: false, insulating: false,
-    };
-  }
-
-  const trajectories = live.map(x => trajectoryOutcome(state, x));
-  const pressures = trajectories.map(x => x.finalPressure);
-  const changes = live.map(x => sensoryChange(x.before, x.after));
-  const signatures = live.map(x => coarseSignature(x.after));
-  const minPressure = Math.min(...pressures);
-  const maxPressure = Math.max(...pressures);
-  const avgPressure = mean(pressures);
-  const improvementFraction = pressures.filter(p => p < currentPressure).length / pressures.length;
-  const preserved = trajectories.filter(x => x.minContinuity > 0).length / trajectories.length;
-  const anyContactLoss = trajectories.some(x => x.minContinuity <= 0);
-  const forcedContactLoss = trajectories.every(x => x.minContinuity <= 0);
-  const forcedImprovement = preserved === 1 && maxPressure < currentPressure - 0.5;
-  const forcedWorsening = minPressure > currentPressure + 0.5;
-  const gain = mean(changes);
-  const insulating = pressures.length >= 3 && avgPressure >= currentPressure - 0.25 && gain < 3.0;
-
+  if (!live.length) return {
+    action,live,unknown:true,support:0,currentPressure,minPressure:null,meanPressure:null,maxPressure:null,
+    improvementFraction:0,outcomeEntropy:Infinity,contactGain:Infinity,contextDistance:Infinity,
+    contactPreservedFraction:1,anyContactLoss:false,forcedContactLoss:false,
+    forcedImprovement:false,forcedWorsening:false,insulating:false,
+  };
+  const trajectories = live.map(x=>trajectoryOutcome(state,x));
+  const pressures = trajectories.map(x=>x.finalPressure);
+  const changes = live.map(x=>sensoryChange(x.before,x.after));
+  const signatures = live.map(x=>coarseSignature(x.after));
+  const minPressure=Math.min(...pressures), maxPressure=Math.max(...pressures), avgPressure=mean(pressures);
+  const improvementFraction=pressures.filter(p=>p<currentPressure).length/pressures.length;
+  const preserved=trajectories.filter(x=>x.minContinuity>0).length/trajectories.length;
+  const gain=mean(changes);
   return {
-    action, live, unknown: false, support: live.length, currentPressure,
-    minPressure, meanPressure: avgPressure, maxPressure,
-    improvementFraction,
-    outcomeEntropy: entropy(signatures),
-    contactGain: gain,
-    contextDistance: mean(live.map(x => x.distance)),
-    contactPreservedFraction: preserved,
-    anyContactLoss,
-    forcedContactLoss,
-    forcedImprovement, forcedWorsening, insulating,
+    action,live,unknown:false,support:live.length,currentPressure,minPressure,meanPressure:avgPressure,maxPressure,
+    improvementFraction,outcomeEntropy:entropy(signatures),contactGain:gain,
+    contextDistance:mean(live.map(x=>x.distance)),contactPreservedFraction:preserved,
+    anyContactLoss:trajectories.some(x=>x.minContinuity<=0),forcedContactLoss:trajectories.every(x=>x.minContinuity<=0),
+    forcedImprovement:preserved===1 && maxPressure<currentPressure-0.5,
+    forcedWorsening:minPressure>currentPressure+0.5,
+    insulating:pressures.length>=3 && avgPressure>=currentPressure-0.25 && gain<3.0,
   };
 }
 
-function keepDiverse(nodes, limit) {
-  if (nodes.length <= limit) return nodes;
-  const chosen = [];
-  const seen = new Set();
-  function take(sorted, n) {
+function keepDiverse(nodes,limit) {
+  if (nodes.length<=limit) return nodes;
+  const chosen=[], seen=new Set();
+  function take(sorted,n) {
     for (const x of sorted) {
-      const k = `${x.firstAction}|${x.depth}|${coarseSignature(x.frame)}|${x.unknown?1:0}|${x.minContinuity}`;
+      const k=`${x.firstAction}|${x.depth}|${coarseSignature(x.frame)}|${x.unknown?1:0}|${x.minContinuity}`;
       if (seen.has(k)) continue;
       seen.add(k); chosen.push(x);
-      if (chosen.length >= n) break;
+      if (chosen.length>=n) break;
     }
   }
-  const q = Math.max(1, Math.floor(limit / 4));
-  take(nodes.slice().sort((a,b)=>a.minContinuity-b.minContinuity || b.maxPressure-a.maxPressure), q);
-  take(nodes.slice().sort((a,b)=>b.maxPressure-a.maxPressure || b.finalPressure-a.finalPressure), q*2);
-  take(nodes.slice().sort((a,b)=>a.finalPressure-b.finalPressure || b.support-a.support), q*3);
-  take(nodes.slice().sort((a,b)=>a.distance-b.distance || b.support-a.support), limit);
-  return chosen.slice(0, limit);
+  const q=Math.max(1,Math.floor(limit/4));
+  take(nodes.slice().sort((a,b)=>a.minContinuity-b.minContinuity || b.maxPressure-a.maxPressure),q);
+  take(nodes.slice().sort((a,b)=>b.maxPressure-a.maxPressure || b.finalPressure-a.finalPressure),q*2);
+  take(nodes.slice().sort((a,b)=>a.finalPressure-b.finalPressure || b.support-a.support),q*3);
+  take(nodes.slice().sort((a,b)=>a.distance-b.distance || b.support-a.support),limit);
+  return chosen.slice(0,limit);
 }
 
-function prospectAction(state, frame, firstAction, horizon = 3, beam = 28) {
-  const initial = nearestOutcomes(state, frame, firstAction, 6);
-  const currentPressure = pressure(frame);
-  if (!initial.length) {
-    return {
-      action:firstAction, unknown:true, support:0, horizon,
-      contactPreservedFraction:1, anyContactLoss:false, forcedContactLoss:false,
-      improvementFraction:0, meanPressure:null, maxPressure:null, minPressure:null,
-      uncertainty:1, information:Infinity, forcedImprovement:false,
-    };
-  }
-
-  let nodes = initial.map(x => ({
-    firstAction,
-    frame:x.after.slice(),
-    minContinuity:continuity(x.after),
-    maxPressure:pressure(x.after),
-    finalPressure:pressure(x.after),
-    support:1,
-    distance:x.distance,
-    depth:1,
-    unknown:false,
-  }));
-
-  for (let depth = 1; depth < horizon; depth++) {
-    const expanded = [];
+function prospectAction(state,frame,firstAction,horizon=3,beam=20) {
+  const initial=nearestOutcomes(state,frame,firstAction,5);
+  const currentPressure=pressure(frame);
+  if (!initial.length) return {
+    action:firstAction,unknown:true,support:0,horizon,contactPreservedFraction:1,anyContactLoss:false,
+    forcedContactLoss:false,improvementFraction:0,meanPressure:null,maxPressure:null,minPressure:null,
+    uncertainty:1,information:Infinity,forcedImprovement:false,
+  };
+  let nodes=initial.map(x=>({firstAction,frame:x.after.slice(),minContinuity:continuity(x.after),
+    maxPressure:pressure(x.after),finalPressure:pressure(x.after),support:1,distance:x.distance,depth:1,unknown:false}));
+  for (let depth=1;depth<horizon;depth++) {
+    const expanded=[];
     for (const node of nodes) {
-      if (node.minContinuity <= 0) { expanded.push(node); continue; }
-      let hadKnown = false;
-      for (let action = 0; action < state.action_count; action++) {
-        const outs = nearestOutcomes(state, node.frame, action, 3);
+      if (node.minContinuity<=0) { expanded.push(node); continue; }
+      let hadKnown=false;
+      for (let action=0;action<state.action_count;action++) {
+        const outs=nearestOutcomes(state,node.frame,action,2);
         if (!outs.length) continue;
-        hadKnown = true;
-        for (const out of outs) {
-          expanded.push({
-            firstAction,
-            frame:out.after.slice(),
-            minContinuity:Math.min(node.minContinuity, continuity(out.after)),
-            maxPressure:Math.max(node.maxPressure, pressure(out.after)),
-            finalPressure:pressure(out.after),
-            support:node.support + 1,
-            distance:node.distance + out.distance,
-            depth:depth + 1,
-            unknown:false,
-          });
-        }
+        hadKnown=true;
+        for (const out of outs) expanded.push({
+          firstAction,frame:out.after.slice(),minContinuity:Math.min(node.minContinuity,continuity(out.after)),
+          maxPressure:Math.max(node.maxPressure,pressure(out.after)),finalPressure:pressure(out.after),
+          support:node.support+1,distance:node.distance+out.distance,depth:depth+1,unknown:false,
+        });
       }
-      if (!hadKnown) expanded.push({ ...node, depth:depth+1, unknown:true });
+      if (!hadKnown) expanded.push({...node,depth:depth+1,unknown:true});
     }
-    nodes = keepDiverse(expanded, beam);
+    nodes=keepDiverse(expanded,beam);
   }
-
-  const preserved = nodes.filter(x=>x.minContinuity>0).length / nodes.length;
-  const finals = nodes.map(x=>x.finalPressure);
-  const unknownFraction = nodes.filter(x=>x.unknown).length / nodes.length;
-  const improvementFraction = finals.filter(p=>p<currentPressure).length / finals.length;
-  const signatures = nodes.map(x=>coarseSignature(x.frame));
+  const preserved=nodes.filter(x=>x.minContinuity>0).length/nodes.length;
+  const finals=nodes.map(x=>x.finalPressure), unknownFraction=nodes.filter(x=>x.unknown).length/nodes.length;
+  const improvementFraction=finals.filter(p=>p<currentPressure).length/finals.length;
   return {
-    action:firstAction,
-    unknown:false,
-    support:initial.length,
-    horizon,
-    leaves:nodes.length,
-    contactPreservedFraction:preserved,
-    anyContactLoss:nodes.some(x=>x.minContinuity<=0),
-    forcedContactLoss:nodes.every(x=>x.minContinuity<=0),
-    improvementFraction,
-    meanPressure:mean(finals),
-    maxPressure:Math.max(...finals),
-    minPressure:Math.min(...finals),
-    uncertainty:unknownFraction,
-    information:entropy(signatures),
+    action:firstAction,unknown:false,support:initial.length,horizon,leaves:nodes.length,
+    contactPreservedFraction:preserved,anyContactLoss:nodes.some(x=>x.minContinuity<=0),
+    forcedContactLoss:nodes.every(x=>x.minContinuity<=0),improvementFraction,
+    meanPressure:mean(finals),maxPressure:Math.max(...finals),minPressure:Math.min(...finals),
+    uncertainty:unknownFraction,information:entropy(nodes.map(x=>coarseSignature(x.frame))),
     forcedImprovement:unknownFraction===0 && preserved===1 && Math.max(...finals)<currentPressure-0.5,
   };
 }
 
 function leastUsed(state) {
-  let best = 0;
-  for (let a = 1; a < state.action_count; a++) if (state.uses[a] < state.uses[best]) best = a;
+  let best=0;
+  for (let a=1;a<state.action_count;a++) if (state.uses[a]<state.uses[best]) best=a;
   return best;
 }
 
-function inquiryScore(state, model) {
-  if (model.unknown) return 1000 - state.uses[model.action] * 2;
-  const underused = 1 / Math.sqrt(1 + state.uses[model.action]);
-  const contextNovelty = clamp(model.contextDistance / 64, 0, 2);
-  const discriminating = Number.isFinite(model.outcomeEntropy) ? model.outcomeEntropy : 0;
-  const contact = clamp(model.contactGain / 32, 0, 2);
-  const continuityRisk = (1 - model.contactPreservedFraction) * 20;
-  return discriminating * 2.4 + underused * 4 + contextNovelty + contact * 0.5 - continuityRisk;
-}
-
-function chooseAction(state, frame) {
-  if (!Array.isArray(frame) || frame.length < 2) throw new Error('guidance requires primitive contact, continuity, and friction');
-
-  const currentPressure = pressure(frame);
-  const constraint = clamp(currentPressure / 255, 0, 1);
-
-  // Practicality changes bootstrap behavior: early inquiry is necessary, but as
-  // embodied constraint rises it is no longer rational to insist on exhaustively
-  // sampling every primitive intervention before using what has already been learned.
-  if (state.transitions.length < state.action_count * 2 && constraint < 0.35) {
-    const action = leastUsed(state);
-    state.decisions.bootstrap_inquiry++;
-    return { action, mode:'bootstrap_inquiry', models:[], prospects:[] };
+function chooseAction(state,frame) {
+  if (!Array.isArray(frame)||frame.length<2) throw new Error('guidance requires primitive contact, continuity, and friction');
+  const currentPressure=pressure(frame), constraint=clamp(currentPressure/255,0,1);
+  if (state.transitions.length<state.action_count*2 && constraint<0.35) {
+    const action=leastUsed(state); state.decisions.bootstrap_inquiry++;
+    return {action,mode:'bootstrap_inquiry',models:[],prospects:[]};
   }
+  const models=Array.from({length:state.action_count},(_,a)=>actionModel(state,frame,a));
+  const horizon=constraint>=0.55?4:constraint>=0.25?3:2;
+  const prospects=Array.from({length:state.action_count},(_,a)=>prospectAction(state,frame,a,horizon));
 
-  const models = Array.from({length:state.action_count}, (_, action)=>actionModel(state, frame, action));
-  const horizon = constraint >= 0.55 ? 4 : constraint >= 0.25 ? 3 : 2;
-  const prospects = Array.from({length:state.action_count}, (_, action)=>prospectAction(state, frame, action, horizon));
-
-  // Under real constraint, infer before committing. Strict foresight means every
-  // represented continuation for the first action preserves contact and resolves
-  // pressure. This is not a reward maximum; it is a forced consequence claim over
-  // the currently represented live futures.
-  if (currentPressure >= 8) {
-    const strict = prospects.filter(p=>!p.unknown && p.support>=2 && p.forcedImprovement && !p.forcedContactLoss);
+  if (currentPressure>=8) {
+    const strict=prospects.filter(p=>!p.unknown&&p.support>=2&&p.forcedImprovement&&!p.forcedContactLoss);
     if (strict.length) {
       strict.sort((a,b)=>a.maxPressure-b.maxPressure || b.contactPreservedFraction-a.contactPreservedFraction || b.support-a.support || a.action-b.action);
       state.decisions.foresight_strict++;
-      return { action:strict[0].action, mode:'foresight_strict', models, prospects };
+      return {action:strict[0].action,mode:'foresight_strict',models,prospects};
     }
-
-    // Defeasible foresight: choose the action whose currently live projected
-    // futures best preserve continued contact and resolve pressure, while making
-    // uncertainty increasingly costly as practical constraint rises.
-    const plausible = prospects.filter(p=>
-      !p.unknown && !p.forcedContactLoss && p.contactPreservedFraction >= 0.85 &&
-      p.improvementFraction >= 0.50
-    );
+    const plausible=prospects.filter(p=>!p.unknown&&!p.forcedContactLoss&&p.contactPreservedFraction>=0.85&&p.improvementFraction>=0.50);
     if (plausible.length) {
-      plausible.sort((a,b)=>{
-        const score = p =>
-          (p.contactPreservedFraction * 24)
-          + (currentPressure - p.meanPressure)
-          - Math.max(0,p.maxPressure-currentPressure)*0.45
-          - p.uncertainty*(8 + constraint*24)
-          + Math.min(6,p.information)*0.15;
-        return score(b)-score(a) || b.support-a.support || a.action-b.action;
-      });
+      const score=p=>(p.contactPreservedFraction*24)+(currentPressure-p.meanPressure)
+        -Math.max(0,p.maxPressure-currentPressure)*0.45-p.uncertainty*(8+constraint*24)+Math.min(6,p.information)*0.15;
+      plausible.sort((a,b)=>score(b)-score(a)||b.support-a.support||a.action-b.action);
       state.decisions.foresight_defeasible++;
-      return { action:plausible[0].action, mode:'foresight_defeasible', models, prospects };
+      return {action:plausible[0].action,mode:'foresight_defeasible',models,prospects};
     }
   }
 
-  // If foresight cannot warrant a trajectory, inquiry remains legitimate, but
-  // Practicality forbids treating all experiments as equally affordable. As
-  // pressure rises, reject represented continuity loss and strongly prefer an
-  // informative intervention whose projected futures preserve capacity.
-  let admissible = prospects.filter(p=>!p.forcedContactLoss && p.contactPreservedFraction >= (constraint>0.5?0.9:0.65));
-  if (!admissible.length) admissible = prospects.filter(p=>!p.forcedContactLoss);
-  if (!admissible.length) admissible = prospects.slice();
-  admissible.sort((a,b)=>{
-    const score = p => {
-      if (p.unknown) return constraint < 0.25 ? 40 - state.uses[p.action] : -40 - state.uses[p.action];
-      return p.information*1.6 + p.contactPreservedFraction*12 - p.uncertainty*(6+constraint*20)
-        - Math.max(0,p.meanPressure-currentPressure)*(0.08+constraint*0.25);
-    };
-    return score(b)-score(a) || a.action-b.action;
-  });
+  let admissible=prospects.filter(p=>!p.forcedContactLoss&&p.contactPreservedFraction>=(constraint>0.5?0.9:0.65));
+  if (!admissible.length) admissible=prospects.filter(p=>!p.forcedContactLoss);
+  if (!admissible.length) admissible=prospects.slice();
+  const score=p=>{
+    if (p.unknown) return constraint<0.25?40-state.uses[p.action]:-40-state.uses[p.action];
+    return p.information*1.6+p.contactPreservedFraction*12-p.uncertainty*(6+constraint*20)
+      -Math.max(0,p.meanPressure-currentPressure)*(0.08+constraint*0.25);
+  };
+  admissible.sort((a,b)=>score(b)-score(a)||a.action-b.action);
   state.decisions.practical_inquiry++;
-  return { action:admissible[0].action, mode:'practical_inquiry', models, prospects };
+  return {action:admissible[0].action,mode:'practical_inquiry',models,prospects};
 }
 
-module.exports = {
-  one, observe, chooseAction, actionModel, nearestOutcomes, frameDistance,
-  trajectoryOutcome, prospectAction,
-};
+module.exports={one,observe,chooseAction,actionModel,nearestOutcomes,frameDistance,trajectoryOutcome,prospectAction};
