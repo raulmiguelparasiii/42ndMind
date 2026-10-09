@@ -4,6 +4,12 @@
 // The mind is never given names such as food, water, danger, trust, shelter,
 // weather, day, or body need. It receives fixed primitive sensor channels and
 // can emit one of eight primitive motor commands.
+//
+// The final sensor channel is an interoceptive friction contact. This is not a
+// reward and does not name what action is good. It is the body's own physical
+// pressure signal: deviation from viable embodied conditions. Stone guidance
+// may know innately that real pressure should be answered rather than insulated
+// from; the agent must still learn which worldly actions actually resolve it.
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -67,6 +73,17 @@ function occupiedBits(w, x, y) {
   return bits;
 }
 
+function bodyFriction(w) {
+  const a = w.agent;
+  // Continuous homeostatic/nociceptive pressure. No action identity enters here.
+  // The signal rises as embodied conditions depart from the body's viable basin.
+  const energy = Math.max(0, 180 - a.energy) * 0.62;
+  const water = Math.max(0, 180 - a.water) * 0.72;
+  const thermal = Math.max(0, Math.abs(a.temp - 128) - 8) * 1.10;
+  const injury = a.injury * 0.90;
+  return clamp(Math.round(energy + water + thermal + injury), 0, 255);
+}
+
 function sense(w) {
   const a = w.agent;
   const channels = [];
@@ -86,6 +103,7 @@ function sense(w) {
   channels.push(w.lastEffect);
   channels.push((a.dir & 3) * 64);
   channels.push(w.lastSignal * 85);
+  channels.push(bodyFriction(w));
   return channels;
 }
 
@@ -183,4 +201,4 @@ function revive(w) {
   w.lastEffect = 12;
 }
 
-module.exports = { create, sense, act, revive, ACTIONS };
+module.exports = { create, sense, act, revive, bodyFriction, ACTIONS };
