@@ -1,0 +1,24 @@
+name: Diagnose unified mind
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: mind-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: node one-mind.test.js
+      - run: SEEDS=420070 DEVELOPMENT_STEPS=500 AUTONOMOUS_STEPS=250 node micro-world-single-life.js
