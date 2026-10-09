@@ -24,9 +24,12 @@ Prefer open developmental runs over deciding the next human-named capability in 
 - Learned descriptions recursively become material for higher learned descriptions.
 - Succession/order can be learned from update order itself; no `step1/step2` labels are required.
 - First open run: 6,000 unlabeled binary contacts. The grammar grew/reorganized under two hidden environmental changes; final exact description was 579 units for 6,000 contacts, with learned structures grounding spans up to 92 contacts. See `OPEN_DEVELOPMENT.md`.
+- Second open run: 9,000 unlabeled noisy scalar contacts. Reusable exact `basis + residual` descriptions spontaneously covered neighborhoods of multiple distinct readings and reorganized when hidden environmental bands shifted or a new band appeared. Final state had 23 active bases; all covered multiple values and 11 covered at least five. See `OPEN_SCALAR_DEVELOPMENT.md`.
 
 ## Current frontier
-The previous open run still received the primitive distinction `0 != 1`. It self-created structure above that alphabet, but did not establish meaningful categories from a richer noisy contact space. The next work is to expose `C` to richer minimally interpreted numerical contact and observe whether equivalence/tolerance/category-like structure becomes worth representing under the same description-length objective. Do not add a `cluster()`, `similarity()`, or `categorize()` authority just to force success.
+The scalar run shows tolerance-like local equivalence structure, but it often over-partitions a broad region into several nearby local descriptions. Do not manually merge them or tune toward a desired human category count.
+
+The next open-development question is whether the same objective can recursively compress these local tolerance descriptions into broader reusable structure and then use the self-created distinctions in higher-order relations, without a hand-written clustering/concept-promotion boundary. Also keep separate the stronger unsolved question of arbitrary perceptual similarity beyond primitive numerical difference.
 
 ## User preference
 Keep chat updates focused on progress and conclusions. Put technical detail and experimental notes in the repo rather than explaining implementation minutiae unless asked.
