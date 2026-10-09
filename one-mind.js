@@ -21,7 +21,7 @@
 const Rel = require('./one-rule.js');
 
 const HORIZON = 12;
-const SAMPLE_EVERY = 4;
+const SAMPLE_EVERY = 8;
 
 function maxIndex(xs) {
   let best = 0;
@@ -30,7 +30,6 @@ function maxIndex(xs) {
 }
 function max(xs) { return xs.length ? Math.max(...xs) : 0; }
 function mean(xs) { return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : 0; }
-function clamp(x,lo,hi){return Math.max(lo,Math.min(hi,x));}
 
 function pressureVector(state, frame) {
   return frame.slice(frame.length - state.pressure_count);
@@ -42,10 +41,17 @@ function worldContact(state, frame) {
   return frame.slice(0, frame.length - state.pressure_count - 1);
 }
 function sceneSignature(state, frame) {
-  // Generic, lossy contact signature. No channel receives a semantic name.
-  // Local spatial contact is kept somewhat finer than the remaining channels.
+  // A deliberately coarse structural contact class. C should discover reusable
+  // relations, not memorize nearly unique whole frames. No channel is given a
+  // semantic name: the summary uses only generic local density/diversity plus
+  // coarse variation in the remaining primitive contact.
   const w = worldContact(state, frame);
-  return w.map((x,i) => Math.floor(x / (i < 9 ? 32 : 64))).join('.');
+  const local = w.slice(0, Math.min(9, w.length));
+  const nonzero = local.filter(x => x !== 0).length;
+  const distinct = new Set(local).size;
+  const rest = w.slice(9);
+  const restHigh = rest.filter(x => x >= 128).length;
+  return `${Math.min(3,Math.floor(nonzero/2))}:${Math.min(3,distinct-1)}:${Math.min(3,Math.floor(restHigh/2))}`;
 }
 function pressureBand(p) {
   if (p < 32) return 'low';
@@ -99,11 +105,10 @@ function sampleFromTrace(state, endFrame) {
   const start = state.transitions[state.transitions.length - HORIZON];
   const pv = pressureVector(state, start.before);
   const purpose = maxIndex(pv);
-  const r = start.runway;
   return {
     purpose,
     pressure_band: pressureBand(pv[purpose]),
-    runway_band: runwayBand(r),
+    runway_band: runwayBand(start.runway),
     scene: sceneSignature(state, start.before),
     action: start.action,
     outcome: outcomeOf(state, start.before, endFrame, purpose),
@@ -122,35 +127,23 @@ function relationFor(state, frame, action) {
     action,
   };
   const prediction = Rel.predict(state.kernel, partial);
-  const pattern = prediction.best_by_target.outcome || null;
-  return { action, partial, pattern };
+  return { action, partial, pattern: prediction.best_by_target.outcome || null };
 }
-
-function patternRank(pattern) {
-  if (!pattern) return Infinity;
-  return pattern.predictive_code_bits;
-}
-
+function patternRank(pattern) { return pattern ? pattern.predictive_code_bits : Infinity; }
 function leastUsed(state, candidates) {
   let best = candidates[0];
-  for (const a of candidates) {
-    if (state.uses[a] < state.uses[best]) best = a;
-  }
+  for (const a of candidates) if (state.uses[a] < state.uses[best]) best = a;
   return best;
 }
 
 function closeMotorRelation(state, frame) {
-  const pv = pressureVector(state, frame);
-  const active = max(pv);
   const runway = learnedRunway(state, frame);
   const rb = runwayBand(runway);
   const relations = Array.from({length:state.action_count},(_,a)=>relationFor(state,frame,a));
 
-  // The Stone supplies orientation, not a domain answer. Among learned
-  // continuations, a relation that has compressed repeated open relief outranks a
-  // relation that has compressed worsening or closure. Within the same status,
-  // the shortest predictive code is the same C objective already used to retain
-  // learned descriptions.
+  // Stone orientation + the same compression criterion: learned open relief is
+  // a warranted completion relation; within the same status, the description
+  // with the shortest predictive code governs the continuation.
   const relief = relations.filter(x => x.pattern && x.pattern.expected === 'open_relief');
   if (relief.length) {
     relief.sort((a,b)=>patternRank(a.pattern)-patternRank(b.pattern) || b.pattern.support-a.pattern.support || a.action-b.action);
@@ -165,9 +158,8 @@ function closeMotorRelation(state, frame) {
     return mixed[0].action;
   }
 
-  // OneLogic leaves the unresolved unresolved. With runway, use reality-contact
-  // to resolve it. This is not a curiosity reward: finite practical slack is what
-  // makes direct inquiry affordable.
+  // OneLogic leaves gaps open. Practical slack determines whether firsthand
+  // contact is still affordable; it does not manufacture a goal or reward.
   const nonDefeated = relations.filter(x => !x.pattern || (x.pattern.expected !== 'closed' && x.pattern.expected !== 'open_worse'));
   if (rb === 'wide' || rb === 'bounded') {
     const pool = nonDefeated.length ? nonDefeated.map(x=>x.action) : relations.map(x=>x.action);
@@ -175,10 +167,6 @@ function closeMotorRelation(state, frame) {
     return leastUsed(state, pool);
   }
 
-  // If direct inquiry is no longer affordable and no relief relation is known,
-  // retain the least contradicted learned continuation. If none exists, there is
-  // genuinely a gap; deterministic least-use is only a motor tie-break, not a
-  // claim that the action is good.
   const known = nonDefeated.filter(x=>x.pattern);
   if (known.length) {
     known.sort((a,b)=>patternRank(a.pattern)-patternRank(b.pattern) || a.action-b.action);
@@ -219,17 +207,15 @@ function C(state, realityContact) {
 
   if (state.previous_frame && state.motor != null) {
     const before = state.previous_frame;
-    const runway = learnedRunway(state, before);
-    state.transitions.push({ before: before.slice(), action: state.motor, after: frame.slice(), runway });
+    state.transitions.push({ before: before.slice(), action: state.motor, after: frame.slice(), runway: learnedRunway(state, before) });
     state.uses[state.motor]++;
   }
   state.contacts.push(frame.slice());
   if (state.contacts.length > 4096) state.contacts.shift();
   if (state.transitions.length > 4096) state.transitions.shift();
 
-  // Recompress one delayed action/consequence relation periodically. This is
-  // empirical foresight: a present continuation is constrained by what actually
-  // followed similar earlier continuations, not by an internal future simulator.
+  // Empirical foresight is learned as a delayed action/consequence relation.
+  // No hypothetical future is generated: actuality supplies both endpoints.
   if (state.transitions.length >= HORIZON && state.transitions.length % SAMPLE_EVERY === 0) {
     const sample = sampleFromTrace(state, frame);
     if (sample) {
