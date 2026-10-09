@@ -184,8 +184,9 @@ function integrateExperiencedContinuation(state, endFrame) {
     state.continuation_seen.add(seenKey);
     integrateSample(state, {
       ...contextForPurpose(state, tr.before, purpose),
+      scope: 'continuation',
       outcome: 'open_relief',
-      motor: tr.action,
+      action: tr.action,
     }, 'same-C experienced purposive continuation');
     added++;
   }
@@ -211,15 +212,16 @@ function patternFor(state, frame, action) {
 }
 
 function continuationFor(state, frame) {
-  // Ask the same learned relation field to complete the motor component of a
+  // Ask the same learned relation field to complete the action component of a
   // presently relevant relation whose grounded historical consequence was
   // relief. The desired outcome is a purposive relation, not a truth claim that
   // the future is already known.
   const prediction = Rel.predict(state.kernel, {
     ...presentContext(state, frame),
+    scope: 'continuation',
     outcome: 'open_relief',
   });
-  const p = prediction.best_by_target.motor || null;
+  const p = prediction.best_by_target.action || null;
   if (!p || !Number.isInteger(p.expected) || p.expected < 0 || p.expected >= state.action_count) return null;
   return p;
 }
