@@ -16,8 +16,8 @@ const Mind = require('./one-mind.js');
 function rng(seed){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/0x100000000;};}
 function mean(xs){return xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0;}
 
-const DEVELOPMENT_STEPS=500;
-const AUTONOMOUS_STEPS=1200;
+const DEVELOPMENT_STEPS=Math.max(1,Number(process.env.DEVELOPMENT_STEPS||500));
+const AUTONOMOUS_STEPS=Math.max(1,Number(process.env.AUTONOMOUS_STEPS||1200));
 const TOTAL_STEPS=DEVELOPMENT_STEPS+AUTONOMOUS_STEPS;
 
 function runMind(seed){
@@ -67,7 +67,12 @@ function runBabble(seed){
   };
 }
 
-const seeds=[420070,420071,420072,420073,420074,420075];
+const defaultSeeds=[420070,420071,420072,420073,420074,420075];
+const seeds=process.env.SEEDS
+  ? process.env.SEEDS.split(',').map(x=>Number(x.trim())).filter(Number.isFinite)
+  : defaultSeeds;
+if(!seeds.length) throw new Error('at least one seed required');
+
 const guided=seeds.map(runMind),babble=seeds.map(runBabble);
 const summary={
   worlds:seeds.length,development_steps:DEVELOPMENT_STEPS,autonomous_horizon:AUTONOMOUS_STEPS,
