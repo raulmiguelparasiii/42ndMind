@@ -6,86 +6,79 @@ const path = require('path');
 const Mind = require('./one-mind.js');
 
 assert.deepStrictEqual(Object.keys(Mind).sort(), ['C','one']);
-assert.strictEqual(Mind.chooseAction, undefined);
-assert.strictEqual(Mind.plan, undefined);
-assert.strictEqual(Mind.policy, undefined);
+for (const name of ['chooseAction','plan','policy','reward','value']) assert.strictEqual(Mind[name], undefined);
 
-// Regression against authored psychology previously mistaken for the mind.
 const source = fs.readFileSync(path.join(__dirname, 'one-mind.js'), 'utf8');
 for (const forbidden of [
-  'sceneSignature',
-  'pressureBand',
-  'runwayBand',
-  'signedEffect',
-  'open_relief',
-  'open_worse',
-  'open_mixed',
-  'purposive_completion',
-  'HORIZON',
-  'dominates(',
-  'leastGrounded(',
-  'consequenceFor(',
-  'action_counts',
-]) assert.ok(!source.includes(forbidden), `forbidden embodied scaffold returned: ${forbidden}`);
+  'sceneSignature', 'pressureBand', 'runwayBand', 'signedEffect',
+  'open_relief', 'open_worse', 'open_mixed', 'purposive_completion',
+  'findReliefPlan', 'prospectAction', 'leastGrounded(', 'dominates(',
+  'action_counts', 'HORIZON',
+]) assert.ok(!source.includes(forbidden), `forbidden authored scaffold returned: ${forbidden}`);
 
 const m = Mind.one(4, 2);
-let frame = [0, 0, 255, 24, 18];
+let frame = [0, 0, 255, 32, 24];
 Mind.C(m, frame);
-assert.strictEqual(m.whole, 1);
-assert.ok(Number.isInteger(m.motor));
 
-const STEPS = 24;
-let action2 = 0;
-for (let t = 0; t < STEPS; t++) {
-  const a = m.motor;
-  if (a === 2) action2++;
-
-  // Synthetic reality only. The mind is not told this rule: motor 2 repeatedly
-  // makes both primitive concern magnitudes smaller; the other motors make them
-  // larger. There is no supplied success label or action preference.
+function advance(preferred) {
+  const action = m.motor;
   let p0 = frame.at(-2) + 2;
   let p1 = frame.at(-1) + 1;
-  if (a === 2) { p0 -= 10; p1 -= 5; }
-  p0 = Math.max(0, Math.min(255, p0));
-  p1 = Math.max(0, Math.min(255, p1));
-  frame = [t % 4, (t * 3) % 7, 255, p0, p1];
+  if (action === preferred) { p0 -= 11; p1 -= 7; }
+  else { p0 += 2; p1 += 2; }
+  p0 = Math.max(1, Math.min(220, p0));
+  p1 = Math.max(1, Math.min(220, p1));
+  const t = m.experiences.length;
+  // Two nuisance channels vary independently. Useful structure must survive
+  // superficial percept differences rather than memorizing the whole frame.
+  frame = [t % 5, (t * 7) % 11, 255, p0, p1];
   Mind.C(m, frame);
-
-  assert.strictEqual(m.whole, 1);
-  assert.ok(Number.isInteger(m.motor) && m.motor >= 0 && m.motor < 4);
+  return action;
 }
 
-assert.strictEqual(m.experiences.length, STEPS);
-assert.strictEqual(m.contacts.length, STEPS + 1);
-assert.strictEqual(m.kernel.whole, 1);
-assert.strictEqual(m.mode, undefined);
-assert.strictEqual(m.outcome_counts, undefined);
-assert.strictEqual(m.context_uses, undefined);
-assert.ok(m.kernel.learned_patterns.length > 0);
-assert.ok(action2 > 0);
+const firstLate = [];
+for (let i = 0; i < 44; i++) {
+  const action = advance(2);
+  if (i >= 28) firstLate.push(action);
+}
 
-// The learned structure must contain the reversible relation needed for purpose:
-// an experienced decrease can make the action that produced it recoverable. This
-// is not a policy table; `action` is simply another target in the same compressed
-// relation as the observed bodily consequence.
-assert.ok(m.kernel.learned_patterns.some(pattern =>
-  pattern.target === 'action' &&
-  pattern.expected === 2 &&
-  pattern.conditions.some(condition =>
-    condition.feature === 'concern_0_order' && condition.value === 'less'
-  )
-), 'experience did not form an outcome-to-action relation');
+assert.strictEqual(m.whole, 1);
+assert.ok(m.structure.simultaneous.patterns.length > 0, 'no reusable simultaneous relations formed');
+assert.ok(m.structure.ordered.rules.length > 0, 'no reusable ordered relations formed');
+assert.ok(m.structure.samples.some(sample => sample.values.relation_kind === 'ordered'), 'ordered structure never became a reusable present relation');
+assert.ok(firstLate.includes(2), 'experienced concern-closing action never became available after learning');
 
-// Once both primitive concerns are absent, the learned decrease relation no longer
-// has purposive authority. With no warranted completion, embodied motor variation
-// continues instead of compulsively repeating the formerly useful action.
+// Reverse reality. The old action is now counterevidence; action 1 is the one
+// whose experienced relation closes both concerns. No reset or semantic signal
+// announces the reversal. C must reorganize from continued reality-contact.
+const secondLate = [];
+for (let i = 0; i < 48; i++) {
+  const action = advance(1);
+  if (i >= 32) secondLate.push(action);
+}
+assert.ok(secondLate.includes(1), 'mind failed to reopen and discover a corrected continuation after reality reversed');
+
+// Satisfaction removes the purposive relation. A previously useful action must
+// not remain compulsory merely because it has historical support.
 const zeroMotors = new Set();
-for (let i = 0; i < 8; i++) {
-  frame = [0, 0, 255, 0, 0];
+for (let i = 0; i < 10; i++) {
+  frame = [i % 3, (i * 2) % 5, 255, 0, 0];
   Mind.C(m, frame);
   zeroMotors.add(m.motor);
 }
-assert.ok(zeroMotors.size > 1, 'closed concern incorrectly kept a fixed motor purpose alive');
+assert.ok(zeroMotors.size > 1, 'closed concerns incorrectly preserved a fixed purposive motor');
 
-console.log('42ndMind purpose-relative embodied relation: PASS');
-console.log(`experiences=${m.experiences.length} patterns=${m.kernel.learned_patterns.length} zero_motor_variants=${zeroMotors.size}`);
+assert.strictEqual(m.contacts.length, m.experiences.length + 1);
+assert.ok(m.experiences.every(x => Array.isArray(x.before) && Array.isArray(x.after) && Number.isInteger(x.action)));
+assert.ok(m.structure.fixed_point_passes >= 1);
+
+console.log('42ndMind self-growing unified relation: PASS');
+console.log(JSON.stringify({
+  experiences: m.experiences.length,
+  simultaneous_patterns: m.structure.simultaneous.patterns.length,
+  simultaneous_symbols: m.structure.simultaneous.symbols.length,
+  ordered_rules: m.structure.ordered.rules.length,
+  ordered_max_depth: m.structure.ordered.rules.reduce((n, r) => Math.max(n, r.depth), 0),
+  corrected_action_seen: secondLate.includes(1),
+  zero_motor_variants: zeroMotors.size,
+}));
