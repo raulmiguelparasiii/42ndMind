@@ -18,8 +18,10 @@
 //   perception_before -> motor -> perception_after
 //
 // preserved exactly in M. The generic relational kernel may compress recurring
-// regularities in those experiences. Numeric change is ordinary subtraction
-// between two perceived states; it is NOT a Philosopher's Stone signed axis and
+// regularities in those experiences. Ordinary perceptual channels remain raw:
+// an integer code is not assumed to be a metric merely because it is numeric.
+// Arithmetic difference is used only on the explicitly magnitude-valued bodily
+// concern channels. That difference is NOT a Philosopher's Stone signed axis and
 // carries no success/failure valence by itself.
 //
 // The only motor-closing commitments made here are consequences of the admitted
@@ -44,7 +46,7 @@ function splitContact(state, frame) {
   };
 }
 
-function difference(after, before) {
+function magnitudeDifference(after, before) {
   return after.map((value, i) => value - before[i]);
 }
 
@@ -61,14 +63,17 @@ function recordExperience(state, beforeFrame, action, afterFrame) {
 
   // The learned sample contains only relations available from the actual
   // before/action/after contact. No outcome class or hand-selected scene exists.
+  // Exteroceptive contact remains categorical/raw; concern_change is a valid
+  // arithmetic relation because the body explicitly supplies those channels as
+  // magnitudes of distinct embodied pressures.
   state.kernel = Rel.integrate(state.kernel, {
     id: `embodied:${state.experiences.length - 1}`,
     sample: {
       percept_before: before.percept,
       concern_before: before.concern,
       action,
-      percept_change: difference(after.percept, before.percept),
-      concern_change: difference(after.concern, before.concern),
+      percept_after: after.percept,
+      concern_change: magnitudeDifference(after.concern, before.concern),
     },
     provenance: 'actual sensorimotor relation',
     raw: experience,
@@ -101,7 +106,7 @@ function dominates(a, b) {
   return strict;
 }
 
-function leastContacted(state, candidates) {
+function leastGrounded(state, candidates) {
   let best = candidates[0];
   for (const candidate of candidates.slice(1)) {
     if (state.action_counts[candidate] < state.action_counts[best] ||
@@ -124,7 +129,7 @@ function closeMotorRelation(state, frame) {
   // OneLogic: an available continuation that reality has not grounded remains a
   // live possibility. Contact the least-grounded one rather than pretending that
   // absence of evidence is negative evidence.
-  if (unresolved.length) return leastContacted(state, unresolved);
+  if (unresolved.length) return leastGrounded(state, unresolved);
 
   // No concern may buy improvement by silently hiding damage to another. Pareto
   // dominance is the strongest comparison available without inventing weights or
@@ -137,7 +142,7 @@ function closeMotorRelation(state, frame) {
 
   // If several grounded continuations remain non-dominated, OneLogic still does
   // not force a conclusion. Further contact is the only warranted discriminator.
-  return leastContacted(state, frontier.map(x => x.action));
+  return leastGrounded(state, frontier.map(x => x.action));
 }
 
 function one(actionCount, concernCount = 1) {
@@ -156,9 +161,9 @@ function one(actionCount, concernCount = 1) {
     prior: {
       stone: {
         axes: {
-          x: ['Practicality', 'Empathy'],
-          z: ['Knowledge', 'Wisdom'],
-          y: ['Insulation', 'Answerability'],
+          x: { negative: 'Practicality', positive: 'Empathy' },
+          z: { negative: 'Knowledge', positive: 'Wisdom' },
+          y: { negative: 'Insulation', positive: 'Answerability' },
         },
         note: 'Stone signs describe cognition orientation relative to reality; they are not outcome valence or pressure direction.',
         answerability: 'materially relevant relations remain jointly exposed to reality; one concern cannot be hidden by an invented scalar trade-off',
