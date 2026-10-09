@@ -5,11 +5,13 @@
 // weather, day, or body need. It receives fixed primitive sensor channels and
 // can emit one of eight primitive motor commands.
 //
-// The final sensor channel is an interoceptive friction contact. This is not a
-// reward and does not name what action is good. It is the body's own physical
-// pressure signal: deviation from viable embodied conditions. Stone guidance
-// may know innately that real pressure should be answered rather than insulated
-// from; the agent must still learn which worldly actions actually resolve it.
+// The final two sensor channels are primitive embodied contacts:
+//   - continuity of reality-contact (255 while embodied contact remains, 0 when
+//     the body has failed);
+//   - interoceptive friction/pressure.
+// These are not action rewards. Stone guidance may know innately that pressure
+// should be answered and that continued reality-contact is a prerequisite for
+// answerability; the agent must still learn which worldly actions achieve that.
 
 function rng(seed) {
   let s = seed >>> 0;
@@ -75,8 +77,6 @@ function occupiedBits(w, x, y) {
 
 function bodyFriction(w) {
   const a = w.agent;
-  // Continuous homeostatic/nociceptive pressure. No action identity enters here.
-  // The signal rises as embodied conditions depart from the body's viable basin.
   const energy = Math.max(0, 180 - a.energy) * 0.62;
   const water = Math.max(0, 180 - a.water) * 0.72;
   const thermal = Math.max(0, Math.abs(a.temp - 128) - 8) * 1.10;
@@ -87,8 +87,6 @@ function bodyFriction(w) {
 function sense(w) {
   const a = w.agent;
   const channels = [];
-  // 3x3 egocentric-ish local contact field. Channel position is primitive
-  // wiring; no semantic name for what any bit means reaches the learner.
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
       channels.push(occupiedBits(w, a.x + dx, a.y + dy));
@@ -103,6 +101,7 @@ function sense(w) {
   channels.push(w.lastEffect);
   channels.push((a.dir & 3) * 64);
   channels.push(w.lastSignal * 85);
+  channels.push(a.alive ? 255 : 0);
   channels.push(bodyFriction(w));
   return channels;
 }
@@ -115,7 +114,6 @@ function passable(w, x, y) {
 }
 
 function moveOther(w) {
-  // The other agent has simple world-side behavior, not a learner-side model.
   if (w.random() < 0.45) {
     const d = DIRS[Math.floor(w.random()*4)];
     const nx = w.other.x + d[0], ny = w.other.y + d[1];
@@ -123,8 +121,6 @@ function moveOther(w) {
       w.other.x = nx; w.other.y = ny;
     }
   }
-  // It sometimes approaches after a repeatedly compatible signal and sometimes
-  // withdraws after the other signal. The learner sees only consequences.
   const dist = Math.abs(w.other.x-w.agent.x)+Math.abs(w.other.y-w.agent.y);
   if (w.lastSignal === 1) w.other.affinity = clamp(w.other.affinity + 1, -8, 8);
   if (w.lastSignal === 2) w.other.affinity = clamp(w.other.affinity - 1, -8, 8);
@@ -139,7 +135,7 @@ function environmentTick(w) {
   w.t++;
   const cycle = w.t % 80;
   w.light = cycle < 48 ? 240 : 45;
-  if (w.t % 55 === 0) w.weather = Math.floor(w.random()*3); // hidden regime
+  if (w.t % 55 === 0) w.weather = Math.floor(w.random()*3);
   const outdoorTarget = w.weather === 0 ? 128 : w.weather === 1 ? 92 : 166;
   const hereShelter = w.shelter.has(key(a.x,a.y));
   const target = hereShelter ? 128 : outdoorTarget;
@@ -153,7 +149,6 @@ function environmentTick(w) {
   a.energy = clamp(a.energy,0,255); a.water = clamp(a.water,0,255); a.temp = clamp(a.temp,0,255);
   w.ambient = clamp(Math.round(128 + (w.weather-1)*32 + (w.light<100?-18:10)),0,255);
 
-  // Resources return without announcing a respawn rule.
   w.resourceClock++;
   if (w.resourceClock % 70 === 0) w.food.add(w.random()<0.5?'5,1':'1,5');
   if (w.resourceClock % 85 === 0) w.water.add(w.random()<0.5?'3,1':'5,5');
@@ -195,8 +190,6 @@ function act(w, action) {
 }
 
 function revive(w) {
-  // A reset exists only so developmental runs can continue after a failed life.
-  // It is a conspicuous consequence in the raw stream, not a hidden reward.
   Object.assign(w.agent, { x:1,y:1,dir:1,energy:180,water:180,temp:128,injury:0,alive:true });
   w.lastEffect = 12;
 }
