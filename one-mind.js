@@ -159,18 +159,20 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   const modelUnit = Math.log2(Math.max(2, atomCount + features.length));
   const candidates = new Map();
 
-  for (const target of features) {
-    for (const expected of featureValues[target]) {
-      for (const { values } of samples) {
-        if (!Object.prototype.hasOwnProperty.call(values, target)) continue;
-        const atoms = Object.keys(values)
-          .filter(feature => feature !== target && !dependencies(feature).has(target))
-          .sort()
-          .map(feature => ({ feature, value: values[feature] }));
-        for (const conditions of combinations(atoms, Math.min(maxConditions, atoms.length))) {
-          const key = `${target}=>${stable(expected)}|${conditionKey(conditions)}`;
-          if (!candidates.has(key)) candidates.set(key, { target, expected, conditions });
-        }
+  // A candidate target=value relation can only have support if that value and its
+  // conditions co-occurred in actual experience. Generate from those occurrences
+  // directly. This is evidence-equivalent to the exhaustive Cartesian loop but
+  // does not waste life recomputing candidates that reality never instantiated.
+  for (const { values } of samples) {
+    for (const target of Object.keys(values).sort()) {
+      const expected = values[target];
+      const atoms = Object.keys(values)
+        .filter(feature => feature !== target && !dependencies(feature).has(target))
+        .sort()
+        .map(feature => ({ feature, value: values[feature] }));
+      for (const conditions of combinations(atoms, Math.min(maxConditions, atoms.length))) {
+        const key = `${target}=>${stable(expected)}|${conditionKey(conditions)}`;
+        if (!candidates.has(key)) candidates.set(key, { target, expected, conditions });
       }
     }
   }
