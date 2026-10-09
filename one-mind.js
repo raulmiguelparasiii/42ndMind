@@ -7,28 +7,21 @@
 //   M(t+1) = C(M(t) ⊕ R(t+1))
 //
 // There is deliberately no planner, policy, reward function, chooseAction(),
-// graph search, or forward simulator in this module. New reality-contact closes
-// the same evolving relational state. The motor continuation is one component of
-// the resulting M, just as learned relations are components of M.
+// graph search, future simulator, or hand-written success-sequence routine here.
+// New reality-contact closes the same evolving relational state. Motor
+// continuation is one component of M.
 //
-// Stone is prior knowledge about orientation: materially relevant pressure must
-// be answered without hiding one pressure inside another, and continued reality-
-// contact must remain open. Practicality is the reality of finite runway: direct
-// trial is affordable only while the embodied relation leaves enough room for it.
-// OneLogic keeps unresolved alternatives unresolved and lets warranted empirical
-// relations, not fabricated certainty, constrain continuation.
+// Stone prior used here: embodied concern is already a signed relation. When
+// reality-contact changes a live pressure, perception itself supplies the sign:
+// pressure reduced => +1, unchanged => 0, pressure increased => -1. Repeated
+// contacts accumulate as defeasible relational evidence through the same kernel.
+// No semantic label such as success/failure/food/water is supplied.
+//
+// The remaining scene reduction, pressure bands, and runway bands are temporary
+// finite representation scaffolds and remain explicit targets for later removal.
 
 const Rel = require('./one-rule.js');
 
-const HORIZON = 12;
-const DELAYED_SAMPLE_EVERY = 8;
-const MATERIAL_PRESSURE_DELTA = 6;
-
-function maxIndex(xs) {
-  let best = 0;
-  for (let i = 1; i < xs.length; i++) if (xs[i] > xs[best]) best = i;
-  return best;
-}
 function mean(xs) { return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : 0; }
 
 function pressureVector(state, frame) {
@@ -56,11 +49,11 @@ function sceneSignature(state, frame) {
 }
 
 function pressureBand(p) {
-  if (p < 32) return 'low';
-  if (p < 96) return 'present';
-  if (p < 160) return 'high';
-  if (p < 224) return 'urgent';
-  return 'critical';
+  if (p < 32) return 'b0';
+  if (p < 96) return 'b1';
+  if (p < 160) return 'b2';
+  if (p < 224) return 'b3';
+  return 'b4';
 }
 
 function learnedRunway(state, frame) {
@@ -84,156 +77,69 @@ function learnedRunway(state, frame) {
   return runway;
 }
 function runwayBand(r) {
-  if (!Number.isFinite(r) || r > 80) return 'wide';
-  if (r > 32) return 'bounded';
-  if (r > 14) return 'tight';
-  return 'immediate';
+  if (!Number.isFinite(r) || r > 80) return 'r0';
+  if (r > 32) return 'r1';
+  if (r > 14) return 'r2';
+  return 'r3';
 }
 
-function outcomeOf(state, startFrame, endFrame, purposeIndex) {
-  if (continuity(state, endFrame) <= 0) return 'closed';
-  const a = pressureVector(state, startFrame);
-  const b = pressureVector(state, endFrame);
-  const targetDelta = b[purposeIndex] - a[purposeIndex];
-  let collateral = -Infinity;
-  for (let i = 0; i < a.length; i++) collateral = Math.max(collateral, b[i]-a[i]);
-  if (targetDelta <= -8 && collateral <= 12) return 'open_relief';
-  if (targetDelta >= 8 || collateral >= 24) return 'open_worse';
-  return 'open_mixed';
+function sign(x) { return x > 0 ? 1 : x < 0 ? -1 : 0; }
+
+function signedEffect(state, before, after) {
+  // Positive means actuality moved the embodied relation toward relief on that
+  // pressure dimension. Negative means it moved away. Nothing here names what
+  // the pressure is or what action ought to be taken.
+  const a = pressureVector(state, before);
+  const b = pressureVector(state, after);
+  return a.map((x,i)=>sign(x-b[i]));
 }
 
-function contextForPurpose(state, frame, purpose) {
-  const pv = pressureVector(state, frame);
+function contextOf(state, frame, action) {
   return {
-    purpose,
-    pressure_band: pressureBand(pv[purpose]),
-    runway_band: runwayBand(learnedRunway(state, frame)),
     scene: sceneSignature(state, frame),
-  };
-}
-
-function presentContext(state, frame) {
-  const pv = pressureVector(state, frame);
-  return contextForPurpose(state, frame, maxIndex(pv));
-}
-
-function contextOf(state, frame, action, lag) {
-  return {
-    ...presentContext(state, frame),
+    pressures: pressureVector(state, frame).map(pressureBand).join(':'),
+    runway: runwayBand(learnedRunway(state, frame)),
     action,
-    lag,
   };
 }
 
-function sampleImmediate(state, before, action, after) {
-  const pv = pressureVector(state, before);
-  const purpose = maxIndex(pv);
-  return {
-    ...contextOf(state, before, action, 'immediate'),
-    outcome: outcomeOf(state, before, after, purpose),
+function integrateExperience(state, before, action, after) {
+  const effect = signedEffect(state, before, after);
+  const sample = {
+    ...contextOf(state, before, action),
+    effect,
   };
-}
-
-function sampleDelayed(state, endFrame) {
-  if (state.transitions.length < HORIZON) return null;
-  const start = state.transitions[state.transitions.length - HORIZON];
-  const pv = pressureVector(state, start.before);
-  const purpose = maxIndex(pv);
-  return {
-    ...contextOf(state, start.before, start.action, 'delayed'),
-    outcome: outcomeOf(state, start.before, endFrame, purpose),
-  };
-}
-
-function materialImmediate(state, before, after) {
-  if (continuity(state,before) !== continuity(state,after)) return true;
-  const a = pressureVector(state,before), b = pressureVector(state,after);
-  return a.some((x,i)=>Math.abs(b[i]-x) >= MATERIAL_PRESSURE_DELTA);
-}
-
-function integrateSample(state, sample, provenance) {
   state.kernel = Rel.integrate(state.kernel, {
     id: `embodied:${state.samples_integrated}`,
     sample,
-    provenance,
+    provenance: 'same-C signed embodied relation from actual before/after contact',
   });
   state.samples_integrated++;
-  if (sample.lag != null && sample.outcome != null) {
-    const k = `${sample.lag}:${sample.outcome}`;
-    state.outcome_counts[k] = (state.outcome_counts[k] || 0) + 1;
-  }
+  const key = effect.join(',');
+  state.outcome_counts[key] = (state.outcome_counts[key] || 0) + 1;
 }
 
-// When actuality shows that a whole experienced span relieved one still-live
-// concern without closing reality-contact, preserve the motors inside that span
-// as parts of the same purposive relation. This is hindsight from actuality,
-// not a simulated future and not a planner. C may later compress those grounded
-// continuations and complete a similar relation directly from M.
-function integrateExperiencedContinuation(state, endFrame) {
-  if (state.transitions.length < HORIZON) return 0;
-  const startIndex = state.transitions.length - HORIZON;
-  const start = state.transitions[startIndex];
-  const purpose = maxIndex(pressureVector(state, start.before));
-  if (outcomeOf(state, start.before, endFrame, purpose) !== 'open_relief') return 0;
-
-  let added = 0;
-  for (let i = startIndex; i < state.transitions.length; i++) {
-    const tr = state.transitions[i];
-    const seenKey = `${tr.id}:${purpose}`;
-    if (state.continuation_seen.has(seenKey)) continue;
-    state.continuation_seen.add(seenKey);
-    integrateSample(state, {
-      ...contextForPurpose(state, tr.before, purpose),
-      scope: 'continuation',
-      outcome: 'open_relief',
-      action: tr.action,
-    }, 'same-C experienced purposive continuation');
-    added++;
-  }
-  state.continuation_relations += added;
-  return added;
-}
-
-function patternFor(state, frame, action) {
-  const candidates = [];
-  for (const lag of ['immediate','delayed']) {
-    const partial = contextOf(state, frame, action, lag);
-    const prediction = Rel.predict(state.kernel, partial);
-    const p = prediction.best_by_target.outcome || null;
-    if (p && !candidates.some(x=>x.pattern.id===p.id)) candidates.push({pattern:p,lag,partial});
-  }
-  candidates.sort((a,b)=>
-    a.pattern.predictive_code_bits-b.pattern.predictive_code_bits ||
-    b.pattern.bits_saved-a.pattern.bits_saved ||
-    b.pattern.covered-a.pattern.covered ||
-    (a.lag==='immediate'?-1:1)
-  );
-  return candidates[0] || null;
-}
-
-function continuationFor(state, frame) {
-  // Ask the same learned relation field to complete the action component of a
-  // presently relevant relation whose grounded historical consequence was
-  // relief. The desired outcome is a purposive relation, not a truth claim that
-  // the future is already known.
-  const prediction = Rel.predict(state.kernel, {
-    ...presentContext(state, frame),
-    scope: 'continuation',
-    outcome: 'open_relief',
-  });
-  const p = prediction.best_by_target.action || null;
-  if (!p || !Number.isInteger(p.expected) || p.expected < 0 || p.expected >= state.action_count) return null;
+function evidenceFor(state, frame, action) {
+  const prediction = Rel.predict(state.kernel, contextOf(state, frame, action));
+  const p = prediction.best_by_target.effect || null;
+  if (!p || !Array.isArray(p.expected) || p.expected.length !== state.pressure_count) return null;
+  if (!p.expected.every(x => x === -1 || x === 0 || x === 1)) return null;
   return p;
 }
 
-function relationFor(state, frame, action) {
-  return { action, evidence: patternFor(state,frame,action) };
+function signedAlignment(state, frame, pattern) {
+  if (!pattern) return null;
+  const pressures = pressureVector(state, frame);
+  const total = pressures.reduce((a,b)=>a+b,0);
+  if (!total) return 0;
+  const raw = pattern.expected.reduce((s,e,i)=>s + e * pressures[i], 0) / total;
+  // Reliability changes authority, not sign. Repeated experience therefore adds
+  // weight without converting a defeasible relation into truth.
+  return raw * pattern.smoothed_reliability;
 }
-function patternRank(evidence) { return evidence ? evidence.pattern.predictive_code_bits : Infinity; }
 
 function contextUseKey(state, frame, action) {
-  const pv=pressureVector(state,frame), purpose=maxIndex(pv);
-  return `${purpose}|${pressureBand(pv[purpose])}|${sceneSignature(state,frame)}|${action}`;
+  return `${sceneSignature(state,frame)}|${pressureVector(state,frame).map(pressureBand).join(':')}|${action}`;
 }
 function leastObserved(state, frame, candidates) {
   let best=candidates[0], n=state.context_uses[contextUseKey(state,frame,best)]||0;
@@ -245,50 +151,48 @@ function leastObserved(state, frame, candidates) {
 }
 
 function closeMotorRelation(state, frame) {
-  const continuation = continuationFor(state, frame);
-  if (continuation) {
-    state.mode = 'purposive_completion';
-    return continuation.expected;
+  const relations = Array.from({length:state.action_count},(_,action)=>{
+    const evidence=evidenceFor(state,frame,action);
+    return {action,evidence,alignment:signedAlignment(state,frame,evidence)};
+  });
+
+  // A positive signed relation means accumulated experience says this available
+  // continuation has tended to move the currently pressured whole toward greater
+  // answerability. All pressure dimensions participate in the same comparison.
+  const answerable = relations.filter(x=>x.alignment != null && x.alignment > 0);
+  if (answerable.length) {
+    answerable.sort((a,b)=>
+      b.alignment-a.alignment ||
+      a.evidence.predictive_code_bits-b.evidence.predictive_code_bits ||
+      b.evidence.covered-a.evidence.covered ||
+      a.action-b.action
+    );
+    state.mode='answerable_completion';
+    return answerable[0].action;
   }
 
-  const rb = runwayBand(learnedRunway(state, frame));
-  const relations = Array.from({length:state.action_count},(_,a)=>relationFor(state,frame,a));
+  const rb=runwayBand(learnedRunway(state,frame));
+  const unresolved=relations.filter(x=>!x.evidence);
 
-  const relief = relations.filter(x => x.evidence && x.evidence.pattern.expected === 'open_relief');
-  if (relief.length) {
-    relief.sort((a,b)=>patternRank(a.evidence)-patternRank(b.evidence) ||
-      b.evidence.pattern.support-a.evidence.pattern.support || a.action-b.action);
-    state.mode = 'answerable_completion';
-    return relief[0].action;
+  // When firsthand discrimination remains affordable, unresolved alternatives
+  // remain open and reality-contact is used to distinguish them.
+  if ((rb==='r0'||rb==='r1') && unresolved.length) {
+    state.mode='answerable_inquiry';
+    return leastObserved(state,frame,unresolved.map(x=>x.action));
   }
 
-  const mixed = relations.filter(x => x.evidence && x.evidence.pattern.expected === 'open_mixed');
-  if ((rb === 'tight' || rb === 'immediate') && mixed.length) {
-    mixed.sort((a,b)=>patternRank(a.evidence)-patternRank(b.evidence) ||
-      b.evidence.pattern.support-a.evidence.pattern.support || a.action-b.action);
-    state.mode = 'practical_completion';
-    return mixed[0].action;
-  }
-
-  const nonDefeated = relations.filter(x => !x.evidence ||
-    (x.evidence.pattern.expected !== 'closed' && x.evidence.pattern.expected !== 'open_worse'));
-
-  // Inquiry is local to the current unresolved relation, not a global motor cycle.
-  // Practical slack makes firsthand discrimination affordable.
-  if (rb === 'wide' || rb === 'bounded') {
-    const pool = nonDefeated.length ? nonDefeated.map(x=>x.action) : relations.map(x=>x.action);
-    state.mode = 'answerable_inquiry';
-    return leastObserved(state,frame,pool);
-  }
-
-  const known = nonDefeated.filter(x=>x.evidence);
+  const known=relations.filter(x=>x.evidence);
   if (known.length) {
-    known.sort((a,b)=>patternRank(a.evidence)-patternRank(b.evidence) || a.action-b.action);
-    state.mode = 'practical_gap';
+    known.sort((a,b)=>
+      b.alignment-a.alignment ||
+      a.evidence.predictive_code_bits-b.evidence.predictive_code_bits ||
+      a.action-b.action
+    );
+    state.mode='practical_completion';
     return known[0].action;
   }
 
-  state.mode = 'unresolved_gap';
+  state.mode='unresolved_gap';
   return leastObserved(state,frame,relations.map(x=>x.action));
 }
 
@@ -308,14 +212,11 @@ function one(actionCount, pressureCount=1) {
     context_uses: {},
     outcome_counts: {},
     samples_integrated: 0,
-    continuation_relations: 0,
-    continuation_seen: new Set(),
-    next_transition_id: 0,
     mode: 'uncontacted',
     prior: {
-      stone: 'answer every materially relevant pressure without insulating from another pressure; keep reality-contact open',
-      practicality: 'finite runway limits direct trial, so warranted learned relations must govern continuation when waiting would consume the possibility of correction',
-      onelogic: 'preserve undefeated possibilities, distinguish warranted completion from unresolved gap, and use affordable contact to resolve uncertainty',
+      stone: 'embodied concern is signed; reality-contact that reduces pressure is positive relative to that concern, increase is negative, and all materially relevant pressures remain jointly answerable',
+      practicality: 'finite runway limits direct trial, so warranted learned relations gain authority when further discrimination would consume the possibility of correction',
+      onelogic: 'preserve undefeated possibilities, let repeated reality-contact accumulate defeasible authority, and keep unresolved alternatives open until actuality discriminates them',
     },
   };
 }
@@ -326,49 +227,29 @@ function C(state, realityContact) {
   const frame = realityContact.slice();
 
   if (state.previous_frame && state.motor != null) {
-    const before = state.previous_frame;
-    const transition = {
-      id: state.next_transition_id++,
-      before: before.slice(),
-      action: state.motor,
-      after: frame.slice(),
-      runway: learnedRunway(state,before),
-    };
-    state.transitions.push(transition);
+    const before=state.previous_frame;
+    state.transitions.push({before:before.slice(),action:state.motor,after:frame.slice()});
     state.uses[state.motor]++;
     const key=contextUseKey(state,before,state.motor);
     state.context_uses[key]=(state.context_uses[key]||0)+1;
 
-    // Material immediate consequences must not be diluted inside a later window.
-    // They are reality-contact of the same kind as delayed consequences and are
-    // handed to the same generic compression law.
-    if (materialImmediate(state,before,frame)) {
-      integrateSample(state,sampleImmediate(state,before,state.motor,frame),'same-C immediate embodied consequence');
-    }
+    // Every actual transition is experience. Its usefulness is not assigned by
+    // a reward label; it is already present in the signed change perceived by M.
+    integrateExperience(state,before,state.motor,frame);
   }
 
   state.contacts.push(frame.slice());
   if (state.contacts.length > 4096) state.contacts.shift();
   if (state.transitions.length > 4096) state.transitions.shift();
 
-  // Delayed empirical consequence remains available as a second timescale. No
-  // hypothetical future is generated: both endpoints came from actuality.
-  if (state.transitions.length >= HORIZON && state.transitions.length % DELAYED_SAMPLE_EVERY === 0) {
-    const sample=sampleDelayed(state,frame);
-    if (sample) {
-      integrateSample(state,sample,'same-C delayed embodied consequence');
-      if (sample.outcome === 'open_relief') integrateExperiencedContinuation(state,frame);
-    }
-  }
-
-  state.previous_frame = frame;
-  if (continuity(state, frame) <= 0) {
-    state.motor = null;
-    state.mode = 'closed';
+  state.previous_frame=frame;
+  if (continuity(state,frame)<=0) {
+    state.motor=null;
+    state.mode='closed';
     return state;
   }
 
-  state.motor = closeMotorRelation(state, frame);
+  state.motor=closeMotorRelation(state,frame);
   return state;
 }
 
