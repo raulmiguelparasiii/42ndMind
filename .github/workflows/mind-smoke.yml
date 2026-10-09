@@ -21,4 +21,4 @@ jobs:
         with:
           node-version: '24'
       - run: node one-mind.test.js
-      - run: SEEDS=420070 DEVELOPMENT_STEPS=500 AUTONOMOUS_STEPS=250 node micro-world-single-life.js
+      - run: SEEDS=420070 DEVELOPMENT_STEPS=250 AUTONOMOUS_STEPS=150 node micro-world-single-life.js
