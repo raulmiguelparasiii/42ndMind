@@ -23,6 +23,7 @@ jobs:
       - run: node one-mind.test.js
       - run: node structured-knowledge.test.js
       - run: node semantic-grounding.test.js
+      - run: node language-school.test.js
       # One continuous individual. This bounded run is for falsifying whether C
       # actually supplies any grounded motor continuation before paying the cost
       # of a long-life benchmark. It is not a score threshold and does not alter
