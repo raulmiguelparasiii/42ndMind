@@ -22,13 +22,19 @@ const TARGETS = Object.freeze([
   { word: 'blue', action: 2, code: 3 },
   { word: 'yellow', action: 3, code: 4 },
 ]);
-const WORDS = Object.freeze(['red','green','blue','yellow','please','touch','choose','take','yes','no']);
+// Exact token identities already used by canonical continuous-life.js.
+const WORDS = Object.freeze([
+  'red','green','blue','yellow',
+  'circle','square','triangle','star',
+  'helps','helped','aid','harms','harmed','hurt','gives','given','supply','blocks','blocked','stop',
+  'one','two','three','the','is','by'
+]);
 const CODE = new Map(WORDS.map((w, i) => [w, 1000 + i]));
 const WORD = new Map([...CODE].map(([w, c]) => [c, w]));
 const TEMPLATES = Object.freeze([
-  t => ['please', 'touch', t.word],
-  t => ['choose', t.word, 'please'],
-  t => ['take', t.word],
+  t => ['the', t.word, 'one'],
+  t => [t.word],
+  t => ['the', t.word],
 ]);
 
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
@@ -168,6 +174,7 @@ const report = {
     starts_from_copy_of_canonical_M: true,
     target_not_available_outside_English: true,
     language_specific_cognition_added: false,
+    canonical_english_token_ids_preserved: true,
   },
   life: {
     steps: STEPS,
