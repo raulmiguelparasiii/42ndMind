@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/ambiguous-route-capture.yml'
       - '.github/scripts/semantic_ambiguous_diagnostic.js'
+      - '.github/scripts/apply_temporal_definition_guard.py'
 
 permissions:
   contents: write
@@ -32,12 +33,26 @@ jobs:
           PY
           python .github/scripts/apply_grounded_completion_guard.py
           python .github/scripts/apply_current_temporal_contact_guard.py
+          python .github/scripts/apply_temporal_definition_guard.py
       - name: Trace ambiguous completion
         run: node .github/scripts/semantic_ambiguous_diagnostic.js
+      - name: Assert partial reality remains ambiguous
+        run: |
+          node - <<'JS'
+          const d = require('./.github/diagnostics/semantic-ambiguous-route.json');
+          if (Object.prototype.hasOwnProperty.call(d.completed, 'p0')) {
+            throw new Error(`unsupported label inferred: ${d.completed.p0}`);
+          }
+          if (Object.prototype.hasOwnProperty.call(d.completed, 'p2')) {
+            throw new Error(`unsupported missing world term inferred: ${d.completed.p2}`);
+          }
+          console.log('partial reality remained unresolved: PASS');
+          JS
       - name: Persist trace
+        if: always()
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .github/diagnostics/semantic-ambiguous-route.json
-          git commit -m 'Record p2 ambiguous completion route'
+          git diff --cached --quiet || git commit -m 'Record temporal-guard ambiguity diagnostic'
           git push origin HEAD:main
