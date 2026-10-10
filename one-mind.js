@@ -133,12 +133,19 @@ function augment(rawSamples, symbols) {
       // A learned symbol is a positive compressed chunk. It is present when its
       // entire grounded definition is present; non-occurrence is not materialized
       // as a second feature-value on every sample. This keeps the learned language
-      // sparse and respects undefined != false while raw grounding remains exact.
+      // sparse while raw grounding remains exact underneath it.
       if (!symbol.definition.every(atom => Object.prototype.hasOwnProperty.call(sample.values, atom.feature))) continue;
       if (symbol.definition.every(atom => sampleHas(sample.values, atom))) sample.values[symbol.feature] = true;
     }
   }
   return samples;
+}
+
+function featureEvaluable(values, feature, byFeature) {
+  const symbol = byFeature.get(feature);
+  if (!symbol) return Object.prototype.hasOwnProperty.call(values, feature);
+  const dependencies = symbolDependencies(symbol, byFeature);
+  return dependencies.size > 0 && [...dependencies].every(dep => Object.prototype.hasOwnProperty.call(values, dep));
 }
 
 function addIndex(index, key, sampleIndex) {
@@ -183,6 +190,14 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     if (!dependencyCache.has(feature)) dependencyCache.set(feature, symbolDependencies(byFeature.get(feature), byFeature));
     return dependencyCache.get(feature);
   }
+  const domainCache = new Map();
+  function domain(feature) {
+    if (domainCache.has(feature)) return domainCache.get(feature);
+    const basis = byFeature.has(feature) ? [...dependencies(feature)] : [feature];
+    const set = new Set(intersectionValues(basis.map(dep => featureIndex.get(dep))));
+    domainCache.set(feature, set);
+    return set;
+  }
 
   const reusableAtoms = samples.map(({ values }) => Object.keys(values).sort()
     .map(feature => ({ feature, value: values[feature] }))
@@ -199,9 +214,10 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   const modelUnit = Math.log2(Math.max(2, atomCount + features.length));
   const patterns = [];
 
-  // A grounded condition is evaluated once. Only target/value pairs actually
-  // present under it can gain support, so impossible descriptions never enter the
-  // finite search. This changes search cost, not the MDL criterion or authority.
+  // Sparse learned concepts are evaluated over the domain where their underlying
+  // definition is knowable. A missing symbol there means the concept did not
+  // occur; elsewhere it remains undefined. This preserves undefined != false
+  // without spraying explicit false values through every remembered contact.
   for (const condition of conditions.values()) {
     const conditionAtomSets = condition.map(atom => atomIndex.get(atomKey(atom)));
     const matchedIndices = intersectionValues(conditionAtomSets);
@@ -217,10 +233,10 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
       }
     }
 
-    const conditionFeatureSets = condition.map(atom => featureIndex.get(atom.feature));
+    const conditionFeatureSets = condition.map(atom => domain(atom.feature));
     const modelBits = (condition.length + 1) * modelUnit;
     for (const { target, expected } of possibleTargets.values()) {
-      const targetPresence = featureIndex.get(target);
+      const targetPresence = domain(target);
       const targetExpectedSet = atomIndex.get(atomKey({ feature: target, value: expected }));
       const eligible = intersectionCount([targetPresence, ...conditionFeatureSets]);
       if (eligible < 4) continue;
@@ -343,10 +359,6 @@ function recompressRelations(rawSamples, seedSymbols = [], maxNewSymbols = 8) {
     const byFeature = new Map(symbols.map(s => [s.feature, s]));
     const additions = [];
 
-    // Candidate definitions remain content-neutral: any reusable conjunction that
-    // compresses some grounded relation may become later representational material.
-    // Existing definitions are skipped, so repeated recompressions can move on to
-    // newly warranted concepts instead of recreating the same small batch forever.
     for (const pattern of patterns) {
       if (pattern.conditions.length < 2) continue;
       if (pattern.conditions.some(atom => byFeature.has(atom.feature) && atom.value !== true)) continue;
@@ -374,17 +386,19 @@ function recompressRelations(rawSamples, seedSymbols = [], maxNewSymbols = 8) {
 // Between global searches, new reality changes the evidential authority of every
 // already-learned relation it bears on. A counter-case is therefore effective on
 // the very next C even though the whole candidate language is not regenerated.
-function refreshPattern(pattern, values) {
+function refreshPattern(pattern, values, symbols) {
+  const byFeature = new Map(symbols.map(s => [s.feature, s]));
   const conditionFeatures = pattern.conditions.map(x => x.feature);
-  if (!Object.prototype.hasOwnProperty.call(values, pattern.target) ||
-      !conditionFeatures.every(feature => Object.prototype.hasOwnProperty.call(values, feature))) return pattern;
+  if (!featureEvaluable(values, pattern.target, byFeature) ||
+      !conditionFeatures.every(feature => featureEvaluable(values, feature, byFeature))) return pattern;
 
   pattern.eligible++;
-  if (same(values[pattern.target], pattern.expected)) pattern.total_expected++;
+  const targetMatches = sampleHas(values, { feature: pattern.target, value: pattern.expected });
+  if (targetMatches) pattern.total_expected++;
   const matched = pattern.conditions.every(atom => sampleHas(values, atom));
   if (matched) {
     pattern.covered++;
-    if (same(values[pattern.target], pattern.expected)) pattern.support++;
+    if (targetMatches) pattern.support++;
     else pattern.exceptions++;
   }
 
@@ -406,9 +420,10 @@ function expandPartial(values, symbols) {
 }
 function predict(structure, partialValues) {
   const values = expandPartial(partialValues, structure.symbols);
+  const byFeature = new Map(structure.symbols.map(s => [s.feature, s]));
   const active = structure.patterns.filter(pattern =>
     pattern.active !== false &&
-    !Object.prototype.hasOwnProperty.call(values, pattern.target) &&
+    !featureEvaluable(values, pattern.target, byFeature) &&
     pattern.conditions.every(atom => sampleHas(values, atom))
   ).sort((a, b) =>
     a.predictive_code_bits - b.predictive_code_bits ||
@@ -496,7 +511,6 @@ function learnedExpansions(sequenceStructure) {
   }));
 }
 
-// Temporal output may guide later judgment but cannot ground its own existence.
 function baseDependencies(feature, byFeature, trail = new Set()) {
   const symbol = byFeature.get(feature);
   if (!symbol) return new Set([feature]);
@@ -615,7 +629,7 @@ function assimilateExperience(state, sample) {
   const structure = state.structure;
   structure.samples.push(sample);
   const expanded = expandPartial(sample.values, structure.symbols);
-  for (const pattern of structure.patterns) refreshPattern(pattern, expanded);
+  for (const pattern of structure.patterns) refreshPattern(pattern, expanded, structure.symbols);
   structure.patterns.sort((a, b) =>
     (a.active === false) - (b.active === false) ||
     a.predictive_code_bits - b.predictive_code_bits ||
