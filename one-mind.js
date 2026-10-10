@@ -286,33 +286,20 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     a.target.localeCompare(b.target)
   );
 
-  const perTarget = Math.max(8, Math.ceil(Math.sqrt(samples.length)));
+  // Finite retention is conclusion-relative. Distinct warranted conclusions must
+  // not erase one another merely because they occupy the same target channel,
+  // and a conclusion may need several independently usable access routes. Prune
+  // redundant descriptions within each (target, expected) referent instead.
+  const perConclusion = Math.max(8, Math.ceil(Math.sqrt(samples.length)));
   const groups = new Map();
   for (const pattern of patterns) {
-    if (!groups.has(pattern.target)) groups.set(pattern.target, []);
-    groups.get(pattern.target).push(pattern);
+    const key = `${pattern.target}=>${stable(pattern.expected)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(pattern);
   }
   const kept = [];
-  for (const target of [...groups.keys()].sort()) {
-    const group = groups.get(target);
-    const chosen = [];
-    const expectedSeen = new Set();
-    for (const pattern of group) {
-      const key = stable(pattern.expected);
-      if (expectedSeen.has(key)) continue;
-      expectedSeen.add(key);
-      chosen.push(pattern);
-      if (chosen.length >= perTarget) break;
-    }
-    if (chosen.length < perTarget) {
-      const chosenSet = new Set(chosen);
-      for (const pattern of group) {
-        if (chosenSet.has(pattern)) continue;
-        chosen.push(pattern);
-        if (chosen.length >= perTarget) break;
-      }
-    }
-    kept.push(...chosen);
+  for (const key of [...groups.keys()].sort()) {
+    kept.push(...groups.get(key).slice(0, perConclusion));
   }
   kept.sort((a, b) =>
     a.predictive_code_bits - b.predictive_code_bits ||
