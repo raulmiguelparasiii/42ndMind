@@ -1,0 +1,384 @@
+{
+  "observed": {
+    "p1": 1,
+    "c0": 0,
+    "c0_open": false
+  },
+  "completed": {
+    "p1": 1,
+    "c0": 0,
+    "c0_open": false,
+    "§t2": false,
+    "§t3": false,
+    "§t7": true,
+    "§t8": false,
+    "§t15": false,
+    "§t18": false,
+    "§t19": false,
+    "§t20": false,
+    "§26": true,
+    "§27": true,
+    "§53": true,
+    "§t1": true,
+    "p2": 2,
+    "§t6": true,
+    "§3": true,
+    "§35": true,
+    "§36": true,
+    "§54": true,
+    "§49": true,
+    "§50": true,
+    "§51": true,
+    "§52": true,
+    "p0": 102,
+    "action": 0,
+    "§25": true,
+    "§34": true
+  },
+  "inferred": [
+    "action",
+    "p0",
+    "p2",
+    "§25",
+    "§26",
+    "§27",
+    "§3",
+    "§34",
+    "§35",
+    "§36",
+    "§49",
+    "§50",
+    "§51",
+    "§52",
+    "§53",
+    "§54",
+    "§t1",
+    "§t15",
+    "§t18",
+    "§t19",
+    "§t2",
+    "§t20",
+    "§t3",
+    "§t6",
+    "§t7",
+    "§t8"
+  ],
+  "unresolved": [],
+  "temporal_current": [
+    {
+      "feature": "§t2",
+      "value": false,
+      "channel": "p1",
+      "expansion": [
+        1,
+        2
+      ],
+      "support": 21
+    },
+    {
+      "feature": "§t3",
+      "value": false,
+      "channel": "p1",
+      "expansion": [
+        1,
+        1,
+        2
+      ],
+      "support": 10
+    },
+    {
+      "feature": "§t7",
+      "value": true,
+      "channel": "p1",
+      "expansion": [
+        2,
+        1
+      ],
+      "support": 21
+    },
+    {
+      "feature": "§t8",
+      "value": false,
+      "channel": "p1",
+      "expansion": [
+        2,
+        1,
+        1
+      ],
+      "support": 10
+    },
+    {
+      "feature": "§t15",
+      "value": false,
+      "channel": "p1",
+      "expansion": [
+        2,
+        2,
+        1,
+        1
+      ],
+      "support": 5
+    },
+    {
+      "feature": "§t18",
+      "value": false,
+      "channel": "p1",
+      "expansion": [
+        2,
+        1,
+        1,
+        2
+      ],
+      "support": 9
+    },
+    {
+      "feature": "§t19",
+      "value": false,
+      "channel": "p1",
+      "expansion": [
+        1,
+        2,
+        1,
+        2
+      ],
+      "support": 8
+    },
+    {
+      "feature": "§t20",
+      "value": false,
+      "channel": "p1",
+      "expansion": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "support": 5
+    },
+    {
+      "feature": "§t1",
+      "value": true,
+      "channel": "p2",
+      "expansion": [
+        1,
+        2
+      ],
+      "support": 21
+    },
+    {
+      "feature": "§t6",
+      "value": true,
+      "channel": "p0",
+      "expansion": [
+        103,
+        102
+      ],
+      "support": 6
+    }
+  ],
+  "satisfied_p0_routes": [
+    {
+      "id": "r220",
+      "expected": 102,
+      "support": 16,
+      "exceptions": 0,
+      "covered": 16,
+      "eligible": 64,
+      "reliability": 1,
+      "predictive_code_bits": 0.3226653016664486,
+      "dependency_count": 2,
+      "conditions": [
+        {
+          "feature": "§3",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        }
+      ],
+      "satisfied_final": true
+    },
+    {
+      "id": "r278",
+      "expected": 102,
+      "support": 16,
+      "exceptions": 0,
+      "covered": 16,
+      "eligible": 64,
+      "reliability": 1,
+      "predictive_code_bits": 0.3226653016664486,
+      "dependency_count": 2,
+      "conditions": [
+        {
+          "feature": "§49",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        }
+      ],
+      "satisfied_final": true
+    },
+    {
+      "id": "r294",
+      "expected": 102,
+      "support": 16,
+      "exceptions": 0,
+      "covered": 16,
+      "eligible": 64,
+      "reliability": 1,
+      "predictive_code_bits": 0.3226653016664486,
+      "dependency_count": 2,
+      "conditions": [
+        {
+          "feature": "§50",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        }
+      ],
+      "satisfied_final": true
+    },
+    {
+      "id": "r330",
+      "expected": 102,
+      "support": 16,
+      "exceptions": 0,
+      "covered": 16,
+      "eligible": 64,
+      "reliability": 1,
+      "predictive_code_bits": 0.44276687240368634,
+      "dependency_count": 2,
+      "conditions": [
+        {
+          "feature": "§3",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        },
+        {
+          "feature": "§49",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        }
+      ],
+      "satisfied_final": true
+    },
+    {
+      "id": "r334",
+      "expected": 102,
+      "support": 16,
+      "exceptions": 0,
+      "covered": 16,
+      "eligible": 64,
+      "reliability": 1,
+      "predictive_code_bits": 0.44276687240368634,
+      "dependency_count": 2,
+      "conditions": [
+        {
+          "feature": "§3",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        },
+        {
+          "feature": "§50",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        }
+      ],
+      "satisfied_final": true
+    },
+    {
+      "id": "r339",
+      "expected": 102,
+      "support": 16,
+      "exceptions": 0,
+      "covered": 16,
+      "eligible": 64,
+      "reliability": 1,
+      "predictive_code_bits": 0.44276687240368634,
+      "dependency_count": 2,
+      "conditions": [
+        {
+          "feature": "§3",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        },
+        {
+          "feature": "p1",
+          "value": 1,
+          "observed": true,
+          "inferred": false,
+          "final_value": 1
+        }
+      ],
+      "satisfied_final": true
+    },
+    {
+      "id": "r344",
+      "expected": 102,
+      "support": 16,
+      "exceptions": 0,
+      "covered": 16,
+      "eligible": 64,
+      "reliability": 1,
+      "predictive_code_bits": 0.44276687240368634,
+      "dependency_count": 2,
+      "conditions": [
+        {
+          "feature": "§3",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        },
+        {
+          "feature": "p2",
+          "value": 2,
+          "observed": false,
+          "inferred": true,
+          "final_value": 2
+        }
+      ],
+      "satisfied_final": true
+    },
+    {
+      "id": "r346",
+      "expected": 102,
+      "support": 16,
+      "exceptions": 0,
+      "covered": 16,
+      "eligible": 64,
+      "reliability": 1,
+      "predictive_code_bits": 0.44276687240368634,
+      "dependency_count": 2,
+      "conditions": [
+        {
+          "feature": "§49",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        },
+        {
+          "feature": "§50",
+          "value": true,
+          "observed": false,
+          "inferred": true,
+          "final_value": true
+        }
+      ],
+      "satisfied_final": true
+    }
+  ]
+}
