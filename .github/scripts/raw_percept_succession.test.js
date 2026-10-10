@@ -1,14 +1,7 @@
 'use strict';
 
 const assert = require('assert');
-const fs = require('fs');
 const Mind = require('../../one-mind.js');
-
-const STAGE = process.env.STAGE || 'all';
-function checkpoint(name, payload = {}) {
-  console.log(JSON.stringify({ checkpoint: name, ...payload }));
-  if (STAGE === name) process.exit(0);
-}
 
 const A = 101;
 const B = 102;
@@ -20,7 +13,6 @@ const SCENE_GAP = 90;
 const m = Mind.one(1, 1);
 assert.ok(Array.isArray(m.structure.temporal_symbols),
   'raw perceptual succession is not represented in M');
-checkpoint('structure');
 
 let noise = 1000;
 function contactOn(state, token, scene) {
@@ -30,6 +22,8 @@ function contact(token, scene) {
   contactOn(m, token, scene);
 }
 
+// One continuous individual experiences the same two opposite ordered relations.
+// The changing third percept prevents a fixed whole-frame alias from carrying the result.
 for (let round = 0; round < 12; round++) {
   contact(A, SCENE_AB);
   contact(B, SCENE_AB);
@@ -48,107 +42,39 @@ function sameExpansion(symbol, expansion) {
 }
 
 const ab = m.structure.temporal_symbols.find(symbol => sameExpansion(symbol, [A, B]));
-assert.ok(ab, 'M did not stabilize the repeated same-channel A→B relation');
-assert.ok(ab.support >= 8, 'A→B did not remain supported by repeated reality contact');
-checkpoint('formation', { feature: ab.feature, support: ab.support });
+assert.ok(ab, 'M did not stabilize repeated same-channel A→B');
+assert.ok(ab.support >= 8, 'repeated reality did not strengthen A→B');
 
-function groundedABRelation(state) {
-  return state.structure.patterns.find(pattern =>
-    pattern.active !== false &&
-    pattern.target === 'p1' &&
-    pattern.expected === SCENE_AB &&
-    pattern.conditions.some(atom => atom.feature === ab.feature && atom.value === true)
-  );
-}
-const groundedBefore = groundedABRelation(m);
-assert.ok(groundedBefore,
-  'the learned A→B relation did not ground into the concurrent world relation');
-checkpoint('grounding', { feature: ab.feature, pattern: groundedBefore.id });
+const grounded = m.structure.patterns.find(pattern =>
+  pattern.active !== false &&
+  pattern.target === 'p1' &&
+  pattern.expected === SCENE_AB &&
+  pattern.conditions.some(atom => atom.feature === ab.feature && atom.value === true)
+);
+assert.ok(grounded, 'A→B did not ground into its concurrent world relation');
 
 const forward = structuredClone(m);
 contactOn(forward, A, null);
 contactOn(forward, B, null);
 assert.strictEqual(forward.current.completed[ab.feature], true,
-  'the recurring A→B percept did not retain its learned temporal identity');
+  'recurring A→B did not reuse the same temporal identity');
 assert.strictEqual(forward.current.completed.p1, SCENE_AB,
-  'the grounded A→B relation was not usable from raw succession');
-checkpoint('forward', { feature: ab.feature, completed_scene: forward.current.completed.p1 });
+  'grounded A→B was not usable live');
 
 const reverse = structuredClone(m);
 contactOn(reverse, B, null);
 contactOn(reverse, A, null);
 assert.notStrictEqual(reverse.current.completed[ab.feature], true,
-  'B→A incorrectly instantiated the learned A→B temporal identity');
-checkpoint('reverse_identity', {
-  ab_value: reverse.current.completed[ab.feature] ?? null,
-  completed_scene: reverse.current.completed.p1 ?? null,
-});
-
-if (STAGE === 'reverse_debug') {
-  const satisfied = pattern => pattern.conditions.every(atom =>
-    Object.prototype.hasOwnProperty.call(reverse.current.completed, atom.feature) &&
-    JSON.stringify(reverse.current.completed[atom.feature]) === JSON.stringify(atom.value)
-  );
-  const inferredSet = new Set(reverse.current.inferred);
-  const targetRoutes = reverse.structure.patterns
-    .filter(pattern => pattern.active !== false && pattern.target === 'p1')
-    .map(pattern => ({
-      id: pattern.id,
-      expected: pattern.expected,
-      conditions: pattern.conditions,
-      satisfied_after_completion: satisfied(pattern),
-      support: pattern.support,
-      exceptions: pattern.exceptions,
-      reliability: pattern.reliability,
-      predictive_code_bits: pattern.predictive_code_bits,
-      dependency_count: pattern.dependency_count,
-    }));
-  const inferredRoutes = reverse.structure.patterns
-    .filter(pattern => pattern.active !== false && inferredSet.has(pattern.target))
-    .map(pattern => ({
-      id: pattern.id,
-      target: pattern.target,
-      expected: pattern.expected,
-      conditions: pattern.conditions,
-      satisfied_after_completion: satisfied(pattern),
-      support: pattern.support,
-      exceptions: pattern.exceptions,
-      reliability: pattern.reliability,
-      predictive_code_bits: pattern.predictive_code_bits,
-    }));
-  const inferredSymbols = reverse.structure.symbols
-    .filter(symbol => inferredSet.has(symbol.feature))
-    .map(symbol => ({
-      feature: symbol.feature,
-      depth: symbol.depth,
-      definition: symbol.definition,
-      source: symbol.source,
-    }));
-  const temporalTrue = Object.fromEntries(Object.entries(reverse.current.completed)
-    .filter(([feature, value]) => feature.startsWith('§t') && value === true));
-  const diagnostic = {
-    ab_feature: ab.feature,
-    reverse_completed_scene: reverse.current.completed.p1 ?? null,
-    reverse_observed: reverse.current.observed,
-    reverse_inferred: reverse.current.inferred,
-    reverse_unresolved: reverse.current.unresolved,
-    temporal_true: temporalTrue,
-    temporal_symbols: reverse.structure.temporal_symbols
-      .filter(symbol => symbol.channel === 'p0')
-      .map(symbol => ({ feature: symbol.feature, expansion: symbol.expansion, support: symbol.support })),
-    inferred_symbols: inferredSymbols,
-    inferred_target_routes: inferredRoutes,
-    active_p1_routes: targetRoutes,
-  };
-  fs.mkdirSync('.github/diagnostics', { recursive: true });
-  fs.writeFileSync('.github/diagnostics/reverse-grounding.json', JSON.stringify(diagnostic, null, 2) + '\n');
-  console.log(JSON.stringify({ checkpoint: 'reverse_debug', file: '.github/diagnostics/reverse-grounding.json' }));
-  process.exit(0);
-}
-
+  'B→A incorrectly instantiated A→B');
 assert.notStrictEqual(reverse.current.completed.p1, SCENE_AB,
-  'B→A reached the A→B scene through some other learned completion route');
-checkpoint('reverse_grounding', { completed_scene: reverse.current.completed.p1 ?? null });
+  'B→A incorrectly reached the A→B grounding');
+
+// Null means this channel was not contacted now. Old p0 history must therefore
+// remain historical rather than masquerading as a temporal relation occurring now.
+const absent = structuredClone(m);
+Mind.C(absent, [null, null, noise++, 0]);
+assert.notStrictEqual(absent.current.completed[ab.feature], true,
+  'uncontacted current p0 reused an old A→B window as present evidence');
 
 const originalFeature = ab.feature;
 const originalSupport = ab.support;
@@ -163,24 +89,23 @@ for (let round = 0; round < 6; round++) {
 contact(GAP, SCENE_GAP);
 
 const stabilized = m.structure.temporal_symbols.find(symbol => sameExpansion(symbol, [A, B]));
-assert.ok(stabilized, 'continued life erased the A→B relation');
+assert.ok(stabilized, 'continued life erased A→B');
 assert.strictEqual(stabilized.feature, originalFeature,
-  'continued life reassigned the same grounded temporal relation a new identity');
+  'continued life reassigned the same relation a new identity');
 assert.ok(stabilized.support >= originalSupport,
-  'confirming experience weakened the stored support of A→B');
-assert.ok(groundedABRelation(m),
-  'continued reality contact erased the grounded A→B world relation');
-checkpoint('persistence', { feature: stabilized.feature, support: stabilized.support });
+  'continued confirming reality weakened A→B support');
 
-console.log('42ndMind raw percept succession and grounding: PASS');
+console.log('42ndMind raw percept succession: PASS');
 console.log(JSON.stringify({
   one_continuous_M: true,
-  same_percept_channel: 'p0',
-  artificial_token_positions: false,
+  relation: 'same-channel A→B',
   learned_temporal_symbol: stabilized.feature,
-  learned_expansion: stabilized.expansion,
-  support: stabilized.support,
+  support_before: originalSupport,
+  support_after: stabilized.support,
   grounded_scene: SCENE_AB,
+  live_reuse: true,
   reverse_order_rejected: true,
+  absent_current_contact_not_reused: true,
+  identity_stable_through_continued_life: true,
   C_language_specific_logic: false,
 }));
