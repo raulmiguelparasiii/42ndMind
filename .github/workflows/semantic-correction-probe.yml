@@ -15,5 +15,5 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Inspect competing correction routes
+      - name: Test continued correction horizon
         run: node .github/scripts/semantic_correction_probe.js
