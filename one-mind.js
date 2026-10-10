@@ -133,10 +133,6 @@ function augment(rawSamples, symbols) {
   const ordered = symbols.slice().sort((a, b) => a.depth - b.depth || a.feature.localeCompare(b.feature));
   for (const symbol of ordered) {
     for (const sample of samples) {
-      // A learned symbol is a positive compressed chunk. It is present when its
-      // entire grounded definition is present; non-occurrence is not materialized
-      // as a second feature-value on every sample. This keeps the learned language
-      // sparse while raw grounding remains exact underneath it.
       if (!symbol.definition.every(atom => Object.prototype.hasOwnProperty.call(sample.values, atom.feature))) continue;
       if (symbol.definition.every(atom => sampleHas(sample.values, atom))) sample.values[symbol.feature] = true;
     }
@@ -217,10 +213,6 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   const modelUnit = Math.log2(Math.max(2, atomCount + features.length));
   const patterns = [];
 
-  // Sparse learned concepts are evaluated over the domain where their underlying
-  // definition is knowable. A missing symbol there means the concept did not
-  // occur; elsewhere it remains undefined. This preserves undefined != false
-  // without spraying explicit false values through every remembered contact.
   for (const condition of conditions.values()) {
     const conditionAtomSets = condition.map(atom => atomIndex.get(atomKey(atom)));
     const matchedIndices = intersectionValues(conditionAtomSets);
@@ -288,8 +280,6 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     a.target.localeCompare(b.target)
   );
 
-  // Finite storage is applied per target rather than globally. Exact contact is
-  // retained underneath this working set and can reopen representation later.
   const perTarget = Math.max(8, Math.ceil(Math.sqrt(samples.length)));
   const groups = new Map();
   for (const pattern of patterns) {
@@ -343,12 +333,6 @@ function nextSymbolNumber(symbols) {
   }
   return next;
 }
-
-// A learned symbol is representational material in M, not a temporary winner in
-// one search pass. Once a grounded conjunction has earned a handle, later global
-// recompression keeps that definition available while all relations involving it
-// remain free to gain or lose evidential authority. This makes conceptual growth
-// cumulative without making any learned claim immutable.
 function recompressRelations(rawSamples, seedSymbols = [], maxNewSymbols = 8) {
   let symbols = seedSymbols.map(cloneSymbol);
   let patterns = [];
@@ -386,9 +370,6 @@ function recompressRelations(rawSamples, seedSymbols = [], maxNewSymbols = 8) {
   return { symbols, patterns };
 }
 
-// Between global searches, new reality changes the evidential authority of every
-// already-learned relation it bears on. A counter-case is therefore effective on
-// the very next C even though the whole candidate language is not regenerated.
 function refreshPattern(pattern, values, symbols) {
   const byFeature = new Map(symbols.map(s => [s.feature, s]));
   const conditionFeatures = pattern.conditions.map(x => x.feature);
@@ -442,24 +423,18 @@ function predict(structure, partialValues) {
 function symbolCompatible(symbol, expected, values, byFeature, trail = new Set()) {
   if (expected !== true || !symbol) return true;
   if (trail.has(symbol.feature)) return false;
-  const next = new Set(trail); next.add(symbol.feature);
+  const next = new Set(trail); nextTrail = next;
   for (const atom of symbol.definition) {
     if (Object.prototype.hasOwnProperty.call(values, atom.feature)) {
       if (!same(values[atom.feature], atom.value)) return false;
       continue;
     }
     const nested = byFeature.get(atom.feature);
-    if (nested && atom.value === true && !symbolCompatible(nested, true, values, byFeature, next)) return false;
+    if (nested && atom.value === true && !symbolCompatible(nested, true, values, byFeature, nextTrail)) return false;
   }
   return true;
 }
 
-// Generic current relation completion. This does not choose an action and has no
-// language-specific branch. It simply exposes, inside M, what uniquely warranted
-// learned relations add to the currently observed contact. True learned concepts
-// may also unfold back into their own grounded definitions, making a compressed
-// handle usable in both directions. Equal-authority incompatible completions stay
-// unresolved instead of being guessed.
 function completeCurrent(state, frame) {
   const present = presentFeatures(state, frame);
   let completed = { ...present.values };
@@ -469,9 +444,6 @@ function completeCurrent(state, frame) {
 
   for (let pass = 0; pass < 12; pass++) {
     let changed = false;
-
-    // Bottom-up: definitions whose grounded terms are already present become
-    // available as compressed handles.
     const expanded = expandPartial(completed, state.structure.symbols);
     for (const [feature, value] of Object.entries(expanded)) {
       if (Object.prototype.hasOwnProperty.call(completed, feature)) continue;
@@ -480,8 +452,6 @@ function completeCurrent(state, frame) {
       changed = true;
     }
 
-    // Top-down: if a true learned handle has itself been warranted, its definition
-    // is the relation it stands for and can expose still-missing terms.
     const orderedSymbols = state.structure.symbols.slice().sort((a, b) => b.depth - a.depth || a.feature.localeCompare(b.feature));
     for (const symbol of orderedSymbols) {
       if (completed[symbol.feature] !== true) continue;
@@ -778,15 +748,21 @@ function spontaneousMotor(state) {
 }
 
 // ---------- first-class relational knowledge inside M ----------
-// These operations are content-neutral. The Stone/OneLogic material below is
-// initialization data placed in M; none of the generic matching/closure code
-// branches on those names or meanings.
+// C only supplies representation mechanics here: terms, variables, relation
+// references, matching, closure, and the structural on/off slot of a relation.
+// It does not know what OneLogic, Stone, counterexample, maturity, etc. mean.
+
+const REL_ACTIVE = Object.freeze({ structural: 'active' });
 
 function cloneRelTerm(value) {
   return value && typeof value === 'object' ? JSON.parse(JSON.stringify(value)) : value;
 }
 function relVar(name) { return { var: String(name) }; }
 function relRef(id) { return { ref: String(id) }; }
+function relRefName(term) {
+  return term && typeof term === 'object' && !Array.isArray(term) &&
+    Object.keys(term).length === 1 && typeof term.ref === 'string' ? term.ref : null;
+}
 function relVariableName(term) {
   return term && typeof term === 'object' && !Array.isArray(term) &&
     Object.keys(term).length === 1 && typeof term.var === 'string' ? term.var : null;
@@ -827,12 +803,10 @@ function normalizeRelRule(raw, fallbackId = null, defaultProvenance = 'contact')
     id: String(raw.id || fallbackId || `kappa:${stable([premises, conclusion])}`),
     premises,
     conclusion,
-    categorical: raw.categorical !== false,
-    exclusive_conclusion: raw.exclusive_conclusion === true,
+    categorical: raw.categorical === true,
     provenance: cloneRelTerm(raw.provenance ?? defaultProvenance),
-    support: Number(raw.support || 0),
-    exceptions: Number(raw.exceptions || 0),
     active: raw.active !== false,
+    state_history: Array.isArray(raw.state_history) ? raw.state_history.map(cloneRelTerm) : [],
   };
 }
 function relFactKey(fact) { return stable([fact.subject, fact.relation, fact.object]); }
@@ -887,19 +861,6 @@ function instantiateRelPattern(pattern, binding) {
   if (subject === undefined || relation === undefined || object === undefined) return null;
   return normalizeRelFact([subject, relation, object]);
 }
-
-function refreshRelRule(rule, episodeFacts) {
-  for (const binding of relPremiseBindings(rule.premises, episodeFacts)) {
-    const expected = instantiateRelPattern(rule.conclusion, binding);
-    if (!expected) continue;
-    if (episodeFacts.some(fact => relFactKey(fact) === relFactKey(expected))) rule.support++;
-    else if (rule.exclusive_conclusion && episodeFacts.some(fact =>
-      same(fact.subject, expected.subject) && same(fact.relation, expected.relation) &&
-      !same(fact.object, expected.object))) rule.exceptions++;
-  }
-  if (rule.categorical && rule.exceptions > 0) rule.active = false;
-  return rule;
-}
 function relationalClosure(baseFacts, rules) {
   const facts = uniqueRelFacts(baseFacts);
   const seen = new Set(facts.map(relFactKey));
@@ -929,11 +890,9 @@ function relRuleDescriptorFacts(rules) {
   const facts = [];
   for (const rule of rules) {
     const ref = relRef(rule.id);
-    facts.push(normalizeRelFact([ref, 'kind', 'relation_schema']));
-    facts.push(normalizeRelFact([ref, 'active', rule.active !== false]));
+    facts.push(normalizeRelFact([ref, 'kind', rule.categorical ? 'categorical_bridge' : 'relation_schema']));
+    facts.push(normalizeRelFact([ref, REL_ACTIVE, rule.active !== false]));
     facts.push(normalizeRelFact([ref, 'provenance', rule.provenance]));
-    facts.push(normalizeRelFact([ref, 'support', rule.support]));
-    facts.push(normalizeRelFact([ref, 'exceptions', rule.exceptions]));
   }
   return facts;
 }
@@ -944,15 +903,28 @@ function empiricalRelationDescriptorFacts(structure) {
     facts.push(normalizeRelFact([ref, 'kind', 'empirical_relation']));
     facts.push(normalizeRelFact([ref, 'target', pattern.target]));
     facts.push(normalizeRelFact([ref, 'expected', pattern.expected]));
-    facts.push(normalizeRelFact([ref, 'active', pattern.active !== false]));
+    facts.push(normalizeRelFact([ref, REL_ACTIVE, pattern.active !== false]));
     for (const atom of pattern.conditions) {
-      facts.push(normalizeRelFact([ref, 'condition', {
-        feature: atom.feature,
-        value: cloneRelTerm(atom.value),
-      }]));
+      facts.push(normalizeRelFact([ref, 'condition', { feature: atom.feature, value: cloneRelTerm(atom.value) }]));
     }
   }
   return facts;
+}
+function isRelationalControlFact(fact) {
+  return relRefName(fact.subject) !== null && same(fact.relation, REL_ACTIVE) && typeof fact.object === 'boolean';
+}
+function applyRelationalControlFacts(state, facts, provenance = 'derived') {
+  let changed = false;
+  for (const fact of facts) {
+    if (!isRelationalControlFact(fact)) continue;
+    const id = relRefName(fact.subject);
+    const rule = state.knowledge.rules.find(candidate => candidate.id === id);
+    if (!rule || rule.active === fact.object) continue;
+    rule.active = fact.object;
+    rule.state_history.push({ active: fact.object, provenance, source_fact: fact.id });
+    changed = true;
+  }
+  return changed;
 }
 
 function foundationalRelationalSeed() {
@@ -984,9 +956,8 @@ function foundationalRelationalSeed() {
     {
       id: 'seed:onelogic:T10',
       premises: [[V('bridge'), 'kind', 'categorical_bridge'], [V('bridge'), 'counterexample', V('case')]],
-      conclusion: [V('bridge'), 'status', 'defeated'],
+      conclusion: [V('bridge'), REL_ACTIVE, false],
       categorical: true,
-      exclusive_conclusion: true,
       provenance: { system: 'OneLogic', theorem: 'T10', source: '42ndLogic/formal/THEOREMS.md' },
     },
     {
@@ -994,7 +965,6 @@ function foundationalRelationalSeed() {
       premises: [[V('query'), 'status', 'undefined']],
       conclusion: [V('query'), 'assertion', 'withhold'],
       categorical: true,
-      exclusive_conclusion: true,
       provenance: { system: 'OneLogic', principle: 'undefined_is_not_false' },
     },
     {
@@ -1002,7 +972,6 @@ function foundationalRelationalSeed() {
       premises: [[V('model'), 'actuality_relation', 'outside_model_class']],
       conclusion: [V('model'), 'required_revision', 'expand_representation'],
       categorical: true,
-      exclusive_conclusion: true,
       provenance: { system: 'OneLogic', theorem: 'T7', source: '42ndLogic/formal/THEOREMS.md' },
     },
     {
@@ -1010,7 +979,6 @@ function foundationalRelationalSeed() {
       premises: [[V('judgment'), 'horizontal_integration', 'full'], [V('judgment'), 'answerability', 'full']],
       conclusion: [V('judgment'), 'stone_state', 'maturity'],
       categorical: true,
-      exclusive_conclusion: true,
       provenance: { system: 'Stone', principle: 'full_integration_under_full_answerability' },
     },
     {
@@ -1018,7 +986,6 @@ function foundationalRelationalSeed() {
       premises: [[V('judgment'), 'insulation', 'full']],
       conclusion: [V('judgment'), 'stone_state', 'collapse'],
       categorical: true,
-      exclusive_conclusion: true,
       provenance: { system: 'Stone', principle: 'full_insulation' },
     },
   ];
@@ -1030,10 +997,23 @@ function foundationalRelationalSeed() {
 function initializeRelationalKnowledge() {
   const seed = foundationalRelationalSeed();
   const knowledge = { facts: seed.facts, rules: seed.rules, episodes: [], current: null };
-  knowledge.current = relationalClosure([...knowledge.facts, ...relRuleDescriptorFacts(knowledge.rules)], knowledge.rules);
+  const pseudoState = { knowledge, structure: { patterns: [] } };
+  refreshRelationalKnowledge(pseudoState);
   return knowledge;
 }
 function refreshRelationalKnowledge(state) {
+  for (let pass = 0; pass < 8; pass++) {
+    const base = [
+      ...state.knowledge.facts,
+      ...relRuleDescriptorFacts(state.knowledge.rules),
+      ...empiricalRelationDescriptorFacts(state.structure),
+    ];
+    const closure = relationalClosure(base, state.knowledge.rules);
+    if (!applyRelationalControlFacts(state, closure.derived, 'relation_completion')) {
+      state.knowledge.current = closure;
+      return;
+    }
+  }
   const base = [
     ...state.knowledge.facts,
     ...relRuleDescriptorFacts(state.knowledge.rules),
@@ -1054,9 +1034,13 @@ function ingestRelationalContact(state, contact) {
     state.knowledge.rules.push(rule);
     existingRuleIds.add(rule.id);
   }
-  for (const rule of state.knowledge.rules) refreshRelRule(rule, episodeFacts);
+
+  const controlFacts = episodeFacts.filter(isRelationalControlFact);
+  const ordinaryFacts = episodeFacts.filter(fact => !isRelationalControlFact(fact));
+  applyRelationalControlFacts(state, controlFacts, 'direct_contact');
+
   const existingFactKeys = new Set(state.knowledge.facts.map(relFactKey));
-  for (const fact of episodeFacts) {
+  for (const fact of ordinaryFacts) {
     const key = relFactKey(fact);
     if (existingFactKeys.has(key)) continue;
     state.knowledge.facts.push(fact);
@@ -1085,8 +1069,8 @@ function one(actionCount, concernCount = 1) {
     },
     knowledge: initializeRelationalKnowledge(),
     prior: {
-      stone: 'materially relevant relations remain answerable to reality; Stone signs are cognitive orientations, never outcome valence',
-      onelogic: 'preserve undefeated possibilities; complete only what grounded relations warrant; unresolved stays unresolved; counterevidence reopens descriptions',
+      stone: 'summary only; structured Stone claims and schemas live in M.knowledge and remain corrigible',
+      onelogic: 'summary only; structured OneLogic claims and schemas live in M.knowledge and remain corrigible',
       embodiment: 'distinct perceptual channels, motor possibilities, and interoceptive pressure magnitudes are primitive physical interfaces, not learned world semantics',
       law: 'M(t+1)=C(M(t)⊕R(t+1)); C preserves exact contact, incrementally updates reusable descriptions, and reopens them under accumulating reality',
     },
