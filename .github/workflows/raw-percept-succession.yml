@@ -1,70 +1,19 @@
 name: Verify raw percept succession
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/raw-percept-succession.yml'
-      - '.github/scripts/raw_percept_succession.test.js'
-      - '.github/scripts/apply_raw_percept_succession.py'
-      - '.github/scripts/apply_grounded_completion_guard.py'
-      - '.github/scripts/apply_current_temporal_contact_guard.py'
-      - 'semantic-grounding.test.js'
-      - 'one-mind.js'
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  falsify-patch-commit:
+  diagnose:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-
-      - name: Confirm baseline defect
-        if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
-        run: |
-          if node .github/scripts/raw_percept_succession.test.js; then
-            echo 'Baseline unexpectedly already represents raw succession.'
-            exit 1
-          fi
-
-      - name: Apply generic temporal representation
-        if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
-        run: |
-          python .github/scripts/apply_raw_percept_succession.py
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('one-mind.js')
-          s = p.read_text()
-          s = s.replace(r'/^§t(\\d+)$/', r'/^§t(\d+)$/')
-          s = s.replace(r'/^p(\\d+)$/', r'/^p(\d+)$/')
-          p.write_text(s)
-          PY
-          python .github/scripts/apply_grounded_completion_guard.py
-          python .github/scripts/apply_current_temporal_contact_guard.py
-
-      - name: Verify one continuing M stabilizes the relation
+      - name: Run focused diagnostic only when explicitly requested
         run: node .github/scripts/raw_percept_succession.test.js
-
-      - name: Preserve the directly affected semantic checkpoint
-        run: node semantic-grounding.test.js
-
-      - name: Commit focused correction
-        if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
-        run: |
-          rm .github/scripts/apply_raw_percept_succession.py
-          rm -f .github/scripts/apply_grounded_completion_guard.py
-          rm -f .github/scripts/apply_current_temporal_contact_guard.py
-          rm -f .github/diagnostics/reverse-grounding.json
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'Stabilize grounded raw percept succession'
-          git push origin HEAD:main
