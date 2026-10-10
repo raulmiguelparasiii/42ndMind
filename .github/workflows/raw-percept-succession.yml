@@ -35,7 +35,16 @@ jobs:
 
       - name: Apply only the generic representation correction
         if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
-        run: python .github/scripts/apply_raw_percept_succession.py
+        run: |
+          python .github/scripts/apply_raw_percept_succession.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('one-mind.js')
+          s = p.read_text()
+          s = s.replace(r'/^§t(\\d+)$/', r'/^§t(\d+)$/')
+          s = s.replace(r'/^p(\\d+)$/', r'/^p(\d+)$/')
+          p.write_text(s)
+          PY
 
       - name: Verify raw succession, grounding, order, and persistence
         run: node .github/scripts/raw_percept_succession.test.js
