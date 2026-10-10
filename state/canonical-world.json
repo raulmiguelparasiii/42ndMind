@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "t": 128,
+  "rng_state": 1130386501,
+  "pressures": [
+    0,
+    0
+  ],
+  "last_effect": 57,
+  "scene": {
+    "id": 15,
+    "actor_color": 4,
+    "actor_shape": 14,
+    "patient_color": 4,
+    "patient_shape": 12,
+    "relation": 23,
+    "quantity": 1,
+    "context": 31,
+    "speaker": 1,
+    "token_index": 6,
+    "surface": [
+      "yellow",
+      "star",
+      "gives",
+      "one",
+      "yellow",
+      "square"
+    ]
+  },
+  "scenes_started": 15,
+  "spoken_tokens": 114,
+  "action_counts": [
+    26,
+    25,
+    31,
+    46
+  ],
+  "grounded_actions": 25,
+  "spontaneous_actions": 103,
+  "pressure_sum": [
+    3235.45,
+    2229.2999999999993
+  ],
+  "pressure_max": [
+    60,
+    37.8
+  ]
+}
