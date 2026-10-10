@@ -1,0 +1,523 @@
+{
+  "ab_feature": "§t1",
+  "reverse_completed_scene": 10,
+  "reverse_observed": {
+    "p0": 101,
+    "p2": 1076,
+    "c0": 0,
+    "c0_open": false
+  },
+  "reverse_inferred": [
+    "action",
+    "p1",
+    "relation_depth",
+    "relation_extent",
+    "relation_symbol",
+    "§72"
+  ],
+  "reverse_unresolved": [],
+  "temporal_true": {},
+  "temporal_symbols": [
+    {
+      "feature": "§t1",
+      "expansion": [
+        101,
+        102
+      ],
+      "support": 12
+    },
+    {
+      "feature": "§t3",
+      "expansion": [
+        101,
+        199
+      ],
+      "support": 12
+    },
+    {
+      "feature": "§t4",
+      "expansion": [
+        102,
+        101,
+        199
+      ],
+      "support": 12
+    },
+    {
+      "feature": "§t5",
+      "expansion": [
+        199,
+        102,
+        101,
+        199
+      ],
+      "support": 12
+    },
+    {
+      "feature": "§t6",
+      "expansion": [
+        101,
+        102,
+        199,
+        102,
+        101,
+        199
+      ],
+      "support": 12
+    },
+    {
+      "feature": "§t11",
+      "expansion": [
+        101,
+        102,
+        199,
+        102,
+        101,
+        199,
+        101,
+        102,
+        199,
+        102,
+        101,
+        199
+      ],
+      "support": 11
+    },
+    {
+      "feature": "§t16",
+      "expansion": [
+        199,
+        102
+      ],
+      "support": 12
+    },
+    {
+      "feature": "§t17",
+      "expansion": [
+        101,
+        102,
+        199,
+        102
+      ],
+      "support": 12
+    }
+  ],
+  "active_p1_routes": [
+    {
+      "id": "r15",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "p0",
+          "value": 199
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 25,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.2786909441020554,
+      "dependency_count": 1
+    },
+    {
+      "id": "r106",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "relation_depth",
+          "value": 2
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.33115836399619086,
+      "dependency_count": 1
+    },
+    {
+      "id": "r108",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "relation_depth",
+          "value": 4
+        }
+      ],
+      "satisfied_after_completion": true,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.33115836399619086,
+      "dependency_count": 1
+    },
+    {
+      "id": "r110",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "relation_extent",
+          "value": 3
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.33115836399619086,
+      "dependency_count": 1
+    },
+    {
+      "id": "r112",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "relation_extent",
+          "value": 6
+        }
+      ],
+      "satisfied_after_completion": true,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.33115836399619086,
+      "dependency_count": 1
+    },
+    {
+      "id": "r135",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "relation_symbol",
+          "value": "§q2"
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.33115836399619086,
+      "dependency_count": 1
+    },
+    {
+      "id": "r140",
+      "expected": 20,
+      "conditions": [
+        {
+          "feature": "relation_symbol",
+          "value": "§q3"
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.33115836399619086,
+      "dependency_count": 1
+    },
+    {
+      "id": "r144",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "relation_symbol",
+          "value": "§q5"
+        }
+      ],
+      "satisfied_after_completion": true,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.33115836399619086,
+      "dependency_count": 1
+    },
+    {
+      "id": "r131",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "relation_symbol",
+          "value": "§q1"
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.33115836399619086,
+      "dependency_count": 1
+    },
+    {
+      "id": "r447",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "§t1",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3374750727308297,
+      "dependency_count": 1
+    },
+    {
+      "id": "r448",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "§t2",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3374750727308297,
+      "dependency_count": 1
+    },
+    {
+      "id": "r452",
+      "expected": 20,
+      "conditions": [
+        {
+          "feature": "§t16",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3374750727308297,
+      "dependency_count": 1
+    },
+    {
+      "id": "r454",
+      "expected": 20,
+      "conditions": [
+        {
+          "feature": "§t18",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3374750727308297,
+      "dependency_count": 1
+    },
+    {
+      "id": "r471",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "§t20",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3374750727308297,
+      "dependency_count": 1
+    },
+    {
+      "id": "r487",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "§t3",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3374750727308297,
+      "dependency_count": 1
+    },
+    {
+      "id": "r488",
+      "expected": 20,
+      "conditions": [
+        {
+          "feature": "§t7",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3374750727308297,
+      "dependency_count": 1
+    },
+    {
+      "id": "r545",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "§t4",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.34076878514246284,
+      "dependency_count": 1
+    },
+    {
+      "id": "r546",
+      "expected": 20,
+      "conditions": [
+        {
+          "feature": "§t8",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.34076878514246284,
+      "dependency_count": 1
+    },
+    {
+      "id": "r583",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "§t5",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.34415796747907085,
+      "dependency_count": 1
+    },
+    {
+      "id": "r584",
+      "expected": 20,
+      "conditions": [
+        {
+          "feature": "§t17",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.34415796747907085,
+      "dependency_count": 1
+    },
+    {
+      "id": "r585",
+      "expected": 20,
+      "conditions": [
+        {
+          "feature": "§t19",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.34415796747907085,
+      "dependency_count": 1
+    },
+    {
+      "id": "r602",
+      "expected": 20,
+      "conditions": [
+        {
+          "feature": "§t9",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3476468316491085,
+      "dependency_count": 1
+    },
+    {
+      "id": "r614",
+      "expected": 10,
+      "conditions": [
+        {
+          "feature": "§t13",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 11,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.34933079864588684,
+      "dependency_count": 1
+    },
+    {
+      "id": "r652",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "§t10",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3512398410182517,
+      "dependency_count": 1
+    },
+    {
+      "id": "r668",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "§t6",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 12,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3512398410182517,
+      "dependency_count": 1
+    },
+    {
+      "id": "r705",
+      "expected": 90,
+      "conditions": [
+        {
+          "feature": "§t11",
+          "value": true
+        }
+      ],
+      "satisfied_after_completion": false,
+      "support": 11,
+      "exceptions": 0,
+      "reliability": 1,
+      "predictive_code_bits": 0.3838337860398796,
+      "dependency_count": 1
+    }
+  ]
+}
