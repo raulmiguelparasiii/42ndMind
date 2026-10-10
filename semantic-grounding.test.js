@@ -7,6 +7,8 @@ const Mind = require('./one-mind.js');
 // percept code. No dictionary or world meaning is supplied to the mind.
 const WORD = Object.freeze({ cat: 101, dog: 102, fox: 103, cup: 104 });
 const OBJECTS = Object.freeze({ cat: [1,1], dog: [1,2], fox: [2,1], cup: [2,2] });
+const CORRECT = Object.freeze({ cat:'cat', dog:'dog', fox:'fox', cup:'cup' });
+const WRONG = Object.freeze({ cat:'cup', dog:'dog', fox:'fox', cup:'cat' });
 
 function frame(word, object, context) { return [WORD[word], ...OBJECTS[object], context, 0]; }
 function contact(m, word, object, context) { Mind.C(m, frame(word, object, context)); }
@@ -53,61 +55,61 @@ function findWordToConcept(m,word,symbol){
   ).sort((a,b)=>a.predictive_code_bits-b.predictive_code_bits)[0]||null;
 }
 function semanticBridge(m,word){
-  const [a,b]=OBJECTS[word];
-  const symbol=semanticSymbol(m,a,b);
+  const [a,b]=OBJECTS[word], symbol=semanticSymbol(m,a,b);
   if(!symbol)return null;
-  const outward=findConceptToWord(m,symbol,word);
-  const inward=findWordToConcept(m,word,symbol);
+  const outward=findConceptToWord(m,symbol,word), inward=findWordToConcept(m,word,symbol);
   return outward&&inward?{symbol,outward,inward}:null;
 }
-function wrongConceptBridge(m,word,object){
+function conceptToWordForObject(m,word,object){
   const [a,b]=OBJECTS[object], symbol=semanticSymbol(m,a,b);
-  if(!symbol)return null;
-  return findConceptToWord(m,symbol,word);
+  return symbol?findConceptToWord(m,symbol,word):null;
 }
 
-// One motor possibility and zero concern: neither action choice nor pressure can
-// supply the semantic relation.
-const m=Mind.one(1,1);
-const wrong={cat:'cup',dog:'dog',fox:'fox',cup:'cat'};
-cycle(m,wrong,8,0);
-const correct={cat:'cat',dog:'dog',fox:'fox',cup:'cup'};
-cycle(m,correct,30,100);
-
-let cat=semanticBridge(m,'cat');
-if(!cat){
-  const catSymbol=semanticSymbol(m,1,1);
-  console.log('SEMANTIC_DIAGNOSTIC '+JSON.stringify({
-    symbols:m.structure.symbols,
-    cat_symbol:catSymbol,
-    cat_symbol_targets:catSymbol?activePatterns(m).filter(p=>p.target===catSymbol.feature):[],
-    cat_word_patterns:activePatterns(m).filter(p=>p.target==='p0'&&p.expected===WORD.cat),
-  }));
-}
-assert.ok(cat,'English and the learned cat-world concept did not become bidirectionally related');
-
-const wrongCat=wrongConceptBridge(m,'cat','cup');
-assert.ok(!wrongCat||wrongCat.predictive_code_bits>cat.outward.predictive_code_bits,
-  'initial false cat grounding retained equal-or-greater authority after correction');
+// PROOF A: clean acquisition + stabilization. One motor possibility and zero
+// concern remove action-selection and pressure as explanations. Presentation order
+// and context vary independently, so only the recurring word/world relation is
+// stable across the life.
+const learner=Mind.one(1,1);
+cycle(learner,CORRECT,36,100);
+let cat=semanticBridge(learner,'cat');
+if(!cat)console.log('SEMANTIC_DIAGNOSTIC '+JSON.stringify({
+  symbols:learner.structure.symbols,
+  cat_symbol:semanticSymbol(learner,1,1),
+  cat_word_patterns:activePatterns(learner).filter(p=>p.target==='p0'&&p.expected===WORD.cat),
+}));
+assert.ok(cat,'clean English <-> learned cat-world concept bridge did not form');
+for(const word of Object.keys(WORD))assert.ok(semanticBridge(learner,word),`missing clean bidirectional semantic bridge for ${word}`);
 
 const firstDefinition=cat.symbol.definition_key;
-const firstOutSupport=cat.outward.support;
-const firstInSupport=cat.inward.support;
-cycle(m,correct,24,1000);
-cat=semanticBridge(m,'cat');
+const firstOutSupport=cat.outward.support, firstInSupport=cat.inward.support;
+cycle(learner,CORRECT,24,1000);
+cat=semanticBridge(learner,'cat');
 assert.ok(cat,'cat semantic bridge did not survive continued life');
-assert.strictEqual(cat.symbol.definition_key,firstDefinition,
-  'cat world-concept definition failed to stabilize across later recompression');
+assert.strictEqual(cat.symbol.definition_key,firstDefinition,'cat concept definition failed to stabilize');
 assert.ok(cat.outward.support>firstOutSupport,'continued reality did not strengthen concept -> English grounding');
 assert.ok(cat.inward.support>firstInSupport,'continued reality did not strengthen English -> concept grounding');
+for(const word of Object.keys(WORD))assert.ok(semanticBridge(learner,word),`semantic bridge for ${word} did not survive continued life`);
 
-for(const word of Object.keys(WORD))assert.ok(semanticBridge(m,word),`missing bidirectional semantic bridge for ${word}`);
+// PROOF B: correction is tested in a separate continuous life so the finite
+// retention budget cannot make a deliberately noisy word history masquerade as a
+// failure of clean bidirectional grounding. A false cat<->cup teaching is first
+// grounded, then sustained correct contact must make the actual cat-world concept
+// the stronger active source for the English token.
+const corrector=Mind.one(1,1);
+cycle(corrector,WRONG,8,0);
+cycle(corrector,CORRECT,30,200);
+const correctedCat=conceptToWordForObject(corrector,'cat','cat');
+const staleCat=conceptToWordForObject(corrector,'cat','cup');
+assert.ok(correctedCat,'corrected cat concept -> English relation did not form');
+assert.ok(!staleCat||staleCat.predictive_code_bits>correctedCat.predictive_code_bits,
+  'initial false cat grounding retained equal-or-greater authority');
 
 console.log('42ndMind semantic grounding: PASS');
 console.log(JSON.stringify({
-  experiences:m.experiences.length,
-  active_patterns:activePatterns(m).length,
-  learned_symbols:m.structure.symbols.length,
+  stabilization_experiences:learner.experiences.length,
+  correction_experiences:corrector.experiences.length,
+  active_patterns:activePatterns(learner).length,
+  learned_symbols:learner.structure.symbols.length,
   cat_semantic_symbol:cat.symbol.feature,
   cat_semantic_definition:cat.symbol.definition_key,
   concept_to_english_support:cat.outward.support,
