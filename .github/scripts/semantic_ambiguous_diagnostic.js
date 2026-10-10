@@ -33,29 +33,32 @@ cycle(learner,CORRECT,16,100);
 const ambiguous=structuredClone(learner);
 Mind.C(ambiguous,[null,1,null,null,0]);
 const inferred=new Set(ambiguous.current.inferred);
-const p0Routes=ambiguous.structure.patterns
-  .filter(p=>p.active!==false && p.target==='p0')
-  .map(p=>({
-    id:p.id,
-    expected:p.expected,
-    support:p.support,
-    exceptions:p.exceptions,
-    covered:p.covered,
-    eligible:p.eligible,
-    reliability:p.reliability,
-    predictive_code_bits:p.predictive_code_bits,
-    dependency_count:p.dependency_count,
-    conditions:p.conditions.map(a=>({
-      ...a,
-      observed:Object.prototype.hasOwnProperty.call(ambiguous.current.observed,a.feature),
-      inferred:inferred.has(a.feature),
-      final_value:Object.prototype.hasOwnProperty.call(ambiguous.current.completed,a.feature)
-        ? ambiguous.current.completed[a.feature] : '__undefined__',
-    })),
-    satisfied_final:p.conditions.every(a=>atomSatisfied(ambiguous.current.completed,a)),
-  }))
-  .filter(r=>r.satisfied_final)
-  .sort((a,b)=>a.predictive_code_bits-b.predictive_code_bits || a.expected-b.expected);
+
+function routesFor(target) {
+  return ambiguous.structure.patterns
+    .filter(p=>p.active!==false && p.target===target)
+    .map(p=>({
+      id:p.id,
+      expected:p.expected,
+      support:p.support,
+      exceptions:p.exceptions,
+      covered:p.covered,
+      eligible:p.eligible,
+      reliability:p.reliability,
+      predictive_code_bits:p.predictive_code_bits,
+      dependency_count:p.dependency_count,
+      conditions:p.conditions.map(a=>({
+        ...a,
+        observed:Object.prototype.hasOwnProperty.call(ambiguous.current.observed,a.feature),
+        inferred:inferred.has(a.feature),
+        final_value:Object.prototype.hasOwnProperty.call(ambiguous.current.completed,a.feature)
+          ? ambiguous.current.completed[a.feature] : '__undefined__',
+      })),
+      satisfied_final:p.conditions.every(a=>atomSatisfied(ambiguous.current.completed,a)),
+    }))
+    .filter(r=>r.satisfied_final)
+    .sort((a,b)=>a.predictive_code_bits-b.predictive_code_bits || String(a.expected).localeCompare(String(b.expected)));
+}
 
 const temporalCurrent=Object.entries(ambiguous.current.completed)
   .filter(([feature])=>feature.startsWith('§t'))
@@ -70,8 +73,14 @@ const out={
   inferred:ambiguous.current.inferred,
   unresolved:ambiguous.current.unresolved,
   temporal_current:temporalCurrent,
-  satisfied_p0_routes:p0Routes,
+  satisfied_p2_routes:routesFor('p2'),
+  satisfied_p0_routes:routesFor('p0'),
 };
 fs.mkdirSync('.github/diagnostics',{recursive:true});
 fs.writeFileSync('.github/diagnostics/semantic-ambiguous-route.json',JSON.stringify(out,null,2)+'\n');
-console.log(JSON.stringify({completed_p0:ambiguous.current.completed.p0 ?? null, route_count:p0Routes.length}));
+console.log(JSON.stringify({
+  completed_p2:ambiguous.current.completed.p2 ?? null,
+  completed_p0:ambiguous.current.completed.p0 ?? null,
+  p2_route_count:out.satisfied_p2_routes.length,
+  p0_route_count:out.satisfied_p0_routes.length,
+}));
