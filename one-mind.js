@@ -715,7 +715,7 @@ function assimilateExperience(state, sample) {
   structure.compiled_experiences = state.experiences.length;
 }
 
-function groundedCompletion(state, frame) {
+function groundedContinuation(state, frame) {
   if (state.experiences.length < 4 || !state.structure.patterns.length) return null;
   const present = presentFeatures(state, frame);
   const purpose = { ...present.values };
@@ -725,7 +725,11 @@ function groundedCompletion(state, frame) {
   }
   if (!open) return null;
 
+  // Purpose is an open relation, not an observation. Complete it through the
+  // same learned relational substrate without reclassifying the intended term
+  // as factual contact.
   const completed = { ...purpose };
+  const inferred = new Set();
   for (let pass = 0; pass < 4; pass++) {
     const prediction = predict(state.structure, completed);
     let changed = false;
@@ -737,6 +741,7 @@ function groundedCompletion(state, frame) {
       );
       if (rival) continue;
       completed[target] = relation.expected;
+      inferred.add(target);
       changed = true;
     }
     if (!changed) break;
@@ -749,7 +754,13 @@ function groundedCompletion(state, frame) {
     const evidence = consequences[`relation_c${i}_order`];
     if (evidence && evidence.expected === GREATER) return null;
   }
-  return action;
+  return {
+    seed: purpose,
+    completed,
+    inferred: [...inferred].sort(),
+    unresolved: [],
+    action,
+  };
 }
 
 function spontaneousMotor(state) {
@@ -1123,8 +1134,27 @@ function C(state, realityContact) {
     state.contacts.push(frame.slice());
     state.previous_contact = frame;
     state.current = completeCurrent(state, frame);
-    const completion = groundedCompletion(state, frame);
-    state.motor = completion == null ? spontaneousMotor(state) : completion;
+    const continuation = groundedContinuation(state, frame);
+    if (continuation) {
+      state.current.continuation = {
+        grounded: true,
+        seed: continuation.seed,
+        completed: continuation.completed,
+        inferred: continuation.inferred,
+        unresolved: continuation.unresolved,
+      };
+      state.motor = continuation.action;
+    } else {
+      state.motor = spontaneousMotor(state);
+      state.current.continuation = {
+        grounded: false,
+        seed: null,
+        completed: { action: state.motor },
+        inferred: [],
+        unresolved: [],
+        source: 'physical_variation',
+      };
+    }
   }
 
   if (relationalContact) ingestRelationalContact(state, relationalContact);
