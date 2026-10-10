@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/raw-percept-succession.yml'
       - '.github/scripts/raw_percept_succession.test.js'
+      - '.github/scripts/apply_raw_percept_succession.py'
       - 'one-mind.js'
 
 permissions:
