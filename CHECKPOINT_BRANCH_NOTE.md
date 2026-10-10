@@ -1,0 +1,1 @@
+The verified code checkpoint remains commit `63783369db66ff1640a48a7d80964af8d12161d1`. A named branch may be created separately as a convenience pointer; the commit SHA is the authoritative immutable reference.
