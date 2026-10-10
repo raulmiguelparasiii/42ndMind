@@ -1,0 +1,53 @@
+name: Continue canonical mind life
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'continuous-life.js'
+      - '.github/workflows/continuous-life.yml'
+      - 'state/run-request.txt'
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: 'Additional reality contacts for the same canonical M'
+        required: false
+        default: '128'
+
+concurrency:
+  group: canonical-continuous-life
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Continue the same M
+        env:
+          LIFE_STEPS: ${{ github.event.inputs.steps || '128' }}
+        run: |
+          mkdir -p state
+          node continuous-life.js | tee state/life-run.log
+
+      - name: Persist the individual and observation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/canonical-mind.json state/canonical-world.json state/life-report.json state/life-run.log
+          if git diff --cached --quiet; then
+            echo 'No canonical life state changed.'
+            exit 0
+          fi
+          git commit -m 'Continue canonical M life'
+          git push origin HEAD:main
