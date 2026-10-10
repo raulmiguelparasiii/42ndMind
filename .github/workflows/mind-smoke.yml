@@ -3,6 +3,16 @@ name: Diagnose unified mind
 on:
   push:
     branches: [main]
+    paths:
+      - 'one-mind.js'
+      - 'one-mind.test.js'
+      - 'structured-knowledge.test.js'
+      - 'semantic-grounding.test.js'
+      - 'language-school.test.js'
+      - 'language-world-life.test.js'
+      - 'micro-world.js'
+      - 'micro-world-single-life.js'
+      - '.github/workflows/mind-smoke.yml'
   workflow_dispatch:
 
 concurrency:
@@ -25,8 +35,4 @@ jobs:
       - run: node semantic-grounding.test.js
       - run: node language-school.test.js
       - run: node language-world-life.test.js
-      # One continuous individual. This bounded run is for falsifying whether C
-      # actually supplies any grounded motor continuation before paying the cost
-      # of a long-life benchmark. It is not a score threshold and does not alter
-      # the world or mind architecture.
       - run: SEEDS=420070 DEVELOPMENT_STEPS=64 AUTONOMOUS_STEPS=32 node micro-world-single-life.js
