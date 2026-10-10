@@ -1,0 +1,83 @@
+{
+  "kind": "42ndMind branch-only English social-life observation",
+  "invariants": {
+    "C_modified": false,
+    "one_mind_js_modified": false,
+    "canonical_M_modified": false,
+    "starts_from_copy_of_canonical_M": true,
+    "target_not_available_outside_English": true,
+    "language_specific_cognition_added": false,
+    "canonical_english_token_ids_preserved": true
+  },
+  "life": {
+    "steps": 16,
+    "experiences_before": 127,
+    "experiences_after": 143,
+    "interactions_started": 6,
+    "correct_actions": 6,
+    "wrong_actions": 10,
+    "accuracy": 0.375,
+    "per_target": {
+      "red": {
+        "asked": 2,
+        "correct": 2,
+        "wrong": 3
+      },
+      "green": {
+        "asked": 2,
+        "correct": 2,
+        "wrong": 5
+      },
+      "blue": {
+        "asked": 1,
+        "correct": 1,
+        "wrong": 2
+      },
+      "yellow": {
+        "asked": 1,
+        "correct": 1,
+        "wrong": 0
+      }
+    },
+    "final_pressure": [
+      21.1,
+      7.6
+    ]
+  },
+  "relational_result": {
+    "active_patterns": 1904,
+    "learned_symbols": 112,
+    "active_patterns_touching_english": 0,
+    "english_action_relations": [],
+    "english_consequence_relations": [],
+    "learned_symbols_with_english_dependency": []
+  },
+  "snapshots": [
+    {
+      "step": 8,
+      "experiences": 135,
+      "symbols": 112,
+      "active_patterns": 1910,
+      "interactions": 4,
+      "correct": 3,
+      "wrong": 5,
+      "pressure": [
+        25.1,
+        7.8
+      ]
+    },
+    {
+      "step": 16,
+      "experiences": 143,
+      "symbols": 112,
+      "active_patterns": 1904,
+      "interactions": 6,
+      "correct": 6,
+      "wrong": 10,
+      "pressure": [
+        21.1,
+        7.6
+      ]
+    }
+  ]
+}
