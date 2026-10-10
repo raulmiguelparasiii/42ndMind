@@ -206,6 +206,7 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   const atomCount = features.reduce((n, f) => n + featureValues[f].length, 0);
   const modelUnit = Math.log2(Math.max(2, atomCount + features.length));
   const patterns = [];
+  const patternDependencies = new Map();
 
   for (const condition of conditions.values()) {
     const conditionAtomSets = condition.map(atom => atomIndex.get(atomKey(atom)));
@@ -256,7 +257,7 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
       if (!(bitsSaved > 0)) continue;
 
       const smoothed = (matchedExpected + 1) / (matched + 2);
-      patterns.push({
+      const pattern = {
         conditions: condition.slice().sort((a, b) => atomKey(a).localeCompare(atomKey(b))),
         target,
         expected,
@@ -273,7 +274,9 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
         dependency_count: dependencyCount,
         model_bits: modelBits,
         active: true,
-      });
+      };
+      patterns.push(pattern);
+      patternDependencies.set(pattern, new Set(conditionDependencies));
     }
   }
 
@@ -287,9 +290,11 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   );
 
   // Finite retention is conclusion-relative. Distinct warranted conclusions must
-  // not erase one another merely because they occupy the same target channel,
-  // and a conclusion may need several independently usable access routes. Prune
-  // redundant descriptions within each (target, expected) referent instead.
+  // not erase one another merely because they occupy the same target channel.
+  // Within one conclusion, first preserve the accessibility frontier: a route is
+  // redundant only when an equally good-or-better route reaches the same result
+  // from a strict subset of its underlying base evidence. Incomparable evidence
+  // routes remain available even when one surface/context is more common.
   const perConclusion = Math.max(8, Math.ceil(Math.sqrt(samples.length)));
   const groups = new Map();
   for (const pattern of patterns) {
@@ -297,9 +302,21 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(pattern);
   }
+  function strictDependencySubset(a, b) {
+    if (!a || !b || a.size >= b.size) return false;
+    for (const feature of a) if (!b.has(feature)) return false;
+    return true;
+  }
   const kept = [];
   for (const key of [...groups.keys()].sort()) {
-    kept.push(...groups.get(key).slice(0, perConclusion));
+    const group = groups.get(key);
+    const frontier = group.filter(pattern => !group.some(other =>
+      other !== pattern &&
+      other.predictive_code_bits <= pattern.predictive_code_bits + 1e-12 &&
+      strictDependencySubset(patternDependencies.get(other), patternDependencies.get(pattern))
+    ));
+    const frontierSet = new Set(frontier);
+    kept.push(...[...frontier, ...group.filter(pattern => !frontierSet.has(pattern))].slice(0, perConclusion));
   }
   kept.sort((a, b) =>
     a.predictive_code_bits - b.predictive_code_bits ||
