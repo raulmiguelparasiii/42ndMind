@@ -27,8 +27,8 @@ class TextInterface {
 }
 
 const text = new TextInterface();
-const EOS = '<eos>';
 const MAX_TOKENS = 10;
+const SURFACE_EXTENT = 17;
 
 const COLORS = Object.freeze({ red: 1, green: 2, blue: 3, yellow: 4 });
 const SHAPES = Object.freeze({ circle: 11, square: 12, triangle: 13, star: 14 });
@@ -63,9 +63,9 @@ function utterance(scene, speaker) {
   const ps = wordForCode(SHAPES, scene.patientShape);
   const verb = verbForCode(scene.verb);
 
-  if (speaker === 1) return [ac, as, verb.active, pc, ps, EOS];
-  if (speaker === 2) return ['the', ac, as, verb.active, 'the', pc, ps, EOS];
-  if (speaker === 3) return ['the', pc, ps, 'is', verb.passive, 'by', 'the', ac, as, EOS];
+  if (speaker === 1) return [ac, as, verb.active, pc, ps];
+  if (speaker === 2) return ['the', ac, as, verb.active, 'the', pc, ps];
+  if (speaker === 3) return ['the', pc, ps, 'is', verb.passive, 'by', 'the', ac, as];
   throw new Error(`unknown speaker ${speaker}`);
 }
 
@@ -76,13 +76,15 @@ function tokenSlots(words) {
   return slots;
 }
 
-// Channels p0..p9 are merely ordered surface-token positions. Unlike the older
-// language-school test, no position means adjective/noun/verb. Scene channels
-// p10..p14 keep one fixed relational world description independent of utterance
-// length/order; p15 is the observed speaker, p16 is unrelated context variation.
+// p0..p9 are merely ordered surface-token positions. No position means a
+// lexical or grammatical category. p10..p14 are one grounded description of
+// the scene; p15 is speaker; p16 unrelated context. p17 is the physically
+// observable extent of this surface sequence. S supplies extent just as it
+// supplies token order/boundaries; it does not tell C what any word or role means.
 function frame(scene, speaker, context) {
+  const words = utterance(scene, speaker);
   return [
-    ...tokenSlots(utterance(scene, speaker)),
+    ...tokenSlots(words),
     scene.actorColor,
     scene.actorShape,
     scene.patientColor,
@@ -90,6 +92,7 @@ function frame(scene, speaker, context) {
     scene.verb,
     speaker,
     context,
+    words.length,
     0,
   ];
 }
@@ -131,9 +134,6 @@ function earlyLifeContacts() {
         for (let ni = 0; ni < EARLY_SHAPES.length; ni++) {
           const actorColor = EARLY_COLORS[ci];
           const actorShape = EARLY_SHAPES[ni];
-          // Patient properties vary independently. The previous draft made them
-          // deterministic functions of actor/verb/speaker, creating accidental
-          // nonlinguistic shortcuts that could crowd out the language relation.
           const patientColor = pick(EARLY_COLORS, random);
           const patientShape = pick(EARLY_SHAPES, random);
           out.push({ scene: scene(actorColor, actorShape, patientColor, patientShape, verb), speaker });
@@ -202,32 +202,10 @@ function directRouteDiagnostics(m, surface, target, expected) {
     const retained = active.filter(p =>
       p.target === target && p.expected === expected &&
       p.conditions.some(c => c.feature === feature && c.value === code)
-    ).map(p => ({
-      id: p.id,
-      conditions: p.conditions,
-      support: p.support,
-      covered: p.covered,
-      reliability: p.reliability,
-      predictive_code_bits: p.predictive_code_bits,
-      dependency_count: p.dependency_count,
-      bits_saved: p.bits_saved,
-    }));
+    ).map(p => ({ id: p.id, conditions: p.conditions }));
     positions.push({ feature, seen, targetKnown, expectedCount, retained });
   }
-  const anyRetained = active.filter(p =>
-    p.target === target && p.expected === expected &&
-    p.conditions.some(c => c.value === code)
-  ).map(p => ({
-    id: p.id,
-    conditions: p.conditions,
-    support: p.support,
-    covered: p.covered,
-    reliability: p.reliability,
-    predictive_code_bits: p.predictive_code_bits,
-    dependency_count: p.dependency_count,
-    bits_saved: p.bits_saved,
-  }));
-  return { surface, code, target, expected, positions, anyRetained };
+  return { surface, code, target, expected, positions };
 }
 
 function readingProbe(m, sceneValue, speaker) {
@@ -238,11 +216,12 @@ function readingProbe(m, sceneValue, speaker) {
     null, null, null, null, null,
     speaker,
     null,
+    words.length,
     0,
   ]);
   const actual = [10, 11, 12, 13, 14].map(i => q.current.completed[`p${i}`]);
   assert.deepStrictEqual(actual, worldValues(sceneValue),
-    `variable-length reading failed for: ${words.filter(x => x !== EOS).join(' ')}`);
+    `variable-length reading failed for: ${words.join(' ')}`);
   return { q, words };
 }
 
@@ -253,20 +232,22 @@ function expressionProbe(m, sceneValue, speaker) {
     ...worldValues(sceneValue),
     speaker,
     null,
+    null,
     0,
   ]);
   const expected = utterance(sceneValue, speaker);
+  const extent = q.current.completed[`p${SURFACE_EXTENT}`];
+  assert.strictEqual(extent, expected.length,
+    `expression did not reconstruct surface extent for speaker ${speaker}`);
   const actual = [];
-  for (let i = 0; i < MAX_TOKENS; i++) {
+  for (let i = 0; i < extent; i++) {
     const code = q.current.completed[`p${i}`];
     assert.ok(Number.isFinite(code), `expression left token ${i} unresolved for speaker ${speaker}`);
-    const surface = text.render(code);
-    actual.push(surface);
-    if (surface === EOS) break;
+    actual.push(text.render(code));
   }
   assert.deepStrictEqual(actual, expected,
     `world relation did not reconstruct speaker ${speaker}'s learned expression`);
-  return { q, actual };
+  return { q, actual, extent };
 }
 
 const learner = Mind.one(1, 1);
@@ -303,6 +284,7 @@ Mind.C(partial, [
   null, null, null, null, null,
   2,
   null,
+  null,
   0,
 ]);
 assert.strictEqual(partial.current.completed.p10, COLORS.yellow,
@@ -328,14 +310,16 @@ console.log(JSON.stringify({
   learned_symbols: learner.structure.symbols.length,
   active_patterns: learner.structure.patterns.filter(p => p.active !== false).length,
   observed_surface_vocabulary: text.toCode.size,
-  utterance_lengths_including_boundary: SPEAKERS.map(s => utterance(novel, s).length),
+  utterance_lengths: SPEAKERS.map(s => utterance(novel, s).length),
   semantic_token_slots: false,
   fixed_adjective_noun_verb_slots: false,
+  sequence_extent_is_structural_contact: true,
   one_continuous_M: true,
   later_vocabulary_appeared_during_life: true,
   new_terms_never_pairwise_cooccurred: true,
   never_seen_scene_read_across_three_forms: reads.length === 3,
   never_seen_scene_expressed_across_three_forms: expressions.length === 3,
+  surface_extent_reconstructed_across_three_forms: expressions.every(x => x.extent === x.actual.length),
   unsupported_partial_terms_withheld: true,
   C_language_specific_changes: false,
 }));
