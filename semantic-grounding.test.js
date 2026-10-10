@@ -126,10 +126,6 @@ assert.strictEqual(fromReality.current.completed.p0,WORD.cat,
   'grounded cat-world relation did not reconstruct the English label');
 
 const ambiguous=structuredClone(learner);
-// The ambiguity probe must isolate the current partial world relation from any
-// learned predecessor sequence. `9` is a novel categorical p1 contact with no
-// learned temporal continuation, so the following p1=1 still leaves p2 open.
-Mind.C(ambiguous,[null,9,null,null,0]);
 Mind.C(ambiguous,[null,1,null,null,0]);
 assert.ok(!Object.prototype.hasOwnProperty.call(ambiguous.current.completed,'p0'),
   'ambiguous partial reality was converted into an unsupported English label');
