@@ -21,6 +21,9 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Verify untouched semantic baseline
+        run: node semantic-grounding.test.js
+
       - name: Apply architectural correction
         run: python .github/scripts/apply_unified_outward_completion.py
 
@@ -32,11 +35,13 @@ jobs:
           grep -q 'state.current.continuation' one-mind.js
           ! grep -q 'state.motor = completion == null' one-mind.js
 
-      - name: Run established regressions
+      - name: Verify semantic behavior after correction
+        run: node semantic-grounding.test.js
+
+      - name: Run remaining established regressions
         run: |
           node one-mind.test.js
           node structured-knowledge.test.js
-          node semantic-grounding.test.js
           node language-school.test.js
           node micro-world-single-life.js
 
