@@ -3,6 +3,12 @@
 const assert = require('assert');
 const Mind = require('../../one-mind.js');
 
+const STAGE = process.env.STAGE || 'all';
+function checkpoint(name, payload = {}) {
+  console.log(JSON.stringify({ checkpoint: name, ...payload }));
+  if (STAGE === name) process.exit(0);
+}
+
 // Generic falsification: the same raw percept must keep one identity when it
 // recurs at different times. Order is supplied only by successive C contacts.
 // No token position, lexical category, sentence slot, grammar, or dictionary is
@@ -16,16 +22,16 @@ const SCENE_BA = 20;
 const SCENE_GAP = 90;
 
 const m = Mind.one(1, 1);
-
-// This is the structural prerequisite. On the uncorrected core it fails before
-// spending compute on schooling. On the corrected core the rest of this file is
-// the actual behavioral falsification.
 assert.ok(Array.isArray(m.structure.temporal_symbols),
   'raw perceptual succession is not represented in M');
+checkpoint('structure');
 
 let noise = 1000;
+function contactOn(state, token, scene) {
+  Mind.C(state, [token, scene, noise++, 0]);
+}
 function contact(token, scene) {
-  Mind.C(m, [token, scene, noise++, 0]);
+  contactOn(m, token, scene);
 }
 
 // A and B occur equally often in both scenes. Their individual identities
@@ -40,8 +46,7 @@ for (let round = 0; round < 12; round++) {
   contact(A, SCENE_BA);
   contact(GAP, SCENE_GAP);
 }
-// Flush the final contact into exact experience.
-contact(GAP, SCENE_GAP);
+contact(GAP, SCENE_GAP); // flush final training contact into exact experience
 
 function sameExpansion(symbol, expansion) {
   return symbol.channel === 'p0' &&
@@ -55,8 +60,8 @@ assert.ok(ab,
   'M did not stabilize the repeated same-channel A→B relation');
 assert.ok(ab.support >= 8,
   'A→B did not remain supported by repeated reality contact');
+checkpoint('formation', { feature: ab.feature, support: ab.support });
 
-// The temporal relation must participate in ordinary empirical grounding.
 function groundedABRelation(state) {
   return state.structure.patterns.find(pattern =>
     pattern.active !== false &&
@@ -68,25 +73,28 @@ function groundedABRelation(state) {
 const groundedBefore = groundedABRelation(m);
 assert.ok(groundedBefore,
   'the learned A→B relation did not ground into the concurrent world relation');
+checkpoint('grounding', { feature: ab.feature, pattern: groundedBefore.id });
 
 // A live recurrence of the same raw sequence, through the same p0 channel and
-// with the world property withheld, must make that grounded relation usable.
+// with the world property withheld, must make the grounded relation usable.
 const forward = structuredClone(m);
-Mind.C(forward, [A, null, noise++, 0]);
-Mind.C(forward, [B, null, noise++, 0]);
-assert.strictEqual(forward.current.completed.p1, SCENE_AB,
-  'the grounded A→B relation was not usable from raw succession');
+contactOn(forward, A, null);
+contactOn(forward, B, null);
 assert.strictEqual(forward.current.completed[ab.feature], true,
   'the recurring A→B percept did not retain its learned temporal identity');
+assert.strictEqual(forward.current.completed.p1, SCENE_AB,
+  'the grounded A→B relation was not usable from raw succession');
+checkpoint('forward', { feature: ab.feature, completed_scene: forward.current.completed.p1 });
 
 // Reversing the exact same percepts must not instantiate A→B.
 const reverse = structuredClone(m);
-Mind.C(reverse, [B, null, noise++, 0]);
-Mind.C(reverse, [A, null, noise++, 0]);
+contactOn(reverse, B, null);
+contactOn(reverse, A, null);
 assert.notStrictEqual(reverse.current.completed[ab.feature], true,
   'B→A incorrectly instantiated the learned A→B relation');
 assert.notStrictEqual(reverse.current.completed.p1, SCENE_AB,
   'reverse order incorrectly grounded as the forward world relation');
+checkpoint('reverse');
 
 // Continue the same M. The relation must keep the same grounded identity rather
 // than being recreated as a new positional percept after more life.
@@ -110,6 +118,7 @@ assert.ok(stabilized.support >= originalSupport,
   'confirming experience weakened the stored support of A→B');
 assert.ok(groundedABRelation(m),
   'continued reality contact erased the grounded A→B world relation');
+checkpoint('persistence', { feature: stabilized.feature, support: stabilized.support });
 
 console.log('42ndMind raw percept succession and grounding: PASS');
 console.log(JSON.stringify({
