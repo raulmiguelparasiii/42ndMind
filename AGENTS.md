@@ -106,7 +106,7 @@ Action and consequence belong to one experienced relation. A learned relation ma
 
 Language is broadly compressed reality-grounded relational structure, not merely interpersonal signal convention.
 
-Raw numeric/categorical contact is substrate, not meaning. `§N` is an arbitrary internal handle; its meaning is its recursively grounded definition and relational position.
+Raw numeric/categorical contact is substrate, not meaning. `§N` is an arbitrary internal handle; its meaning is its recursively grounded definition and relational position. No particular `§N` or toy word such as `cat` is architecturally privileged.
 
 Desired architecture:
 
@@ -117,6 +117,8 @@ reality-grounded internal relational language
 ```
 
 Words must not receive meaning from a dictionary hidden in `C`. English is an expression surface that can attach to independently grounded meanings. `M` should be able to use its internal relational language without translating every cognition into English.
+
+A bounded fixed-slot compositional schooling test now passes. It establishes reuse/composition of independently taught word relations at toy scale, not general English or learned natural-language grammar. The interface still preserves three token positions.
 
 ## Current active architecture
 
@@ -140,6 +142,7 @@ Words must not receive meaning from a dictionary hidden in `C`. English is an ex
 - uses only nonsemantic physical motor variation when no grounded motor completion exists;
 - incrementally refreshes learned evidence and periodically reopens exact accumulated experience for broader recompression;
 - retains finite working descriptions relative to their referent rather than one global popularity list;
+- when predictive warrant is tied, uses the ultimate base dependency footprint as a finite-retention tie-break so an inaccessible compressed alias cannot crowd out an equally warranted directly usable route; this does **not** generally penalize abstraction;
 - contains `M.knowledge`, a first-class relational substrate with subject/relation/object terms, variables, explicit relation references, generic schema matching, recursive closure, provenance, and relation-about-relation representation;
 - represents relation activity as a generic structural property so relational knowledge can alter the status of other relational knowledge without theorem-specific branches;
 - seeds Stone and OneLogic as ordinary corrigible `M` content and allows later structured reality contact to add, refine, or defeat such relations.
@@ -156,6 +159,7 @@ Search/recompression/storage bounds are engineering constraints, not cognitive a
 6. Sparse concepts initially lacked a comparison domain; they are now evaluable where their grounded dependencies are known, preserving `undefined != false` elsewhere.
 7. Stored bidirectional semantic bridges were weaker than actual use; partial contact and generic `M.current` completion were added so learned relations can genuinely translate incomplete contact without a language-specific branch.
 8. The first first-class-knowledge draft deactivated categorical schemas directly when a counterexample appeared. That passed tests but effectively smuggled T10 into `C`. It was rejected. The replacement makes T10 itself a relation in `M`; its self-defeat test proves the epistemic authority is in `M`, not generic machinery.
+9. The first compositional language-school run exposed dependency-blind finite retention: an equally predictive context-dependent `§` handle could crowd out a directly usable relation because tie ordering ignored what base information was needed to reconstruct the antecedent. A first attempted fix globally charged compressed relations for reconstruction cost; that broke legitimate compound semantic grounding and was rejected. The accepted fix leaves predictive/compression authority unchanged and uses ultimate dependency count **only as a tie-break among equal predictive candidates**. The unchanged language-school test then passed.
 
 ## Frozen checkpoints
 
@@ -189,24 +193,20 @@ corrected_initial_false_grounding = true
 semantic_specific_C_logic = false
 ```
 
-### C. First-class seeded relational knowledge / no-cheat meta-relations — current strongest verified code
+The `cat`/`§1` pair above is only the historical test fixture, not a privileged part of the architecture.
 
-Code before this documentation-only update:
+### C. First-class seeded relational knowledge / no-cheat meta-relations
+
+Tested code:
 
 ```text
 bcadf9294dc13dda07a2522b044450e1493d08e7
+checkpoint/first-class-knowledge-2026-10-10
 ```
 
-GitHub Actions run `38021478963`, job `114123219304`, passed every active gate:
+GitHub Actions run `38021478963` passed every active gate at that checkpoint.
 
-```text
-one-mind.test.js                 PASS
-structured-knowledge.test.js     PASS
-semantic-grounding.test.js       PASS
-micro-world-single-life.js       PASS
-```
-
-The new structured-knowledge gate verifies:
+The structured-knowledge gate verifies:
 
 ```text
 Stone/OneLogic seed exists as structured M content
@@ -218,16 +218,61 @@ T10 can be made to disable itself
 once T10 is inactive, C no longer enforces T10-like behavior
 ```
 
-The unchanged 96-contact embodied regression also passed, so the first-class knowledge substrate did not break the existing learned-action path.
+### D. Bounded compositional language / dependency-aware retention — current strongest tested code
 
-This checkpoint proves only those bounded representational and corrigibility claims. It does not prove full formal OneLogic execution, general reasoning, general English, or AGI.
+Exact tested code SHA:
+
+```text
+242bf79481d641a69691f8434dcabead432c8735
+checkpoint/compositional-language-2026-10-10
+```
+
+Primary GitHub Actions run `38029514723`, job `114147310257`, passed:
+
+```text
+one-mind.test.js                 PASS
+structured-knowledge.test.js     PASS
+semantic-grounding.test.js       PASS
+language-school.test.js          PASS
+micro-world-single-life.js       PASS
+```
+
+The unchanged compositional schooling gate verified:
+
+```text
+experiences = 101
+base_vocabulary = 9
+later_taught_vocabulary = 3
+total_tested_vocabulary = 12
+held_out_base_sentences_read = 3
+held_out_base_sentences_expressed = 3
+never_seen_new_word_combination_read = true
+never_seen_new_word_combination_expressed = true
+ambiguous_partial_contact_suspended = true
+C_language_specific_changes = false
+```
+
+The three later words `yellow`, `star`, and `jumps` were taught separately and never appeared together during schooling; the never-experienced combination `yellow star jumps` was then both read and expressed correctly.
+
+The same code preserved the unchanged 96-contact embodied regression:
+
+```text
+survived = true
+autonomous_steps_survived = 32
+avg_friction = 31.49
+babble_avg_friction = 47.6
+grounded_motor_steps = 17
+grounded_autonomous_steps = 13
+```
+
+This establishes bounded fixed-slot compositional language learning/generalization, not broad natural-language competence. See `CHECKPOINT_COMPOSITIONAL_LANGUAGE_2026-10-10.md` for the failure history and exact limitations.
 
 ## Current frontier
 
-1. **Richer proposition/possibility representation.** The first-class relational substrate now handles variables and meta-relations, but not yet arbitrary proposition objects, alternative live possibility sets, quantifiers, set-valued operations, or general negation/compatibility semantics.
-2. **Full OneLogic inside M.** T1-T10 are represented, and some are operational, but the remaining formal theorems should become executable only by extending generic representation enough to express their actual mathematics. Do not add theorem-specific solvers.
+1. **Richer proposition/possibility representation.** The first-class relational substrate handles variables and meta-relations, but not yet arbitrary proposition objects, alternative live possibility sets, quantifiers, set-valued operations, or general negation/compatibility semantics.
+2. **Full OneLogic inside M.** T1-T10 are represented, and some are operational, but remaining formal theorems should become executable only by extending generic representation enough to express their actual mathematics. Do not add theorem-specific solvers.
 3. **Stone beyond seed schemas.** Current Stone knowledge is a structured leg-up, not a complete derivation engine for arbitrary judgment stance. Any fuller use must arise through the same relation substrate and reality contact.
-4. **English beyond labels.** Sentence order, composition, reference, grammar, and expression must emerge through the same relational substrate; tokenization may belong to `S`, but semantics/grammar do not belong in `C`.
+4. **English beyond the fixed-slot compositional mini-language.** Variable-length expression, syntax induction, morphology, reference, negation, quantification, questions, discourse, and freer word order remain unproved. Tokenization may belong to `S`; semantics/grammar do not belong in `C`.
 5. **Source/provenance learning.** Books/testimony must enter as claims-with-provenance, distinct from actuality. Source authority must become learned and referent-relative, not a hard-coded weight.
 6. **Inquiry.** Partial/undefined contact is represented and ambiguous completion can remain unresolved. Materially relevant unresolved alternatives should eventually make discriminating contact itself a warranted continuation, without an explore module.
 7. **Scaling.** The 96-contact micro-world remains expensive. Stable handles should reduce repeated search while retaining grounding for correction. Optimize indexes/local/incremental completion without changing semantic authority.
@@ -238,11 +283,12 @@ This checkpoint proves only those bounded representational and corrigibility cla
 ## Next legitimate sequence
 
 1. Preserve all frozen checkpoints.
-2. Extend the **same** first-class relation substrate only where a generic representational limitation is demonstrated, especially propositions, alternatives, and live possibility sets.
-3. Make more formal OneLogic content executable through that generic substrate rather than theorem-specific code.
-4. Use the same substrate for source-mediated learning and richer language contact.
-5. Make stable concepts and meta-relations cheap query-relative handles instead of repeatedly scanning the full lifetime.
-6. Continue the existing single-life experiment for longer spans once scaling permits; inspect stabilization rather than adding cognitive modules.
-7. After every generic change, rerun self-correction, no-cheat structured knowledge, semantic translation, micro-world agency, temporal, and later multi-seed falsification.
+2. Keep the new language-school failure history as a regression: do not restore dependency-blind retention or weaken held-out composition tests.
+3. Extend the **same** first-class relation substrate only where a generic representational limitation is demonstrated, especially propositions, alternatives, live possibility sets, and variable-length relational expression.
+4. Make more formal OneLogic content executable through that generic substrate rather than theorem-specific code.
+5. Use the same substrate for source-mediated learning and richer language contact.
+6. Make stable concepts and meta-relations cheap query-relative handles instead of repeatedly scanning the full lifetime.
+7. Continue the existing single-life experiment for longer spans once scaling permits; inspect stabilization rather than adding cognitive modules.
+8. After every generic change, rerun self-correction, no-cheat structured knowledge, semantic translation/composition, micro-world agency, temporal, and later multi-seed falsification.
 
 Do not declare a capability proved because desired behavior appears once. Remove shortcuts, isolate the claim, and preserve earlier regressions.
