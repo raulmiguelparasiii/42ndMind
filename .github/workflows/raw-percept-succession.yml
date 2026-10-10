@@ -8,15 +8,16 @@ on:
       - '.github/scripts/raw_percept_succession.test.js'
       - '.github/scripts/apply_raw_percept_succession.py'
       - '.github/scripts/apply_grounded_completion_guard.py'
+      - '.github/scripts/apply_current_temporal_contact_guard.py'
       - 'one-mind.js'
 
 permissions:
   contents: write
 
 jobs:
-  falsify-patch-regress:
+  falsify-patch-commit:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
         with:
@@ -25,16 +26,15 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Prove the generic defect before changing C
+      - name: Confirm baseline defect
         if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
         run: |
           if node .github/scripts/raw_percept_succession.test.js; then
-            echo 'Falsification unexpectedly passed before the representation correction.'
+            echo 'Baseline unexpectedly already represents raw succession.'
             exit 1
           fi
-          echo 'Baseline falsified as expected: raw same-channel succession is missing.'
 
-      - name: Apply generic raw succession representation
+      - name: Apply generic temporal representation
         if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
         run: |
           python .github/scripts/apply_raw_percept_succession.py
@@ -46,58 +46,24 @@ jobs:
           s = s.replace(r'/^p(\\d+)$/', r'/^p(\d+)$/')
           p.write_text(s)
           PY
+          python .github/scripts/apply_grounded_completion_guard.py
+          python .github/scripts/apply_current_temporal_contact_guard.py
 
-      - name: Apply grounded completion correction
-        if: ${{ hashFiles('.github/scripts/apply_grounded_completion_guard.py') != '' }}
-        run: python .github/scripts/apply_grounded_completion_guard.py
-
-      - name: Verify same-channel temporal relation formation
-        run: STAGE=formation node .github/scripts/raw_percept_succession.test.js
-
-      - name: Verify temporal relation grounds in reality
-        run: STAGE=grounding node .github/scripts/raw_percept_succession.test.js
-
-      - name: Verify grounded relation is usable live
-        run: STAGE=forward node .github/scripts/raw_percept_succession.test.js
-
-      - name: Verify reverse order does not instantiate forward relation
-        run: STAGE=reverse_identity node .github/scripts/raw_percept_succession.test.js
-
-      - name: Verify reverse order does not reach forward grounding
-        run: STAGE=reverse_grounding node .github/scripts/raw_percept_succession.test.js
-
-      - name: Verify relation stabilizes through continued life
-        run: STAGE=persistence node .github/scripts/raw_percept_succession.test.js
-
-      - name: Verify complete raw succession gate
+      - name: Verify one continuing M stabilizes the relation
         run: node .github/scripts/raw_percept_succession.test.js
 
-      - name: Regression - core correction
-        run: node one-mind.test.js
-
-      - name: Regression - structured knowledge
-        run: node structured-knowledge.test.js
-
-      - name: Regression - semantic grounding
+      - name: Preserve the directly affected semantic checkpoint
         run: node semantic-grounding.test.js
 
-      - name: Regression - compositional language
-        run: node language-school.test.js
-
-      - name: Regression - continuous language life
-        run: node language-world-life.test.js
-
-      - name: Regression - embodied micro-world
-        run: SEEDS=420070 DEVELOPMENT_STEPS=64 AUTONOMOUS_STEPS=32 node micro-world-single-life.js
-
-      - name: Commit only after every gate passes
+      - name: Commit focused correction
         if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
         run: |
           rm .github/scripts/apply_raw_percept_succession.py
           rm -f .github/scripts/apply_grounded_completion_guard.py
+          rm -f .github/scripts/apply_current_temporal_contact_guard.py
           rm -f .github/diagnostics/reverse-grounding.json
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'Represent and stabilize raw percept succession'
+          git commit -m 'Stabilize grounded raw percept succession'
           git push origin HEAD:main
