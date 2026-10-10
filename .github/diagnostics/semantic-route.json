@@ -8,73 +8,39 @@
   "completed": {
     "p0": 102,
     "p1": 1,
-    "p2": 1,
-    "p3": 7,
+    "p2": 2,
     "c0": 0
   },
   "inferred": [
     "action",
     "p1",
     "p2",
-    "p3",
-    "§2",
-    "§24",
-    "§39",
-    "§40",
-    "§41",
-    "§42",
-    "§43",
-    "§44",
-    "§45",
-    "§46",
-    "§47",
-    "§48",
+    "§25",
+    "§26",
+    "§27",
+    "§3",
+    "§34",
+    "§35",
+    "§36",
+    "§49",
+    "§50",
     "§51",
     "§52",
+    "§53",
+    "§54",
     "§t1",
-    "§t10",
-    "§t11",
     "§t12",
     "§t13",
     "§t14",
-    "§t15",
-    "§t16",
     "§t17",
-    "§t18",
-    "§t19",
-    "§t2",
-    "§t20",
-    "§t21",
-    "§t22",
     "§t23",
     "§t24",
-    "§t25",
-    "§t26",
-    "§t3",
-    "§t4",
-    "§t5",
     "§t6",
     "§t7",
-    "§t8",
     "§t9"
   ],
-  "unresolved": [
-    "§3",
-    "§49",
-    "§50",
-    "§53",
-    "§54"
-  ],
+  "unresolved": [],
   "temporal_true": [
-    {
-      "feature": "§t4",
-      "channel": "p2",
-      "expansion": [
-        2,
-        1
-      ],
-      "support": 22
-    },
     {
       "feature": "§t6",
       "channel": "p0",
@@ -85,59 +51,46 @@
       "support": 6
     },
     {
-      "feature": "§t20",
-      "channel": "p1",
-      "expansion": [
-        1,
-        1,
-        2,
-        2
-      ],
-      "support": 5
-    },
-    {
-      "feature": "§t22",
-      "channel": "p3",
-      "expansion": [
-        5,
-        7
-      ],
-      "support": 5
-    },
-    {
-      "feature": "§t25",
+      "feature": "§t1",
       "channel": "p2",
       "expansion": [
-        2,
         1,
+        2
+      ],
+      "support": 21
+    },
+    {
+      "feature": "§t7",
+      "channel": "p1",
+      "expansion": [
         2,
         1
       ],
-      "support": 9
+      "support": 21
     }
   ],
-  "temporal_false_count": 21,
+  "temporal_false_count": 7,
   "satisfied_p2_routes": [
     {
-      "id": "r7",
-      "expected": 1,
-      "support": 22,
+      "id": "r8",
+      "expected": 2,
+      "support": 21,
       "exceptions": 0,
-      "covered": 22,
+      "covered": 21,
       "eligible": 63,
       "reliability": 1,
-      "predictive_code_bits": 0.3054164344159915,
+      "predictive_code_bits": 0.3081462271715638,
       "dependency_count": 1,
       "satisfied_final": true,
       "conditions": [
         {
-          "feature": "§t4",
+          "feature": "§t1",
           "value": true,
           "observed": false,
           "inferred": true,
           "primitive_definition": [
             {
-              "feature": "§t4"
+              "feature": "§t1"
             }
           ]
         }
@@ -229,25 +182,25 @@
       ]
     },
     {
-      "id": "r315",
-      "expected": 1,
-      "support": 22,
+      "id": "r318",
+      "expected": 2,
+      "support": 21,
       "exceptions": 0,
-      "covered": 22,
+      "covered": 21,
       "eligible": 63,
       "reliability": 1,
-      "predictive_code_bits": 0.4274243792919155,
+      "predictive_code_bits": 0.43015417204748785,
       "dependency_count": 2,
       "satisfied_final": true,
       "conditions": [
         {
-          "feature": "§t4",
+          "feature": "§t1",
           "value": true,
           "observed": false,
           "inferred": true,
           "primitive_definition": [
             {
-              "feature": "§t4"
+              "feature": "§t1"
             }
           ]
         },
@@ -265,25 +218,25 @@
       ]
     },
     {
-      "id": "r316",
-      "expected": 1,
-      "support": 22,
+      "id": "r319",
+      "expected": 2,
+      "support": 21,
       "exceptions": 0,
-      "covered": 22,
+      "covered": 21,
       "eligible": 63,
       "reliability": 1,
-      "predictive_code_bits": 0.4274243792919155,
+      "predictive_code_bits": 0.43015417204748785,
       "dependency_count": 2,
       "satisfied_final": true,
       "conditions": [
         {
-          "feature": "§t4",
+          "feature": "§t1",
           "value": true,
           "observed": false,
           "inferred": true,
           "primitive_definition": [
             {
-              "feature": "§t4"
+              "feature": "§t1"
             }
           ]
         },
@@ -301,25 +254,25 @@
       ]
     },
     {
-      "id": "r317",
-      "expected": 1,
-      "support": 22,
+      "id": "r320",
+      "expected": 2,
+      "support": 21,
       "exceptions": 0,
-      "covered": 22,
+      "covered": 21,
       "eligible": 63,
       "reliability": 1,
-      "predictive_code_bits": 0.4274243792919155,
+      "predictive_code_bits": 0.43015417204748785,
       "dependency_count": 2,
       "satisfied_final": true,
       "conditions": [
         {
-          "feature": "§t4",
+          "feature": "§t1",
           "value": true,
           "observed": false,
           "inferred": true,
           "primitive_definition": [
             {
-              "feature": "§t4"
+              "feature": "§t1"
             }
           ]
         },
@@ -339,122 +292,10 @@
   ],
   "inferred_symbols": [
     {
-      "feature": "§2",
+      "feature": "§25",
       "definition": [
         {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        }
-      ],
-      "primitive_definition": [
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "feature": "§24",
-      "definition": [
-        {
-          "feature": "§2",
-          "value": true
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        }
-      ],
-      "primitive_definition": [
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "feature": "§39",
-      "definition": [
-        {
-          "feature": "§2",
-          "value": true
-        },
-        {
-          "feature": "§24",
-          "value": true
-        }
-      ],
-      "primitive_definition": [
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "feature": "§40",
-      "definition": [
-        {
-          "feature": "§2",
-          "value": true
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        }
-      ],
-      "primitive_definition": [
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "feature": "§41",
-      "definition": [
-        {
-          "feature": "§t4",
+          "feature": "§t7",
           "value": true
         },
         {
@@ -464,7 +305,7 @@
       ],
       "primitive_definition": [
         {
-          "feature": "§t4",
+          "feature": "§t7",
           "value": true
         },
         {
@@ -474,10 +315,10 @@
       ]
     },
     {
-      "feature": "§42",
+      "feature": "§26",
       "definition": [
         {
-          "feature": "§t4",
+          "feature": "§t7",
           "value": true
         },
         {
@@ -487,7 +328,7 @@
       ],
       "primitive_definition": [
         {
-          "feature": "§t4",
+          "feature": "§t7",
           "value": true
         },
         {
@@ -497,10 +338,10 @@
       ]
     },
     {
-      "feature": "§43",
+      "feature": "§27",
       "definition": [
         {
-          "feature": "§t4",
+          "feature": "§t7",
           "value": true
         },
         {
@@ -510,7 +351,7 @@
       ],
       "primitive_definition": [
         {
-          "feature": "§t4",
+          "feature": "§t7",
           "value": true
         },
         {
@@ -520,15 +361,15 @@
       ]
     },
     {
-      "feature": "§44",
+      "feature": "§3",
       "definition": [
         {
-          "feature": "§2",
-          "value": true
+          "feature": "p1",
+          "value": 1
         },
         {
-          "feature": "§39",
-          "value": true
+          "feature": "p2",
+          "value": 2
         }
       ],
       "primitive_definition": [
@@ -538,23 +379,99 @@
         },
         {
           "feature": "p2",
-          "value": 1
+          "value": 2
+        }
+      ]
+    },
+    {
+      "feature": "§34",
+      "definition": [
+        {
+          "feature": "§t1",
+          "value": true
         },
+        {
+          "feature": "action",
+          "value": 0
+        }
+      ],
+      "primitive_definition": [
+        {
+          "feature": "§t1",
+          "value": true
+        },
+        {
+          "feature": "action",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "feature": "§35",
+      "definition": [
+        {
+          "feature": "§t1",
+          "value": true
+        },
+        {
+          "feature": "c0_open",
+          "value": false
+        }
+      ],
+      "primitive_definition": [
+        {
+          "feature": "§t1",
+          "value": true
+        },
+        {
+          "feature": "c0_open",
+          "value": false
+        }
+      ]
+    },
+    {
+      "feature": "§36",
+      "definition": [
+        {
+          "feature": "§t1",
+          "value": true
+        },
+        {
+          "feature": "c0",
+          "value": 0
+        }
+      ],
+      "primitive_definition": [
+        {
+          "feature": "§t1",
+          "value": true
+        },
+        {
+          "feature": "c0",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "feature": "§49",
+      "definition": [
+        {
+          "feature": "§3",
+          "value": true
+        },
+        {
+          "feature": "p1",
+          "value": 1
+        }
+      ],
+      "primitive_definition": [
         {
           "feature": "p1",
           "value": 1
         },
         {
           "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
+          "value": 2
         },
         {
           "feature": "p1",
@@ -563,15 +480,15 @@
       ]
     },
     {
-      "feature": "§45",
+      "feature": "§50",
       "definition": [
         {
-          "feature": "§2",
+          "feature": "§3",
           "value": true
         },
         {
-          "feature": "§40",
-          "value": true
+          "feature": "p2",
+          "value": 2
         }
       ],
       "primitive_definition": [
@@ -581,136 +498,11 @@
         },
         {
           "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
+          "value": 2
         },
         {
           "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "feature": "§46",
-      "definition": [
-        {
-          "feature": "§24",
-          "value": true
-        },
-        {
-          "feature": "§39",
-          "value": true
-        }
-      ],
-      "primitive_definition": [
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "feature": "§47",
-      "definition": [
-        {
-          "feature": "§24",
-          "value": true
-        },
-        {
-          "feature": "§40",
-          "value": true
-        }
-      ],
-      "primitive_definition": [
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "feature": "§48",
-      "definition": [
-        {
-          "feature": "§24",
-          "value": true
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        }
-      ],
-      "primitive_definition": [
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p2",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
-        },
-        {
-          "feature": "p1",
-          "value": 1
+          "value": 2
         }
       ]
     },
@@ -757,6 +549,52 @@
         {
           "feature": "p0",
           "value": 102
+        }
+      ]
+    },
+    {
+      "feature": "§53",
+      "definition": [
+        {
+          "feature": "§t1",
+          "value": true
+        },
+        {
+          "feature": "p1",
+          "value": 1
+        }
+      ],
+      "primitive_definition": [
+        {
+          "feature": "§t1",
+          "value": true
+        },
+        {
+          "feature": "p1",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "feature": "§54",
+      "definition": [
+        {
+          "feature": "§t7",
+          "value": true
+        },
+        {
+          "feature": "p2",
+          "value": 2
+        }
+      ],
+      "primitive_definition": [
+        {
+          "feature": "§t7",
+          "value": true
+        },
+        {
+          "feature": "p2",
+          "value": 2
         }
       ]
     }
