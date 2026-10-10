@@ -61,17 +61,16 @@ replace_once(
     'current temporal evaluation',
 )
 
-# Structural descriptions are inspectable consequences of experience. They are
-# not free-standing sensory facts that completion may manufacture and feed back
-# into itself.
+# These three fields describe the compressor's own chosen encoding. They are
+# inspectable structure, but they are not independently contacted reality. A
+# compression depth, chunk length, or local §q name must therefore never become
+# a missing reality-term merely because an empirical correlation can predict it.
+# Real relation content (including relation_cN_order) remains available.
 anchor = 'function completeCurrent(state, frame) {'
 if s.count(anchor) != 1:
     raise SystemExit(f'completeCurrent anchor: expected one match, found {s.count(anchor)}')
 helper = '''function compressionDescriptionFeature(feature) {
   return feature === 'relation_depth' || feature === 'relation_extent' || feature === 'relation_symbol';
-}
-function temporalEvidenceFeature(feature) {
-  return /^§t\d+$/.test(feature);
 }
 function symbolDependsOnCompressionDescription(symbol, byFeature) {
   if (!symbol) return false;
@@ -107,10 +106,6 @@ replace_once(
 '''    const prediction = predict(state.structure, completed);
     for (const [target, relation] of Object.entries(prediction.best_by_target)) {
       if (Object.prototype.hasOwnProperty.call(completed, target)) continue;
-      // A temporal symbol says what actually occurred on one physical channel.
-      // It may support predictions once directly evaluated from that channel's
-      // contact history, but completion cannot infer that history into existence.
-      if (temporalEvidenceFeature(target)) continue;
       // Keep compressor-description metadata descriptive. It can summarize a
       // relation that exists, but it cannot be inferred as if it were sensory
       // evidence and then used to bootstrap unrelated empirical completion.
