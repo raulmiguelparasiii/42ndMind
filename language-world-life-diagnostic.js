@@ -5,61 +5,37 @@ const fs = require('fs');
 let source = fs.readFileSync(require.resolve('./language-world-life.test.js'), 'utf8');
 
 source = source.replace(
-  'function readingProbe(m, sceneValue, speaker) {',
-  `function matchingTargetDiagnostics(m, values, target) {
+  "for (const feature of ['p12', 'p13', 'p14']) {",
+  `if (Object.prototype.hasOwnProperty.call(partial.current.completed, 'p12')) {
   const sameValue = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  return (m.structure.patterns || [])
-    .filter(p => p.active !== false && p.target === target && p.conditions.every(c =>
-      Object.prototype.hasOwnProperty.call(values, c.feature) && sameValue(values[c.feature], c.value)))
+  const candidates = (partial.structure.patterns || [])
+    .filter(p => p.active !== false && p.target === 'p12' && p.conditions.every(c =>
+      Object.prototype.hasOwnProperty.call(partial.current.completed, c.feature) &&
+      sameValue(partial.current.completed[c.feature], c.value)))
     .sort((a, b) =>
       a.predictive_code_bits - b.predictive_code_bits ||
-      b.bits_saved - a.bits_saved ||
-      b.covered - a.covered ||
-      a.id.localeCompare(b.id))
+      b.bits_saved - a.bits_saved || b.covered - a.covered || a.id.localeCompare(b.id))
     .slice(0, 40)
     .map(p => ({
-      id: p.id,
-      expected: p.expected,
-      conditions: p.conditions,
-      support: p.support,
-      covered: p.covered,
-      reliability: p.reliability,
-      predictive_code_bits: p.predictive_code_bits,
-      dependency_count: p.dependency_count,
-      bits_saved: p.bits_saved,
+      id: p.id, expected: p.expected, conditions: p.conditions,
+      support: p.support, exceptions: p.exceptions, covered: p.covered,
+      reliability: p.reliability, predictive_code_bits: p.predictive_code_bits,
+      dependency_count: p.dependency_count, bits_saved: p.bits_saved,
     }));
+  const trueSymbolsContainingP12 = (partial.structure.symbols || [])
+    .filter(s => partial.current.completed[s.feature] === true &&
+      s.definition.some(a => a.feature === 'p12'))
+    .map(s => ({ feature: s.feature, definition: s.definition, source: s.source }));
+  console.log('PARTIAL_OVERREACH_DIAGNOSTIC ' + JSON.stringify({
+    observed: partial.current.observed,
+    completed: partial.current.completed,
+    inferred: partial.current.inferred,
+    unresolved: partial.current.unresolved,
+    p12_candidates: candidates,
+    true_symbols_containing_p12: trueSymbolsContainingP12,
+  }));
 }
-
-function readingProbe(m, sceneValue, speaker) {`
-);
-
-source = source.replace(
-  `  const actual = [10, 11, 12, 13, 14].map(i => q.current.completed[\`p\${i}\`]);
-  assert.deepStrictEqual(actual, worldValues(sceneValue),
-    \`variable-length reading failed for: \${words.filter(x => x !== EOS).join(' ')}\`);`,
-  `  const actual = [10, 11, 12, 13, 14].map(i => q.current.completed[\`p\${i}\`]);
-  const expected = worldValues(sceneValue);
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-    console.log('READING_FAILURE_DIAGNOSTIC ' + JSON.stringify({
-      speaker,
-      words,
-      actual,
-      expected,
-      unresolved: q.current.unresolved,
-      completed: q.current.completed,
-      p13_matching_candidates: matchingTargetDiagnostics(q, q.current.completed, 'p13'),
-    }));
-  }
-  assert.deepStrictEqual(actual, expected,
-    \`variable-length reading failed for: \${words.filter(x => x !== EOS).join(' ')}\`);`
-);
-
-source = source.replace(
-  `  star: directRouteDiagnostics(learner, 'star', 'p11', SHAPES.star),
-  helps: directRouteDiagnostics(learner, 'helps', 'p14', VERBS.helps.code),`,
-  `  star: directRouteDiagnostics(learner, 'star', 'p11', SHAPES.star),
-  helps: directRouteDiagnostics(learner, 'helps', 'p14', VERBS.helps.code),
-  square_patient: directRouteDiagnostics(learner, 'square', 'p13', SHAPES.square),`
+for (const feature of ['p12', 'p13', 'p14']) {`
 );
 
 const execute = new Function('require', 'module', 'exports', '__filename', '__dirname', source);
