@@ -80,6 +80,54 @@ function teach(m, samples, rounds, seedBase) {
   }
 }
 
+function compactPattern(pattern) {
+  return {
+    id: pattern.id,
+    conditions: pattern.conditions,
+    target: pattern.target,
+    expected: pattern.expected,
+    active: pattern.active !== false,
+    support: pattern.support,
+    exceptions: pattern.exceptions,
+    covered: pattern.covered,
+    eligible: pattern.eligible,
+    reliability: pattern.reliability,
+    bits_saved: pattern.bits_saved,
+    predictive_code_bits: pattern.predictive_code_bits,
+  };
+}
+
+function diagnoseReadFailure(m, q, colorWord, nounWord, verbWord, expected) {
+  const tokenCodes = {
+    color: text.code(colorWord),
+    noun: text.code(nounWord),
+    verb: text.code(verbWord),
+  };
+  const lexicalForward = m.structure.patterns.filter(pattern =>
+    pattern.target === 'p5' && pattern.expected === expected[2] &&
+    pattern.conditions.some(atom => atom.feature === 'p2' && atom.value === tokenCodes.verb)
+  ).map(compactPattern);
+  const lexicalReverse = m.structure.patterns.filter(pattern =>
+    pattern.target === 'p2' && pattern.expected === tokenCodes.verb &&
+    pattern.conditions.some(atom => atom.feature === 'p5' && atom.value === expected[2])
+  ).map(compactPattern);
+  const allVerbWorld = m.structure.patterns.filter(pattern => pattern.target === 'p5').map(compactPattern);
+  const allVerbEnglish = m.structure.patterns.filter(pattern => pattern.target === 'p2').map(compactPattern);
+  console.log('LANGUAGE_SCHOOL_DIAGNOSTIC ' + JSON.stringify({
+    sentence: [colorWord, nounWord, verbWord],
+    token_codes: tokenCodes,
+    expected_world: expected,
+    current: q.current,
+    lexical_forward: lexicalForward,
+    lexical_reverse: lexicalReverse,
+    all_p5_patterns: allVerbWorld,
+    all_p2_patterns: allVerbEnglish,
+    pattern_count: m.structure.patterns.length,
+    active_pattern_count: m.structure.patterns.filter(p => p.active !== false).length,
+    symbols: m.structure.symbols.length,
+  }));
+}
+
 function readProbe(m, colorWord, nounWord, verbWord, expected) {
   const q = structuredClone(m);
   Mind.C(q, [
@@ -87,6 +135,9 @@ function readProbe(m, colorWord, nounWord, verbWord, expected) {
     null, null, null, null,
     0,
   ]);
+  if (q.current.completed.p3 !== expected[0] || q.current.completed.p4 !== expected[1] || q.current.completed.p5 !== expected[2]) {
+    diagnoseReadFailure(m, q, colorWord, nounWord, verbWord, expected);
+  }
   assert.strictEqual(q.current.completed.p3, expected[0], `reading failed for color in: ${colorWord} ${nounWord} ${verbWord}`);
   assert.strictEqual(q.current.completed.p4, expected[1], `reading failed for noun in: ${colorWord} ${nounWord} ${verbWord}`);
   assert.strictEqual(q.current.completed.p5, expected[2], `reading failed for verb in: ${colorWord} ${nounWord} ${verbWord}`);
