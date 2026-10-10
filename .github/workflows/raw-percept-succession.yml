@@ -55,8 +55,11 @@ jobs:
       - name: Verify grounded relation is usable live
         run: STAGE=forward node .github/scripts/raw_percept_succession.test.js
 
-      - name: Verify reverse order stays distinct
-        run: STAGE=reverse node .github/scripts/raw_percept_succession.test.js
+      - name: Verify reverse order does not instantiate forward relation
+        run: STAGE=reverse_identity node .github/scripts/raw_percept_succession.test.js
+
+      - name: Verify reverse order does not reach forward grounding
+        run: STAGE=reverse_grounding node .github/scripts/raw_percept_succession.test.js
 
       - name: Verify relation stabilizes through continued life
         run: STAGE=persistence node .github/scripts/raw_percept_succession.test.js
