@@ -1,0 +1,46 @@
+name: Test generic confirmation-stability correction
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-confirmation-stability.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Apply generic retention correction
+        run: python .github/scripts/apply_confirmation_stability.py
+      - name: Falsify confirmation stability
+        run: node .github/scripts/confirmation_stability.test.js
+      - name: Run established regressions
+        run: |
+          node one-mind.test.js
+          node structured-knowledge.test.js
+          node semantic-grounding.test.js
+          node language-school.test.js
+          node language-world-life.test.js
+          SEEDS=420070 DEVELOPMENT_STEPS=64 AUTONOMOUS_STEPS=32 node micro-world-single-life.js
+      - name: Commit only if every gate passed
+        run: |
+          mv .github/scripts/confirmation_stability.test.js confirmation-stability.test.js
+          rm .github/scripts/apply_confirmation_stability.py
+          rm -f .github/scripts/semantic_correction_probe.js
+          rm -f .github/workflows/semantic-correction-probe.yml
+          rm .github/workflows/apply-confirmation-stability.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Stabilize warranted relations under confirming experience'
+          git push origin HEAD:main
