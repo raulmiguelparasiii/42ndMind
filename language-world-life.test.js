@@ -109,6 +109,7 @@ function shuffle(items, seed) {
   }
   return out;
 }
+function pick(items, random) { return items[Math.floor(random() * items.length)]; }
 
 function scene(actorColor, actorShape, patientColor, patientShape, verb) {
   return {
@@ -121,7 +122,7 @@ function scene(actorColor, actorShape, patientColor, patientShape, verb) {
 }
 
 function earlyLifeContacts() {
-  const out = [];
+  const out = [], random = rng(420071);
   for (let si = 0; si < SPEAKERS.length; si++) {
     const speaker = SPEAKERS[si];
     for (let vi = 0; vi < EARLY_VERBS.length; vi++) {
@@ -130,35 +131,42 @@ function earlyLifeContacts() {
         for (let ni = 0; ni < EARLY_SHAPES.length; ni++) {
           const actorColor = EARLY_COLORS[ci];
           const actorShape = EARLY_SHAPES[ni];
-          const patientColor = EARLY_COLORS[(ci + vi + si + 1) % EARLY_COLORS.length];
-          const patientShape = EARLY_SHAPES[(ni + 2 * vi + si + 1) % EARLY_SHAPES.length];
+          // Patient properties vary independently. The previous draft made them
+          // deterministic functions of actor/verb/speaker, creating accidental
+          // nonlinguistic shortcuts that could crowd out the language relation.
+          const patientColor = pick(EARLY_COLORS, random);
+          const patientShape = pick(EARLY_SHAPES, random);
           out.push({ scene: scene(actorColor, actorShape, patientColor, patientShape, verb), speaker });
         }
       }
     }
   }
-  return shuffle(out, 420071);
+  return shuffle(out, 420072);
 }
 
 // New vocabulary appears later as part of ordinary life, not as category lessons.
 // Each contact contains at most one of yellow/star/helps, so the strong final
 // combination and every pair among those three remain absent from experience.
 function laterLifeContacts() {
-  const out = [];
+  const out = [], random = rng(990071);
   for (const speaker of SPEAKERS) {
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       const c = EARLY_COLORS[i % EARLY_COLORS.length];
-      const c2 = EARLY_COLORS[(i + 1) % EARLY_COLORS.length];
-      const s = EARLY_SHAPES[i % EARLY_SHAPES.length];
-      const s2 = EARLY_SHAPES[(i + 1) % EARLY_SHAPES.length];
-      const v = EARLY_VERBS[i % EARLY_VERBS.length];
+      const s = EARLY_SHAPES[(i * 2) % EARLY_SHAPES.length];
+      const v = EARLY_VERBS[(i + 1) % EARLY_VERBS.length];
+      const patientColorA = pick(EARLY_COLORS, random);
+      const patientShapeA = pick(EARLY_SHAPES, random);
+      const patientColorB = pick(EARLY_COLORS, random);
+      const patientShapeB = pick(EARLY_SHAPES, random);
+      const patientColorC = pick(EARLY_COLORS, random);
+      const patientShapeC = pick(EARLY_SHAPES, random);
 
-      out.push({ scene: scene('yellow', s, c2, s2, v), speaker });
-      out.push({ scene: scene(c, 'star', c2, s2, v), speaker });
-      out.push({ scene: scene(c, s, c2, s2, 'helps'), speaker });
+      out.push({ scene: scene('yellow', s, patientColorA, patientShapeA, v), speaker });
+      out.push({ scene: scene(c, 'star', patientColorB, patientShapeB, v), speaker });
+      out.push({ scene: scene(c, s, patientColorC, patientShapeC, 'helps'), speaker });
     }
   }
-  return shuffle(out, 990071);
+  return shuffle(out, 990072);
 }
 
 function live(m, contacts, contextOffset) {
