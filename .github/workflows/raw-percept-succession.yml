@@ -9,6 +9,7 @@ on:
       - '.github/scripts/apply_raw_percept_succession.py'
       - '.github/scripts/apply_grounded_completion_guard.py'
       - '.github/scripts/apply_current_temporal_contact_guard.py'
+      - 'semantic-grounding.test.js'
       - 'one-mind.js'
 
 permissions:
