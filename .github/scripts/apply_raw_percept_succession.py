@@ -17,7 +17,6 @@ replace_once(
     'function learnPatterns(samplesInput, symbols, maxConditions = 2, knownDomains = null) {',
     'learnPatterns signature',
 )
-
 replace_once(
 '''  const domainCache = new Map();
   function domain(feature) {
@@ -31,10 +30,9 @@ replace_once(
 '''  const domainCache = new Map();
   function domain(feature) {
     if (domainCache.has(feature)) return domainCache.get(feature);
-    // Some learned relations are sparse positive handles whose falsity is still
-    // evaluable wherever their complete grounded definition has been observed.
-    // `knownDomains` supplies those warranted evaluation positions without
-    // materializing authored false values into every remembered sample.
+    // Sparse learned relations can be absent while still being evaluable when
+    // their complete grounded observation window exists. This keeps undefined
+    // distinct from false without materializing false values through memory.
     if (knownDomains && knownDomains.has(feature)) {
       const set = new Set(knownDomains.get(feature));
       domainCache.set(feature, set);
@@ -48,22 +46,19 @@ replace_once(
 ''',
     'generic sparse evaluation domain',
 )
-
 replace_once(
     'function recompressRelations(rawSamples, seedSymbols = [], maxNewSymbols = 8) {',
     'function recompressRelations(rawSamples, seedSymbols = [], maxNewSymbols = 8, knownDomains = null) {',
     'recompressRelations signature',
 )
-
 replace_once(
     '    patterns = learnPatterns(samples, symbols, 2);',
     '    patterns = learnPatterns(samples, symbols, 2, knownDomains);',
     'iterative relation learning domain',
 )
-
 replace_once(
-    '  patterns = learnPatterns(augment(rawSamples, symbols), symbols, 2).map(pattern => {',
-    '  patterns = learnPatterns(augment(rawSamples, symbols), symbols, 2, knownDomains).map(pattern => {',
+    '  patterns = learnPatterns(augment(rawSamples, symbols), symbols, 2).map((p, i) => ({ ...p, id: `r${i + 1}` }));',
+    '  patterns = learnPatterns(augment(rawSamples, symbols), symbols, 2, knownDomains).map((p, i) => ({ ...p, id: `r${i + 1}` }));',
     'final relation learning domain',
 )
 
@@ -75,10 +70,7 @@ helpers = r'''function temporalDefinitionKey(channel, expansion) {
   return `${channel}:${stable(expansion)}`;
 }
 function cloneTemporalSymbol(symbol) {
-  return {
-    ...symbol,
-    expansion: (symbol.expansion || []).map(value => value),
-  };
+  return { ...symbol, expansion: (symbol.expansion || []).slice() };
 }
 function nextTemporalSymbolNumber(symbols) {
   let next = 1;
@@ -90,6 +82,9 @@ function nextTemporalSymbolNumber(symbols) {
 }
 function observedPerceptStreams(state) {
   const streams = {};
+  // Each exact experience contributes its before-contact once. Thus temporal
+  // order comes from lived succession while a raw value keeps the same identity
+  // whenever it recurs on the same physical perceptual channel.
   for (let sampleIndex = 0; sampleIndex < state.experiences.length; sampleIndex++) {
     const percept = splitContact(state, state.experiences[sampleIndex].before).percept;
     for (let channelIndex = 0; channelIndex < percept.length; channelIndex++) {
@@ -116,12 +111,8 @@ function learnPerceptTemporalVocabulary(state, seedSymbols = []) {
     const stream = streams[channel];
     const sequence = recompressSequence(stream.values);
     order[channel] = {
-      raw_values: stream.values.slice(),
       encoded_order: sequence.encoded_stream.slice(),
-      rules: sequence.rules.map(rule => ({
-        ...rule,
-        expansion: rule.expansion.slice(),
-      })),
+      rules: sequence.rules.map(rule => ({ ...rule, expansion: rule.expansion.slice() })),
     };
     for (const learned of learnedExpansions(sequence)) {
       if (!Array.isArray(learned.expansion) || learned.expansion.length < 2) continue;
@@ -140,12 +131,12 @@ function learnPerceptTemporalVocabulary(state, seedSymbols = []) {
     }
   }
 
-  // Persistent identity belongs to the grounded expansion, not to whatever
-  // local §q name a later recompression happens to assign it.
+  // Identity belongs to the grounded channel+expansion. Support is recalculated
+  // from exact experience, so continued contact strengthens the same relation.
   for (const symbol of symbols) {
     const stream = streams[symbol.channel];
     let support = 0;
-    if (stream) {
+    if (stream && symbol.expansion.length) {
       for (let start = 0; start + symbol.expansion.length <= stream.values.length; start++) {
         if (occurrenceAt(stream.values, start, symbol.expansion)) support++;
       }
@@ -168,6 +159,9 @@ function annotatePerceptTemporalRelations(state, baseSamples, seedSymbols = []) 
       domains.set(symbol.feature, domain);
       continue;
     }
+    // A temporal relation is attached to the contact at which its final term is
+    // encountered. Earlier positions where the full window did not yet exist are
+    // undefined. Later complete windows are evaluable whether the relation occurs.
     for (let end = symbol.expansion.length - 1; end < stream.values.length; end++) {
       const start = end - symbol.expansion.length + 1;
       const sampleIndex = stream.sample_indices[end];
@@ -203,6 +197,8 @@ function currentPerceptTemporalValues(state) {
 }
 
 '''
+# r'' above deliberately emits one backslash in JS regex literals.
+helpers = helpers.replace('\\\\d', '\\d')
 s = s.replace(anchor, helpers + anchor, 1)
 
 old_start = '''function recompressWhole(state) {
@@ -211,17 +207,13 @@ old_start = '''function recompressWhole(state) {
     samples: base,
     symbols: (state.structure?.symbols || []).map(cloneSymbol),
     patterns: [], tokens: [], order_rules: [], encoded_order: [],
-    fixed_point_passes: 0, compiled_experiences: base.length,
-    next_recompression_at: Math.max(4, base.length + 4),
+    fixed_point_passes: 0, compiled_experiences: base.length, next_recompression_at: 4,
   };
 
   let samples = base;
 '''
 new_start = '''function recompressWhole(state) {
   const base = directSamples(state);
-  // Apply the existing generic sequence compressor to each physical percept
-  // channel itself. A value therefore keeps one sensory identity across time;
-  // temporal position is represented by the learned succession relation.
   const perceptTemporal = annotatePerceptTemporalRelations(
     state, base, state.structure?.temporal_symbols || []
   );
@@ -231,80 +223,70 @@ new_start = '''function recompressWhole(state) {
     temporal_symbols: perceptTemporal.symbols,
     percept_order: perceptTemporal.order,
     patterns: [], tokens: [], order_rules: [], encoded_order: [],
-    fixed_point_passes: 0, compiled_experiences: base.length,
-    next_recompression_at: Math.max(4, base.length + 4),
+    fixed_point_passes: 0, compiled_experiences: base.length, next_recompression_at: 4,
   };
 
   let samples = perceptTemporal.samples;
 '''
 replace_once(old_start, new_start, 'recompressWhole start')
-
-# The relation learner now knows where a sparse temporal relation was fully
-# evaluable, so absence in those positions can legitimately count as false.
-old_call = '    const learned = recompressRelations(samples, symbols, symbolBudget);'
-new_call = '    const learned = recompressRelations(samples, symbols, symbolBudget, perceptTemporal.domains);'
-if s.count(old_call) != 1:
-    raise SystemExit(f'recompress loop call: expected one match, found {s.count(old_call)}')
-s = s.replace(old_call, new_call, 1)
-
 replace_once(
-    '    const next = annotateTemporalRelations(state, base, descriptions);',
-    '    const next = annotateTemporalRelations(state, perceptTemporal.samples, descriptions);',
+    '    learned = recompressRelations(samples, learned.symbols, symbolBudget);',
+    '    learned = recompressRelations(samples, learned.symbols, symbolBudget, perceptTemporal.domains);',
+    'recompress loop call',
+)
+replace_once(
+    '    const next = annotateTemporalRelations(state, base, temporalDescriptions(samples, tokens, sequence));',
+    '    const next = annotateTemporalRelations(state, perceptTemporal.samples, temporalDescriptions(samples, tokens, sequence));',
     'preserve raw temporal annotations across fixed-point passes',
 )
-
 replace_once(
-    '  const finalLearned = recompressRelations(samples, symbols, symbolBudget);',
-    '  const finalLearned = recompressRelations(samples, symbols, symbolBudget, perceptTemporal.domains);',
+    '  learned = recompressRelations(samples, learned.symbols, symbolBudget);',
+    '  learned = recompressRelations(samples, learned.symbols, symbolBudget, perceptTemporal.domains);',
     'final relation recompression domain',
 )
-
-old_return = '''  return {
-    samples, symbols, patterns,
-    tokens: sequence.raw_tokens,
-    order_rules: sequence.rules,
-    encoded_order: sequence.encoded_stream,
-    fixed_point_passes: passes,
-    compiled_experiences: base.length,
-    next_recompression_at: nextRecompressionAt(base.length),
-  };
-}'''
-new_return = '''  return {
-    samples, symbols, patterns,
+replace_once(
+'''  return {
+    samples,
+    symbols: learned.symbols,
+    patterns: learned.patterns,
+    tokens,
+''',
+'''  return {
+    samples,
+    symbols: learned.symbols,
     temporal_symbols: perceptTemporal.symbols,
     percept_order: perceptTemporal.order,
-    tokens: sequence.raw_tokens,
-    order_rules: sequence.rules,
-    encoded_order: sequence.encoded_stream,
-    fixed_point_passes: passes,
-    compiled_experiences: base.length,
-    next_recompression_at: nextRecompressionAt(base.length),
-  };
-}'''
-replace_once(old_return, new_return, 'recompressWhole return')
+    patterns: learned.patterns,
+    tokens,
+''',
+    'recompressWhole return',
+)
 
-old_current = '''function completeCurrent(state, frame) {
+replace_once(
+'''function completeCurrent(state, frame) {
   const present = presentFeatures(state, frame);
   let completed = { ...present.values };
   const inferred = new Set();
-  const unresolved = [];
-'''
-new_current = '''function completeCurrent(state, frame) {
+  const unresolved = new Set();
+''',
+'''function completeCurrent(state, frame) {
   const present = presentFeatures(state, frame);
   const temporal = currentPerceptTemporalValues(state);
   let completed = { ...present.values, ...temporal };
   const inferred = new Set(Object.keys(temporal));
-  const unresolved = [];
-'''
-replace_once(old_current, new_current, 'live temporal completion')
-
-old_structure = '''      samples: [], symbols: [], patterns: [], tokens: [], order_rules: [], encoded_order: [],
+  const unresolved = new Set();
+''',
+    'live temporal completion',
+)
+replace_once(
+'''      samples: [], symbols: [], patterns: [], tokens: [], order_rules: [], encoded_order: [],
       fixed_point_passes: 0, compiled_experiences: 0, next_recompression_at: 4,
-'''
-new_structure = '''      samples: [], symbols: [], temporal_symbols: [], percept_order: {},
+''',
+'''      samples: [], symbols: [], temporal_symbols: [], percept_order: {},
       patterns: [], tokens: [], order_rules: [], encoded_order: [],
       fixed_point_passes: 0, compiled_experiences: 0, next_recompression_at: 4,
-'''
-replace_once(old_structure, new_structure, 'initial temporal vocabulary')
+''',
+    'initial temporal vocabulary',
+)
 
 p.write_text(s)
