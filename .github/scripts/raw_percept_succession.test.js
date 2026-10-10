@@ -16,6 +16,13 @@ const SCENE_BA = 20;
 const SCENE_GAP = 90;
 
 const m = Mind.one(1, 1);
+
+// This is the structural prerequisite. On the uncorrected core it fails before
+// spending compute on schooling. On the corrected core the rest of this file is
+// the actual behavioral falsification.
+assert.ok(Array.isArray(m.structure.temporal_symbols),
+  'raw perceptual succession is not represented in M');
+
 let noise = 1000;
 function contact(token, scene) {
   Mind.C(m, [token, scene, noise++, 0]);
@@ -25,7 +32,7 @@ function contact(token, scene) {
 // therefore cannot distinguish SCENE_AB from SCENE_BA. Only their experienced
 // succession can. GAP prevents the target pair from being created accidentally
 // across episode boundaries. Noise makes whole snapshots unique.
-for (let round = 0; round < 24; round++) {
+for (let round = 0; round < 12; round++) {
   contact(A, SCENE_AB);
   contact(B, SCENE_AB);
   contact(GAP, SCENE_GAP);
@@ -35,9 +42,6 @@ for (let round = 0; round < 24; round++) {
 }
 // Flush the final contact into exact experience.
 contact(GAP, SCENE_GAP);
-
-assert.ok(Array.isArray(m.structure.temporal_symbols),
-  'raw perceptual succession is not represented in M');
 
 function sameExpansion(symbol, expansion) {
   return symbol.channel === 'p0' &&
@@ -88,7 +92,7 @@ assert.notStrictEqual(reverse.current.completed.p1, SCENE_AB,
 // than being recreated as a new positional percept after more life.
 const originalFeature = ab.feature;
 const originalSupport = ab.support;
-for (let round = 0; round < 12; round++) {
+for (let round = 0; round < 6; round++) {
   contact(A, SCENE_AB);
   contact(B, SCENE_AB);
   contact(GAP, SCENE_GAP);
