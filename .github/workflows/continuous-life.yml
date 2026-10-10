@@ -34,12 +34,6 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Make raw percept succession ordinary relational material
-        run: |
-          if ! grep -q 'temporal_symbols' one-mind.js; then
-            python .github/scripts/apply_raw_percept_succession.py
-          fi
-
       - name: Continue the same M
         env:
           LIFE_STEPS: ${{ github.event.inputs.steps || '128' }}
@@ -52,7 +46,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add one-mind.js state/canonical-mind.json state/canonical-world.json state/life-report.json state/life-run.log state/relational-language-report.json state/relational-language-run.log
+          git add state/canonical-mind.json state/canonical-world.json state/life-report.json state/life-run.log state/relational-language-report.json state/relational-language-run.log
           if git diff --cached --quiet; then
             echo 'No canonical life state changed.'
             exit 0
