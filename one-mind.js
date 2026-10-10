@@ -76,10 +76,6 @@ function magnitudeOrder(after, before) {
   return SAME;
 }
 
-// Channel boundaries are supplied by the physical interface. Exposing each
-// observed channel separately is decomposition of contact, not a human-authored
-// scene. `null` in a percept channel means that channel was not contacted in this
-// frame; it is absent/undefined, never an authored false value.
 function presentFeatures(state, frame) {
   const contact = splitContact(state, frame);
   const values = {};
@@ -113,8 +109,6 @@ function directSample(state, experience, index) {
 function directSamples(state) {
   return state.experiences.map((experience, index) => directSample(state, experience, index));
 }
-
-// ---------- the one description search over simultaneous relations ----------
 
 function symbolDependencies(symbol, byFeature, trail = new Set()) {
   if (trail.has(symbol.feature)) return new Set();
@@ -498,8 +492,6 @@ function completeCurrent(state, frame) {
   };
 }
 
-// ---------- the same description search over succession ----------
-
 function baseToken(event) { return `e:${stable(event)}`; }
 function nonOverlappingOccurrences(sequence, pair) {
   let count = 0;
@@ -747,11 +739,8 @@ function spontaneousMotor(state) {
   return state.motor_variation % state.action_count;
 }
 
-// ---------- first-class relational knowledge inside M ----------
-// C only supplies representation mechanics here: terms, variables, relation
-// references, matching, closure, and the structural on/off slot of a relation.
-// It does not know what OneLogic, Stone, counterexample, maturity, etc. mean.
-
+// C only supplies generic relational representation mechanics. It does not know
+// what OneLogic, Stone, counterexample, maturity, etc. mean.
 const REL_ACTIVE = Object.freeze({ structural: 'active' });
 
 function cloneRelTerm(value) {
@@ -773,7 +762,7 @@ function normalizeRelFact(raw, fallbackId = null) {
     if (raw.length !== 3) throw new Error('relational fact arrays require [subject, relation, object]');
     [subject, relation, object] = raw;
   } else if (raw && typeof raw === 'object') {
-    ({ id, subject, relation, object } = raw;
+    ({ id, subject, relation, object } = raw);
   } else throw new Error('invalid relational fact');
   if (subject === undefined || relation === undefined || object === undefined) {
     throw new Error('relational fact requires subject/relation/object');
