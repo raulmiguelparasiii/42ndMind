@@ -112,7 +112,6 @@ function shuffle(items, seed) {
   }
   return out;
 }
-function pick(items, random) { return items[Math.floor(random() * items.length)]; }
 
 function scene(actorColor, actorShape, patientColor, patientShape, verb) {
   return {
@@ -124,19 +123,28 @@ function scene(actorColor, actorShape, patientColor, patientShape, verb) {
   };
 }
 
+// The early world is a balanced 3x3x3 design. Patient properties are deterministic
+// only as orthogonal combinations of all three varying actor/relation dimensions;
+// no one old feature predicts another. This removes accidental scene shortcuts
+// while keeping the world finite and exactly reproducible.
 function earlyLifeContacts() {
-  const out = [], random = rng(420071);
-  for (let si = 0; si < SPEAKERS.length; si++) {
-    const speaker = SPEAKERS[si];
-    for (let vi = 0; vi < EARLY_VERBS.length; vi++) {
-      const verb = EARLY_VERBS[vi];
-      for (let ci = 0; ci < EARLY_COLORS.length; ci++) {
-        for (let ni = 0; ni < EARLY_SHAPES.length; ni++) {
-          const actorColor = EARLY_COLORS[ci];
-          const actorShape = EARLY_SHAPES[ni];
-          const patientColor = pick(EARLY_COLORS, random);
-          const patientShape = pick(EARLY_SHAPES, random);
-          out.push({ scene: scene(actorColor, actorShape, patientColor, patientShape, verb), speaker });
+  const out = [];
+  for (const speaker of SPEAKERS) {
+    for (let ci = 0; ci < EARLY_COLORS.length; ci++) {
+      for (let ni = 0; ni < EARLY_SHAPES.length; ni++) {
+        for (let vi = 0; vi < EARLY_VERBS.length; vi++) {
+          const patientColor = EARLY_COLORS[(ci + ni + vi) % EARLY_COLORS.length];
+          const patientShape = EARLY_SHAPES[(ci + 2 * ni + vi) % EARLY_SHAPES.length];
+          out.push({
+            scene: scene(
+              EARLY_COLORS[ci],
+              EARLY_SHAPES[ni],
+              patientColor,
+              patientShape,
+              EARLY_VERBS[vi]
+            ),
+            speaker,
+          });
         }
       }
     }
@@ -144,26 +152,36 @@ function earlyLifeContacts() {
   return shuffle(out, 420072);
 }
 
-// New vocabulary appears later as part of ordinary life, not as category lessons.
-// Each contact contains at most one of yellow/star/helps, so the strong final
-// combination and every pair among those three remain absent from experience.
+// New vocabulary appears later as part of ordinary life, not category lessons.
+// Each new term receives a balanced 3x3 spread over the two old dimensions that
+// remain free in its scene. Each contact contains at most one of yellow/star/helps,
+// so the strong final combination and every pair among those three remain absent.
 function laterLifeContacts() {
-  const out = [], random = rng(990071);
+  const out = [];
   for (const speaker of SPEAKERS) {
-    for (let i = 0; i < 8; i++) {
-      const c = EARLY_COLORS[i % EARLY_COLORS.length];
-      const s = EARLY_SHAPES[(i * 2) % EARLY_SHAPES.length];
-      const v = EARLY_VERBS[(i + 1) % EARLY_VERBS.length];
-      const patientColorA = pick(EARLY_COLORS, random);
-      const patientShapeA = pick(EARLY_SHAPES, random);
-      const patientColorB = pick(EARLY_COLORS, random);
-      const patientShapeB = pick(EARLY_SHAPES, random);
-      const patientColorC = pick(EARLY_COLORS, random);
-      const patientShapeC = pick(EARLY_SHAPES, random);
+    for (let a = 0; a < 3; a++) {
+      for (let b = 0; b < 3; b++) {
+        const patientColor = EARLY_COLORS[(a + b) % 3];
+        const patientShape = EARLY_SHAPES[(a + 2 * b) % 3];
 
-      out.push({ scene: scene('yellow', s, patientColorA, patientShapeA, v), speaker });
-      out.push({ scene: scene(c, 'star', patientColorB, patientShapeB, v), speaker });
-      out.push({ scene: scene(c, s, patientColorC, patientShapeC, 'helps'), speaker });
+        // yellow: actor shape and verb vary independently.
+        out.push({
+          scene: scene('yellow', EARLY_SHAPES[a], patientColor, patientShape, EARLY_VERBS[b]),
+          speaker,
+        });
+
+        // star: actor color and verb vary independently.
+        out.push({
+          scene: scene(EARLY_COLORS[a], 'star', patientColor, patientShape, EARLY_VERBS[b]),
+          speaker,
+        });
+
+        // helps: actor color and actor shape vary independently.
+        out.push({
+          scene: scene(EARLY_COLORS[a], EARLY_SHAPES[b], patientColor, patientShape, 'helps'),
+          speaker,
+        });
+      }
     }
   }
   return shuffle(out, 990072);
@@ -313,6 +331,7 @@ console.log(JSON.stringify({
   utterance_lengths: SPEAKERS.map(s => utterance(novel, s).length),
   semantic_token_slots: false,
   fixed_adjective_noun_verb_slots: false,
+  balanced_scene_design: true,
   sequence_extent_is_structural_contact: true,
   one_continuous_M: true,
   later_vocabulary_appeared_during_life: true,
