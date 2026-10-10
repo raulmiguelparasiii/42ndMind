@@ -7,14 +7,8 @@
 // Reality-contact is retained exactly. C keeps reusable relations it has found,
 // assimilates each new contact directly into them, and reopens the accumulated
 // record when unresolved residual reality has grown enough to justify another
-// global description search. Stable understanding is reused instead of rebuilding
-// a lifetime after every sensation. Counterevidence changes learned authority
-// immediately and later recompression can reorganize the descriptions themselves.
-//
-// Nothing here names food, water, danger, shelter, reward, success, curiosity,
-// scenes, goals, plans, or good actions. Motor continuation is a missing term of
-// the same current relation. If reality has not grounded a completion, cognition
-// remains unresolved and embodiment contributes non-semantic motor variation.
+// global description search. Learned concept definitions remain part of M across
+// later recompressions; predictive relations to those concepts remain corrigible.
 
 const LESS = 'less';
 const SAME = 'same';
@@ -271,12 +265,8 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     a.target.localeCompare(b.target)
   );
 
-  // Description authority is referent-relative. A relation about one target must
-  // not disappear merely because unrelated targets happen to have many cheaper
-  // descriptions. The finite storage/search budget is therefore applied within
-  // each target, while first preserving the shortest grounded description for
-  // every distinct value that target actually took. This is representation
-  // throttling, not a preference over any world meaning or action.
+  // Finite storage is applied per target rather than globally. Exact contact is
+  // retained underneath this working set and can reopen representation later.
   const perTarget = Math.max(8, Math.ceil(Math.sqrt(samples.length)));
   const groups = new Map();
   for (const pattern of patterns) {
@@ -315,32 +305,51 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   return kept;
 }
 
-function recompressRelations(rawSamples) {
-  let symbols = [];
+function cloneSymbol(symbol) {
+  return {
+    ...symbol,
+    definition: symbol.definition.map(atom => ({ ...atom })),
+    source: symbol.source ? { ...symbol.source } : undefined,
+  };
+}
+function nextSymbolNumber(symbols) {
+  let next = 1;
+  for (const symbol of symbols) {
+    const match = /^§(\d+)$/.exec(symbol.feature);
+    if (match) next = Math.max(next, Number(match[1]) + 1);
+  }
+  return next;
+}
+
+// A learned symbol is representational material in M, not a temporary winner in
+// one search pass. Once a grounded conjunction has earned a handle, later global
+// recompression keeps that definition available while all relations involving it
+// remain free to gain or lose evidential authority. This makes conceptual growth
+// cumulative without making any learned claim immutable.
+function recompressRelations(rawSamples, seedSymbols = []) {
+  let symbols = seedSymbols.map(cloneSymbol);
   let patterns = [];
-  const existingDefinitions = new Set();
+  const existingDefinitions = new Set(symbols.map(s => s.definition_key || conditionKey(s.definition)));
+  let nextNumber = nextSymbolNumber(symbols);
+
   for (let pass = 0; pass < 2; pass++) {
     const samples = augment(rawSamples, symbols);
     patterns = learnPatterns(samples, symbols, 2);
-    const winners = [];
-    const seenTargets = new Set();
-    for (const pattern of patterns) {
-      const key = `${pattern.target}=>${stable(pattern.expected)}`;
-      if (seenTargets.has(key)) continue;
-      seenTargets.add(key);
-      winners.push(pattern);
-    }
-
     const byFeature = new Map(symbols.map(s => [s.feature, s]));
     const additions = [];
-    for (const pattern of winners) {
+
+    // Candidate definitions remain content-neutral: any reusable conjunction that
+    // compresses some grounded relation may become later representational material.
+    // Existing definitions are skipped, so repeated recompressions can move on to
+    // newly warranted concepts instead of recreating the same small batch forever.
+    for (const pattern of patterns) {
       if (pattern.conditions.length < 2) continue;
       if (pattern.conditions.some(atom => byFeature.has(atom.feature) && atom.value !== true)) continue;
       const definitionKey = conditionKey(pattern.conditions);
       if (existingDefinitions.has(definitionKey)) continue;
       const depth = 1 + pattern.conditions.reduce((m, atom) => Math.max(m, byFeature.get(atom.feature)?.depth || 0), 0);
       additions.push({
-        feature: `§${symbols.length + additions.length + 1}`,
+        feature: `§${nextNumber++}`,
         depth,
         definition: pattern.conditions.map(a => ({ ...a })),
         definition_key: definitionKey,
@@ -550,27 +559,26 @@ function annotateTemporalRelations(state, baseSamples, descriptions) {
 }
 
 function nextRecompressionAt(n) {
-  // Finite computation is not a cognitive faculty. As grounded structure grows,
-  // C reuses it and waits for a sublinear amount of additional residual contact
-  // before reopening the global description search. Exact contact is never lost.
   return n + Math.max(4, Math.ceil(Math.sqrt(Math.max(1, n))));
 }
 
 function recompressWhole(state) {
   const base = directSamples(state);
   if (base.length < 4) return {
-    samples: base, symbols: [], patterns: [], tokens: [], order_rules: [], encoded_order: [],
+    samples: base,
+    symbols: (state.structure?.symbols || []).map(cloneSymbol),
+    patterns: [], tokens: [], order_rules: [], encoded_order: [],
     fixed_point_passes: 0, compiled_experiences: base.length, next_recompression_at: 4,
   };
 
   let samples = base;
-  let learned = { symbols: [], patterns: [] };
+  let learned = { symbols: (state.structure?.symbols || []).map(cloneSymbol), patterns: [] };
   let tokens = [];
   let sequence = { encoded_stream: [], rules: [] };
   let previousKey = '';
   let passes = 0;
   for (let pass = 0; pass < 3; pass++) {
-    learned = recompressRelations(samples);
+    learned = recompressRelations(samples, learned.symbols);
     tokens = samples.map(sample => eventToken(state, learned, sample));
     sequence = recompressSequence(tokens);
     const next = annotateTemporalRelations(state, base, temporalDescriptions(samples, tokens, sequence));
@@ -580,7 +588,7 @@ function recompressWhole(state) {
     if (key === previousKey) break;
     previousKey = key;
   }
-  learned = recompressRelations(samples);
+  learned = recompressRelations(samples, learned.symbols);
   return {
     samples,
     symbols: learned.symbols,
@@ -622,8 +630,6 @@ function groundedCompletion(state, frame) {
   }
   if (!open) return null;
 
-  // Missing terms of the current relation can expose further missing terms. No
-  // candidate future is generated or scored; equal-code rivals remain unresolved.
   const completed = { ...purpose };
   for (let pass = 0; pass < 4; pass++) {
     const prediction = predict(state.structure, completed);
@@ -643,8 +649,6 @@ function groundedCompletion(state, frame) {
   const action = completed.action;
   if (!Number.isInteger(action) || action < 0 || action >= state.action_count) return null;
 
-  // A continuation cannot gain authority by hiding another material relation the
-  // same grounded structure says it worsens. No numerical exchange rate is added.
   const consequences = predict(state.structure, { ...present.values, action }).best_by_target;
   for (let i = 0; i < state.concern_count; i++) {
     const evidence = consequences[`relation_c${i}_order`];
@@ -695,10 +699,6 @@ function C(state, realityContact) {
     state.experiences.push(experience);
     const sample = directSample(state, experience, index);
 
-    // Every contact changes M immediately. Global search is reopened only when
-    // residual contact since the last search is large enough relative to the
-    // accumulated description; between searches, the new evidence directly
-    // updates existing relations. Nothing is dropped or semantically filtered.
     if (state.experiences.length >= state.structure.next_recompression_at) state.structure = recompressWhole(state);
     else assimilateExperience(state, sample);
   }
