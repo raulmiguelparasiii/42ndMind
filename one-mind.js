@@ -563,7 +563,7 @@ function recompressSequence(events) {
     rules.push({ symbol, expansion: winner.pair.slice(), depth, occurrences_at_birth: winner.occurrences, savings: winner.savings });
     sequence = replacePair(sequence, winner.pair, symbol);
   }
-  const bySymbol = new Map(rules.map(rule => [r.symbol, r]));
+  const bySymbol = new Map(rules.map(rule => [rule.symbol, rule]));
   const decoded = sequence.flatMap(token => expandToken(token, bySymbol));
   if (!same(decoded, rawTokens)) throw new Error('recompression changed experienced order');
   return { raw_tokens: rawTokens, encoded_stream: sequence, rules };
