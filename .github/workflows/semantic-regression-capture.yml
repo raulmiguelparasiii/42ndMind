@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/semantic-regression-capture.yml'
+      - '.github/scripts/apply_current_temporal_contact_guard.py'
 
 permissions:
   contents: write
@@ -31,11 +32,12 @@ jobs:
           p.write_text(s)
           PY
           python .github/scripts/apply_grounded_completion_guard.py
+          python .github/scripts/apply_current_temporal_contact_guard.py
 
       - name: Trace dog completion routes
         run: node .github/scripts/semantic_candidate_diagnostic.js
 
-      - name: Capture semantic grounding failure
+      - name: Capture semantic grounding result
         run: |
           mkdir -p .github/diagnostics
           set +e
@@ -44,11 +46,4 @@ jobs:
           set -e
           printf '\nexit_code=%s\n' "$code" >> .github/diagnostics/semantic-regression.txt
           cat .github/diagnostics/semantic-regression.txt
-
-      - name: Persist diagnostic only
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/diagnostics/semantic-regression.txt .github/diagnostics/semantic-route.json
-          git commit -m 'Record semantic route diagnostic'
-          git push origin HEAD:main
+          exit "$code"
