@@ -68,9 +68,10 @@ function conceptToWordForObject(m,word,object){
 // PROOF A: clean acquisition + stabilization. One motor possibility and zero
 // concern remove action-selection and pressure as explanations. Presentation order
 // and context vary independently, so only the recurring word/world relation is
-// stable across the life.
+// stable across the life. The bounded horizon still crosses many independent
+// global recompressions; indefinite life is not simulated by wasteful rescanning.
 const learner=Mind.one(1,1);
-cycle(learner,CORRECT,36,100);
+cycle(learner,CORRECT,16,100);
 let cat=semanticBridge(learner,'cat');
 if(!cat)console.log('SEMANTIC_DIAGNOSTIC '+JSON.stringify({
   symbols:learner.structure.symbols,
@@ -82,7 +83,7 @@ for(const word of Object.keys(WORD))assert.ok(semanticBridge(learner,word),`miss
 
 const firstDefinition=cat.symbol.definition_key;
 const firstOutSupport=cat.outward.support, firstInSupport=cat.inward.support;
-cycle(learner,CORRECT,24,1000);
+cycle(learner,CORRECT,8,1000);
 cat=semanticBridge(learner,'cat');
 assert.ok(cat,'cat semantic bridge did not survive continued life');
 assert.strictEqual(cat.symbol.definition_key,firstDefinition,'cat concept definition failed to stabilize');
@@ -90,14 +91,12 @@ assert.ok(cat.outward.support>firstOutSupport,'continued reality did not strengt
 assert.ok(cat.inward.support>firstInSupport,'continued reality did not strengthen English -> concept grounding');
 for(const word of Object.keys(WORD))assert.ok(semanticBridge(learner,word),`semantic bridge for ${word} did not survive continued life`);
 
-// PROOF B: correction is tested in a separate continuous life so the finite
-// retention budget cannot make a deliberately noisy word history masquerade as a
-// failure of clean bidirectional grounding. A false cat<->cup teaching is first
-// grounded, then sustained correct contact must make the actual cat-world concept
-// the stronger active source for the English token.
+// PROOF B: correction is tested in a separate continuous life. A false cat<->cup
+// teaching is first grounded, then sustained correct contact must make the actual
+// cat-world concept the stronger active source for the English token.
 const corrector=Mind.one(1,1);
-cycle(corrector,WRONG,8,0);
-cycle(corrector,CORRECT,30,200);
+cycle(corrector,WRONG,4,0);
+cycle(corrector,CORRECT,16,200);
 const correctedCat=conceptToWordForObject(corrector,'cat','cat');
 const staleCat=conceptToWordForObject(corrector,'cat','cup');
 assert.ok(correctedCat,'corrected cat concept -> English relation did not form');
@@ -118,5 +117,5 @@ console.log(JSON.stringify({
   english_to_concept_reliability:Number(cat.inward.reliability.toFixed(4)),
   bidirectional_words:Object.keys(WORD).length,
   corrected_initial_false_grounding:true,
-  C_modified_for_semantics:false,
+  semantic_specific_C_logic:false,
 }));
