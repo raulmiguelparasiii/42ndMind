@@ -3,6 +3,10 @@ name: Falsify continuous language life
 on:
   push:
     branches: [main]
+    paths:
+      - 'one-mind.js'
+      - 'language-world-life.test.js'
+      - '.github/workflows/language-life.yml'
   workflow_dispatch:
 
 concurrency:
