@@ -22,13 +22,30 @@ function frame(word, object, context) {
 function contact(m, word, object, context) {
   Mind.C(m, frame(word, object, context));
 }
-function cycle(m, mapping, rounds, start = 0) {
+function rng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(1664525, s) + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+function shuffledWords(seed) {
+  const random = rng(seed);
   const words = ['cat', 'dog', 'fox', 'cup'];
+  for (let i = words.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [words[i], words[j]] = [words[j], words[i]];
+  }
+  return words;
+}
+function cycle(m, mapping, rounds, start = 0) {
   for (let r = 0; r < rounds; r++) {
+    const words = shuffledWords((start + 1) * 4099 + r * 7919);
     for (let i = 0; i < words.length; i++) {
       const word = words[i];
-      // Context deliberately varies independently of word/object identity.
-      contact(m, word, mapping[word], (start + r * 5 + i * 3) % 7);
+      // Presentation order and context both vary independently of meaning, so
+      // temporal position cannot be a stable shortcut for the English token.
+      contact(m, word, mapping[word], (start * 3 + r * 5 + i * 2 + (r % 3)) % 11);
     }
   }
 }
