@@ -7,6 +7,7 @@ on:
       - '.github/workflows/raw-percept-succession.yml'
       - '.github/scripts/raw_percept_succession.test.js'
       - '.github/scripts/apply_raw_percept_succession.py'
+      - '.github/scripts/apply_grounded_completion_guard.py'
       - 'one-mind.js'
 
 permissions:
@@ -33,7 +34,7 @@ jobs:
           fi
           echo 'Baseline falsified as expected: raw same-channel succession is missing.'
 
-      - name: Apply only the generic representation correction
+      - name: Apply generic raw succession representation
         if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
         run: |
           python .github/scripts/apply_raw_percept_succession.py
@@ -46,6 +47,10 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Apply grounded completion correction
+        if: ${{ hashFiles('.github/scripts/apply_grounded_completion_guard.py') != '' }}
+        run: python .github/scripts/apply_grounded_completion_guard.py
+
       - name: Verify same-channel temporal relation formation
         run: STAGE=formation node .github/scripts/raw_percept_succession.test.js
 
@@ -57,15 +62,6 @@ jobs:
 
       - name: Verify reverse order does not instantiate forward relation
         run: STAGE=reverse_identity node .github/scripts/raw_percept_succession.test.js
-
-      - name: Capture reverse completion route
-        run: |
-          STAGE=reverse_debug node .github/scripts/raw_percept_succession.test.js
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/diagnostics/reverse-grounding.json
-          git commit -m 'Record raw succession reverse diagnostic'
-          git push origin HEAD:main
 
       - name: Verify reverse order does not reach forward grounding
         run: STAGE=reverse_grounding node .github/scripts/raw_percept_succession.test.js
@@ -89,6 +85,8 @@ jobs:
         if: ${{ hashFiles('.github/scripts/apply_raw_percept_succession.py') != '' }}
         run: |
           rm .github/scripts/apply_raw_percept_succession.py
+          rm -f .github/scripts/apply_grounded_completion_guard.py
+          rm -f .github/diagnostics/reverse-grounding.json
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
