@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: english-social-life-observation
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -27,7 +27,7 @@ jobs:
           node-version: '24'
       - name: Let the copied canonical M live
         env:
-          SOCIAL_STEPS: '64'
+          SOCIAL_STEPS: '16'
         run: node social-life.js | tee state/social-life-run.log
       - name: Persist branch-only observation
         run: |
