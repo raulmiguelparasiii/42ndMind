@@ -1,0 +1,56 @@
+name: Diagnose raw succession regressions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/raw-percept-regression-diagnostic.yml'
+      - '.github/scripts/apply_raw_percept_succession.py'
+      - '.github/scripts/apply_grounded_completion_guard.py'
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Apply exact staged candidate
+        run: |
+          python .github/scripts/apply_raw_percept_succession.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('one-mind.js')
+          s = p.read_text()
+          s = s.replace(r'/^§t(\\d+)$/', r'/^§t(\d+)$/')
+          s = s.replace(r'/^p(\\d+)$/', r'/^p(\d+)$/')
+          p.write_text(s)
+          PY
+          python .github/scripts/apply_grounded_completion_guard.py
+
+      - name: Core correction
+        if: always()
+        run: node one-mind.test.js
+
+      - name: Structured knowledge
+        if: always()
+        run: node structured-knowledge.test.js
+
+      - name: Semantic grounding
+        if: always()
+        run: node semantic-grounding.test.js
+
+      - name: Compositional language
+        if: always()
+        run: node language-school.test.js
+
+      - name: Continuous language life
+        if: always()
+        run: node language-world-life.test.js
+
+      - name: Embodied micro-world
+        if: always()
+        run: SEEDS=420070 DEVELOPMENT_STEPS=64 AUTONOMOUS_STEPS=32 node micro-world-single-life.js
