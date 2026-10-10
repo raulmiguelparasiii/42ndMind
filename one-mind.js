@@ -227,13 +227,12 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     for (const atom of condition) {
       for (const dependency of dependencies(atom.feature)) conditionDependencies.add(dependency);
     }
-    // Naming a learned handle can be cheap, but using it still requires enough
-    // reality-contact to reconstruct that handle. Finite retention therefore
-    // charges only the dependency footprint hidden by compression; otherwise a
-    // narrower handle can crowd out a directly usable relation with equal warrant.
+    // A learned handle may compress several prerequisites. That is legitimate
+    // abstraction and is not penalized. But when two candidate relations have
+    // equal predictive warrant, finite retention prefers the one whose antecedent
+    // can be reconstructed from fewer independent base features. This prevents a
+    // context-dependent alias from crowding out an equally warranted direct route.
     const dependencyCount = conditionDependencies.size;
-    const dependencyExcess = Math.max(0, dependencyCount - condition.length);
-    const reconstructionBits = dependencyExcess * modelUnit;
     const modelBits = (condition.length + 1) * modelUnit;
     for (const { target, expected } of possibleTargets.values()) {
       const targetPresence = domain(target);
@@ -257,7 +256,6 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
       if (!(bitsSaved > 0)) continue;
 
       const smoothed = (matchedExpected + 1) / (matched + 2);
-      const predictiveCodeBits = -Math.log2(smoothed) + modelBits / eligible;
       patterns.push({
         conditions: condition.slice().sort((a, b) => atomKey(a).localeCompare(atomKey(b))),
         target,
@@ -271,11 +269,8 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
         smoothed_reliability: smoothed,
         base_rate: baseRate,
         bits_saved: bitsSaved,
-        predictive_code_bits: predictiveCodeBits,
+        predictive_code_bits: -Math.log2(smoothed) + modelBits / eligible,
         dependency_count: dependencyCount,
-        dependency_excess: dependencyExcess,
-        reconstruction_bits: reconstructionBits,
-        retention_code_bits: predictiveCodeBits + reconstructionBits / eligible,
         model_bits: modelBits,
         active: true,
       });
@@ -283,8 +278,8 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
   }
 
   patterns.sort((a, b) =>
-    a.retention_code_bits - b.retention_code_bits ||
     a.predictive_code_bits - b.predictive_code_bits ||
+    a.dependency_count - b.dependency_count ||
     b.bits_saved - a.bits_saved ||
     a.conditions.length - b.conditions.length ||
     conditionKey(a.conditions).localeCompare(conditionKey(b.conditions)) ||
@@ -320,8 +315,8 @@ function learnPatterns(samplesInput, symbols, maxConditions = 2) {
     kept.push(...chosen);
   }
   kept.sort((a, b) =>
-    a.retention_code_bits - b.retention_code_bits ||
     a.predictive_code_bits - b.predictive_code_bits ||
+    a.dependency_count - b.dependency_count ||
     b.bits_saved - a.bits_saved ||
     a.conditions.length - b.conditions.length ||
     conditionKey(a.conditions).localeCompare(conditionKey(b.conditions)) ||
@@ -407,7 +402,6 @@ function refreshPattern(pattern, values, symbols) {
   const residualBits = pattern.covered * entropyBinary(pattern.support, pattern.covered) + unmatched * entropyBinary(unmatchedExpected, unmatched);
   pattern.bits_saved = baseBits - residualBits - pattern.model_bits;
   pattern.predictive_code_bits = -Math.log2(pattern.smoothed_reliability) + pattern.model_bits / pattern.eligible;
-  pattern.retention_code_bits = pattern.predictive_code_bits + (pattern.reconstruction_bits || 0) / pattern.eligible;
   pattern.active = pattern.covered >= 2 && unmatched >= 2 && pattern.reliability > pattern.base_rate && pattern.bits_saved > 0;
   return pattern;
 }
@@ -569,7 +563,7 @@ function recompressSequence(events) {
     rules.push({ symbol, expansion: winner.pair.slice(), depth, occurrences_at_birth: winner.occurrences, savings: winner.savings });
     sequence = replacePair(sequence, winner.pair, symbol);
   }
-  const bySymbol = new Map(rules.map(rule => [rule.symbol, rule]));
+  const bySymbol = new Map(rules.map(rule => [r.symbol, r]));
   const decoded = sequence.flatMap(token => expandToken(token, bySymbol));
   if (!same(decoded, rawTokens)) throw new Error('recompression changed experienced order');
   return { raw_tokens: rawTokens, encoded_stream: sequence, rules };
@@ -705,8 +699,8 @@ function assimilateExperience(state, sample) {
   for (const pattern of structure.patterns) refreshPattern(pattern, expanded, structure.symbols);
   structure.patterns.sort((a, b) =>
     (a.active === false) - (b.active === false) ||
-    (a.retention_code_bits ?? a.predictive_code_bits) - (b.retention_code_bits ?? b.predictive_code_bits) ||
     a.predictive_code_bits - b.predictive_code_bits ||
+    (a.dependency_count || 1) - (b.dependency_count || 1) ||
     b.bits_saved - a.bits_saved ||
     b.covered - a.covered ||
     a.id.localeCompare(b.id)
