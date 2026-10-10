@@ -1,144 +1,238 @@
 # 42ndMind project memory
 
-Read this before changing the project.
+Read this fully before changing the project.
 
 ## Goal
-Build one developing artificial mind from one compact reality-governed developmental law rather than a collection of hand-written cognitive faculties.
 
-Core developmental form:
+Build one developing artificial mind from one compact reality-governed developmental law rather than a collection of hand-written cognitive faculties.
 
 ```text
 M_(t+1) = C(M_t ⊕ R_(t+1))
 ```
 
-`M` remains one whole (`whole = 1`). `R` is new reality-contact. `C` recompresses accumulated reality while preserving what grounds it. Learned structure may be reopened or reorganized when later reality makes a better description possible.
+`M` is one whole (`whole = 1`): the individual's currently organized relational state. `R` is new reality-contact. `C` is the content-neutral developmental transformation that preserves contact, discovers/reuses relations, recompresses them, completes warranted missing terms, and reopens structure under counterevidence.
 
-## Foundational prior knowledge — intentional exception
-The mind is **not** philosophically blank. Two discovered/formalized pieces of guidance are intentionally available from the start:
+The intended endpoint is a standalone self-growing mind whose understanding remains answerable to reality. Language, concepts, identity, attention, planning-like behavior, foresight, social understanding, and other recognizable faculties must arise as structures in `M`, not as separate authorities beside `C`.
 
-1. **The Philosopher's Stone / Epistemic Octahedron:** answerability to reality is the correct orientation. Friction/pressure is not to be hidden, suppressed, or escaped through insulation; materially relevant pressures must be integrated rather than allowing one to hide another. Continued capacity for reality-contact is a prerequisite for remaining answerable.
-2. **OneLogic / 42ndLogic:** preserve possibilities reality has not defeated; eliminate exactly what warranted reality-contact defeats; assert only what survivors force; seek discriminating reality-contact when unresolved; expand/revise representation when actuality no longer fits it. Undefined is not false.
+## Hard distinction: C versus M
 
-Stone axes are signed **cognitive relations toward reality**, not reward signs or good/bad outcome labels:
+**No cheating C.** `C` must remain content-neutral. Do not add capability-specific logic to it because the mind "needs" language, OneLogic, Stone judgment, source weighting, planning, goals, or some world skill.
+
+`C` is how the mind changes. `M` is what the mind currently contains and understands.
+
+The user's preferred architecture is that the Philosopher's Stone, formal OneLogic, English, mathematics, books, and other advanced prior knowledge should ultimately live as **corrigible structured knowledge inside `M`**. They may give the developing mind a leg up, but reality must still be able to refine or defeat them. Hard-coding OneLogic or the Stone as an immutable special reasoning engine inside `C` would prevent the mind from genuinely correcting those claims.
+
+The current `prior` strings in `one-mind.js` are descriptive placeholders only; they are not yet an operational structured representation of Stone or formal OneLogic.
+
+## Reality interface
+
+The mind law is not its receptors or actuators. A surrounding embodiment/interface may provide:
+
+```text
+W --S--> R --C(M⊕R)--> M' --A--> W'
+```
+
+`S` is inward transduction only. `A` is outward actuation/expression only. Neither may decide what a relation means or what is true.
+
+Primitive embodiment may supply:
+- a finite set of motor possibilities;
+- distinct perceptual channel boundaries;
+- distinct interoceptive concern/pressure magnitudes.
+
+The mind is not told the world meaning of those channels. Arbitrary percept values remain literal/categorical unless the physical interface itself warrants stronger structure. Never subtract/rank arbitrary codes merely because they are numeric.
+
+Interoceptive pressure channels are explicitly magnitude-valued, so `after < before`, `=`, and `>` are legitimate experienced physical relations. They are not rewards and are not Stone coordinates.
+
+## Stone / Epistemic Octahedron
+
+Stone geometry is the reality-relative structure of judgment, not a reward space:
 - `+x` Empathy / `-x` Practicality
 - `+z` Wisdom / `-z` Knowledge
 - `+y` Answerability / `-y` Insulation
+- top `(0,1,0)` = Maturity/full Answerability
+- bottom `(0,-1,0)` = Collapse/full Insulation
+- equator `y=0` = prejudice structurally
 
-Do not convert ordinary bodily improvement/worsening into a Stone coordinate. A physical or perceptual change is reality-contact. Its relevance to concern, purpose, knowledge, wisdom, practicality, and answerability is a further cognitive relation and must not be smuggled in as primitive valence.
+Stone signs are signed orientations of cognition toward reality, **not** good/bad outcome signs. Do not convert bodily improvement/worsening into Stone coordinates.
 
-Practicality is reality's finite constraint relation: time, distance, energy, irreversibility, opportunity cost, and other real limits make exhaustive firsthand trial impossible. It is not a separate planner or utility module.
+Knowledge is warranted actuality/contact. Wisdom is expected to be closely related to OneLogic: what may legitimately be concluded, preserved, rejected, left unresolved, investigated, or represented differently from that knowledge. Empathy/Practicality concern materially relevant concern and real finite constraint, but must not become hand-written modules or scalar utilities.
 
-## Primitive embodiment boundary
-The embodied test world may supply the mind with primitive interfaces that an organism must physically have before learning can occur:
-- a finite set of available motor commands;
-- ordinary perceptual contact as distinct physical channels;
-- distinct interoceptive concern/pressure magnitudes produced by its own body.
+Do not assign a numerical Stone stance merely because the axes are known. A stance must be derived from the actual cognitive relations to the referent.
 
-The mind is not told the world meaning of those channels (food, water, shelter, danger, etc.). Interoceptive concern magnitudes are **not rewards** and are **not Stone coordinates**. Their distinction from ordinary perception is intentional embodiment, analogous to a body having internal-state sensing rather than learning from scratch that it has a body.
+## OneLogic / 42ndLogic
 
-Because those interoceptive channels are explicitly supplied as magnitudes, their physical ordering is legitimate primitive contact: `after < before`, `after = before`, and `after > before` are relations in experienced reality. These order relations still carry no Stone sign and no generic good/bad label.
+Do not confuse the prose summary with the formal system. The prose first-principles description is:
 
-Distinct perceptual channels may be represented separately because channel boundaries are part of the supplied physical interface. Their values remain literal/categorical unless the interface itself warrants stronger structure. Do not subtract, rank, or otherwise assign metric meaning to arbitrary percept codes.
+> Preserve possibilities reality has not defeated. Eliminate exactly what warranted contact defeats. Assert only what the survivors force. Seek discriminating contact when unresolved. Expand/revise representation when actuality no longer fits. Undefined is not false.
 
-## Purpose as a reality-relative relation
-Purpose must not be installed as a reward, goal variable, success label, planner, or action policy.
+The separate `raulmiguelparasiii/42ndLogic` repository contains the formal architecture: live possibility set `K`, strict categorical consequence, sharp update `U*`, actuality preservation, query-relative representation, model-class expansion, objective deviation, and counterexample defeat.
 
-A concern is **open** while the reality-relation it concerns remains unsatisfied. Nominal acquisition or formal possession does not by itself close it. Example used to expose this logic: obtaining an adult cat did not satisfy the intended relation of having the wanted cat-life when distrust and the required time commitment made that relation unacceptable; returning the cat corrected the admissible continuation while the underlying concern remained open. Obtaining the later kitten did satisfy the relevant concern, so the original cat-seeking pull effectively disappeared immediately.
+Notation warning: 42ndMind's `C(M⊕R)` is the whole developmental transformation; formal OneLogic also uses `C(K)` for categorical consequences. They are related ideas but not the same operator.
 
-Therefore:
-- experience can correct which continuations are admissible without closing the underlying concern;
-- a purpose loses authority when reality actually satisfies the relation it was about;
-- a later alternative does not inherit the old purposive pull merely because it is better on one dimension after that concern is already closed;
-- an adverse consequence is not automatically proof that the original judgment failed; a mature relation can include known or allotted costs, but any trade-off must itself be grounded rather than supplied by an invented scalar utility.
+Current 42ndMind behavior is OneLogic-compatible in several places (counterevidence, unresolved rivals, representation reopening), but formal OneLogic has **not yet been represented inside `M` as usable structured knowledge**. Do not claim otherwise.
 
-For primitive bodily concerns, a non-zero pressure magnitude is an open embodied concern and zero is absence of that pressure by interface definition. The minimal closure relation is therefore simply `less` of that same open pressure, not because `less = reward`, but because the referent itself is a pressure magnitude.
+## Purpose as an open reality-relative relation
 
-Experienced action and consequence belong to one relation. The same compressed relation may be used in either direction: action can imply an expected consequence, and a presently relevant consequence/purpose can make the action that previously produced it recoverable as the missing term. This is relation completion, not a second action faculty.
+Purpose must not be installed as reward, goal variable, success flag, planner, or action policy.
 
-The deeper working interpretation is:
+A concern stays open while the reality-relation it concerns remains unsatisfied. A route may be defeated while the underlying concern survives. Nominal acquisition does not equal satisfaction. The cat example that exposed this: the adult-cat route was rejected because distrust/time cost defeated that continuation, while the wanted cat-life concern remained open; the later kitten actually satisfied the concern, so the old cat-seeking pull closed.
+
+For primitive bodily pressures only, nonzero pressure is an open embodied concern and zero is absence by interface definition. The minimal closure relation is `less` of that same magnitude, not because `less = reward`.
+
+Experienced action and consequence belong to one relation. The same learned relation may be used in either direction: action can imply consequence, or a presently relevant consequence can leave action as the missing term. This is relation completion, not a separate planner.
+
+Working formulation:
 
 > Cognition is continuous completion, correction, and recompression of open relations with reality.
 
-Action, memory, attention, planning-like behavior, foresight, and concept formation are not to be installed as separate controllers. If they appear, they should be descriptions of relational structure that `C` developed and is currently using.
+## Language / semantics hypothesis
 
-## Success criterion
-The intended endpoint is a self-growing human-like mind whose structure develops from the one law and whose reasoning can exceed ordinary human judgment by remaining consistently answerable to reality through the Stone and OneLogic.
+Language is treated broadly as compressed reality-grounded relational structure, not merely interpersonal signal convention.
 
-The Stone is available to the mind itself as the structure of reality-relative judgment, not merely as an external evaluator. OneLogic is the Wisdom relation of that structure: it governs what may be concluded, what must remain unresolved, when correction is required, and when further reality-contact is warranted. Inquiry provides informational grounding where Knowledge is insufficient. Purposive relations must arise within the same Stone structure from embodied concern under real constraint, so increasingly distant continuation, foresight, and other higher capacities can emerge from learned relations rather than from a separate planner.
+Raw numeric/categorical contact is substrate, not meaning. A learned symbol such as `§1` is only an arbitrary handle; its meaning is its recursively grounded relational definition and position among other relations.
 
-Memory, concepts, categories, attention, causality, foresight, planning-like behavior, curiosity, language, social understanding, and other recognizable faculties are expected descriptions of structures that may emerge inside `M`; they are not separate authorities to add beside `C`.
+English should ultimately be one expression/communication surface attached to independently grounded meanings:
 
-The micro-world is a falsification arena for this claim. Strong or eventually dominant performance should arise because the mind developed better reality-grounded structure. Do not improve scores by adding world-specific survival knowledge, semantic action rules, reward shaping, privileged state labels, or a hand-written cognitive shortcut.
+```text
+English word <-> stabilized internal relation
+```
 
-The final mind must be standalone. No LLM, external reasoner, hidden cognitive controller, or human intervention may supply its live reasoning once it is running.
+The mind should be able to use the internal relational language without translating every cognition into English. Other languages can in principle attach to the same relation. Natural-language words must not get their meaning from a dictionary hidden in `C`.
 
-## Non-negotiable design constraint
-The **active cognitive runtime must be one thing**. `one-mind.js` is the current active mind and may expose only `one` and `C`. It must not delegate cognition to `one-rule.js`, `recursive-recompression.js`, `sequence-recompression.js`, or another helper subsystem. Other source files may remain as historical experiments, tests, benchmarks, or documentation, but they are not live cognitive authorities.
+## Non-negotiable implementation constraints
 
-Do not manually add world-specific modules for memory, concepts, empathy, causality, categories, planning, curiosity, food-seeking, danger avoidance, etc. Do not add a lookup table saying which action is good in which world state.
+The **active cognitive runtime must be one thing**: `one-mind.js`.
 
-**There must not be a separate planner/action-policy faculty.** Understanding and continuation are one state. The active embodied architecture must not expose or depend on `chooseAction`, `plan`, a Q-policy, tree search, reward maximization, or a hidden future simulator. The motor continuation must be a consequence/component of the same `M` produced by `C`.
-
-The Stone and OneLogic are permitted foundational guidance. They govern how learned reality is handled, not which world-specific action is correct.
-
-Important anti-cheat constraints learned on 2026-10-09:
-- Do not manually mark a sequence that ended in relief as "successful" and replay it later. That supplies the very purposive faculty the mind is supposed to develop.
-- Do not encode bodily change as a Stone sign. Stone signs are orientations of cognition toward reality.
-- Do not assign generic numeric meaning to arbitrary sensor codes. Some perceptual channels are categorical/bit-coded; arithmetic or ordinal relations are meaningful only where the primitive interface actually supplies a magnitude.
-- Do not collapse distinct concerns into a weighted utility merely to force a decision. If reality has not supplied a trade-off relation, keep the trade-off unresolved.
-- Do not confuse nominal goal-state labels with satisfaction. Purpose closes only when the relevant experienced relation is actually answered.
-- Do not install Pareto comparison, least-observed exploration, success replay, or other generic-looking decision procedures as substitutes for relational completion. If they are genuine cognitive capacities, they must emerge from `C` rather than sit beside it.
-- Do not keep one global leaderboard of learned descriptions when that lets unrelated referents erase a grounded relation. Description authority is referent-relative; finite search/storage throttling must not silently turn global popularity into cognitive authority.
-- Do not interpret a good benchmark score as intelligence when the motor stream is still the embodiment's fallback variation. Measure whether the motor actually came from grounded relational completion.
-
-Prefer open developmental runs over deciding the next human-named capability in advance. Use isolated tests afterward to explain/falsify what emerged, and keep regressions to ensure later work does not break earlier invariants.
-
-## Current active architecture
-`one-mind.js` is now self-contained. It has no cognitive `require()` dependencies. Its public interface is only:
+Its public cognitive interface remains only:
 
 ```text
 one(...)
 C(M, R)
 ```
 
-Its current finite realization of the one law does the following inside the same `M` and same `C`:
+It must not delegate cognition to historical helper files such as `one-rule.js`, `recursive-recompression.js`, or `sequence-recompression.js`.
 
-- retains every exact embodied transition as `perception_before -> motor -> perception_after`;
-- exposes supplied perceptual channels individually without assigning world semantics;
-- exposes only legitimate ordinal change on explicitly magnitude-valued interoceptive channels;
-- searches repeated simultaneous relations for shorter MDL descriptions;
-- recursively reuses learned conjunction descriptions as later representational material;
-- treats succession already present in `M_t -> M_(t+1)` as available relational structure and can compress repeated ordered event structure without a supplied temporal horizon;
-- uses learned relations in either direction, allowing a presently open relation to leave `action` as a missing term to be completed;
-- recursively completes currently warranted missing terms without generating/scoring candidate futures;
+Do not add:
+- planner / action policy / Q-learning / tree search / reward maximization;
+- hidden future simulator;
+- language module, semantic dictionary, scene classifier, or word-specific C rules;
+- hand-written memory, concept, empathy, causality, category, curiosity, food-seeking, or danger-avoidance faculty;
+- success replay or privileged success/failure labels;
+- scalar utility combining distinct concerns;
+- Pareto selector or least-observed exploration as a substitute for learned relation completion;
+- numerical Stone valence on ordinary physical changes;
+- global popularity/leaderboards that erase valid referent-relative relations.
+
+When a benchmark fails, change the generic relation/compression machinery only when the failure demonstrates a generic structural defect. Preserve failures rather than manufacturing success.
+
+## Current active architecture
+
+`one-mind.js` is self-contained and has no cognitive `require()` dependencies. It currently:
+- retains every exact `perception_before -> motor -> perception_after` transition;
+- exposes supplied perceptual channels without world semantics;
+- exposes only legitimate ordinal change on explicitly magnitude-valued concern channels;
+- searches repeated simultaneous relations for MDL-shorter descriptions;
+- learns conjunction handles `§N` and can recursively reuse them as later representational material;
+- keeps learned concept definitions **cumulative inside `M` across later global recompressions**;
+- represents learned concepts sparsely: the positive handle appears where its grounded definition occurs instead of adding explicit false values to every memory;
+- treats a sparse concept as evaluable wherever the primitive/base relations required by its definition are known, while it remains undefined outside that domain (`undefined != false`);
+- treats succession already inherent in `M_t -> M_(t+1)` as available structure and can compress recurring event order into `§qN` chunks;
+- predicts learned relations in either direction;
 - keeps equal-authority incompatible completions unresolved;
-- prevents a proposed continuation from gaining authority by hiding another learned material bodily relation it worsens, without inventing an exchange rate;
-- when no grounded motor completion exists, allows only non-semantic physical motor variation so further action/consequence contact can occur;
-- incrementally updates the evidential authority of existing learned relations on every new contact;
-- periodically reopens the exact accumulated record for global re-description so stable structure can be reused while counterevidence can still reorganize it;
-- retains finite learned descriptions relative to their target/referent rather than letting unrelated high-compression relations globally crowd them out.
+- uses open primitive concerns to recover action as a missing relational term when grounded;
+- prevents an action from gaining authority by hiding another learned bodily relation it worsens, without an invented exchange rate;
+- uses only nonsemantic physical motor variation when no grounded motor completion exists;
+- incrementally refreshes existing relation evidence after every contact;
+- periodically reopens the exact accumulated record for broader recompression;
+- retains finite descriptions relative to their target/referent rather than one global top-N list.
 
-The finite recompression schedule and search bounds are engineering constraints, not new cognitive authorities. Exact lived contact remains retained beneath them.
+The finite search, recompression schedule, and storage bounds are engineering constraints, not cognitive authorities. Exact lived contact remains beneath them.
 
-## Verified results
-The current synthetic correction regression passes on the self-contained mind:
+## Important failures that shaped the architecture
+
+1. An earlier 200-contact micro-world run had exactly equal action counts `[25,25,25,25,25,25,25,25]`. Lower friction was rejected as evidence of intelligence because action was still fallback cycling. This motivated explicit external grounded-action measurement.
+2. A global top-pattern list allowed unrelated easy relations to erase action-relevant relations. Retention became referent-relative.
+3. In the first semantic test, fixed teacher ordering let temporal chunks predict word labels. The test was corrected by randomizing presentation order instead of changing cognition.
+4. Learned `§` vocabulary was originally rebuilt from scratch on each global recompression. That contradicted the requirement that `M` actually accumulate and stabilize concepts, so learned definitions now persist in `M`.
+5. Persisting every learned concept as a true/false feature across every historical sample caused vocabulary growth to expand the whole lifetime. Concepts are now sparse positive chunks.
+6. Sparse concept absence was initially treated as unevaluable everywhere, preventing word->concept relations from getting a comparison class. Concepts are now evaluated over the domain where their underlying grounded definition is knowable, preserving `undefined != false` outside that domain.
+
+These are generic representation corrections. None adds English meanings, Stone judgments, or OneLogic rules to `C`.
+
+## Frozen verified semantic checkpoint — 2026-10-10
+
+Authoritative tested code commit:
 
 ```text
-42ndMind one self-contained developmental authority: PASS
+63783369db66ff1640a48a7d80964af8d12161d1
+```
+
+Convenience branch:
+
+```text
+checkpoint/semantic-grounding-2026-10-10
+```
+
+The commit passed one GitHub Actions job containing all three active falsification layers.
+
+### Self-correction regression
+
+```text
 experiences = 50
-patterns = 114
-symbols = 3
+patterns = 441
+symbols = 43
 order_rules = 5
 order_max_depth = 2
 corrected_action_seen = true
 zero_motor_variants = 4
 ```
 
-The regression first exposes one action that reduces two primitive concerns, then reverses actuality without announcing the change so a different action has that relation. The same mind develops a usable relation, later changes under counterevidence, and stops preserving the old purposive action after the concerns are closed. No reward, policy, planner, success flag, Pareto selector, or semantic action rule is supplied.
+### Semantic grounding/stabilization regression
 
-A 200-contact micro-world run on the earlier global-top-96 retention version produced lower friction than babble but exactly equal action counts `[25,25,25,25,25,25,25,25]`. That was correctly rejected as evidence of learned agency: it was the signature of fallback motor variation. This failure motivated referent-relative description retention rather than a world-specific action fix.
+External test interface used arbitrary categorical word codes and four simple world relations. Presentation order and irrelevant context were varied. The mind had one motor possibility and zero pressure, so action policy/reward cannot explain the relation.
 
-The first bounded micro-world run after referent-relative retention and explicit external agency measurement used seed `420070`, 64 protected developmental contacts, then 32 autonomous contacts. Result:
+The clean learner formed:
+
+```text
+§1 := p1=1 & p2=1
+```
+
+and developed both:
+
+```text
+§1 -> external English label 101 ("cat" in the test interface)
+external English label 101 -> §1
+```
+
+After further life, the same concept definition survived and both directions strengthened.
+
+Verified output:
+
+```text
+stabilization_experiences = 95
+correction_experiences = 79
+active_patterns = 730
+learned_symbols = 67
+cat_semantic_symbol = §1
+cat_semantic_definition = p1=1&p2=1
+concept_to_english_support = 24
+english_to_concept_support = 24
+concept_to_english_reliability = 1
+english_to_concept_reliability = 1
+bidirectional_words = 4
+corrected_initial_false_grounding = true
+semantic_specific_C_logic = false
+```
+
+A separate continuous correction life first received a deliberately false cat/cup pairing, then sustained correct contact. The corrected cat-world relation became the stronger active grounding; the stale false bridge did not retain equal-or-greater authority.
+
+This is a bounded toy categorical result. It establishes that an arbitrary external label can become bidirectionally related to a reusable world-grounded internal relation and stabilize/correct without language-specific `C` logic. It does **not** yet establish grammar, compositional language, source reasoning, or general natural-language understanding.
+
+See `SEMANTIC_GROUNDING.md` for the protocol and claim limits.
+
+### Same-commit micro-world regression
+
+Seed `420070`, 64 protected developmental contacts + 32 autonomous contacts:
 
 ```text
 steps = 96
@@ -147,47 +241,47 @@ autonomous_steps_survived = 32
 average friction = 31.49
 babble average friction = 47.60
 terminal friction = 111
-max friction = 111
-action counts = [15,13,12,12,11,13,10,10]
-grounded motor steps = 15
-grounded autonomous steps = 11
-learned patterns = 350
-active patterns = 347
-action patterns = 10
-direct purposive action patterns = 0
-learned symbols = 12
+terminal pressures = [0,0,111,0]
+action counts = [16,12,13,12,10,13,10,10]
+grounded motor steps = 17
+grounded autonomous steps = 13
+learned patterns = 1030
+active patterns = 1028
+learned symbols = 80
 final ordered rules = 0
 ```
 
-This is the first micro-world evidence in the current clean architecture that some motor continuation actually came from learned relational completion rather than only from the body's fallback variation. The nonuniform action counts independently differ from the old exact fallback cycle. The lower friction than babble is supportive but is not by itself proof of intelligence.
+The richer cumulative vocabulary therefore preserved and slightly increased grounded motor continuation in this bounded seed relative to the previous version (15 total / 11 autonomous). Lower friction remains supportive, not proof by itself.
 
-The fact that `direct purposive action patterns = 0` while grounded motor completions occurred means the grounded actions were not simply a retained direct `less -> action` shortcut at the final snapshot; completion could proceed through other learned relations. This is worth preserving and testing rather than replacing with an explicit success rule.
-
-`ordered_rules = 0` in that final micro-world snapshot also means longer order-sensitive structure has not yet been demonstrated as stable in that particular life, despite the synthetic regression demonstrating ordered compression can form. Do not claim mature foresight from this run.
-
-`micro-world-single-life.js` executes `mind.motor` directly. Its grounded-motor counters are external instrumentation only: they observe whether the embodiment's fallback variation state advanced, and this information is never supplied back to the mind or used to choose the action.
+Signal instrumentation also observed 3 grounded signal-1 emissions, 2 during the autonomous phase, but this does not establish language or intentional communication.
 
 ## Current frontier
-The architecture now demonstrates all three minimal developmental claims separately and, in bounded form, together:
 
-1. it can grow reusable structure from experience;
-2. it can correct that structure when actuality reverses;
-3. it can sometimes let learned structure determine motor continuation in the micro-world without a separate action policy.
+The checkpoint is not human-level or general intelligence. The main unresolved work is:
 
-That is not yet evidence that a complete human-equivalent or superior mind has been achieved. Do not use the word "finished" to mean scientifically established general intelligence. The current falsification targets are narrower and concrete.
+1. **Structured knowledge substrate.** Current flat categorical channels and conjunction handles are not yet a sufficiently general representation for variables, propositions, quantified/alternative possibilities, theorem structure, provenance, and formal OneLogic/Stone knowledge to live naturally inside `M`. This is now the central theoretical implementation problem.
+2. **OneLogic/Stone inside M.** Replace inert descriptive prior strings with actual correction-open relational knowledge that generic `C` can use. Do not hard-code a OneLogic solver or Stone evaluator into `C`.
+3. **English beyond labels.** Extend ordinary reality contact toward sequences, compositional relations, reference, and expression while keeping word meanings grounded in the internal relational language. Do not add a language faculty.
+4. **Partial/undefined contact and inquiry.** A general mind must represent incomplete contact without equating absent information with false. Discriminating inquiry should emerge when unresolved alternatives become materially relevant.
+5. **Source/provenance reasoning.** Books/testimony should enter as claims with provenance. Source authority must become a learned referent-relative relation, not a hard-coded weight.
+6. **Computational scaling.** At only 96 micro-world experiences the cumulative mind retained 80 symbols and more than 1,000 patterns; that run still took about two minutes. Stabilized concepts should eventually become cheap handles that reduce repeated raw search while preserving grounding for reopening.
+7. **Temporal depth.** The synthetic test demonstrates ordered compression, but the final micro-world snapshot still has `ordered_rules = 0`. Do not claim mature foresight yet.
+8. **Abstract purpose and allotted costs.** Primitive pressure concerns are still the only innate open concerns, and current rejection of any separately learned worsening relation is too strict for grounded allotted trade-offs. Higher purposive structure must emerge rather than be supplied by scalar utility.
+9. **Replication.** Embodied grounded agency is still one bounded seed. Multi-seed and longer-life tests are required before strong behavioral claims.
 
-The main remaining issues are:
-- **computational cost:** the 96-contact micro-world agency diagnostic took about two minutes on the GitHub runner. Generic recompression must become substantially more incremental/efficient without filtering inconvenient experience or introducing semantic shortcuts;
-- **temporal depth:** stable longer ordered relations and distant consequences have not yet been demonstrated in the micro-world. Improve the same generic relational/recompression process rather than adding a temporal-credit or foresight module;
-- **abstract purpose:** only primitive bodily pressure relations currently provide innate open concerns. More abstract/social purposes should emerge through learned relations to reality and concern, not be inserted as named goals;
-- **allotted trade-offs:** a mature judgment may knowingly accept a local cost within a better grounded higher relation. Such allowance must emerge from a learned higher relation, never from a hand-written scalar utility or generic exchange rate;
-- **replication:** the grounded-agency result is currently demonstrated on one bounded seed. Multi-seed and longer-life validation are needed before making strong behavioral claims.
+## Next legitimate work
 
-The next legitimate work is therefore to improve the efficiency and depth of the **same self-contained `C`**, then rerun broader single-life micro-world validation. Do not add another cognitive file, planner, evaluator, reward function, named faculty, semantic scene extractor, or world-specific survival rule.
+Proceed in this order unless new falsification changes the structure:
 
-Do not assign a numerical Stone stance to a cognition merely because the axes are known. A numerical stance must be derived from the actual cognitive relations to the referent; otherwise it is another authored label.
+1. preserve the frozen semantic checkpoint;
+2. design a **generic structured relational representation inside `M`** capable of expressing partial alternatives, propositions/relations, provenance, and recursively grounded definitions without adding capability-specific `C` logic;
+3. represent formal OneLogic and Stone knowledge in that substrate as corrigible initial `M`, not as immutable code in `C`;
+4. use the same substrate for English/text contact so English can map to/from stable internal relations;
+5. improve incremental/local recompression so cumulative concepts reduce rather than explode computation;
+6. rerun correction, semantic, micro-world, temporal, and multi-seed falsification after every generic change.
 
-If viability falls after a generic correction, preserve the failure. A clean failure is more informative than a cheated success.
+Do not declare a capability proved because the desired behavior appears once. Require an isolated falsification test that removes obvious shortcuts, then ensure earlier regressions remain intact.
 
 ## User preference
-Keep chat updates focused on progress and conclusions. Put implementation detail and experimental notes in the repo unless asked.
+
+Keep chat updates focused on progress and conclusions. Put implementation detail and experimental notes in the repo unless asked. The user cares more about objective structural correctness than conversational reassurance.
