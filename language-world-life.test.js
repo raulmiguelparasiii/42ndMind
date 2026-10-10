@@ -164,19 +164,14 @@ function laterLifeContacts() {
         const patientColor = EARLY_COLORS[(a + b) % 3];
         const patientShape = EARLY_SHAPES[(a + 2 * b) % 3];
 
-        // yellow: actor shape and verb vary independently.
         out.push({
           scene: scene('yellow', EARLY_SHAPES[a], patientColor, patientShape, EARLY_VERBS[b]),
           speaker,
         });
-
-        // star: actor color and verb vary independently.
         out.push({
           scene: scene(EARLY_COLORS[a], 'star', patientColor, patientShape, EARLY_VERBS[b]),
           speaker,
         });
-
-        // helps: actor color and actor shape vary independently.
         out.push({
           scene: scene(EARLY_COLORS[a], EARLY_SHAPES[b], patientColor, patientShape, 'helps'),
           speaker,
@@ -197,33 +192,6 @@ function live(m, contacts, contextOffset) {
 
 function worldValues(scene) {
   return [scene.actorColor, scene.actorShape, scene.patientColor, scene.patientShape, scene.verb];
-}
-
-function directRouteDiagnostics(m, surface, target, expected) {
-  const code = text.code(surface);
-  const samples = m.structure.samples || [];
-  const active = (m.structure.patterns || []).filter(p => p.active !== false);
-  const positions = [];
-  for (let slot = 0; slot < MAX_TOKENS; slot++) {
-    const feature = `p${slot}`;
-    let seen = 0, targetKnown = 0, expectedCount = 0;
-    for (const sample of samples) {
-      const values = sample.values || {};
-      if (values[feature] !== code) continue;
-      seen++;
-      if (Object.prototype.hasOwnProperty.call(values, target)) {
-        targetKnown++;
-        if (values[target] === expected) expectedCount++;
-      }
-    }
-    if (!seen) continue;
-    const retained = active.filter(p =>
-      p.target === target && p.expected === expected &&
-      p.conditions.some(c => c.feature === feature && c.value === code)
-    ).map(p => ({ id: p.id, conditions: p.conditions }));
-    positions.push({ feature, seen, targetKnown, expectedCount, retained });
-  }
-  return { surface, code, target, expected, positions };
 }
 
 function readingProbe(m, sceneValue, speaker) {
@@ -280,11 +248,6 @@ live(learner, later, 5000);
 live(learner, [early[0]], 9000);
 
 const novel = scene('yellow', 'star', 'blue', 'square', 'helps');
-
-console.log('LANGUAGE_LIFE_ROUTE_DIAGNOSTIC ' + JSON.stringify({
-  star: directRouteDiagnostics(learner, 'star', 'p11', SHAPES.star),
-  helps: directRouteDiagnostics(learner, 'helps', 'p14', VERBS.helps.code),
-}));
 
 // Same never-experienced scene must be understood through three genuinely
 // different variable-length/order conventions learned from the ongoing life.
