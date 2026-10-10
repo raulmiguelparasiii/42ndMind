@@ -91,7 +91,30 @@ assert.ok(cat.outward.support>firstOutSupport,'continued reality did not strengt
 assert.ok(cat.inward.support>firstInSupport,'continued reality did not strengthen English -> concept grounding');
 for(const word of Object.keys(WORD))assert.ok(semanticBridge(learner,word),`semantic bridge for ${word} did not survive continued life`);
 
-// PROOF B: correction is tested in a separate continuous life. A false cat<->cup
+// PROOF B: actual relational translation from partial contact. `null` means that
+// a perceptual channel was not contacted, not false. The same learned M must fill
+// only what its grounded relations warrant. These queries run on independent
+// clones so the probes do not train one another.
+const fromEnglish=structuredClone(learner);
+Mind.C(fromEnglish,[WORD.cat,null,null,null,0]);
+assert.strictEqual(fromEnglish.current.completed[cat.symbol.feature],true,
+  'English contact did not reconstruct the stabilized internal cat relation');
+assert.strictEqual(fromEnglish.current.completed.p1,1,
+  'English contact did not unfold the first grounded cat-world term');
+assert.strictEqual(fromEnglish.current.completed.p2,1,
+  'English contact did not unfold the second grounded cat-world term');
+
+const fromReality=structuredClone(learner);
+Mind.C(fromReality,[null,1,1,null,0]);
+assert.strictEqual(fromReality.current.completed.p0,WORD.cat,
+  'grounded cat-world relation did not reconstruct the English label');
+
+const ambiguous=structuredClone(learner);
+Mind.C(ambiguous,[null,1,null,null,0]);
+assert.ok(!Object.prototype.hasOwnProperty.call(ambiguous.current.completed,'p0'),
+  'ambiguous partial reality was converted into an unsupported English label');
+
+// PROOF C: correction is tested in a separate continuous life. A false cat<->cup
 // teaching is first grounded, then sustained correct contact must make the actual
 // cat-world concept the stronger active source for the English token.
 const corrector=Mind.one(1,1);
@@ -116,6 +139,9 @@ console.log(JSON.stringify({
   concept_to_english_reliability:Number(cat.outward.reliability.toFixed(4)),
   english_to_concept_reliability:Number(cat.inward.reliability.toFixed(4)),
   bidirectional_words:Object.keys(WORD).length,
+  english_to_internal_translation:true,
+  internal_to_english_translation:true,
+  ambiguous_partial_contact_suspended:true,
   corrected_initial_false_grounding:true,
   semantic_specific_C_logic:false,
 }));
