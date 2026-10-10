@@ -3,6 +3,22 @@ name: Verify one-rule kernel
 on:
   push:
     branches: [main]
+    paths:
+      - 'one-rule.js'
+      - 'one-rule.test.js'
+      - 'one-rule.stress.js'
+      - 'recursive-recompression.js'
+      - 'recursive-recompression.test.js'
+      - 'temporal-recompression.test.js'
+      - 'sequence-recompression.test.js'
+      - 'open-development.js'
+      - 'open-development-scalar.js'
+      - 'micro-world-open.js'
+      - 'one-mind.js'
+      - 'one-mind.test.js'
+      - 'micro-world.js'
+      - 'micro-world-single-life.js'
+      - '.github/workflows/one-rule.yml'
   pull_request:
   workflow_dispatch:
 
