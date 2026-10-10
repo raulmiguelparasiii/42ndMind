@@ -66,6 +66,9 @@ const temporalCurrent=Object.entries(ambiguous.current.completed)
     const s=ambiguous.structure.temporal_symbols.find(x=>x.feature===feature);
     return {feature,value,channel:s?.channel,expansion:s?.expansion,support:s?.support};
   });
+const inferredTemporalTrue=temporalCurrent
+  .filter(x=>x.value===true && inferred.has(x.feature))
+  .map(x=>({...x,routes:routesFor(x.feature)}));
 
 const out={
   observed:ambiguous.current.observed,
@@ -73,6 +76,7 @@ const out={
   inferred:ambiguous.current.inferred,
   unresolved:ambiguous.current.unresolved,
   temporal_current:temporalCurrent,
+  inferred_temporal_true:inferredTemporalTrue,
   satisfied_p2_routes:routesFor('p2'),
   satisfied_p0_routes:routesFor('p0'),
 };
@@ -81,6 +85,5 @@ fs.writeFileSync('.github/diagnostics/semantic-ambiguous-route.json',JSON.string
 console.log(JSON.stringify({
   completed_p2:ambiguous.current.completed.p2 ?? null,
   completed_p0:ambiguous.current.completed.p0 ?? null,
-  p2_route_count:out.satisfied_p2_routes.length,
-  p0_route_count:out.satisfied_p0_routes.length,
+  inferred_temporal_true:inferredTemporalTrue.map(x=>x.feature),
 }));
