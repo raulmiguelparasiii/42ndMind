@@ -1,0 +1,51 @@
+name: Capture semantic regression
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/semantic-regression-capture.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Apply exact staged candidate
+        run: |
+          python .github/scripts/apply_raw_percept_succession.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('one-mind.js')
+          s = p.read_text()
+          s = s.replace(r'/^§t(\\d+)$/', r'/^§t(\d+)$/')
+          s = s.replace(r'/^p(\\d+)$/', r'/^p(\d+)$/')
+          p.write_text(s)
+          PY
+          python .github/scripts/apply_grounded_completion_guard.py
+
+      - name: Capture semantic grounding failure
+        run: |
+          mkdir -p .github/diagnostics
+          set +e
+          node semantic-grounding.test.js > .github/diagnostics/semantic-regression.txt 2>&1
+          code=$?
+          set -e
+          printf '\nexit_code=%s\n' "$code" >> .github/diagnostics/semantic-regression.txt
+          cat .github/diagnostics/semantic-regression.txt
+
+      - name: Persist diagnostic only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/diagnostics/semantic-regression.txt
+          git commit -m 'Record semantic regression diagnostic'
+          git push origin HEAD:main
