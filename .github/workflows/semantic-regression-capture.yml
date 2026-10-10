@@ -1,4 +1,4 @@
-name: Capture semantic regression
+name: Verify semantic grounding candidate
 
 on:
   push:
@@ -6,13 +6,10 @@ on:
     paths:
       - '.github/workflows/semantic-regression-capture.yml'
       - '.github/scripts/apply_current_temporal_contact_guard.py'
-      - '.github/scripts/semantic_ambiguous_diagnostic.js'
-
-permissions:
-  contents: write
+      - '.github/scripts/apply_temporal_definition_guard.py'
 
 jobs:
-  capture:
+  semantic:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -34,31 +31,7 @@ jobs:
           PY
           python .github/scripts/apply_grounded_completion_guard.py
           python .github/scripts/apply_current_temporal_contact_guard.py
+          python .github/scripts/apply_temporal_definition_guard.py
 
-      - name: Trace dog completion routes
-        run: node .github/scripts/semantic_candidate_diagnostic.js
-
-      - name: Trace ambiguous completion routes
-        run: node .github/scripts/semantic_ambiguous_diagnostic.js
-
-      - name: Capture semantic grounding result
-        run: |
-          mkdir -p .github/diagnostics
-          set +e
-          node semantic-grounding.test.js > .github/diagnostics/semantic-regression.txt 2>&1
-          code=$?
-          set -e
-          printf '\nexit_code=%s\n' "$code" >> .github/diagnostics/semantic-regression.txt
-          cat .github/diagnostics/semantic-regression.txt
-          printf '%s\n' "$code" > .github/diagnostics/semantic-exit-code.txt
-
-      - name: Persist corrected diagnostic
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/diagnostics/semantic-route.json .github/diagnostics/semantic-ambiguous-route.json .github/diagnostics/semantic-regression.txt .github/diagnostics/semantic-exit-code.txt
-          git commit -m 'Record ambiguous semantic route diagnostic'
-          git push origin HEAD:main
-
-      - name: Fail if semantic regression remains
-        run: test "$(cat .github/diagnostics/semantic-exit-code.txt)" = "0"
+      - name: Verify complete semantic grounding regression
+        run: node semantic-grounding.test.js
