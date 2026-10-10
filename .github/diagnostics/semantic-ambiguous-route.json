@@ -176,6 +176,282 @@
       "support": 6
     }
   ],
+  "inferred_temporal_true": [
+    {
+      "feature": "§t7",
+      "value": true,
+      "channel": "p1",
+      "expansion": [
+        2,
+        1
+      ],
+      "support": 21,
+      "routes": [
+        {
+          "id": "r424",
+          "expected": true,
+          "support": 21,
+          "exceptions": 11,
+          "covered": 32,
+          "eligible": 63,
+          "reliability": 0.65625,
+          "predictive_code_bits": 0.8720471123648903,
+          "dependency_count": 1,
+          "conditions": [
+            {
+              "feature": "p1",
+              "value": 1,
+              "observed": true,
+              "inferred": false,
+              "final_value": 1
+            }
+          ],
+          "satisfied_final": true
+        },
+        {
+          "id": "r441",
+          "expected": true,
+          "support": 21,
+          "exceptions": 11,
+          "covered": 32,
+          "eligible": 63,
+          "reliability": 0.65625,
+          "predictive_code_bits": 0.9940550572408144,
+          "dependency_count": 2,
+          "conditions": [
+            {
+              "feature": "action",
+              "value": 0,
+              "observed": false,
+              "inferred": true,
+              "final_value": 0
+            },
+            {
+              "feature": "p1",
+              "value": 1,
+              "observed": true,
+              "inferred": false,
+              "final_value": 1
+            }
+          ],
+          "satisfied_final": true
+        },
+        {
+          "id": "r442",
+          "expected": true,
+          "support": 21,
+          "exceptions": 11,
+          "covered": 32,
+          "eligible": 63,
+          "reliability": 0.65625,
+          "predictive_code_bits": 0.9940550572408144,
+          "dependency_count": 2,
+          "conditions": [
+            {
+              "feature": "c0_open",
+              "value": false,
+              "observed": true,
+              "inferred": false,
+              "final_value": false
+            },
+            {
+              "feature": "p1",
+              "value": 1,
+              "observed": true,
+              "inferred": false,
+              "final_value": 1
+            }
+          ],
+          "satisfied_final": true
+        },
+        {
+          "id": "r443",
+          "expected": true,
+          "support": 21,
+          "exceptions": 11,
+          "covered": 32,
+          "eligible": 63,
+          "reliability": 0.65625,
+          "predictive_code_bits": 0.9940550572408144,
+          "dependency_count": 2,
+          "conditions": [
+            {
+              "feature": "c0",
+              "value": 0,
+              "observed": true,
+              "inferred": false,
+              "final_value": 0
+            },
+            {
+              "feature": "p1",
+              "value": 1,
+              "observed": true,
+              "inferred": false,
+              "final_value": 1
+            }
+          ],
+          "satisfied_final": true
+        }
+      ]
+    },
+    {
+      "feature": "§t1",
+      "value": true,
+      "channel": "p2",
+      "expansion": [
+        1,
+        2
+      ],
+      "support": 21,
+      "routes": [
+        {
+          "id": "r409",
+          "expected": true,
+          "support": 21,
+          "exceptions": 10,
+          "covered": 31,
+          "eligible": 63,
+          "reliability": 0.6774193548387096,
+          "predictive_code_bits": 0.8289783904730045,
+          "dependency_count": 1,
+          "conditions": [
+            {
+              "feature": "p2",
+              "value": 2,
+              "observed": false,
+              "inferred": true,
+              "final_value": 2
+            }
+          ],
+          "satisfied_final": true
+        },
+        {
+          "id": "r432",
+          "expected": true,
+          "support": 21,
+          "exceptions": 10,
+          "covered": 31,
+          "eligible": 63,
+          "reliability": 0.6774193548387096,
+          "predictive_code_bits": 0.9509863353489285,
+          "dependency_count": 2,
+          "conditions": [
+            {
+              "feature": "action",
+              "value": 0,
+              "observed": false,
+              "inferred": true,
+              "final_value": 0
+            },
+            {
+              "feature": "p2",
+              "value": 2,
+              "observed": false,
+              "inferred": true,
+              "final_value": 2
+            }
+          ],
+          "satisfied_final": true
+        },
+        {
+          "id": "r434",
+          "expected": true,
+          "support": 21,
+          "exceptions": 10,
+          "covered": 31,
+          "eligible": 63,
+          "reliability": 0.6774193548387096,
+          "predictive_code_bits": 0.9509863353489285,
+          "dependency_count": 2,
+          "conditions": [
+            {
+              "feature": "c0_open",
+              "value": false,
+              "observed": true,
+              "inferred": false,
+              "final_value": false
+            },
+            {
+              "feature": "p2",
+              "value": 2,
+              "observed": false,
+              "inferred": true,
+              "final_value": 2
+            }
+          ],
+          "satisfied_final": true
+        },
+        {
+          "id": "r436",
+          "expected": true,
+          "support": 21,
+          "exceptions": 10,
+          "covered": 31,
+          "eligible": 63,
+          "reliability": 0.6774193548387096,
+          "predictive_code_bits": 0.9509863353489285,
+          "dependency_count": 2,
+          "conditions": [
+            {
+              "feature": "c0",
+              "value": 0,
+              "observed": true,
+              "inferred": false,
+              "final_value": 0
+            },
+            {
+              "feature": "p2",
+              "value": 2,
+              "observed": false,
+              "inferred": true,
+              "final_value": 2
+            }
+          ],
+          "satisfied_final": true
+        }
+      ]
+    },
+    {
+      "feature": "§t6",
+      "value": true,
+      "channel": "p0",
+      "expansion": [
+        103,
+        102
+      ],
+      "support": 6,
+      "routes": [
+        {
+          "id": "r380",
+          "expected": true,
+          "support": 6,
+          "exceptions": 0,
+          "covered": 6,
+          "eligible": 63,
+          "reliability": 1,
+          "predictive_code_bits": 0.5586689125701682,
+          "dependency_count": 2,
+          "conditions": [
+            {
+              "feature": "§t1",
+              "value": true,
+              "observed": false,
+              "inferred": true,
+              "final_value": true
+            },
+            {
+              "feature": "§t7",
+              "value": true,
+              "observed": false,
+              "inferred": true,
+              "final_value": true
+            }
+          ],
+          "satisfied_final": true
+        }
+      ]
+    }
+  ],
   "satisfied_p2_routes": [
     {
       "id": "r8",
