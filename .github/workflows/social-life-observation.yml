@@ -1,0 +1,39 @@
+name: Observe English social life
+
+on:
+  push:
+    branches: [experiment/english-social-life-20261010]
+    paths:
+      - 'social-life.js'
+      - '.github/workflows/social-life-observation.yml'
+
+concurrency:
+  group: english-social-life-observation
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Let the copied canonical M live
+        env:
+          SOCIAL_STEPS: '64'
+        run: node social-life.js | tee state/social-life-run.log
+      - name: Persist branch-only observation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/social-life-report.json state/social-life-mind.json state/social-life-run.log
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Observe English social life [skip ci]'
+          git push origin HEAD:experiment/english-social-life-20261010
