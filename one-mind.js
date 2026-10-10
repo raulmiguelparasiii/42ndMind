@@ -130,8 +130,12 @@ function augment(rawSamples, symbols) {
   const ordered = symbols.slice().sort((a, b) => a.depth - b.depth || a.feature.localeCompare(b.feature));
   for (const symbol of ordered) {
     for (const sample of samples) {
+      // A learned symbol is a positive compressed chunk. It is present when its
+      // entire grounded definition is present; non-occurrence is not materialized
+      // as a second feature-value on every sample. This keeps the learned language
+      // sparse and respects undefined != false while raw grounding remains exact.
       if (!symbol.definition.every(atom => Object.prototype.hasOwnProperty.call(sample.values, atom.feature))) continue;
-      sample.values[symbol.feature] = symbol.definition.every(atom => sampleHas(sample.values, atom));
+      if (symbol.definition.every(atom => sampleHas(sample.values, atom))) sample.values[symbol.feature] = true;
     }
   }
   return samples;
@@ -326,13 +330,14 @@ function nextSymbolNumber(symbols) {
 // recompression keeps that definition available while all relations involving it
 // remain free to gain or lose evidential authority. This makes conceptual growth
 // cumulative without making any learned claim immutable.
-function recompressRelations(rawSamples, seedSymbols = []) {
+function recompressRelations(rawSamples, seedSymbols = [], maxNewSymbols = 8) {
   let symbols = seedSymbols.map(cloneSymbol);
   let patterns = [];
   const existingDefinitions = new Set(symbols.map(s => s.definition_key || conditionKey(s.definition)));
   let nextNumber = nextSymbolNumber(symbols);
+  let remaining = Math.max(0, maxNewSymbols);
 
-  for (let pass = 0; pass < 2; pass++) {
+  for (let pass = 0; pass < 2 && remaining > 0; pass++) {
     const samples = augment(rawSamples, symbols);
     patterns = learnPatterns(samples, symbols, 2);
     const byFeature = new Map(symbols.map(s => [s.feature, s]));
@@ -356,7 +361,8 @@ function recompressRelations(rawSamples, seedSymbols = []) {
         source: { target: pattern.target, expected: pattern.expected, bits_saved: pattern.bits_saved },
       });
       existingDefinitions.add(definitionKey);
-      if (additions.length >= 8) break;
+      remaining--;
+      if (remaining <= 0) break;
     }
     if (!additions.length) break;
     symbols = [...symbols, ...additions];
@@ -577,8 +583,11 @@ function recompressWhole(state) {
   let sequence = { encoded_stream: [], rules: [] };
   let previousKey = '';
   let passes = 0;
+  let symbolBudget = 8;
   for (let pass = 0; pass < 3; pass++) {
-    learned = recompressRelations(samples, learned.symbols);
+    const beforeSymbols = learned.symbols.length;
+    learned = recompressRelations(samples, learned.symbols, symbolBudget);
+    symbolBudget = Math.max(0, symbolBudget - (learned.symbols.length - beforeSymbols));
     tokens = samples.map(sample => eventToken(state, learned, sample));
     sequence = recompressSequence(tokens);
     const next = annotateTemporalRelations(state, base, temporalDescriptions(samples, tokens, sequence));
@@ -588,7 +597,7 @@ function recompressWhole(state) {
     if (key === previousKey) break;
     previousKey = key;
   }
-  learned = recompressRelations(samples, learned.symbols);
+  learned = recompressRelations(samples, learned.symbols, symbolBudget);
   return {
     samples,
     symbols: learned.symbols,
