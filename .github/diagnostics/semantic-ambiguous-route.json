@@ -21,7 +21,6 @@
     "§53": true,
     "§t1": true,
     "p2": 2,
-    "§t6": true,
     "§3": true,
     "§35": true,
     "§36": true,
@@ -59,7 +58,6 @@
     "§t2",
     "§t20",
     "§t3",
-    "§t6",
     "§t7",
     "§t8"
   ],
@@ -164,16 +162,6 @@
         2
       ],
       "support": 21
-    },
-    {
-      "feature": "§t6",
-      "value": true,
-      "channel": "p0",
-      "expansion": [
-        103,
-        102
-      ],
-      "support": 6
     }
   ],
   "inferred_temporal_true": [
@@ -405,46 +393,6 @@
               "observed": false,
               "inferred": true,
               "final_value": 2
-            }
-          ],
-          "satisfied_final": true
-        }
-      ]
-    },
-    {
-      "feature": "§t6",
-      "value": true,
-      "channel": "p0",
-      "expansion": [
-        103,
-        102
-      ],
-      "support": 6,
-      "routes": [
-        {
-          "id": "r380",
-          "expected": true,
-          "support": 6,
-          "exceptions": 0,
-          "covered": 6,
-          "eligible": 63,
-          "reliability": 1,
-          "predictive_code_bits": 0.5586689125701682,
-          "dependency_count": 2,
-          "conditions": [
-            {
-              "feature": "§t1",
-              "value": true,
-              "observed": false,
-              "inferred": true,
-              "final_value": true
-            },
-            {
-              "feature": "§t7",
-              "value": true,
-              "observed": false,
-              "inferred": true,
-              "final_value": true
             }
           ],
           "satisfied_final": true
