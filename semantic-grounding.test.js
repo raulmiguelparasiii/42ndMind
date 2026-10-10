@@ -35,28 +35,44 @@ function cycle(m, mapping, rounds, start = 0) {
 function activePatterns(m) {
   return m.structure.patterns.filter(p => p.active !== false);
 }
-function hasAtom(pattern, feature, value) {
-  return pattern.conditions.some(c => c.feature === feature && c.value === value);
+function atomGrounds(m, atom, feature, value, trail = new Set()) {
+  if (atom.feature === feature && atom.value === value) return true;
+  if (atom.value !== true || trail.has(atom.feature)) return false;
+  const symbol = m.structure.symbols.find(s => s.feature === atom.feature);
+  if (!symbol) return false;
+  const next = new Set(trail); next.add(atom.feature);
+  return symbol.definition.some(child => atomGrounds(m, child, feature, value, next));
+}
+function patternGrounds(m, pattern, feature, value) {
+  return pattern.conditions.some(atom => atomGrounds(m, atom, feature, value));
 }
 function findReverse(m, word, a, b) {
   return activePatterns(m).filter(p =>
     p.target === 'p0' && p.expected === WORD[word] &&
-    hasAtom(p, 'p1', a) && hasAtom(p, 'p2', b)
+    patternGrounds(m, p, 'p1', a) && patternGrounds(m, p, 'p2', b)
   ).sort((x, y) => x.predictive_code_bits - y.predictive_code_bits)[0] || null;
 }
 function findForward(m, word, target, expected) {
   return activePatterns(m).filter(p =>
     p.target === target && p.expected === expected &&
-    hasAtom(p, 'p0', WORD[word])
+    patternGrounds(m, p, 'p0', WORD[word])
   ).sort((x, y) => x.predictive_code_bits - y.predictive_code_bits)[0] || null;
 }
 function semanticSymbol(m, a, b) {
-  return m.structure.symbols.find(s => {
-    const primitive = s.definition.filter(x => x.feature === 'p1' || x.feature === 'p2');
-    return primitive.length === 2 &&
-      primitive.some(x => x.feature === 'p1' && x.value === a) &&
-      primitive.some(x => x.feature === 'p2' && x.value === b);
-  }) || null;
+  return m.structure.symbols.find(s =>
+    s.definition.some(x => atomGrounds(m, x, 'p1', a)) &&
+    s.definition.some(x => atomGrounds(m, x, 'p2', b))
+  ) || null;
+}
+function conditionSignature(m, pattern) {
+  function expand(atom, trail = new Set()) {
+    if (atom.value !== true || trail.has(atom.feature)) return [`${atom.feature}=${JSON.stringify(atom.value)}`];
+    const symbol = m.structure.symbols.find(s => s.feature === atom.feature);
+    if (!symbol) return [`${atom.feature}=true`];
+    const next = new Set(trail); next.add(atom.feature);
+    return symbol.definition.flatMap(child => expand(child, next));
+  }
+  return [...new Set(pattern.conditions.flatMap(atom => expand(atom)))].sort().join('&');
 }
 
 // One physical continuation only: motor variation cannot encode the words.
@@ -76,6 +92,14 @@ cycle(m, correct, 30, 100);
 let catReverse = findReverse(m, 'cat', 1, 1);
 let catForwardA = findForward(m, 'cat', 'p1', 1);
 let catForwardB = findForward(m, 'cat', 'p2', 1);
+if (!catReverse || !catForwardA || !catForwardB) {
+  console.log('SEMANTIC_DIAGNOSTIC ' + JSON.stringify({
+    symbols: m.structure.symbols,
+    p0_patterns: activePatterns(m).filter(p => p.target === 'p0'),
+    p1_patterns: activePatterns(m).filter(p => p.target === 'p1' && p.expected === 1),
+    p2_patterns: activePatterns(m).filter(p => p.target === 'p2' && p.expected === 1),
+  }));
+}
 assert.ok(catReverse, 'no grounded reality -> English relation formed for cat');
 assert.ok(catForwardA && catForwardB, 'no English -> grounded reality relation formed for cat');
 
@@ -84,8 +108,7 @@ const wrongCat = findReverse(m, 'cat', 2, 2);
 assert.ok(!wrongCat || wrongCat.predictive_code_bits > catReverse.predictive_code_bits,
   'initial false cat grounding retained equal-or-greater authority after correction');
 
-const firstSignature = catReverse.conditions
-  .map(x => `${x.feature}=${JSON.stringify(x.value)}`).sort().join('&');
+const firstSignature = conditionSignature(m, catReverse);
 const firstSupport = catReverse.support;
 const firstSymbol = semanticSymbol(m, 1, 1);
 assert.ok(firstSymbol, 'no reusable internal relation formed for cat reality');
@@ -106,8 +129,7 @@ assert.strictEqual(laterSymbol.definition_key, firstDefinition,
 assert.ok(catReverse.support > firstSupport,
   'continued confirming reality did not increase support for stabilized semantic relation');
 
-const laterSignature = catReverse.conditions
-  .map(x => `${x.feature}=${JSON.stringify(x.value)}`).sort().join('&');
+const laterSignature = conditionSignature(m, catReverse);
 assert.strictEqual(laterSignature, firstSignature,
   'best grounded reality -> English bridge did not stabilize');
 
