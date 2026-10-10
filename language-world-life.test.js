@@ -181,6 +181,55 @@ function worldValues(scene) {
   return [scene.actorColor, scene.actorShape, scene.patientColor, scene.patientShape, scene.verb];
 }
 
+function directRouteDiagnostics(m, surface, target, expected) {
+  const code = text.code(surface);
+  const samples = m.structure.samples || [];
+  const active = (m.structure.patterns || []).filter(p => p.active !== false);
+  const positions = [];
+  for (let slot = 0; slot < MAX_TOKENS; slot++) {
+    const feature = `p${slot}`;
+    let seen = 0, targetKnown = 0, expectedCount = 0;
+    for (const sample of samples) {
+      const values = sample.values || {};
+      if (values[feature] !== code) continue;
+      seen++;
+      if (Object.prototype.hasOwnProperty.call(values, target)) {
+        targetKnown++;
+        if (values[target] === expected) expectedCount++;
+      }
+    }
+    if (!seen) continue;
+    const retained = active.filter(p =>
+      p.target === target && p.expected === expected &&
+      p.conditions.some(c => c.feature === feature && c.value === code)
+    ).map(p => ({
+      id: p.id,
+      conditions: p.conditions,
+      support: p.support,
+      covered: p.covered,
+      reliability: p.reliability,
+      predictive_code_bits: p.predictive_code_bits,
+      dependency_count: p.dependency_count,
+      bits_saved: p.bits_saved,
+    }));
+    positions.push({ feature, seen, targetKnown, expectedCount, retained });
+  }
+  const anyRetained = active.filter(p =>
+    p.target === target && p.expected === expected &&
+    p.conditions.some(c => c.value === code)
+  ).map(p => ({
+    id: p.id,
+    conditions: p.conditions,
+    support: p.support,
+    covered: p.covered,
+    reliability: p.reliability,
+    predictive_code_bits: p.predictive_code_bits,
+    dependency_count: p.dependency_count,
+    bits_saved: p.bits_saved,
+  }));
+  return { surface, code, target, expected, positions, anyRetained };
+}
+
 function readingProbe(m, sceneValue, speaker) {
   const q = structuredClone(m);
   const words = utterance(sceneValue, speaker);
@@ -232,6 +281,11 @@ live(learner, later, 5000);
 live(learner, [early[0]], 9000);
 
 const novel = scene('yellow', 'star', 'blue', 'square', 'helps');
+
+console.log('LANGUAGE_LIFE_ROUTE_DIAGNOSTIC ' + JSON.stringify({
+  star: directRouteDiagnostics(learner, 'star', 'p11', SHAPES.star),
+  helps: directRouteDiagnostics(learner, 'helps', 'p14', VERBS.helps.code),
+}));
 
 // Same never-experienced scene must be understood through three genuinely
 // different variable-length/order conventions learned from the ongoing life.
