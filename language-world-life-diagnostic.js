@@ -1,7 +1,6 @@
 'use strict';
 
 const fs = require('fs');
-const vm = require('vm');
 
 let source = fs.readFileSync(require.resolve('./language-world-life.test.js'), 'utf8');
 
@@ -63,4 +62,5 @@ source = source.replace(
   square_patient: directRouteDiagnostics(learner, 'square', 'p13', SHAPES.square),`
 );
 
-vm.runInThisContext(source, { filename: 'language-world-life.test.js' });
+const execute = new Function('require', 'module', 'exports', '__filename', '__dirname', source);
+execute(require, module, module.exports, require.resolve('./language-world-life.test.js'), __dirname);
