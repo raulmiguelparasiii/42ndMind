@@ -423,7 +423,7 @@ function predict(structure, partialValues) {
 function symbolCompatible(symbol, expected, values, byFeature, trail = new Set()) {
   if (expected !== true || !symbol) return true;
   if (trail.has(symbol.feature)) return false;
-  const next = new Set(trail); nextTrail = next;
+  const nextTrail = new Set(trail); nextTrail.add(symbol.feature);
   for (const atom of symbol.definition) {
     if (Object.prototype.hasOwnProperty.call(values, atom.feature)) {
       if (!same(values[atom.feature], atom.value)) return false;
@@ -773,7 +773,7 @@ function normalizeRelFact(raw, fallbackId = null) {
     if (raw.length !== 3) throw new Error('relational fact arrays require [subject, relation, object]');
     [subject, relation, object] = raw;
   } else if (raw && typeof raw === 'object') {
-    ({ id, subject, relation, object } = raw);
+    ({ id, subject, relation, object } = raw;
   } else throw new Error('invalid relational fact');
   if (subject === undefined || relation === undefined || object === undefined) {
     throw new Error('relational fact requires subject/relation/object');
