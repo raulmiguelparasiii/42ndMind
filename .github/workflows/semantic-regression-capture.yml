@@ -32,6 +32,9 @@ jobs:
           PY
           python .github/scripts/apply_grounded_completion_guard.py
 
+      - name: Trace dog completion routes
+        run: node .github/scripts/semantic_candidate_diagnostic.js
+
       - name: Capture semantic grounding failure
         run: |
           mkdir -p .github/diagnostics
@@ -46,6 +49,6 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/diagnostics/semantic-regression.txt
-          git commit -m 'Record semantic regression diagnostic'
+          git add .github/diagnostics/semantic-regression.txt .github/diagnostics/semantic-route.json
+          git commit -m 'Record semantic route diagnostic'
           git push origin HEAD:main
