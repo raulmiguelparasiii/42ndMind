@@ -24,13 +24,13 @@ jobs:
       - name: Apply architectural correction
         run: python .github/scripts/apply_unified_outward_completion.py
 
-      - name: Verify one completion authority
+      - name: Verify outward source is in M current
         run: |
           node --check one-mind.js
-          grep -q 'function completeRelationalValues' one-mind.js
           grep -q 'function groundedContinuation' one-mind.js
           ! grep -q 'function groundedCompletion' one-mind.js
           grep -q 'state.current.continuation' one-mind.js
+          ! grep -q 'state.motor = completion == null' one-mind.js
 
       - name: Run established regressions
         run: |
@@ -48,5 +48,5 @@ jobs:
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m 'Unify outward continuation with relational completion [skip ci]'
+          git commit -m 'Unify outward continuation with M current [skip ci]'
           git push origin HEAD:fix/unified-outward-completion-20261010
