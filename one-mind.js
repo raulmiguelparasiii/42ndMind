@@ -77,12 +77,15 @@ function magnitudeOrder(after, before) {
 }
 
 // Channel boundaries are supplied by the physical interface. Exposing each
-// channel separately is decomposition of contact, not a human-authored scene.
-// Arbitrary percept codes are never subtracted or given metric meaning.
+// observed channel separately is decomposition of contact, not a human-authored
+// scene. `null` in a percept channel means that channel was not contacted in this
+// frame; it is absent/undefined, never an authored false value.
 function presentFeatures(state, frame) {
   const contact = splitContact(state, frame);
   const values = {};
-  for (let i = 0; i < contact.percept.length; i++) values[`p${i}`] = contact.percept[i];
+  for (let i = 0; i < contact.percept.length; i++) {
+    if (contact.percept[i] !== null) values[`p${i}`] = contact.percept[i];
+  }
   for (let i = 0; i < contact.concern.length; i++) {
     values[`c${i}`] = contact.concern[i];
     values[`c${i}_open`] = contact.concern[i] > 0;
@@ -436,6 +439,95 @@ function predict(structure, partialValues) {
   return { expanded: values, active, best_by_target: best };
 }
 
+function symbolCompatible(symbol, expected, values, byFeature, trail = new Set()) {
+  if (expected !== true || !symbol) return true;
+  if (trail.has(symbol.feature)) return false;
+  const next = new Set(trail); next.add(symbol.feature);
+  for (const atom of symbol.definition) {
+    if (Object.prototype.hasOwnProperty.call(values, atom.feature)) {
+      if (!same(values[atom.feature], atom.value)) return false;
+      continue;
+    }
+    const nested = byFeature.get(atom.feature);
+    if (nested && atom.value === true && !symbolCompatible(nested, true, values, byFeature, next)) return false;
+  }
+  return true;
+}
+
+// Generic current relation completion. This does not choose an action and has no
+// language-specific branch. It simply exposes, inside M, what uniquely warranted
+// learned relations add to the currently observed contact. True learned concepts
+// may also unfold back into their own grounded definitions, making a compressed
+// handle usable in both directions. Equal-authority incompatible completions stay
+// unresolved instead of being guessed.
+function completeCurrent(state, frame) {
+  const present = presentFeatures(state, frame);
+  let completed = { ...present.values };
+  const inferred = new Set();
+  const unresolved = new Set();
+  const byFeature = new Map(state.structure.symbols.map(s => [s.feature, s]));
+
+  for (let pass = 0; pass < 12; pass++) {
+    let changed = false;
+
+    // Bottom-up: definitions whose grounded terms are already present become
+    // available as compressed handles.
+    const expanded = expandPartial(completed, state.structure.symbols);
+    for (const [feature, value] of Object.entries(expanded)) {
+      if (Object.prototype.hasOwnProperty.call(completed, feature)) continue;
+      completed[feature] = value;
+      inferred.add(feature);
+      changed = true;
+    }
+
+    // Top-down: if a true learned handle has itself been warranted, its definition
+    // is the relation it stands for and can expose still-missing terms.
+    const orderedSymbols = state.structure.symbols.slice().sort((a, b) => b.depth - a.depth || a.feature.localeCompare(b.feature));
+    for (const symbol of orderedSymbols) {
+      if (completed[symbol.feature] !== true) continue;
+      if (!symbolCompatible(symbol, true, completed, byFeature)) {
+        unresolved.add(symbol.feature);
+        continue;
+      }
+      for (const atom of symbol.definition) {
+        if (Object.prototype.hasOwnProperty.call(completed, atom.feature)) continue;
+        completed[atom.feature] = atom.value;
+        inferred.add(atom.feature);
+        changed = true;
+      }
+    }
+
+    const prediction = predict(state.structure, completed);
+    for (const [target, relation] of Object.entries(prediction.best_by_target)) {
+      if (Object.prototype.hasOwnProperty.call(completed, target)) continue;
+      const rival = prediction.active.find(other =>
+        other.target === target && !same(other.expected, relation.expected) &&
+        Math.abs(other.predictive_code_bits - relation.predictive_code_bits) < 1e-9
+      );
+      if (rival) {
+        unresolved.add(target);
+        continue;
+      }
+      const symbol = byFeature.get(target);
+      if (!symbolCompatible(symbol, relation.expected, completed, byFeature)) {
+        unresolved.add(target);
+        continue;
+      }
+      completed[target] = relation.expected;
+      inferred.add(target);
+      changed = true;
+    }
+    if (!changed) break;
+  }
+
+  return {
+    observed: { ...present.values },
+    completed,
+    inferred: [...inferred].sort(),
+    unresolved: [...unresolved].filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort(),
+  };
+}
+
 // ---------- the same description search over succession ----------
 
 function baseToken(event) { return `e:${stable(event)}`; }
@@ -695,6 +787,7 @@ function one(actionCount, concernCount = 1) {
     contacts: [],
     experiences: [],
     previous_contact: null,
+    current: null,
     motor: null,
     motor_variation: (0x9e3779b9 ^ actionCount ^ (concernCount << 8)) >>> 0,
     structure: {
@@ -713,7 +806,14 @@ function one(actionCount, concernCount = 1) {
 function C(state, realityContact) {
   if (!state || state.whole !== 1) throw new Error('C requires one whole mind');
   if (!Array.isArray(realityContact) || realityContact.length <= state.concern_count) throw new Error('invalid reality-contact');
-  if (!realityContact.every(Number.isFinite)) throw new Error('reality-contact must be finite numeric perception');
+
+  const cut = realityContact.length - state.concern_count;
+  const percept = realityContact.slice(0, cut);
+  const concern = realityContact.slice(cut);
+  if (!percept.every(value => value === null || Number.isFinite(value))) {
+    throw new Error('perceptual contact must be finite numeric values or null for unobserved channels');
+  }
+  if (!concern.every(Number.isFinite)) throw new Error('concern contact must be finite numeric magnitudes');
 
   const frame = realityContact.slice();
   if (state.previous_contact && state.motor != null) {
@@ -728,6 +828,7 @@ function C(state, realityContact) {
 
   state.contacts.push(frame.slice());
   state.previous_contact = frame;
+  state.current = completeCurrent(state, frame);
   const completion = groundedCompletion(state, frame);
   state.motor = completion == null ? spontaneousMotor(state) : completion;
   return state;
