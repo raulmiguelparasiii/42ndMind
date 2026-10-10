@@ -9,11 +9,6 @@ function checkpoint(name, payload = {}) {
   if (STAGE === name) process.exit(0);
 }
 
-// Generic falsification: the same raw percept must keep one identity when it
-// recurs at different times. Order is supplied only by successive C contacts.
-// No token position, lexical category, sentence slot, grammar, or dictionary is
-// supplied. p0 is one physical categorical percept channel; p1 is a world
-// property; p2 is irrelevant changing context; c0 is closed.
 const A = 101;
 const B = 102;
 const GAP = 199;
@@ -34,10 +29,8 @@ function contact(token, scene) {
   contactOn(m, token, scene);
 }
 
-// A and B occur equally often in both scenes. Their individual identities
-// therefore cannot distinguish SCENE_AB from SCENE_BA. Only their experienced
-// succession can. GAP prevents the target pair from being created accidentally
-// across episode boundaries. Noise makes whole snapshots unique.
+// Same raw percepts, same physical channel. A and B occur equally often under
+// both scene values, so only experienced succession can distinguish the cases.
 for (let round = 0; round < 12; round++) {
   contact(A, SCENE_AB);
   contact(B, SCENE_AB);
@@ -46,7 +39,7 @@ for (let round = 0; round < 12; round++) {
   contact(A, SCENE_BA);
   contact(GAP, SCENE_GAP);
 }
-contact(GAP, SCENE_GAP); // flush final training contact into exact experience
+contact(GAP, SCENE_GAP);
 
 function sameExpansion(symbol, expansion) {
   return symbol.channel === 'p0' &&
@@ -56,10 +49,8 @@ function sameExpansion(symbol, expansion) {
 }
 
 const ab = m.structure.temporal_symbols.find(symbol => sameExpansion(symbol, [A, B]));
-assert.ok(ab,
-  'M did not stabilize the repeated same-channel A→B relation');
-assert.ok(ab.support >= 8,
-  'A→B did not remain supported by repeated reality contact');
+assert.ok(ab, 'M did not stabilize the repeated same-channel A→B relation');
+assert.ok(ab.support >= 8, 'A→B did not remain supported by repeated reality contact');
 checkpoint('formation', { feature: ab.feature, support: ab.support });
 
 function groundedABRelation(state) {
@@ -75,8 +66,6 @@ assert.ok(groundedBefore,
   'the learned A→B relation did not ground into the concurrent world relation');
 checkpoint('grounding', { feature: ab.feature, pattern: groundedBefore.id });
 
-// A live recurrence of the same raw sequence, through the same p0 channel and
-// with the world property withheld, must make the grounded relation usable.
 const forward = structuredClone(m);
 contactOn(forward, A, null);
 contactOn(forward, B, null);
@@ -86,18 +75,19 @@ assert.strictEqual(forward.current.completed.p1, SCENE_AB,
   'the grounded A→B relation was not usable from raw succession');
 checkpoint('forward', { feature: ab.feature, completed_scene: forward.current.completed.p1 });
 
-// Reversing the exact same percepts must not instantiate A→B.
 const reverse = structuredClone(m);
 contactOn(reverse, B, null);
 contactOn(reverse, A, null);
 assert.notStrictEqual(reverse.current.completed[ab.feature], true,
-  'B→A incorrectly instantiated the learned A→B relation');
+  'B→A incorrectly instantiated the learned A→B temporal identity');
+checkpoint('reverse_identity', {
+  ab_value: reverse.current.completed[ab.feature] ?? null,
+  completed_scene: reverse.current.completed.p1 ?? null,
+});
 assert.notStrictEqual(reverse.current.completed.p1, SCENE_AB,
-  'reverse order incorrectly grounded as the forward world relation');
-checkpoint('reverse');
+  'B→A reached the A→B scene through some other learned completion route');
+checkpoint('reverse_grounding', { completed_scene: reverse.current.completed.p1 ?? null });
 
-// Continue the same M. The relation must keep the same grounded identity rather
-// than being recreated as a new positional percept after more life.
 const originalFeature = ab.feature;
 const originalSupport = ab.support;
 for (let round = 0; round < 6; round++) {
