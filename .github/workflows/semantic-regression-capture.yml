@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/semantic-regression-capture.yml'
       - '.github/scripts/apply_current_temporal_contact_guard.py'
+      - '.github/scripts/semantic_ambiguous_diagnostic.js'
 
 permissions:
   contents: write
@@ -37,6 +38,9 @@ jobs:
       - name: Trace dog completion routes
         run: node .github/scripts/semantic_candidate_diagnostic.js
 
+      - name: Trace ambiguous completion routes
+        run: node .github/scripts/semantic_ambiguous_diagnostic.js
+
       - name: Capture semantic grounding result
         run: |
           mkdir -p .github/diagnostics
@@ -52,8 +56,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/diagnostics/semantic-route.json .github/diagnostics/semantic-regression.txt .github/diagnostics/semantic-exit-code.txt
-          git commit -m 'Record corrected semantic route diagnostic'
+          git add .github/diagnostics/semantic-route.json .github/diagnostics/semantic-ambiguous-route.json .github/diagnostics/semantic-regression.txt .github/diagnostics/semantic-exit-code.txt
+          git commit -m 'Record ambiguous semantic route diagnostic'
           git push origin HEAD:main
 
       - name: Fail if semantic regression remains
