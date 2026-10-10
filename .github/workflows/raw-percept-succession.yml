@@ -46,7 +46,22 @@ jobs:
           p.write_text(s)
           PY
 
-      - name: Verify raw succession, grounding, order, and persistence
+      - name: Verify same-channel temporal relation formation
+        run: STAGE=formation node .github/scripts/raw_percept_succession.test.js
+
+      - name: Verify temporal relation grounds in reality
+        run: STAGE=grounding node .github/scripts/raw_percept_succession.test.js
+
+      - name: Verify grounded relation is usable live
+        run: STAGE=forward node .github/scripts/raw_percept_succession.test.js
+
+      - name: Verify reverse order stays distinct
+        run: STAGE=reverse node .github/scripts/raw_percept_succession.test.js
+
+      - name: Verify relation stabilizes through continued life
+        run: STAGE=persistence node .github/scripts/raw_percept_succession.test.js
+
+      - name: Verify complete raw succession gate
         run: node .github/scripts/raw_percept_succession.test.js
 
       - name: Run established regressions
