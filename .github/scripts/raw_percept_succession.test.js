@@ -30,8 +30,6 @@ function contact(token, scene) {
   contactOn(m, token, scene);
 }
 
-// Same raw percepts, same physical channel. A and B occur equally often under
-// both scene values, so only experienced succession can distinguish the cases.
 for (let round = 0; round < 12; round++) {
   contact(A, SCENE_AB);
   contact(B, SCENE_AB);
@@ -91,6 +89,7 @@ if (STAGE === 'reverse_debug') {
     Object.prototype.hasOwnProperty.call(reverse.current.completed, atom.feature) &&
     JSON.stringify(reverse.current.completed[atom.feature]) === JSON.stringify(atom.value)
   );
+  const inferredSet = new Set(reverse.current.inferred);
   const targetRoutes = reverse.structure.patterns
     .filter(pattern => pattern.active !== false && pattern.target === 'p1')
     .map(pattern => ({
@@ -104,6 +103,27 @@ if (STAGE === 'reverse_debug') {
       predictive_code_bits: pattern.predictive_code_bits,
       dependency_count: pattern.dependency_count,
     }));
+  const inferredRoutes = reverse.structure.patterns
+    .filter(pattern => pattern.active !== false && inferredSet.has(pattern.target))
+    .map(pattern => ({
+      id: pattern.id,
+      target: pattern.target,
+      expected: pattern.expected,
+      conditions: pattern.conditions,
+      satisfied_after_completion: satisfied(pattern),
+      support: pattern.support,
+      exceptions: pattern.exceptions,
+      reliability: pattern.reliability,
+      predictive_code_bits: pattern.predictive_code_bits,
+    }));
+  const inferredSymbols = reverse.structure.symbols
+    .filter(symbol => inferredSet.has(symbol.feature))
+    .map(symbol => ({
+      feature: symbol.feature,
+      depth: symbol.depth,
+      definition: symbol.definition,
+      source: symbol.source,
+    }));
   const temporalTrue = Object.fromEntries(Object.entries(reverse.current.completed)
     .filter(([feature, value]) => feature.startsWith('§t') && value === true));
   const diagnostic = {
@@ -116,6 +136,8 @@ if (STAGE === 'reverse_debug') {
     temporal_symbols: reverse.structure.temporal_symbols
       .filter(symbol => symbol.channel === 'p0')
       .map(symbol => ({ feature: symbol.feature, expansion: symbol.expansion, support: symbol.support })),
+    inferred_symbols: inferredSymbols,
+    inferred_target_routes: inferredRoutes,
     active_p1_routes: targetRoutes,
   };
   fs.mkdirSync('.github/diagnostics', { recursive: true });
