@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
 const Mind = require('../../one-mind.js');
 
 const STAGE = process.env.STAGE || 'all';
@@ -84,6 +85,45 @@ checkpoint('reverse_identity', {
   ab_value: reverse.current.completed[ab.feature] ?? null,
   completed_scene: reverse.current.completed.p1 ?? null,
 });
+
+if (STAGE === 'reverse_debug') {
+  const satisfied = pattern => pattern.conditions.every(atom =>
+    Object.prototype.hasOwnProperty.call(reverse.current.completed, atom.feature) &&
+    JSON.stringify(reverse.current.completed[atom.feature]) === JSON.stringify(atom.value)
+  );
+  const targetRoutes = reverse.structure.patterns
+    .filter(pattern => pattern.active !== false && pattern.target === 'p1')
+    .map(pattern => ({
+      id: pattern.id,
+      expected: pattern.expected,
+      conditions: pattern.conditions,
+      satisfied_after_completion: satisfied(pattern),
+      support: pattern.support,
+      exceptions: pattern.exceptions,
+      reliability: pattern.reliability,
+      predictive_code_bits: pattern.predictive_code_bits,
+      dependency_count: pattern.dependency_count,
+    }));
+  const temporalTrue = Object.fromEntries(Object.entries(reverse.current.completed)
+    .filter(([feature, value]) => feature.startsWith('§t') && value === true));
+  const diagnostic = {
+    ab_feature: ab.feature,
+    reverse_completed_scene: reverse.current.completed.p1 ?? null,
+    reverse_observed: reverse.current.observed,
+    reverse_inferred: reverse.current.inferred,
+    reverse_unresolved: reverse.current.unresolved,
+    temporal_true: temporalTrue,
+    temporal_symbols: reverse.structure.temporal_symbols
+      .filter(symbol => symbol.channel === 'p0')
+      .map(symbol => ({ feature: symbol.feature, expansion: symbol.expansion, support: symbol.support })),
+    active_p1_routes: targetRoutes,
+  };
+  fs.mkdirSync('.github/diagnostics', { recursive: true });
+  fs.writeFileSync('.github/diagnostics/reverse-grounding.json', JSON.stringify(diagnostic, null, 2) + '\n');
+  console.log(JSON.stringify({ checkpoint: 'reverse_debug', file: '.github/diagnostics/reverse-grounding.json' }));
+  process.exit(0);
+}
+
 assert.notStrictEqual(reverse.current.completed.p1, SCENE_AB,
   'B→A reached the A→B scene through some other learned completion route');
 checkpoint('reverse_grounding', { completed_scene: reverse.current.completed.p1 ?? null });
