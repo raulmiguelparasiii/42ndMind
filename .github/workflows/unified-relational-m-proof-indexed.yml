@@ -1,0 +1,45 @@
+name: unified-relational-m-proof-indexed
+
+on:
+  push:
+    branches:
+      - fix/unified-relational-m-20261011
+    paths:
+      - .github/workflows/unified-relational-m-proof-indexed.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/unified-relational-m-20261011
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply correction and semantics-preserving index
+        run: |
+          node apply-unified-relational-m.js
+          node apply-relational-index.js
+          node --check one-mind.js
+      - name: Prove unified relation composition
+        run: node unified-relational-proof.js
+      - name: Run unchanged core regressions
+        run: |
+          node one-mind.test.js
+          node structured-knowledge.test.js
+          node language-school.test.js
+      - name: Matched 16-contact social observation
+        run: SOCIAL_STEPS=16 REPORT_PATH=state/unified-relational-fixed-16.json node unified-relational-observation.js
+      - name: Persist only if all gates pass
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add one-mind.js state/unified-relational-fixed-16.json
+          git commit -m "Unify relational cognition across lived M"
+          git push origin HEAD:fix/unified-relational-m-20261011
