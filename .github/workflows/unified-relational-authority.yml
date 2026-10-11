@@ -1,0 +1,48 @@
+name: unified-relational-authority
+
+on:
+  push:
+    branches:
+      - fix/unified-relational-m-20261011
+    paths:
+      - .github/workflows/unified-relational-authority.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/unified-relational-m-20261011
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply the foundational correction
+        run: |
+          node apply-unified-relational-m.js
+          node apply-relational-index.js
+          node apply-single-relational-authority.js
+          node --check one-mind.js
+      - name: Prove formerly separated relations compose
+        run: node unified-relational-proof.js
+      - name: Existing self-correction gate
+        run: timeout 120s node one-mind.test.js
+      - name: Existing structured-knowledge gate
+        run: timeout 120s node structured-knowledge.test.js
+      - name: Existing language-school gate
+        run: timeout 150s node language-school.test.js
+      - name: Same 16-contact English-dependent life
+        run: SOCIAL_STEPS=16 REPORT_PATH=state/unified-relational-authority-16.json node unified-relational-observation.js
+      - name: Persist candidate and direct result
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add one-mind.js state/unified-relational-authority-16.json
+          git commit -m "Use one learned relational authority across M"
+          git pull --rebase origin fix/unified-relational-m-20261011
+          git push origin HEAD:fix/unified-relational-m-20261011
