@@ -53,20 +53,17 @@ function compileLearnedRelationalSchemas(structure) {
   const schemas = [];
   const S = relVar('current_subject');
 
+  // A learned definition is a description, not independent evidence that its
+  // constituents currently obtain. Constituent actuality may warrant recognizing
+  // the handle; an inferred handle may not categorically manufacture actuality in
+  // the opposite direction. Reverse completion must be warranted by an empirical
+  // or explicit relation of its own.
   for (const symbol of structure?.symbols || []) {
     schemas.push(learnedSchema(S, symbol.definition || [], symbol.feature, true, {
-      id: 'learned:symbol:forward:' + symbol.feature,
+      id: 'learned:symbol:recognition:' + symbol.feature,
       kind: 'structural_definition',
       source: { handle: symbol.feature, depth: symbol.depth },
     }));
-    for (let i = 0; i < (symbol.definition || []).length; i++) {
-      const atom = symbol.definition[i];
-      schemas.push(learnedSchema(S, [{ feature: symbol.feature, value: true }], atom.feature, atom.value, {
-        id: 'learned:symbol:backward:' + symbol.feature + ':' + i,
-        kind: 'structural_definition',
-        source: { handle: symbol.feature, depth: symbol.depth },
-      }));
-    }
   }
 
   for (const pattern of structure?.patterns || []) {
