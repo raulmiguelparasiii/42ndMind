@@ -1,4 +1,4 @@
-# corrected generator validation
+# warrant-preserving single-authority validation
 name: unified-relational-authority
 
 on:
@@ -44,6 +44,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add one-mind.js state/unified-relational-authority-16.json
-          git commit -m "Use one learned relational authority across M"
+          git commit -m "Use one warranted relational authority across M"
           git pull --rebase origin fix/unified-relational-m-20261011
           git push origin HEAD:fix/unified-relational-m-20261011
