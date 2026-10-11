@@ -11,9 +11,6 @@ const REPORT = process.env.REPORT_PATH ? path.resolve(process.env.REPORT_PATH) :
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 
-// Direct substrate probe: a generic relation placed in M.knowledge should be able
-// to complete ordinary perceptual contact, and a generic purposive relation should
-// be able to complete action, without a separate empirical-language path.
 const probe = Mind.one(2, 1);
 Mind.C(probe, { relations: { rules: [
   {
@@ -43,7 +40,6 @@ const WORDS = Object.freeze([
   'one','two','three','the','is','by'
 ]);
 const CODE = new Map(WORDS.map((w, i) => [w, 1000 + i]));
-const WORD = new Map([...CODE].map(([w, c]) => [c, w]));
 const TEMPLATES = Object.freeze([t => ['the', t.word, 'one'], t => [t.word], t => ['the', t.word]]);
 function rng(w) { w.rng = (Math.imul(w.rng >>> 0, 1664525) + 1013904223) >>> 0; return w.rng / 0x100000000; }
 function choose(w, xs) { return xs[Math.floor(rng(w) * xs.length)]; }
@@ -94,6 +90,17 @@ const englishAction = english.filter(p => p.target === 'action' || (p.conditions
 const englishConsequence = english.filter(p =>
   /^relation_c\d+_order$/.test(p.target) || /^next:p9$/.test(p.target) ||
   (p.conditions || []).some(a => /^relation_c\d+_order$/.test(a.feature) || a.feature === 'next:p9'));
+
+const learnedRules = mind.knowledge?.learned_rules || [];
+function ruleTouchesRelation(rule, relation) {
+  return same(rule?.conclusion?.relation, relation) || (rule?.premises || []).some(p => same(p.relation, relation));
+}
+const successionRules = learnedRules.filter(r => r.kind === 'succession_relation');
+const successionEnglish = successionRules.filter(r => ruleTouchesRelation(r, 'p7'));
+const successionEnglishAction = successionEnglish.filter(r => ruleTouchesRelation(r, 'action'));
+const successionEnglishConsequence = successionEnglish.filter(r =>
+  ruleTouchesRelation(r, 'relation_c0_order') || ruleTouchesRelation(r, 'relation_c1_order') || ruleTouchesRelation(r, 'p9'));
+
 const knowledgeFacts = mind.knowledge?.facts || [];
 const livedContactsInKnowledge = new Set(knowledgeFacts.filter(f => typeof f.subject === 'string' && f.subject.startsWith('contact:')).map(f => f.subject)).size;
 const nextLinks = knowledgeFacts.filter(f => f.relation === 'next').length;
@@ -122,6 +129,8 @@ const report = {
     lived_contact_subjects: livedContactsInKnowledge,
     next_links: nextLinks,
     experience_relations_through: mind.knowledge?.experience_relations_through ?? null,
+    succession_discovery_through: mind.knowledge?.succession_discovery_through ?? null,
+    succession_rules: successionRules.length,
     learned_relation_descriptors: learnedDescriptors,
     ordered_relation_descriptors: orderedDescriptors,
   },
@@ -129,7 +138,10 @@ const report = {
     active_patterns_touching_english: english.length,
     english_action_relations: englishAction.length,
     english_consequence_relations: englishConsequence.length,
-    examples: english.slice(0, 8),
+    first_class_succession_relations_touching_english: successionEnglish.length,
+    first_class_english_action_relations: successionEnglishAction.length,
+    first_class_english_consequence_relations: successionEnglishConsequence.length,
+    examples: successionEnglish.slice(0, 8),
   },
 };
 if (REPORT) { fs.mkdirSync(path.dirname(REPORT), { recursive: true }); fs.writeFileSync(REPORT, JSON.stringify(report, null, 2) + '\n'); }
