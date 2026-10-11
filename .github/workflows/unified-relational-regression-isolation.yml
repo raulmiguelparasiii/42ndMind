@@ -1,0 +1,30 @@
+name: unified-relational-regression-isolation
+
+on:
+  push:
+    branches:
+      - fix/unified-relational-m-20261011
+    paths:
+      - .github/workflows/unified-relational-regression-isolation.yml
+  workflow_dispatch:
+
+jobs:
+  isolate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/unified-relational-m-20261011
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply exact candidate
+        run: |
+          node apply-unified-relational-m.js
+          node apply-relational-index.js
+      - name: Existing self-correction gate
+        run: timeout 120s node one-mind.test.js
+      - name: Existing structured-knowledge gate
+        run: timeout 120s node structured-knowledge.test.js
+      - name: Existing language-school gate
+        run: timeout 120s node language-school.test.js
