@@ -91,7 +91,7 @@ function presentFeatures(state, frame) {
 
 function directSample(state, experience, index) {
   const start = presentFeatures(state, experience.before);
-  const end = splitContact(state, experience.after);
+  const end = presentFeatures(state, experience.after);
   const values = {
     ...start.values,
     action: experience.action,
@@ -99,8 +99,15 @@ function directSample(state, experience, index) {
     relation_extent: 1,
     relation_symbol: null,
   };
+
+  // This is a search index over the exact experienced transition, not a second
+  // cognitive world. Ordinary later percepts remain terms of the same relation.
+  // `next:` denotes the structural path already present in before-action-after.
+  for (let i = 0; i < end.contact.percept.length; i++) {
+    if (end.contact.percept[i] !== null) values[`next:p${i}`] = end.contact.percept[i];
+  }
   for (let i = 0; i < state.concern_count; i++) {
-    const order = magnitudeOrder(end.concern[i], start.contact.concern[i]);
+    const order = magnitudeOrder(end.contact.concern[i], start.contact.concern[i]);
     values[`immediate_c${i}_order`] = order;
     values[`relation_c${i}_order`] = order;
   }
@@ -108,6 +115,51 @@ function directSample(state, experience, index) {
 }
 function directSamples(state) {
   return state.experiences.map((experience, index) => directSample(state, experience, index));
+}
+
+function experienceRelationalFacts(state, experience, index) {
+  const beforeId = `contact:${index}`;
+  const afterId = `contact:${index + 1}`;
+  const experienceId = `experience:${index}`;
+  const before = presentFeatures(state, experience.before).values;
+  const after = presentFeatures(state, experience.after).values;
+  const facts = [
+    normalizeRelFact([experienceId, 'before', beforeId]),
+    normalizeRelFact([experienceId, 'action', experience.action]),
+    normalizeRelFact([experienceId, 'after', afterId]),
+    normalizeRelFact([beforeId, 'next', afterId]),
+    normalizeRelFact([beforeId, 'action', experience.action]),
+    normalizeRelFact([beforeId, 'experience', experienceId]),
+  ];
+  for (const [feature, value] of Object.entries(before)) facts.push(normalizeRelFact([beforeId, feature, cloneRelTerm(value)]));
+  for (const [feature, value] of Object.entries(after)) facts.push(normalizeRelFact([afterId, feature, cloneRelTerm(value)]));
+  for (let i = 0; i < state.concern_count; i++) {
+    const a = splitContact(state, experience.before).concern[i];
+    const b = splitContact(state, experience.after).concern[i];
+    facts.push(normalizeRelFact([beforeId, `relation_c${i}_order`, magnitudeOrder(b, a)]));
+  }
+  return facts;
+}
+
+function storeExperienceRelations(state, experience, index) {
+  if (!state.knowledge) return;
+  const existing = new Set((state.knowledge.facts || []).map(relFactKey));
+  for (const fact of experienceRelationalFacts(state, experience, index)) {
+    const key = relFactKey(fact);
+    if (existing.has(key)) continue;
+    state.knowledge.facts.push(fact);
+    existing.add(key);
+  }
+  state.knowledge.experience_relations_through = Math.max(
+    Number(state.knowledge.experience_relations_through || 0), index + 1
+  );
+}
+
+function ensureExperienceRelations(state) {
+  if (!state.knowledge) return;
+  let through = Math.max(0, Math.floor(Number(state.knowledge.experience_relations_through || 0)));
+  through = Math.min(through, state.experiences.length);
+  for (let i = through; i < state.experiences.length; i++) storeExperienceRelations(state, state.experiences[i], i);
 }
 
 function symbolDependencies(symbol, byFeature, trail = new Set()) {
@@ -446,66 +498,208 @@ function symbolCompatible(symbol, expected, values, byFeature, trail = new Set()
   return true;
 }
 
-function completeCurrent(state, frame) {
-  const present = presentFeatures(state, frame);
-  let completed = { ...present.values };
-  const inferred = new Set();
-  const unresolved = new Set();
-  const byFeature = new Map(state.structure.symbols.map(s => [s.feature, s]));
+function knowledgeCompleteValues(state, seedValues) {
+  if (!state.knowledge) return { values: { ...seedValues }, unresolved: [] };
+  const subject = '@current';
+  const currentFacts = Object.entries(seedValues).map(([feature, value]) =>
+    normalizeRelFact([subject, feature, cloneRelTerm(value)]));
+  const base = [
+    ...state.knowledge.facts,
+    ...relRuleDescriptorFacts(state.knowledge.rules),
+    ...empiricalRelationDescriptorFacts(state.structure),
+    ...currentFacts,
+  ];
+  const closure = relationalClosure(base, state.knowledge.rules);
+  const grouped = new Map();
+  for (const fact of closure.facts) {
+    if (!same(fact.subject, subject)) continue;
+    if (!grouped.has(fact.relation)) grouped.set(fact.relation, []);
+    grouped.get(fact.relation).push(fact.object);
+  }
+  const values = { ...seedValues };
+  const unresolved = [];
+  for (const [relation, objects] of grouped) {
+    if (Object.prototype.hasOwnProperty.call(values, relation)) continue;
+    const distinct = unique(objects);
+    if (distinct.length === 1) values[relation] = cloneRelTerm(distinct[0]);
+    else if (distinct.length > 1) unresolved.push(relation);
+  }
+  return { values, unresolved: unique(unresolved) };
+}
 
-  for (let pass = 0; pass < 12; pass++) {
+function learnedSchema(subjectVar, premises, target, expected, meta) {
+  return {
+    id: meta.id,
+    premises: premises.map(atom => normalizeRelPattern([subjectVar, atom.feature, cloneRelTerm(atom.value)])),
+    conclusion: normalizeRelPattern([subjectVar, target, cloneRelTerm(expected)]),
+    kind: meta.kind,
+    active: meta.active !== false,
+    authority: meta.authority ?? null,
+    bits_saved: meta.bits_saved ?? null,
+    covered: meta.covered ?? null,
+    source: cloneRelTerm(meta.source ?? null),
+  };
+}
+
+function compileLearnedRelationalSchemas(structure) {
+  const schemas = [];
+  const S = relVar('current_subject');
+
+  // A learned definition is a description, not independent evidence that its
+  // constituents currently obtain. Constituent actuality may warrant recognizing
+  // the handle; an inferred handle may not categorically manufacture actuality in
+  // the opposite direction. Reverse completion must be warranted by an empirical
+  // or explicit relation of its own.
+  for (const symbol of structure?.symbols || []) {
+    schemas.push(learnedSchema(S, symbol.definition || [], symbol.feature, true, {
+      id: 'learned:symbol:recognition:' + symbol.feature,
+      kind: 'structural_definition',
+      source: { handle: symbol.feature, depth: symbol.depth },
+    }));
+  }
+
+  for (const pattern of structure?.patterns || []) {
+    if (pattern.active === false) continue;
+    schemas.push(learnedSchema(S, pattern.conditions || [], pattern.target, pattern.expected, {
+      id: 'learned:empirical:' + pattern.id,
+      kind: 'empirical_relation',
+      active: pattern.active !== false,
+      authority: pattern.predictive_code_bits,
+      bits_saved: pattern.bits_saved,
+      covered: pattern.covered,
+      source: {
+        pattern_id: pattern.id,
+        support: pattern.support,
+        exceptions: pattern.exceptions,
+        reliability: pattern.reliability,
+      },
+    }));
+  }
+  return schemas;
+}
+
+function syncLearnedRelationalSchemas(state) {
+  if (!state.knowledge) return;
+  state.knowledge.learned_rules = compileLearnedRelationalSchemas(state.structure);
+}
+
+function currentFactValues(facts, subject) {
+  const grouped = new Map();
+  for (const fact of facts) {
+    if (!same(fact.subject, subject)) continue;
+    if (!grouped.has(fact.relation)) grouped.set(fact.relation, []);
+    grouped.get(fact.relation).push(fact.object);
+  }
+  return grouped;
+}
+
+function learnedRuleBindings(rule, values, subject) {
+  const facts = Object.entries(values).map(([relation, object]) => normalizeRelFact([subject, relation, cloneRelTerm(object)]));
+  return relPremiseBindings(rule.premises, facts);
+}
+
+function learnedRuleConclusion(rule, binding) {
+  return instantiateRelPattern(rule.conclusion, binding);
+}
+
+function unifiedCurrentCompletion(state, seedValues) {
+  syncLearnedRelationalSchemas(state);
+  const subject = '@current';
+  const values = { ...seedValues };
+  const unresolved = new Set();
+  const inferred = new Set();
+
+  for (let pass = 0; pass < 16; pass++) {
     let changed = false;
-    const expanded = expandPartial(completed, state.structure.symbols);
-    for (const [feature, value] of Object.entries(expanded)) {
-      if (Object.prototype.hasOwnProperty.call(completed, feature)) continue;
-      completed[feature] = value;
-      inferred.add(feature);
+
+    const currentFacts = Object.entries(values).map(([relation, object]) =>
+      normalizeRelFact([subject, relation, cloneRelTerm(object)]));
+    const base = [
+      ...state.knowledge.facts,
+      ...relRuleDescriptorFacts(state.knowledge.rules),
+      ...currentFacts,
+    ];
+    const closure = relationalClosure(base, state.knowledge.rules);
+    const grouped = currentFactValues(closure.facts, subject);
+    for (const [relation, objects] of grouped) {
+      if (Object.prototype.hasOwnProperty.call(values, relation)) continue;
+      const distinct = unique(objects);
+      if (distinct.length === 1) {
+        values[relation] = cloneRelTerm(distinct[0]);
+        inferred.add(relation);
+        changed = true;
+      } else if (distinct.length > 1) unresolved.add(relation);
+    }
+
+    const structural = [];
+    const empiricalByTarget = new Map();
+    for (const rule of state.knowledge.learned_rules || []) {
+      if (rule.active === false) continue;
+      const bindings = learnedRuleBindings(rule, values, subject);
+      if (!bindings.length) continue;
+      for (const binding of bindings) {
+        const conclusion = learnedRuleConclusion(rule, binding);
+        if (!conclusion || !same(conclusion.subject, subject)) continue;
+        if (rule.kind === 'structural_definition') structural.push({ rule, conclusion });
+        else {
+          const key = String(conclusion.relation);
+          if (!empiricalByTarget.has(key)) empiricalByTarget.set(key, []);
+          empiricalByTarget.get(key).push({ rule, conclusion });
+        }
+      }
+    }
+
+    for (const { conclusion } of structural) {
+      const relation = conclusion.relation;
+      if (Object.prototype.hasOwnProperty.call(values, relation)) {
+        if (!same(values[relation], conclusion.object)) unresolved.add(relation);
+        continue;
+      }
+      values[relation] = cloneRelTerm(conclusion.object);
+      inferred.add(relation);
       changed = true;
     }
 
-    const orderedSymbols = state.structure.symbols.slice().sort((a, b) => b.depth - a.depth || a.feature.localeCompare(b.feature));
-    for (const symbol of orderedSymbols) {
-      if (completed[symbol.feature] !== true) continue;
-      if (!symbolCompatible(symbol, true, completed, byFeature)) {
-        unresolved.add(symbol.feature);
-        continue;
-      }
-      for (const atom of symbol.definition) {
-        if (Object.prototype.hasOwnProperty.call(completed, atom.feature)) continue;
-        completed[atom.feature] = atom.value;
-        inferred.add(atom.feature);
-        changed = true;
-      }
-    }
-
-    const prediction = predict(state.structure, completed);
-    for (const [target, relation] of Object.entries(prediction.best_by_target)) {
-      if (Object.prototype.hasOwnProperty.call(completed, target)) continue;
-      const rival = prediction.active.find(other =>
-        other.target === target && !same(other.expected, relation.expected) &&
-        Math.abs(other.predictive_code_bits - relation.predictive_code_bits) < 1e-9
+    for (const [relation, candidates] of empiricalByTarget) {
+      if (Object.prototype.hasOwnProperty.call(values, relation)) continue;
+      candidates.sort((a, b) =>
+        (a.rule.authority ?? Infinity) - (b.rule.authority ?? Infinity) ||
+        (b.rule.bits_saved ?? -Infinity) - (a.rule.bits_saved ?? -Infinity) ||
+        (b.rule.covered ?? -Infinity) - (a.rule.covered ?? -Infinity) ||
+        a.rule.id.localeCompare(b.rule.id)
+      );
+      const best = candidates[0];
+      const rival = candidates.find(other =>
+        !same(other.conclusion.object, best.conclusion.object) &&
+        Math.abs((other.rule.authority ?? Infinity) - (best.rule.authority ?? Infinity)) < 1e-9
       );
       if (rival) {
-        unresolved.add(target);
+        unresolved.add(relation);
         continue;
       }
-      const symbol = byFeature.get(target);
-      if (!symbolCompatible(symbol, relation.expected, completed, byFeature)) {
-        unresolved.add(target);
-        continue;
-      }
-      completed[target] = relation.expected;
-      inferred.add(target);
+      values[relation] = cloneRelTerm(best.conclusion.object);
+      inferred.add(relation);
       changed = true;
     }
+
     if (!changed) break;
   }
 
   return {
-    observed: { ...present.values },
-    completed,
+    values,
     inferred: [...inferred].sort(),
-    unresolved: [...unresolved].filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort(),
+    unresolved: [...unresolved].filter(feature => !Object.prototype.hasOwnProperty.call(values, feature)).sort(),
+  };
+}
+
+function completeCurrent(state, frame) {
+  const present = presentFeatures(state, frame);
+  const result = unifiedCurrentCompletion(state, present.values);
+  return {
+    observed: { ...present.values },
+    completed: result.values,
+    inferred: result.inferred,
+    unresolved: result.unresolved,
   };
 }
 
@@ -604,11 +798,12 @@ function groundedSymbols(structure) {
 }
 function eventToken(state, structure, sample) {
   const expanded = expandPartial(sample.values, structure.symbols);
-  const grounded = groundedSymbols(structure);
-  const learned = Object.keys(expanded).filter(key => key.startsWith('§') && expanded[key] === true && grounded.has(key)).sort();
-  const orders = [];
-  for (let i = 0; i < state.concern_count; i++) orders.push(sample.values[`immediate_c${i}_order`]);
-  return { action: sample.values.action, orders, learned };
+  return {
+    terms: Object.keys(expanded).sort().map(feature => ({
+      feature,
+      value: cloneRelTerm(expanded[feature]),
+    })),
+  };
 }
 function occurrenceAt(tokens, start, expansion) {
   if (start + expansion.length > tokens.length) return false;
@@ -716,49 +911,30 @@ function assimilateExperience(state, sample) {
 }
 
 function groundedContinuation(state, frame) {
-  if (state.experiences.length < 4 || !state.structure.patterns.length) return null;
   const present = presentFeatures(state, frame);
   const purpose = { ...present.values };
   let open = 0;
   for (let i = 0; i < state.concern_count; i++) {
-    if (present.contact.concern[i] > 0) { purpose[`relation_c${i}_order`] = LESS; open++; }
+    if (present.contact.concern[i] > 0) {
+      purpose['relation_c' + i + '_order'] = LESS;
+      open++;
+    }
   }
   if (!open) return null;
 
-  // Purpose is an open relation, not an observation. Complete it through the
-  // same learned relational substrate without reclassifying the intended term
-  // as factual contact.
-  const completed = { ...purpose };
-  const inferred = new Set();
-  for (let pass = 0; pass < 4; pass++) {
-    const prediction = predict(state.structure, completed);
-    let changed = false;
-    for (const [target, relation] of Object.entries(prediction.best_by_target)) {
-      if (Object.prototype.hasOwnProperty.call(completed, target)) continue;
-      const rival = prediction.active.find(other =>
-        other.target === target && !same(other.expected, relation.expected) &&
-        Math.abs(other.predictive_code_bits - relation.predictive_code_bits) < 1e-9
-      );
-      if (rival) continue;
-      completed[target] = relation.expected;
-      inferred.add(target);
-      changed = true;
-    }
-    if (!changed) break;
-  }
-  const action = completed.action;
+  const completion = unifiedCurrentCompletion(state, purpose);
+  const action = completion.values.action;
   if (!Number.isInteger(action) || action < 0 || action >= state.action_count) return null;
 
-  const consequences = predict(state.structure, { ...present.values, action }).best_by_target;
+  const consequence = unifiedCurrentCompletion(state, { ...present.values, action });
   for (let i = 0; i < state.concern_count; i++) {
-    const evidence = consequences[`relation_c${i}_order`];
-    if (evidence && evidence.expected === GREATER) return null;
+    if (consequence.values['relation_c' + i + '_order'] === GREATER) return null;
   }
   return {
     seed: purpose,
-    completed,
-    inferred: [...inferred].sort(),
-    unresolved: [],
+    completed: completion.values,
+    inferred: completion.inferred,
+    unresolved: completion.unresolved,
     action,
   };
 }
@@ -851,11 +1027,22 @@ function matchRelPattern(pattern, fact, binding = {}) {
   return next;
 }
 function relPremiseBindings(premises, facts) {
+  // Pure index: it changes neither matching nor authority. Literal relations are
+  // used to avoid scanning facts that cannot possibly satisfy the premise.
+  const byRelation = new Map();
+  for (const fact of facts) {
+    const key = stable(fact.relation);
+    if (!byRelation.has(key)) byRelation.set(key, []);
+    byRelation.get(key).push(fact);
+  }
+
   let bindings = [{}];
   for (const premise of premises) {
+    const relationVariable = relVariableName(premise.relation);
+    const candidates = relationVariable ? facts : (byRelation.get(stable(premise.relation)) || []);
     const next = [];
     for (const binding of bindings) {
-      for (const fact of facts) {
+      for (const fact of candidates) {
         const matched = matchRelPattern(premise, fact, binding);
         if (matched) next.push(matched);
       }
@@ -925,6 +1112,22 @@ function empiricalRelationDescriptorFacts(structure) {
     for (const atom of pattern.conditions) {
       facts.push(normalizeRelFact([ref, 'condition', { feature: atom.feature, value: cloneRelTerm(atom.value) }]));
     }
+  }
+  for (const symbol of structure?.symbols || []) {
+    const ref = relRef(`concept:${symbol.feature}`);
+    facts.push(normalizeRelFact([ref, 'kind', 'learned_relation']));
+    facts.push(normalizeRelFact([ref, 'handle', symbol.feature]));
+    facts.push(normalizeRelFact([ref, 'depth', symbol.depth]));
+    for (const atom of symbol.definition || []) {
+      facts.push(normalizeRelFact([ref, 'condition', { feature: atom.feature, value: cloneRelTerm(atom.value) }]));
+    }
+  }
+  for (const rule of structure?.order_rules || []) {
+    const ref = relRef(`ordered:${rule.symbol}`);
+    facts.push(normalizeRelFact([ref, 'kind', 'ordered_relation']));
+    facts.push(normalizeRelFact([ref, 'handle', rule.symbol]));
+    facts.push(normalizeRelFact([ref, 'depth', rule.depth]));
+    facts.push(normalizeRelFact([ref, 'expansion', cloneRelTerm(rule.expansion)]));
   }
   return facts;
 }
@@ -1014,8 +1217,8 @@ function foundationalRelationalSeed() {
 }
 function initializeRelationalKnowledge() {
   const seed = foundationalRelationalSeed();
-  const knowledge = { facts: seed.facts, rules: seed.rules, episodes: [], current: null };
-  const pseudoState = { knowledge, structure: { patterns: [] } };
+  const knowledge = { facts: seed.facts, rules: seed.rules, learned_rules: [], episodes: [], current: null, experience_relations_through: 0 };
+  const pseudoState = { knowledge, structure: { patterns: [], symbols: [], order_rules: [] } };
   refreshRelationalKnowledge(pseudoState);
   return knowledge;
 }
@@ -1097,6 +1300,8 @@ function one(actionCount, concernCount = 1) {
 
 function C(state, realityContact) {
   if (!state || state.whole !== 1) throw new Error('C requires one whole mind');
+  ensureExperienceRelations(state);
+  syncLearnedRelationalSchemas(state);
 
   let frame = null;
   let relationalContact = null;
@@ -1125,6 +1330,7 @@ function C(state, realityContact) {
       const index = state.experiences.length;
       const experience = { before: state.previous_contact.slice(), action: state.motor, after: frame.slice() };
       state.experiences.push(experience);
+      storeExperienceRelations(state, experience, index);
       const sample = directSample(state, experience, index);
 
       if (state.experiences.length >= state.structure.next_recompression_at) state.structure = recompressWhole(state);

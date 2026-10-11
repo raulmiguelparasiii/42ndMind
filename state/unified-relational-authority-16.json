@@ -1,0 +1,35 @@
+{
+  "kind": "42ndMind unified-relational-M observation",
+  "mind_module": "one-mind.js",
+  "direct_unification": {
+    "structured_relation_completes_perception": true,
+    "structured_relation_completes_action": true
+  },
+  "life": {
+    "steps": 16,
+    "experiences_before": 127,
+    "experiences_after": 143,
+    "interactions": 3,
+    "correct": 2,
+    "wrong": 14,
+    "accuracy": 0.125,
+    "final_pressure": [
+      35.6,
+      10
+    ]
+  },
+  "unified_substrate": {
+    "knowledge_facts": 3153,
+    "lived_contact_subjects": 144,
+    "next_links": 143,
+    "experience_relations_through": 143,
+    "learned_relation_descriptors": 0,
+    "ordered_relation_descriptors": 0
+  },
+  "english": {
+    "active_patterns_touching_english": 0,
+    "english_action_relations": 0,
+    "english_consequence_relations": 0,
+    "examples": []
+  }
+}
