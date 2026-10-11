@@ -1,0 +1,59 @@
+name: unified-relational-m-quick
+
+on:
+  push:
+    branches:
+      - fix/unified-relational-m-20261011
+    paths:
+      - .github/workflows/unified-relational-m-quick.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/unified-relational-m-20261011
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply unified relational correction
+        run: |
+          node apply-unified-relational-m.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = 'one-mind.js';
+          let s = fs.readFileSync(p, 'utf8');
+          const guard = "function groundedContinuation(state, frame) {\n  if (state.experiences.length < 4 || !state.structure.patterns.length) return null;";
+          if (!s.includes(guard)) throw new Error('groundedContinuation guard not found');
+          s = s.replace(guard, "function groundedContinuation(state, frame) {");
+          s = s.replace("      refreshRelationalKnowledge(state);\n", '');
+          fs.writeFileSync(p, s);
+          NODE
+          node --check one-mind.js
+      - name: Observe direct improvement and matched 16-contact social life
+        run: |
+          SOCIAL_STEPS=16 REPORT_PATH=state/unified-relational-fixed-16.json node unified-relational-observation.js
+          node - <<'NODE'
+          const r = require('./state/unified-relational-fixed-16.json');
+          if (!r.direct_unification.structured_relation_completes_perception) throw new Error('structured relation still cannot complete perception');
+          if (!r.direct_unification.structured_relation_completes_action) throw new Error('structured relation still cannot complete action');
+          if (!(r.unified_substrate.next_links > 0)) throw new Error('lived succession was not reified in M.knowledge');
+          NODE
+      - name: Run unchanged core regressions
+        run: |
+          node one-mind.test.js
+          node structured-knowledge.test.js
+          node language-school.test.js
+      - name: Persist validated correction
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add one-mind.js state/unified-relational-fixed-16.json
+          git commit -m "Unify lived relations in M and validate direct improvement"
+          git push origin HEAD:fix/unified-relational-m-20261011
