@@ -123,8 +123,6 @@ function unifiedCurrentCompletion(state, seedValues) {
   for (let pass = 0; pass < 16; pass++) {
     let changed = false;
 
-    // Corrigible categorical/explicit relations and the current lived terms are
-    // queried in the same subject-relation-object space.
     const currentFacts = Object.entries(values).map(([relation, object]) =>
       normalizeRelFact([subject, relation, cloneRelTerm(object)]));
     const base = [
@@ -225,7 +223,7 @@ const groundedContinuation = String.raw`function groundedContinuation(state, fra
   let open = 0;
   for (let i = 0; i < state.concern_count; i++) {
     if (present.contact.concern[i] > 0) {
-      purpose[`relation_c${i}_order`] = LESS;
+      purpose['relation_c' + i + '_order'] = LESS;
       open++;
     }
   }
@@ -237,7 +235,7 @@ const groundedContinuation = String.raw`function groundedContinuation(state, fra
 
   const consequence = unifiedCurrentCompletion(state, { ...present.values, action });
   for (let i = 0; i < state.concern_count; i++) {
-    if (consequence.values[`relation_c${i}_order`] === GREATER) return null;
+    if (consequence.values['relation_c' + i + '_order'] === GREATER) return null;
   }
   return {
     seed: purpose,
@@ -249,8 +247,6 @@ const groundedContinuation = String.raw`function groundedContinuation(state, fra
 }`;
 replaceFunction('groundedContinuation', groundedContinuation);
 
-// Add the learned-schema store to new minds; old serialized minds are migrated by
-// syncLearnedRelationalSchemas without discarding their history.
 const initNeedle = "const knowledge = { facts: seed.facts, rules: seed.rules, episodes: [], current: null, experience_relations_through: 0 };";
 if (source.includes(initNeedle)) {
   source = source.replace(initNeedle,
