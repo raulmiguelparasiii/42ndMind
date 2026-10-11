@@ -11,9 +11,6 @@ const REPORT = process.env.REPORT_PATH ? path.resolve(process.env.REPORT_PATH) :
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 
-// Direct substrate probe: a generic relation placed in M.knowledge should be able
-// to complete ordinary perceptual contact, and a generic purposive relation should
-// be able to complete action, without a separate empirical-language path.
 const probe = Mind.one(2, 1);
 Mind.C(probe, { relations: { rules: [
   {
@@ -87,21 +84,27 @@ function act(action) {
 
 const before = mind.experiences.length;
 for (let i = 0; i < STEPS; i++) { Mind.C(mind, sense()); act(mind.motor); }
-const patterns = (mind.structure?.patterns || []).filter(p => p.active !== false);
-function touchesSpeechAtom(a) { return a?.feature === 'p7' || a?.feature === 'next:p7'; }
-const english = patterns.filter(p => p.target === 'p7' || p.target === 'next:p7' || (p.conditions || []).some(touchesSpeechAtom));
-const englishAction = english.filter(p => p.target === 'action' || (p.conditions || []).some(a => a.feature === 'action'));
-const englishConsequence = english.filter(p =>
-  /^relation_c\d+_order$/.test(p.target) || /^next:p9$/.test(p.target) ||
-  (p.conditions || []).some(a => /^relation_c\d+_order$/.test(a.feature) || a.feature === 'next:p9'));
+
+const legacyPatterns = (mind.structure?.patterns || []).filter(p => p.active !== false);
+const firstClassPatterns = (mind.knowledge?.relational_patterns || []).filter(p => p.active !== false);
+const concepts = mind.knowledge?.relational_concepts || [];
+function atomSpeech(a) { return a?.feature === 'p7'; }
+function patternSpeech(p) { return p.target === 'p7' || (p.conditions || []).some(atomSpeech); }
+function premiseSpeech(p) { return String(p?.relation) === 'p7'; }
+const firstClassEnglish = firstClassPatterns.filter(patternSpeech);
+const firstClassEnglishAction = firstClassEnglish.filter(p => p.target === 'action' || (p.conditions || []).some(a => a.feature === 'action'));
+const firstClassEnglishConsequence = firstClassEnglish.filter(p =>
+  /^relation_c\d+_order$/.test(p.target) || p.target === 'p9' ||
+  (p.conditions || []).some(a => /^relation_c\d+_order$/.test(a.feature) || a.feature === 'p9'));
+const englishConcepts = concepts.filter(c => (c.premises || []).some(premiseSpeech));
+const recursiveConcepts = concepts.filter(c => (c.depth || 1) > 1);
+
 const knowledgeFacts = mind.knowledge?.facts || [];
 const livedContactsInKnowledge = new Set(knowledgeFacts.filter(f => typeof f.subject === 'string' && f.subject.startsWith('contact:')).map(f => f.subject)).size;
 const nextLinks = knowledgeFacts.filter(f => f.relation === 'next').length;
-const orderedDescriptors = mind.knowledge?.current?.facts?.filter(f => same(f.relation, 'kind') && same(f.object, 'ordered_relation')).length || 0;
-const learnedDescriptors = mind.knowledge?.current?.facts?.filter(f => same(f.relation, 'kind') && same(f.object, 'learned_relation')).length || 0;
 
 const report = {
-  kind: '42ndMind unified-relational-M observation',
+  kind: '42ndMind first-class relational-growth observation',
   mind_module: path.basename(mindPath),
   direct_unification: {
     structured_relation_completes_perception: perceptCrossesSubstrate,
@@ -117,19 +120,24 @@ const report = {
     accuracy: Number((world.correct / Math.max(1, world.correct + world.wrong)).toFixed(4)),
     final_pressure: world.pressure,
   },
-  unified_substrate: {
+  first_class_growth: {
     knowledge_facts: knowledgeFacts.length,
     lived_contact_subjects: livedContactsInKnowledge,
     next_links: nextLinks,
     experience_relations_through: mind.knowledge?.experience_relations_through ?? null,
-    learned_relation_descriptors: learnedDescriptors,
-    ordered_relation_descriptors: orderedDescriptors,
+    relational_patterns: firstClassPatterns.length,
+    relational_concepts: concepts.length,
+    recursive_concepts: recursiveConcepts.length,
+    maximum_concept_depth: concepts.reduce((m, c) => Math.max(m, c.depth || 1), 0),
+    legacy_patterns_not_counted_as_authority: legacyPatterns.length,
   },
   english: {
-    active_patterns_touching_english: english.length,
-    english_action_relations: englishAction.length,
-    english_consequence_relations: englishConsequence.length,
-    examples: english.slice(0, 8),
+    first_class_patterns_touching_english: firstClassEnglish.length,
+    first_class_english_action_relations: firstClassEnglishAction.length,
+    first_class_english_consequence_relations: firstClassEnglishConsequence.length,
+    first_class_concepts_touching_english: englishConcepts.length,
+    pattern_examples: firstClassEnglish.slice(0, 8),
+    concept_examples: englishConcepts.slice(0, 8),
   },
 };
 if (REPORT) { fs.mkdirSync(path.dirname(REPORT), { recursive: true }); fs.writeFileSync(REPORT, JSON.stringify(report, null, 2) + '\n'); }
