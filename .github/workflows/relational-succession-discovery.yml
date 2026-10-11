@@ -1,0 +1,57 @@
+name: relational-succession-discovery
+
+on:
+  push:
+    branches:
+      - fix/unified-relational-m-20261011
+    paths:
+      - .github/workflows/relational-succession-discovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/unified-relational-m-20261011
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply relational succession discovery only
+        run: |
+          node apply-relational-succession-discovery.js
+          node --check one-mind.js
+      - name: Observe the same English-dependent life first
+        run: |
+          SOCIAL_STEPS=16 REPORT_PATH=state/relational-succession-16.json node unified-relational-observation.js
+          node - <<'NODE'
+          const r = require('./state/relational-succession-16.json');
+          if (!r.direct_unification.structured_relation_completes_perception || !r.direct_unification.structured_relation_completes_action) {
+            throw new Error('relational unification regressed');
+          }
+          if (!(r.english.first_class_succession_relations_touching_english > 0)) {
+            throw new Error('first-class discovery still found no English-bearing succession relation');
+          }
+          if (!(r.english.first_class_english_action_relations > 0 || r.english.first_class_english_consequence_relations > 0)) {
+            throw new Error('English still has no lived action/consequence relation');
+          }
+          NODE
+      - name: Existing self-correction gate
+        run: timeout 120s node one-mind.test.js
+      - name: Existing structured-knowledge gate
+        run: timeout 120s node structured-knowledge.test.js
+      - name: Existing compositional-language gate
+        run: timeout 180s node language-school.test.js
+      - name: Persist only if direct improvement and all regressions pass
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add one-mind.js state/relational-succession-16.json
+          git commit -m "Discover succession inside first-class relational M"
+          git pull --rebase origin fix/unified-relational-m-20261011
+          git push origin HEAD:fix/unified-relational-m-20261011
