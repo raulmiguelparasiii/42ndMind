@@ -3,15 +3,27 @@
 const assert = require('assert');
 const Mind = require('./one-mind.js');
 
-// Discovery must live in first-class M, not in state.structure. Repeated opaque
-// contact is enough to form a relation; after training, delete the legacy search
-// result and require the first-class relation to continue cognition on its own.
 const m = Mind.one(1, 1);
 for (let i = 0; i < 40; i++) {
   const a = i % 2 === 0;
   Mind.C(m, [a ? 1 : 2, a ? 10 : 20, 0]);
 }
+const contactFacts = (m.knowledge.facts || []).filter(f => typeof f.subject === 'string' && f.subject.startsWith('contact:'));
+const p0Facts = contactFacts.filter(f => f.relation === 'p0');
+const p1Facts = contactFacts.filter(f => f.relation === 'p1');
+console.log('FIRST_CLASS_DISCOVERY_DIAGNOSTIC ' + JSON.stringify({
+  experiences: m.experiences.length,
+  contact_facts: contactFacts.length,
+  p0_facts: p0Facts.length,
+  p1_facts: p1Facts.length,
+  p0_values: [...new Set(p0Facts.map(f => f.object))],
+  p1_values: [...new Set(p1Facts.map(f => f.object))],
+  relational_patterns: m.knowledge.relational_patterns || [],
+  relational_concepts: (m.knowledge.relational_concepts || []).slice(0, 8),
+  next_relation_recompression_at: m.knowledge.next_relation_recompression_at,
+}));
 assert.ok((m.knowledge.relational_patterns || []).length > 0, 'no first-class empirical relations were discovered');
+
 const q = structuredClone(m);
 q.structure.patterns = [];
 q.structure.symbols = [];
@@ -19,9 +31,6 @@ Mind.C(q, [1, null, 0]);
 assert.strictEqual(q.current.completed.p1, 10,
   'current cognition still depended on the legacy flat structure instead of first-class M');
 
-// Succession must grow by reusing relations, not by authored previous-step fields
-// or by scanning an externally selected temporal depth. The only temporal fact is
-// the exact contact --next--> contact relation already present in lived M.
 const t = Mind.one(1, 1);
 for (let round = 0; round < 20; round++) {
   Mind.C(t, [1, 0]);
