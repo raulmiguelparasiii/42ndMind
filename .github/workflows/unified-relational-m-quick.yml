@@ -25,16 +25,6 @@ jobs:
       - name: Apply unified relational correction
         run: |
           node apply-unified-relational-m.js
-          node - <<'NODE'
-          const fs = require('fs');
-          const p = 'one-mind.js';
-          let s = fs.readFileSync(p, 'utf8');
-          const guard = "function groundedContinuation(state, frame) {\n  if (state.experiences.length < 4 || !state.structure.patterns.length) return null;";
-          if (!s.includes(guard)) throw new Error('groundedContinuation guard not found');
-          s = s.replace(guard, "function groundedContinuation(state, frame) {");
-          s = s.replace("      refreshRelationalKnowledge(state);\n", '');
-          fs.writeFileSync(p, s);
-          NODE
           node --check one-mind.js
       - name: Observe direct improvement and matched 16-contact social life
         run: |
