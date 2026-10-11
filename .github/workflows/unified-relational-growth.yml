@@ -1,0 +1,49 @@
+name: unified-relational-growth
+
+on:
+  push:
+    branches:
+      - fix/unified-relational-growth-20261011
+    paths:
+      - apply-unified-relational-growth.js
+      - relational-growth-proof.js
+      - unified-relational-observation.js
+      - .github/workflows/unified-relational-growth.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/unified-relational-growth-20261011
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply only first-class relational growth
+        run: |
+          node apply-unified-relational-growth.js
+          node --check one-mind.js
+      - name: Prove growth comes from first-class M
+        run: timeout 120s node relational-growth-proof.js
+      - name: Existing self-correction gate
+        run: timeout 120s node one-mind.test.js
+      - name: Existing structured-knowledge gate
+        run: timeout 120s node structured-knowledge.test.js
+      - name: Existing compositional-language gate
+        run: timeout 180s node language-school.test.js
+      - name: Same 16-contact English-dependent life
+        run: timeout 180s env SOCIAL_STEPS=16 REPORT_PATH=state/unified-relational-growth-16.json node unified-relational-observation.js
+      - name: Persist only if all gates pass
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add one-mind.js state/unified-relational-growth-16.json
+          git commit -m "Grow relations from first-class lived M"
+          git pull --rebase origin fix/unified-relational-growth-20261011
+          git push origin HEAD:fix/unified-relational-growth-20261011
