@@ -1,0 +1,25 @@
+name: unified-authority-reversal-diagnostic
+
+on:
+  push:
+    branches:
+      - fix/unified-relational-m-20261011
+    paths:
+      - .github/workflows/unified-authority-reversal-diagnostic.yml
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/unified-relational-m-20261011
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: |
+          node apply-unified-relational-m.js
+          node apply-relational-index.js
+          node apply-single-relational-authority.js
+          node unified-authority-reversal-diagnostic.js
