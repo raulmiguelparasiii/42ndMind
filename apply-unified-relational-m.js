@@ -5,7 +5,10 @@ const path = require('path');
 const file = path.join(__dirname, 'one-mind.js');
 let source = fs.readFileSync(file, 'utf8');
 
-function replaceFunction(name, replacement) {
+function asNamedFunction(fn, name) {
+  return fn.toString().replace(/^function\s+[^\s(]+/, `function ${name}`);
+}
+function replaceFunction(name, fn) {
   const needle = `function ${name}(`;
   const start = source.indexOf(needle);
   if (start < 0) throw new Error(`missing function ${name}`);
@@ -28,11 +31,15 @@ function replaceFunction(name, replacement) {
     }
   }
   if (end < 0) throw new Error(`unterminated function ${name}`);
-  source = source.slice(0, start) + replacement.trim() + source.slice(end);
+  source = source.slice(0, start) + asNamedFunction(fn, name) + source.slice(end);
+}
+function insertBefore(needle, text) {
+  const at = source.indexOf(needle);
+  if (at < 0) throw new Error(`missing insertion point: ${needle}`);
+  source = source.slice(0, at) + '\n' + text.trim() + '\n' + source.slice(at);
 }
 
-replaceFunction('directSample', String.raw`
-function directSample(state, experience, index) {
+function directSampleReplacement(state, experience, index) {
   const start = presentFeatures(state, experience.before);
   const end = presentFeatures(state, experience.after);
   const values = {
@@ -43,11 +50,9 @@ function directSample(state, experience, index) {
     relation_symbol: null,
   };
 
-  // The empirical search index is a lossless view of the contacted transition,
-  // not a second cognitive representation. Ordinary later percepts remain terms
-  // of the same experienced relation instead of disappearing behind concern-only
-  // consequence summaries. `next:` is only the structural path through the exact
-  // before -> action -> after episode already retained in M.
+  // This is a search index over the exact experienced transition, not a second
+  // cognitive world. Ordinary later percepts remain terms of the same relation.
+  // `next:` denotes the structural path already present in before-action-after.
   for (let i = 0; i < end.contact.percept.length; i++) {
     if (end.contact.percept[i] !== null) values[`next:p${i}`] = end.contact.percept[i];
   }
@@ -57,11 +62,8 @@ function directSample(state, experience, index) {
     values[`relation_c${i}_order`] = order;
   }
   return { id: `e${index}`, values };
-}`);
-
-const insertionPoint = source.indexOf('\nfunction symbolDependencies(');
-if (insertionPoint < 0) throw new Error('missing symbolDependencies insertion point');
-const relationalExperienceHelpers = String.raw`
+}
+replaceFunction('directSample', directSampleReplacement);
 
 function experienceRelationalFacts(state, experience, index) {
   const beforeId = `contact:${index}`;
@@ -86,7 +88,6 @@ function experienceRelationalFacts(state, experience, index) {
   }
   return facts;
 }
-
 function storeExperienceRelations(state, experience, index) {
   if (!state.knowledge) return;
   const existing = new Set((state.knowledge.facts || []).map(relFactKey));
@@ -100,19 +101,17 @@ function storeExperienceRelations(state, experience, index) {
     Number(state.knowledge.experience_relations_through || 0), index + 1
   );
 }
-
 function ensureExperienceRelations(state) {
   if (!state.knowledge) return;
   let through = Math.max(0, Math.floor(Number(state.knowledge.experience_relations_through || 0)));
   through = Math.min(through, state.experiences.length);
   for (let i = through; i < state.experiences.length; i++) storeExperienceRelations(state, state.experiences[i], i);
 }
-`;
-source = source.slice(0, insertionPoint) + relationalExperienceHelpers + source.slice(insertionPoint);
-
-const completionInsertion = source.indexOf('\nfunction completeCurrent(');
-if (completionInsertion < 0) throw new Error('missing completeCurrent insertion point');
-const completionHelper = String.raw`
+insertBefore('\nfunction symbolDependencies(', [
+  experienceRelationalFacts.toString(),
+  storeExperienceRelations.toString(),
+  ensureExperienceRelations.toString(),
+].join('\n\n'));
 
 function knowledgeCompleteValues(state, seedValues) {
   if (!state.knowledge) return { values: { ...seedValues }, unresolved: [] };
@@ -142,11 +141,9 @@ function knowledgeCompleteValues(state, seedValues) {
   }
   return { values, unresolved: unique(unresolved) };
 }
-`;
-source = source.slice(0, completionInsertion) + completionHelper + source.slice(completionInsertion);
+insertBefore('\nfunction completeCurrent(', knowledgeCompleteValues.toString());
 
-replaceFunction('completeCurrent', String.raw`
-function completeCurrent(state, frame) {
+function completeCurrentReplacement(state, frame) {
   const present = presentFeatures(state, frame);
   let completed = { ...present.values };
   const inferred = new Set();
@@ -156,10 +153,6 @@ function completeCurrent(state, frame) {
   for (let pass = 0; pass < 12; pass++) {
     let changed = false;
 
-    // Structured knowledge and empirical contact now meet on the same current
-    // subject. A relation learned/taught in M.knowledge can therefore complete
-    // ordinary perception, and its conclusion immediately becomes empirical
-    // relational material on the next pass (and vice versa).
     const fromKnowledge = knowledgeCompleteValues(state, completed);
     for (const feature of fromKnowledge.unresolved) unresolved.add(feature);
     for (const [feature, value] of Object.entries(fromKnowledge.values)) {
@@ -221,25 +214,21 @@ function completeCurrent(state, frame) {
     inferred: [...inferred].sort(),
     unresolved: [...unresolved].filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort(),
   };
-}`);
+}
+replaceFunction('completeCurrent', completeCurrentReplacement);
 
-replaceFunction('eventToken', String.raw`
-function eventToken(state, structure, sample) {
+function eventTokenReplacement(state, structure, sample) {
   const expanded = expandPartial(sample.values, structure.symbols);
-  // Ordered experience is no longer projected onto a special action/pressure
-  // vocabulary. The temporal compressor receives the same grounded terms as the
-  // relational learner, including raw perceptual contact and learned handles.
   return {
     terms: Object.keys(expanded).sort().map(feature => ({
       feature,
       value: cloneRelTerm(expanded[feature]),
     })),
   };
-}`);
+}
+replaceFunction('eventToken', eventTokenReplacement);
 
-replaceFunction('groundedContinuation', String.raw`
-function groundedContinuation(state, frame) {
-  if (state.experiences.length < 4 || !state.structure.patterns.length) return null;
+function groundedContinuationReplacement(state, frame) {
   const present = presentFeatures(state, frame);
   const purpose = { ...present.values };
   let open = 0;
@@ -295,10 +284,10 @@ function groundedContinuation(state, frame) {
     unresolved: [...unresolved].filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort(),
     action,
   };
-}`);
+}
+replaceFunction('groundedContinuation', groundedContinuationReplacement);
 
-replaceFunction('empiricalRelationDescriptorFacts', String.raw`
-function empiricalRelationDescriptorFacts(structure) {
+function empiricalRelationDescriptorFactsReplacement(structure) {
   const facts = [];
   for (const pattern of structure?.patterns || []) {
     const ref = relRef(`empirical:${pattern.id}`);
@@ -327,36 +316,30 @@ function empiricalRelationDescriptorFacts(structure) {
     facts.push(normalizeRelFact([ref, 'expansion', cloneRelTerm(rule.expansion)]));
   }
   return facts;
-}`);
+}
+replaceFunction('empiricalRelationDescriptorFacts', empiricalRelationDescriptorFactsReplacement);
 
-replaceFunction('initializeRelationalKnowledge', String.raw`
-function initializeRelationalKnowledge() {
+function initializeRelationalKnowledgeReplacement() {
   const seed = foundationalRelationalSeed();
   const knowledge = { facts: seed.facts, rules: seed.rules, episodes: [], current: null, experience_relations_through: 0 };
   const pseudoState = { knowledge, structure: { patterns: [], symbols: [], order_rules: [] } };
   refreshRelationalKnowledge(pseudoState);
   return knowledge;
-}`);
+}
+replaceFunction('initializeRelationalKnowledge', initializeRelationalKnowledgeReplacement);
 
-// Integrate historical and newly closed embodied experience into the same
-// first-class relation substrate. Existing serialized M states migrate lazily and
-// deterministically from their exact retained experiences; nothing is relabeled by
-// world semantics and canonical history is not discarded.
 const cStart = source.indexOf('function C(state, realityContact) {');
 if (cStart < 0) throw new Error('missing C');
 const validateLine = "  if (!state || state.whole !== 1) throw new Error('C requires one whole mind');";
 const validateAt = source.indexOf(validateLine, cStart);
 if (validateAt < 0) throw new Error('missing C validation');
 const afterValidate = validateAt + validateLine.length;
-source = source.slice(0, afterValidate) + "\n  ensureExperienceRelations(state);" + source.slice(afterValidate);
+source = source.slice(0, afterValidate) + '\n  ensureExperienceRelations(state);' + source.slice(afterValidate);
 
-const experienceNeedle = `      state.experiences.push(experience);\n      const sample = directSample(state, experience, index);`;
+const experienceNeedle = "      state.experiences.push(experience);\n      const sample = directSample(state, experience, index);";
 if (!source.includes(experienceNeedle)) throw new Error('missing experience assimilation block');
-source = source.replace(experienceNeedle, `      state.experiences.push(experience);\n      storeExperienceRelations(state, experience, index);\n      const sample = directSample(state, experience, index);`);
-
-const structureNeedle = `      if (state.experiences.length >= state.structure.next_recompression_at) state.structure = recompressWhole(state);\n      else assimilateExperience(state, sample);`;
-if (!source.includes(structureNeedle)) throw new Error('missing structure update block');
-source = source.replace(structureNeedle, `      if (state.experiences.length >= state.structure.next_recompression_at) state.structure = recompressWhole(state);\n      else assimilateExperience(state, sample);\n      refreshRelationalKnowledge(state);`);
+source = source.replace(experienceNeedle,
+  "      state.experiences.push(experience);\n      storeExperienceRelations(state, experience, index);\n      const sample = directSample(state, experience, index);");
 
 fs.writeFileSync(file, source);
 console.log('Applied unified relational M correction to one-mind.js');
