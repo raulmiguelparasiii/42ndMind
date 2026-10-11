@@ -6,6 +6,7 @@ on:
       - fix/unified-relational-growth-v2-20261011
     paths:
       - apply-first-class-growth-v2.js
+      - optimize-first-class-growth-v2.js
       - relational-growth-v2-proof.js
       - unified-relational-observation.js
       - .github/workflows/unified-relational-growth-v2.yml
@@ -28,6 +29,7 @@ jobs:
       - name: Apply only incremental first-class growth
         run: |
           node apply-first-class-growth-v2.js
+          node optimize-first-class-growth-v2.js
           node --check one-mind.js
       - name: Prove first-class relational growth
         run: timeout 90s node relational-growth-v2-proof.js
