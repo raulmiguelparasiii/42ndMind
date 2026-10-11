@@ -6,6 +6,7 @@ on:
       - fix/unified-relational-growth-20261011
     paths:
       - apply-unified-relational-growth.js
+      - fix-relational-growth-contact-parser.js
       - relational-growth-proof.js
       - unified-relational-observation.js
       - .github/workflows/unified-relational-growth.yml
@@ -28,6 +29,7 @@ jobs:
       - name: Apply only first-class relational growth
         run: |
           node apply-unified-relational-growth.js
+          node fix-relational-growth-contact-parser.js
           node --check one-mind.js
       - name: Prove growth comes from first-class M
         run: timeout 120s node relational-growth-proof.js
