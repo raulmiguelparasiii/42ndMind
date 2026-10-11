@@ -1,0 +1,40 @@
+{
+  "kind": "42ndMind incremental first-class relational-growth observation",
+  "mind_module": "one-mind.js",
+  "direct_unification": {
+    "structured_relation_completes_perception": true,
+    "structured_relation_completes_action": true
+  },
+  "life": {
+    "steps": 16,
+    "experiences_before": 127,
+    "experiences_after": 143,
+    "interactions": 3,
+    "correct": 2,
+    "wrong": 14,
+    "accuracy": 0.125,
+    "final_pressure": [
+      35.9,
+      10
+    ]
+  },
+  "first_class_growth": {
+    "knowledge_facts": 3378,
+    "lived_contact_subjects": 144,
+    "next_links": 143,
+    "experience_relations_through": 143,
+    "active_relational_patterns": 584,
+    "relational_concepts": 4,
+    "successive_concepts": 2,
+    "recursive_concepts": 1,
+    "maximum_concept_depth": 2
+  },
+  "english": {
+    "first_class_patterns_touching_english": 0,
+    "english_action_relations": 0,
+    "english_consequence_relations": 0,
+    "first_class_concepts_touching_english": 0,
+    "pattern_examples": [],
+    "concept_examples": []
+  }
+}
