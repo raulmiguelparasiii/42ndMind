@@ -1,0 +1,10 @@
+'use strict';
+const fs = require('fs');
+const file = 'one-mind.js';
+let source = fs.readFileSync(file, 'utf8');
+const bad = "const m = /^contact:(\\\\d+)$/.exec(subject);";
+const good = "const m = /^contact:(\\d+)$/.exec(subject);";
+if (!source.includes(bad)) throw new Error('expected escaped contact parser not found');
+source = source.replace(bad, good);
+fs.writeFileSync(file, source);
+console.log('Corrected contact-id parser escaping');
