@@ -8,9 +8,9 @@ mind.one = function boundedOne(options = {}) {
   return originalOne({
     ...options,
     config: {
-      resolve_iterations: 28,
-      candidate_limit: 24,
-      fixed_point_passes: 4,
+      resolve_iterations: 8,
+      candidate_limit: 12,
+      fixed_point_passes: 2,
       history_limit: 4096,
       ...(options.config || {}),
     },
