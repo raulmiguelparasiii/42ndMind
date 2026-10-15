@@ -59,44 +59,38 @@ However, it is **not the canonical mind**, and it must not silently become a rep
 
 ## 3. Current evidential status
 
-PR #10 / merge commit `0a20d58ad799518cef896549e28c64409605d062` crossed an important boundary for **grounded state-transition intentions**.
+PR #10 / merge commit `0a20d58ad799518cef896549e28c64409605d062` crossed an important boundary for **grounded state-transition intentions**. PR #11 / merge commit `7e029824a81291f7bb827686be2228693fb2144f` then widened the same anti-cheat requirement to sixteen executable intent families.
 
-Before that checkpoint, the track had demonstrated mathematical encoding/address/correlation: vectors, canonical relations, similarity, closure, and English-to-relation resolution. Those results still matter, but an opaque relation handle or similarity vector is only a mathematical address.
+Before these checkpoints, the track had demonstrated mathematical encoding/address/correlation: vectors, canonical relations, similarity, closure, and English-to-relation resolution. Those results still matter, but an opaque relation handle or similarity vector is only a mathematical address.
 
-The new grounded-intent layer additionally derives an inspectable predicate from actual before/after reality contact. For example, the held-out English expression:
+The grounded-intent layer additionally derives an inspectable predicate from actual before/after reality contact. For example, the held-out English expression:
 
 ```text
 close this application
 ```
 
-resolved to the stabilized predicate:
+resolved to a predicate of the form:
 
 ```text
-P_I := c1=σ_jawdym ∧ c2=σ_1a54qy0
-       ∧ x1(t+1)=x1(t)
-       ∧ x2(t)=1 ∧ x2(t+1)=0
-       ∧ x3(t)=1 ∧ x3(t+1)=0
+P_I := scope
+       ∧ x_file(t+1)=x_file(t)
+       ∧ x_running(t)=1 ∧ x_running(t+1)=0
+       ∧ x_visible(t)=1 ∧ x_visible(t+1)=0
 ```
 
-with the observed coordinate interpretation:
+(the implementation uses canonical coordinate symbols plus a separate inspectable coordinate map rather than the explanatory names above).
 
-```text
-x1 = file-existence coordinate
-x2 = running-state coordinate
-x3 = visibility coordinate
-```
+Thus the English surface is no longer the mathematical answer. The predicate itself says, over the grounded coordinate domain, that file existence is invariant while running and visibility transition from true to false. Neighboring meanings such as concealing the interface, deleting a persisted object, moving, copying, enabling/disabling, pausing/resuming, increasing/decreasing, and others produce different full mathematical anatomy objects.
 
-Thus the English surface is no longer the mathematical answer. The predicate itself says, over the grounded coordinate domain, that file existence is invariant while running and visibility transition from true to false. Neighboring meanings such as concealing the interface, deleting a persisted object, moving, copying, increasing, and decreasing produce different predicates.
-
-The anti-cheat gate verified seven representative grounded intent families with no semantic family names supplied to `F`: 7/7 held-out English expressions reached the expected mathematical anatomy; the predicates were invariant to reversal of non-temporal training order; neighboring intentions remained mathematically distinct; the English surface verbs were absent from the predicates; counterevidence reopened the anatomy; and resolution retained exact local `whole = 1` closure. See `CHECKPOINT_MATHEMATICAL_INTENT_2026-10-15.md`.
+The first anti-cheat gate verified seven representative grounded intent families with no semantic family names supplied to `F`. The widened gate then verified 16/16 mathematical anatomies and 16/16 English-only holdouts, with 48 opaque grounded training contacts, no critical mathematical collisions, non-temporal insertion-order invariance, and exact local `whole = 1` closure. See `CHECKPOINT_MATHEMATICAL_INTENT_2026-10-15.md`.
 
 Use this evidence boundary from now on:
 
 ```text
-mathematical encoding/address/correlation             = demonstrated broadly in bounded English tests
-grounded state-transition mathematical anatomy        = demonstrated in bounded anti-cheat tests
+mathematical encoding/address/correlation                  = demonstrated broadly in bounded English tests
+grounded executable/state-transition mathematical anatomy = demonstrated in 16 bounded anti-cheat families
 full abstract/compositional intention mathematical anatomy = not yet demonstrated
-universal mathematical language                       = target, not established result
+universal mathematical language                            = target, not established result
 ```
 
 Do not convert the first two results into a claim that all English has been mathematically solved.
@@ -135,7 +129,7 @@ A convincing general result should produce, for an English intention `I`, an exp
 8. insertion order of non-temporal evidence should not arbitrarily change the final resolved meaning;
 9. the mathematics can be inspected well enough to explain what semantic content each surviving relation contributes.
 
-The grounded state-transition checkpoint now satisfies these requirements only within its tested domain. The remaining research problem is to make the same standard hold recursively for abstract, propositional, modal, social, epistemic, counterfactual, and discourse intentions rather than representing those merely by opaque primer relations.
+The grounded executable checkpoint now satisfies these requirements only within its tested domain. The remaining research problem is to make the same standard hold recursively for abstract, propositional, modal, social, epistemic, counterfactual, and discourse intentions rather than representing those merely by opaque primer relations.
 
 A useful shorthand remains:
 
