@@ -120,6 +120,18 @@ Words must not receive meaning from a dictionary hidden in `C`. English is an ex
 
 A bounded fixed-slot compositional schooling test now passes. It establishes reuse/composition of independently taught word relations at toy scale, not general English or learned natural-language grammar. The interface still preserves three token positions.
 
+## Parallel universal-language experiment — do not conflate it with the mind
+
+`universal-language.js` is a newer, narrower parallel experiment whose target is direct English-intention <-> mathematical-relational representation under one live state/update law. It is **not** the canonical developing mind and must not silently replace `one-mind.js`, `M`, or `C`.
+
+Read `UNIVERSAL_LANGUAGE_TRACK.md` before changing that experiment or proposing integration with the canonical mind.
+
+Current evidential boundary: the universal-language track has demonstrated bounded mathematical encoding/correlation, stabilization, canonicalization, and English-to-relation resolution. It has **not yet demonstrated a full mathematical equivalent of an English intention whose internal mathematical structure itself constitutes the intention's meaning**. An opaque relation handle, similarity vector, or classification score is a mathematical address/encoding, not yet the sought mathematical anatomy of intent. High held-out accuracy must not be described as having solved this stronger requirement.
+
+The older 42ndMind target remains more ambitious: one continuing `M` should develop increasingly complex relational cognition from foundational, content-neutral developmental machinery and reality-contact, with English eventually attaching to and expressing the same internal relational language rather than becoming a separate cognitive module.
+
+Context-loss rule: the repository is authoritative memory. Before declaring a mechanism missing, search `AGENTS.md`, checkpoints, design notes, tests, and implementation history. Absence from the current conversation/context window is **unknown**, not evidence of absence from the project. Do not replace a mechanism whose original purpose and falsification history have not been recovered.
+
 ## Current active architecture
 
 `one-mind.js` currently:
