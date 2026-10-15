@@ -1,0 +1,23 @@
+name: Anti-cheat universal language
+
+on:
+  pull_request:
+    paths:
+      - 'universal-language.js'
+      - 'anti-cheat-language.test.js'
+      - '.github/workflows/anti-cheat-language.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  falsification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: node anti-cheat-language.test.js
