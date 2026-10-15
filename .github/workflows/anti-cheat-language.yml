@@ -8,6 +8,7 @@ on:
       - 'wide-opaque-english.test.js'
       - 'wide-opaque-english-2.test.js'
       - 'mathematical-intent.test.js'
+      - 'wide-mathematical-intent.test.js'
       - 'UNIVERSAL_LANGUAGE_TRACK.md'
       - '.github/workflows/anti-cheat-language.yml'
   workflow_dispatch:
@@ -28,3 +29,4 @@ jobs:
       - run: node wide-opaque-english.test.js
       - run: node wide-opaque-english-2.test.js
       - run: node mathematical-intent.test.js
+      - run: node wide-mathematical-intent.test.js
