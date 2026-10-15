@@ -1,0 +1,41 @@
+name: English expansion school
+
+on:
+  pull_request:
+    paths:
+      - 'english-expansion.js'
+      - '.github/workflows/english-expansion.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'english-expansion.js'
+      - '.github/workflows/english-expansion.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: english-expansion-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  expand:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Continue the same persistent U
+        run: node english-expansion.js
+      - name: Persist expanded U on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/universal-language-state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Persist expanded universal-language English state"
+          git push
