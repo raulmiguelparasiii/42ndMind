@@ -6,6 +6,7 @@ on:
       - 'universal-language.js'
       - 'relational-math.js'
       - 'stone-closed-math.js'
+      - 'stone-reality-contact.js'
       - 'anti-cheat-language.test.js'
       - 'wide-opaque-english.test.js'
       - 'wide-opaque-english-2.test.js'
@@ -13,6 +14,7 @@ on:
       - 'wide-mathematical-intent.test.js'
       - 'stone-pole-math.test.js'
       - 'stone-closed-math.test.js'
+      - 'empathy-reality-contact.test.js'
       - 'UNIVERSAL_LANGUAGE_TRACK.md'
       - 'STONE_CLOSED_MATH_DESIGN.md'
       - '.github/workflows/anti-cheat-language.yml'
@@ -37,3 +39,4 @@ jobs:
       - run: node wide-mathematical-intent.test.js
       - run: node stone-pole-math.test.js
       - run: node stone-closed-math.test.js
+      - run: node empathy-reality-contact.test.js
