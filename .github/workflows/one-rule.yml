@@ -18,7 +18,6 @@ on:
       - 'one-mind.test.js'
       - 'micro-world.js'
       - 'micro-world-single-life.js'
-      - 'universal-language.js'
       - '.github/workflows/one-rule.yml'
   pull_request:
   workflow_dispatch:
@@ -38,7 +37,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: node universal-language.js
       - run: node one-rule.test.js
       - run: node recursive-recompression.test.js
       - run: node temporal-recompression.test.js
