@@ -36,6 +36,15 @@ const incomplete = {
   complete_ops:[2]
 };
 
+// This contact explicitly warrants that both O2 and O7 were exhaustively
+// checked in its finite domain. Absence of the proposed O7 edge is therefore
+// counterevidence rather than mere missing contact.
+const completeAgainstWrong = {
+  nodes:['j','w','c'],
+  edges:[{op:2,from:'j',to:'w'}],
+  complete_ops:[2,7]
+};
+
 const intendedPattern={edges:[
   [2,'a','b'], [2,'b','c'], [4,'c','d'], [0,'d','e'], [5,'d','f']
 ]};
@@ -62,13 +71,20 @@ contact(L,incomplete,{id:'partial'});
 assert.strictEqual(good.status,'open');
 assert.strictEqual(wrong.status,'open');
 
-// Independent reality contact can promote a proposal.
+// Independent reality contact can promote the supported proposal. The wrong
+// proposal stays open because O7 has not been tested here: undefined != false.
 contact(L,positive,{id:'positive'});
 assert.strictEqual(good.status,'supported');
 assert.strictEqual(good.usable,true);
-assert.strictEqual(wrong.status,'defeated');
+assert.strictEqual(wrong.status,'open');
 assert.strictEqual(wrong.usable,false);
 assert.deepStrictEqual(usablePatterns(L).map(x=>x.id),['good']);
+
+// Once the relevant operator class has actually been exhaustively checked, the
+// wrong proposal can be defeated.
+contact(L,completeAgainstWrong,{id:'complete-against-wrong'});
+assert.strictEqual(wrong.status,'defeated');
+assert.strictEqual(wrong.usable,false);
 
 // Later complete counterevidence reopens what had been supported.
 contact(L,broken,{id:'counterexample'});
