@@ -79,7 +79,7 @@ function evidenceParts(evidence){
 function config(overrides={}){ return {equivalence_threshold:0.82,overlap_threshold:0.52,min_equivalence_support:2,candidate_floor:0.055,max_components:48,candidate_scan_limit:256,max_span_tokens:6,relation_learning_rate:0.3,fixed_point_passes:1,history_limit:10000,...overrides}; }
 function one(options={}){ return {whole:1,version:VERSION,step:0,config:config(options.config||{}),relations:{},relation_order:[],canonical:{},canonical_signature:'',canonical_revision:0,equivalence_sets:[],overlaps:[],contradictions:[],encounters:[],current:null,audit:[],metrics:{progress:0,coverage:0,resolution:0,grounding:0,consistency:1,stability:0,unknown_mass:1,relations:0,canonical_relations:0,encounters:0,fixed_point_passes:0,bar:'[------------------------------]   0.00%'}}; }
 function runtime(U){
-  if(!U._runtime) Object.defineProperty(U,'_runtime',{value:{step:-1,revision:-1,canon:[],byId:new Map(),lexDf:{},lexWeight:{},invLex:new Map(),invCtx:new Map(),invGround:new Map()},enumerable:false,writable:true,configurable:true});
+  if(!U._runtime) Object.defineProperty(U,'_runtime',{value:{step:-1,revision:-1,canon:[],byId:new Map(),lexDf:{},lexWeight:{},invLex:new Map(),invCtx:new Map(),invGround:new Map(),exemplars:new Map()},enumerable:false,writable:true,configurable:true});
   return U._runtime;
 }
 function invalidateRuntime(U){ const r=runtime(U); r.step=-1; r.revision=-1; }
@@ -134,8 +134,17 @@ function canonicalRelationsUncached(U){
   const out=[];for(const set of U.equivalence_sets){const ms=set.members.map(id=>U.relations[id]).filter(Boolean),v={lexical:{},context:{},ground:{}};let total=0,support=0,grounded=0,stability=0;const labels=[],children=[],parents=[];for(const r of ms){const w=Math.max(EPS,r.support);total+=w;support+=r.support;grounded+=r.grounded_support;stability+=r.stability*w;vAdd(v.lexical,r.lexical,w);vAdd(v.context,r.context,w);vAdd(v.ground,r.ground,w);labels.push(...r.labels);children.push(...r.children);parents.push(...r.parents);}out.push({id:set.representative,members:set.members.slice(),labels:uniq(labels),lexical:vUnit(v.lexical),context:vUnit(v.context),ground:vUnit(v.ground),support,grounded_support:grounded,stability:total?stability/total:0,children:uniq(children),parents:uniq(parents)});}return out;
 }
 function invAdd(map,key,id){if(!map.has(key))map.set(key,new Set());map.get(key).add(id);}
+function relationExemplars(U,r){
+  const seen=new Set(),out=[];
+  for(const id of r.members||[r.id]) for(const p of U.relations[id]?.provenance||[]){
+    const text=String(p?.utterance||'').trim();
+    if(!text||seen.has(text))continue;
+    seen.add(text);out.push(textFeatures(text));
+  }
+  return out.slice(-16);
+}
 function buildRuntime(U){
-  const rt=runtime(U);if(rt.step===U.step&&rt.revision===U.canonical_revision)return rt;const canon=canonicalRelationsUncached(U),byId=new Map(canon.map(r=>[r.id,r])),lexDf={};for(const r of canon)for(const k of Object.keys(r.lexical||{}))lexDf[k]=(lexDf[k]||0)+1;const n=Math.max(1,canon.length),lexWeight={};for(const [k,df] of Object.entries(lexDf))lexWeight[k]=1+Math.log((n+1)/(df+1));const invLex=new Map(),invCtx=new Map(),invGround=new Map();for(const r of canon){for(const k of Object.keys(r.lexical||{}))invAdd(invLex,k,r.id);for(const k of Object.keys(r.context||{}))invAdd(invCtx,k,r.id);for(const k of Object.keys(r.ground||{}))invAdd(invGround,k,r.id);}Object.assign(rt,{step:U.step,revision:U.canonical_revision,canon,byId,lexDf,lexWeight,invLex,invCtx,invGround});return rt;
+  const rt=runtime(U);if(rt.step===U.step&&rt.revision===U.canonical_revision)return rt;const canon=canonicalRelationsUncached(U),byId=new Map(canon.map(r=>[r.id,r])),lexDf={};for(const r of canon)for(const k of Object.keys(r.lexical||{}))lexDf[k]=(lexDf[k]||0)+1;const n=Math.max(1,canon.length),lexWeight={};for(const [k,df] of Object.entries(lexDf))lexWeight[k]=1+Math.log((n+1)/(df+1));const invLex=new Map(),invCtx=new Map(),invGround=new Map(),exemplars=new Map();for(const r of canon){for(const k of Object.keys(r.lexical||{}))invAdd(invLex,k,r.id);for(const k of Object.keys(r.context||{}))invAdd(invCtx,k,r.id);for(const k of Object.keys(r.ground||{}))invAdd(invGround,k,r.id);exemplars.set(r.id,relationExemplars(U,r));}Object.assign(rt,{step:U.step,revision:U.canonical_revision,canon,byId,lexDf,lexWeight,invLex,invCtx,invGround,exemplars});return rt;
 }
 function canonicalRelations(U){return buildRuntime(U).canon;}
 function lexicalWeight(U,k){return buildRuntime(U).lexWeight[k]||1+Math.log(buildRuntime(U).canon.length+1);}
@@ -146,8 +155,14 @@ function spanVectors(U,p){
 }
 function directedLexicalCoverage(U,q,prototype){let hit=0,total=0,spec=0,count=0;for(const [k,x] of Object.entries(q||{})){if(!k.startsWith('txt:'))continue;const w=lexicalWeight(U,k),m=w*x*x;total+=m;spec+=w;count++;if(has(prototype,k))hit+=m;}if(total<=EPS)return 0;const specificity=count?spec/count:1;return clamp((hit/total)*clamp((specificity-1)/1.6,.18,1));}
 function lexicalSimilarity(U,r,p){
-  const weight=k=>lexicalWeight(U,k);let best=vCosWeighted(p.lexical,r.lexical,weight);
-  for(const span of spanVectors(U,p)){const cos=vCosWeighted(span.v,r.lexical,weight),coverage=directedLexicalCoverage(U,span.v,r.lexical);best=Math.max(best,.92*cos,coverage);}
+  const rt=buildRuntime(U),weight=k=>lexicalWeight(U,k),examples=rt.exemplars.get(r.id)||[];
+  let best=vCosWeighted(p.lexical,r.lexical,weight);
+  for(const ex of examples) best=Math.max(best,1.04*vCosWeighted(p.lexical,ex,weight),directedLexicalCoverage(U,p.lexical,ex));
+  for(const span of spanVectors(U,p)){
+    const cos=vCosWeighted(span.v,r.lexical,weight),coverage=directedLexicalCoverage(U,span.v,r.lexical);
+    best=Math.max(best,.92*cos,coverage);
+    for(const ex of examples) best=Math.max(best,1.02*vCosWeighted(span.v,ex,weight),directedLexicalCoverage(U,span.v,ex));
+  }
   return clamp(best);
 }
 function refreshStability(U){ for(const id of U.relation_order){const r=U.relations[id];if(!r)continue;r.stability=clamp((r.support/(r.support+2))*Math.exp(-4*r.drift)/(1+r.contradiction_support));} }
