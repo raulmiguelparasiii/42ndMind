@@ -59,7 +59,7 @@ However, it is **not the canonical mind**, and it must not silently become a rep
 
 ## 3. Current evidential status
 
-PR #10 / merge commit `0a20d58ad799518cef896549e28c64409605d062` crossed an important boundary for **grounded state-transition intentions**. PR #11 / merge commit `7e029824a81291f7bb827686be2228693fb2144f` then widened the same anti-cheat requirement to sixteen executable intent families.
+PR #10 / merge commit `0a20d58ad799518cef896549e28c64409605d062` crossed an important boundary for **grounded state-transition intentions**. PR #11 / merge commit `7e029824a81291f7bb827686be2228693fb2144f` widened the same anti-cheat requirement to sixteen executable intent families. PR #12 / merge commit `f18d568f61baf8c897ffe28d6ed77d16ceaf19c8` then established **primer-grounded relational mathematical anatomy for the seven basic Stone states**: Empathy, Practicality, Knowledge, Wisdom, Answerability, Insulation, and Absence/null.
 
 Before these checkpoints, the track had demonstrated mathematical encoding/address/correlation: vectors, canonical relations, similarity, closure, and English-to-relation resolution. Those results still matter, but an opaque relation handle or similarity vector is only a mathematical address.
 
@@ -84,16 +84,20 @@ Thus the English surface is no longer the mathematical answer. The predicate its
 
 The first anti-cheat gate verified seven representative grounded intent families with no semantic family names supplied to `F`. The widened gate then verified 16/16 mathematical anatomies and 16/16 English-only holdouts, with 48 opaque grounded training contacts, no critical mathematical collisions, non-temporal insertion-order invariance, and exact local `whole = 1` closure. See `CHECKPOINT_MATHEMATICAL_INTENT_2026-10-15.md`.
 
+The Stone-pole gate used 21 structured primer contacts drawn from the Stone's own definitions, again with fresh opaque relation handles, no semantic relation labels supplied to `F`, and no explicit equivalences. All seven pole families stabilized, all seven yielded distinct finite relational predicates, and all seven held-out English words resolved back to the correct mathematical anatomy. Absence/null reduced to explicit zero relational properties. This is a substantive relational representation, but it remains **primer-grounded rather than an autonomous rediscovery of the Stone from raw reality**. See `CHECKPOINT_STONE_POLE_MATH_2026-10-15.md`.
+
 Use this evidence boundary from now on:
 
 ```text
-mathematical encoding/address/correlation                  = demonstrated broadly in bounded English tests
-grounded executable/state-transition mathematical anatomy = demonstrated in 16 bounded anti-cheat families
-full abstract/compositional intention mathematical anatomy = not yet demonstrated
-universal mathematical language                            = target, not established result
+mathematical encoding/address/correlation                    = demonstrated broadly in bounded English tests
+grounded executable/state-transition mathematical anatomy   = demonstrated in 16 bounded anti-cheat families
+Stone-pole primer-grounded relational mathematical anatomy   = demonstrated 7/7
+full abstract/compositional intention mathematical anatomy   = not yet demonstrated
+autonomous derivation of Stone poles from raw reality        = not demonstrated
+universal mathematical language                              = target, not established result
 ```
 
-Do not convert the first two results into a claim that all English has been mathematically solved.
+Do not convert these bounded results into a claim that all English has been mathematically solved.
 
 ## 4. Meaning of `1` in this track
 
@@ -129,7 +133,7 @@ A convincing general result should produce, for an English intention `I`, an exp
 8. insertion order of non-temporal evidence should not arbitrarily change the final resolved meaning;
 9. the mathematics can be inspected well enough to explain what semantic content each surviving relation contributes.
 
-The grounded executable checkpoint now satisfies these requirements only within its tested domain. The remaining research problem is to make the same standard hold recursively for abstract, propositional, modal, social, epistemic, counterfactual, and discourse intentions rather than representing those merely by opaque primer relations.
+The grounded executable checkpoint satisfies these requirements only within its tested domain. The Stone checkpoint extends explicit mathematical anatomy into a small abstract semantic domain, but by means of structured primer contact. The remaining research problem is to make the same standard hold recursively for arbitrary abstract, propositional, modal, social, epistemic, counterfactual, and discourse intentions rather than representing those merely by opaque primer relations or unreduced semantic primitives.
 
 A useful shorthand remains:
 
@@ -168,5 +172,7 @@ Before proposing an architectural addition, replacement, or simplification:
 4. Treat absence from current conversational context as **unknown**, not as evidence of absence from the project.
 5. Prefer an isolated experiment over modifying the canonical runtime when the relationship is not yet understood.
 6. Preserve frozen checkpoints and previous falsification gates.
+
+For work involving the Stone poles, read `CHECKPOINT_STONE_POLE_MATH_2026-10-15.md` before proposing new pole semantics or claiming that the seven poles are still only opaque mathematical addresses.
 
 The repository, not conversational memory, is the authoritative project memory.
