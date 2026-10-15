@@ -1,0 +1,45 @@
+name: one-logic-formal
+
+on:
+  push:
+    paths:
+      - 'formal/**'
+      - 'tests/test_one_logic.py'
+      - '.github/workflows/one-logic-formal.yml'
+  pull_request:
+    paths:
+      - 'formal/**'
+      - 'tests/test_one_logic.py'
+      - '.github/workflows/one-logic-formal.yml'
+
+jobs:
+  python-falsifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit and exhaustive bounded attacks
+        run: python -m unittest discover -s tests -v
+      - name: Full bounded falsifier
+        run: PYTHONPATH=formal python -m one_logic.falsifier
+
+  lean-proof-kernel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kernel-check formal theorems
+        uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: formal/lean
+          auto-config: false
+          build: true
+          test: false
+          lint: false
+          use-mathlib-cache: false
+          leanchecker: true
+          leanchecker-args: OneLogic
+          nanoda: false
+          axiom-audit: true
+          axiom-audit-root: OneLogic
