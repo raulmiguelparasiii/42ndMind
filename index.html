@@ -54,8 +54,8 @@
       </div>
 
       <div class="entry">
-        <textarea id="input" rows="1" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="formal input" placeholder="x"></textarea>
-        <textarea id="filters" rows="1" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="filters" placeholder="φ"></textarea>
+        <textarea id="input" rows="1" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="formal input" placeholder="2+2=4 · E=mc² · typed JSON"></textarea>
+        <textarea id="filters" rows="1" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="filters" placeholder="why, proof, certificate, gaps"></textarea>
       </div>
 
       <output class="result" id="result">1</output>
@@ -68,6 +68,11 @@
     </section>
   </main>
   <script src="kernel.js"></script>
+  <script src="exact.js"></script>
+  <script src="symbolic-algebra.js"></script>
+  <script src="symbolic-solver.js"></script>
+  <script src="logic-compare.js"></script>
+  <script src="symbolic.js"></script>
   <script>
     (() => {
       'use strict';
@@ -89,29 +94,6 @@
         if (typeof value === 'string') return value;
         return JSON.stringify(value, null, 2);
       };
-
-      function displayValue(evaluated) {
-        const list = filters.value.split(/[,+\n]+/).map((x) => x.trim()).filter(Boolean);
-        for (const raw of list) {
-          if (/^(?:display:)?yes\/no$/i.test(raw)) return evaluated.align ? 'yes' : 'no';
-          if (/^(?:display:)?true\/false$/i.test(raw)) return evaluated.align ? 'true' : 'false';
-          const pair = raw.match(/^display:labels=(.*?)\|(.*)$/i);
-          if (pair) return evaluated.align ? pair[1].trim() : pair[2].trim();
-          if (/^display:query$/i.test(raw)) {
-            const canonical = evaluated.solution && evaluated.solution.canonical;
-            const labels = canonical && canonical.labels;
-            const query = canonical && String(canonical.query || '').trim();
-            if (labels && query) {
-              if (evaluated.align && Object.prototype.hasOwnProperty.call(labels, query)) return String(labels[query]);
-              const opposite = query.startsWith('¬') ? query.slice(1) : '¬' + query;
-              if ((evaluated.solution.facts || []).includes(opposite) && Object.prototype.hasOwnProperty.call(labels, opposite)) {
-                return String(labels[opposite]);
-              }
-            }
-          }
-        }
-        return String(evaluated.align);
-      }
 
       function grow(el) {
         el.style.height = 'auto';
@@ -162,7 +144,7 @@
         clearTimeout(timer);
         timer = setTimeout(() => {
           const evaluated = K.evaluate(input.value, filters.value, view);
-          result.textContent = displayValue(evaluated);
+          result.textContent = String(evaluated.align);
           renderPaths(evaluated.projections.filter((x) => x.value !== null));
           state.textContent = JSON.stringify(evaluated.solution, null, 2);
           renderMenu();
