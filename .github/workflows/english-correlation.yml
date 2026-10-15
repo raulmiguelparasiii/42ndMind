@@ -1,0 +1,30 @@
+name: English correlation
+
+on:
+  pull_request:
+    paths:
+      - 'english-correlation.js'
+      - 'universal-language.js'
+      - '.github/workflows/english-correlation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  correlate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Run English correlation
+        run: RESET_ENGLISH=1 node english-correlation.js
+      - name: Upload learned universal-language state
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-language-english-state
+          path: state/universal-language-english.json
+          if-no-files-found: error
