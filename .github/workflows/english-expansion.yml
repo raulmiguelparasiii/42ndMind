@@ -5,14 +5,12 @@ on:
     paths:
       - 'universal-language.js'
       - 'english-expansion.js'
-      - 'apply-semantic-oracle-loop.js'
       - '.github/workflows/english-expansion.yml'
   push:
-    branches: [main, english-expansion-1]
+    branches: [main]
     paths:
       - 'universal-language.js'
       - 'english-expansion.js'
-      - 'apply-semantic-oracle-loop.js'
       - '.github/workflows/english-expansion.yml'
   workflow_dispatch:
 
@@ -32,18 +30,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Apply semantic oracle loop correction
-        run: node apply-semantic-oracle-loop.js
-      - name: Commit corrected sources on development branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/english-expansion-1'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add universal-language.js english-expansion.js
-          if ! git diff --cached --quiet; then
-            git commit -m "Stabilize anonymous semantic signals into known relations"
-            git push
-          fi
       - name: Continue the same persistent U
         run: |
           sed -i "/  if(!closure)/i\\  console.log('EXPANSION DIAGNOSTIC'); console.log(JSON.stringify(report,null,2));" english-expansion.js
