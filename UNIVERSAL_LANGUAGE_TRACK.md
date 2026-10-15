@@ -57,29 +57,73 @@ This track is useful because it can investigate the missing English/mathematics 
 
 However, it is **not the canonical mind**, and it must not silently become a replacement for `one-mind.js` or `C`.
 
-## 3. Current evidential status: correlation/encoding is not yet mathematical equivalence of intent
+## 3. Current evidential status
 
-Do not overstate what the current universal-language track has proved.
+PR #10 / merge commit `0a20d58ad799518cef896549e28c64409605d062` crossed an important boundary for **grounded state-transition intentions**.
 
-At present it can convert English/contact into mathematical objects such as sparse lexical vectors, context vectors, executable/relational grounding vectors, canonical relation groups, similarity values, and normalized resolution masses. It can also stabilize independently named relations under shared grounding and map held-out English back toward stabilized relations.
+Before that checkpoint, the track had demonstrated mathematical encoding/address/correlation: vectors, canonical relations, similarity, closure, and English-to-relation resolution. Those results still matter, but an opaque relation handle or similarity vector is only a mathematical address.
 
-Those are real mathematical encodings and relational correlations, but they are **not yet sufficient to claim that a complete English intention has a mathematical equivalent whose internal mathematical structure itself specifies the intention's meaning**.
-
-For example, assigning an English intention to an opaque canonical handle, or to a high-dimensional similarity vector, gives the intention a mathematical address. That is weaker than deriving a mathematical object whose relations transparently constitute the intent.
-
-Therefore, until a stronger result exists, use this distinction:
+The new grounded-intent layer additionally derives an inspectable predicate from actual before/after reality contact. For example, the held-out English expression:
 
 ```text
-mathematical encoding/address/correlation    = demonstrated in bounded cases
-mathematical equivalent of a full intention  = not yet demonstrated
-universal mathematical language              = target, not established result
+close this application
 ```
 
-High held-out classification accuracy does not erase this distinction.
+resolved to the stabilized predicate:
 
-## 4. Strong success criterion for the current track
+```text
+P_I := c1=σ_jawdym ∧ c2=σ_1a54qy0
+       ∧ x1(t+1)=x1(t)
+       ∧ x2(t)=1 ∧ x2(t+1)=0
+       ∧ x3(t)=1 ∧ x3(t+1)=0
+```
 
-A convincing result should produce, for an English intention `I`, an explicit mathematical relational object `M(I)` such that:
+with the observed coordinate interpretation:
+
+```text
+x1 = file-existence coordinate
+x2 = running-state coordinate
+x3 = visibility coordinate
+```
+
+Thus the English surface is no longer the mathematical answer. The predicate itself says, over the grounded coordinate domain, that file existence is invariant while running and visibility transition from true to false. Neighboring meanings such as concealing the interface, deleting a persisted object, moving, copying, increasing, and decreasing produce different predicates.
+
+The anti-cheat gate verified seven representative grounded intent families with no semantic family names supplied to `F`: 7/7 held-out English expressions reached the expected mathematical anatomy; the predicates were invariant to reversal of non-temporal training order; neighboring intentions remained mathematically distinct; the English surface verbs were absent from the predicates; counterevidence reopened the anatomy; and resolution retained exact local `whole = 1` closure. See `CHECKPOINT_MATHEMATICAL_INTENT_2026-10-15.md`.
+
+Use this evidence boundary from now on:
+
+```text
+mathematical encoding/address/correlation             = demonstrated broadly in bounded English tests
+grounded state-transition mathematical anatomy        = demonstrated in bounded anti-cheat tests
+full abstract/compositional intention mathematical anatomy = not yet demonstrated
+universal mathematical language                       = target, not established result
+```
+
+Do not convert the first two results into a claim that all English has been mathematically solved.
+
+## 4. Meaning of `1` in this track
+
+Do not treat heterogeneous semantic constraints as mutually exclusive probability slices merely to make them sum to one.
+
+For a grounded mathematical intention predicate `P_I`, define its admissible realization set:
+
+```text
+K_I = { ω : P_I(ω) }
+```
+
+The local whole is the complete admissible realization set for that intention:
+
+```text
+μ_I(K_I) = 1
+```
+
+The conjunctive constraints inside `P_I` jointly define that whole; they do not individually need to sum to one. Where the system is uncertain which stabilized relation is intended, the existing resolution layer may distribute resolved mass plus explicit unknown mass so that the interpretation closes to one.
+
+This preserves the older warning that overlapping relations must not be falsely double-counted while retaining the user's recursive intuition that a resolved intention or relation can itself be treated as the local whole.
+
+## 5. Strong success criterion for the current track
+
+A convincing general result should produce, for an English intention `I`, an explicit mathematical relational object `M(I)` such that:
 
 1. its internal relations carry the semantic distinctions rather than an opaque label carrying them;
 2. paraphrases converge to the same object because of those relations, not because the answer was supplied;
@@ -91,7 +135,9 @@ A convincing result should produce, for an English intention `I`, an explicit ma
 8. insertion order of non-temporal evidence should not arbitrarily change the final resolved meaning;
 9. the mathematics can be inspected well enough to explain what semantic content each surviving relation contributes.
 
-A useful shorthand is:
+The grounded state-transition checkpoint now satisfies these requirements only within its tested domain. The remaining research problem is to make the same standard hold recursively for abstract, propositional, modal, social, epistemic, counterfactual, and discourse intentions rather than representing those merely by opaque primer relations.
+
+A useful shorthand remains:
 
 ```text
 English -> mathematical anatomy of intent
@@ -103,7 +149,7 @@ not merely:
 English -> mathematical address of intent
 ```
 
-## 5. Relationship between the two projects
+## 6. Relationship between the two projects
 
 The parallel track may eventually help solve the older project's language seam, but integration must preserve the canonical architecture.
 
@@ -118,7 +164,7 @@ canonical 42ndMind may later express/learn that bridge as corrigible structure i
 
 Do not simply copy semantic authority from `universal-language.js` into `C`. If integration happens, show why the mechanism is generic representation/development or why it can live as learned/seeded content inside `M` while remaining corrigible.
 
-## 6. Context-loss safety rule
+## 7. Context-loss safety rule
 
 Before proposing an architectural addition, replacement, or simplification:
 
