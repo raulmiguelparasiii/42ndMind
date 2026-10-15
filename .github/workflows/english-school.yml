@@ -1,0 +1,42 @@
+name: English correlation school
+
+on:
+  pull_request:
+    paths:
+      - 'universal-language.js'
+      - 'english-school.js'
+      - '.github/workflows/english-school.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'universal-language.js'
+      - 'english-school.js'
+      - '.github/workflows/english-school.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: english-school-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  school:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Correlate English into the live relational language
+        run: node english-school.js
+      - name: Persist the trained U on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/universal-language-state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Persist universal-language English school state"
+          git push
