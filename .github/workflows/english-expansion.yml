@@ -31,7 +31,9 @@ jobs:
         with:
           node-version: '24'
       - name: Continue the same persistent U
-        run: node english-expansion.js
+        run: |
+          sed -i "/  if(!closure)/i\\  console.log('EXPANSION DIAGNOSTIC'); console.log(JSON.stringify(report,null,2));" english-expansion.js
+          node english-expansion.js
       - name: Persist expanded U on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
