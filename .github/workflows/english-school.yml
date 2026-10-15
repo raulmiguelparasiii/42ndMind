@@ -5,14 +5,12 @@ on:
     paths:
       - 'universal-language.js'
       - 'english-school.js'
-      - 'english-school-runner.js'
       - '.github/workflows/english-school.yml'
   push:
     branches: [main]
     paths:
       - 'universal-language.js'
       - 'english-school.js'
-      - 'english-school-runner.js'
       - '.github/workflows/english-school.yml'
   workflow_dispatch:
 
@@ -26,13 +24,14 @@ permissions:
 jobs:
   school:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
       - name: Correlate English into the live relational language
-        run: node english-school-runner.js
+        run: node english-school.js
       - name: Persist the trained U on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
