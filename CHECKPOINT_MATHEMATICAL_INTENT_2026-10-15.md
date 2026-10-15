@@ -4,28 +4,39 @@
 
 This checkpoint belongs to the narrower `universal-language.js` track, not to the canonical `one-mind.js` developing-mind runtime.
 
-Verified merge commit:
+Primary implementation merge:
 
 ```text
 0a20d58ad799518cef896549e28c64409605d062
 ```
 
-Primary anti-cheat GitHub Actions run:
+Wider grounded-anatomy coverage merge:
+
+```text
+7e029824a81291f7bb827686be2228693fb2144f
+```
+
+Primary anti-cheat implementation run:
 
 ```text
 38779150370
 ```
 
-The run passed:
+Wider grounded-anatomy run:
 
 ```text
-anti-cheat-language.test.js       PASS
-wide-opaque-english.test.js       PASS
-wide-opaque-english-2.test.js     PASS
-mathematical-intent.test.js       PASS
+38780573779
 ```
 
-The broad English correlation school also passed on the same PR head in run `38779150349`.
+The wider run passed:
+
+```text
+anti-cheat-language.test.js          PASS
+wide-opaque-english.test.js          PASS
+wide-opaque-english-2.test.js        PASS
+mathematical-intent.test.js          PASS
+wide-mathematical-intent.test.js     PASS
+```
 
 ## What changed
 
@@ -55,7 +66,7 @@ The English-only held-out expression:
 close this application
 ```
 
-resolved to mathematical signature:
+resolved in the first gate to mathematical signature:
 
 ```text
 μ_1n96968
@@ -82,29 +93,39 @@ so within the tested domain the predicate states that the persisted file remains
 
 The formula contains none of the training surface verbs `close`, `quit`, or `exit`.
 
-Nearby intentions resolve differently. Examples from the same passed gate include:
+Nearby intentions resolve differently. Examples from the same passed gates include:
 
 ```text
-close this window
-P_I := c1=σ_jawdym ∧ c2=σ_1ubdyra
-       ∧ x1(t+1)=x1(t)
-       ∧ x2(t)=1 ∧ x2(t+1)=0
+close/hide interface
+P_I := scope
+       ∧ x_running(t+1)=x_running(t)
+       ∧ x_visible(t)=1 ∧ x_visible(t+1)=0
 
-copy this record
-P_I := c1=σ_jawdym ∧ c2=σ_ydcqv4
-       ∧ x1(t+1)=x1(t)+(1)
-       ∧ x2(t+1)=x2(t)
+copy record
+P_I := scope
+       ∧ x_copies(t+1)=x_copies(t)+(1)
+       ∧ x_source(t+1)=x_source(t)
 
-increase this level
-P_I := c1=σ_5khsyd ∧ c2=σ_1jyrwst
-       ∧ x1(t+1)=x1(t)+(1)
+increase level
+P_I := scope ∧ x_value(t+1)=x_value(t)+(1)
 
-decrease this level
-P_I := c1=σ_5khsyd ∧ c2=σ_1jyrwst
-       ∧ x1(t+1)=x1(t)+(-1)
+decrease level
+P_I := scope ∧ x_value(t+1)=x_value(t)+(-1)
+
+pause task
+P_I := scope
+       ∧ x_active(t+1)=x_active(t)
+       ∧ x_paused(t)=0 ∧ x_paused(t+1)=1
+
+resume task
+P_I := scope
+       ∧ x_active(t+1)=x_active(t)
+       ∧ x_paused(t)=1 ∧ x_paused(t+1)=0
 ```
 
-## Anti-cheat result
+The implementation uses canonical coordinate symbols plus a separate coordinate map. Explanatory coordinate names above are for inspection only.
+
+## First anti-cheat mathematical result
 
 `mathematical-intent.test.js` supplied `F` with 21 grounded contacts over seven externally evaluated relation families. Each grounded example received a fresh opaque relation handle; the human family names were not supplied to `F`.
 
@@ -122,11 +143,30 @@ counterevidence_reopened_anatomy = true
 exact_resolution_whole_equals_one = true
 ```
 
-The seven tested grounded families were termination, interface concealment, deletion, copying, moving, increase, and decrease. Their human-readable names exist only in the external test harness.
+## Wider grounded mathematical result
+
+`wide-mathematical-intent.test.js` then widened the same standard to sixteen executable intent families. It supplied 48 grounded contacts, again with fresh opaque handles and no human semantic family names given to `F`.
+
+Verified report from run `38780573779`:
+
+```text
+families = 16
+opaque_training_contacts = 48
+semantic_family_labels_given_to_F = 0
+mathematical_equivalents_verified = 16
+held_out_english_to_math_hits = 16/16
+insertion_order_invariant = true
+critical_math_collisions = []
+exact_whole_equals_one = true
+```
+
+The sixteen externally evaluated families were open, terminate, conceal, delete, copy, move, rename, create, save, undo, enable, disable, increase, decrease, pause, and resume. Their human-readable family names live in the evaluator, not in `F`.
+
+Some displayed formulas can have the same algebraic shape while still be different full mathematical anatomy objects because their coordinate basis differs. For example, a false-to-true transition in `saved` is not the same coordinate as a false-to-true transition in `exists`. The anatomy signature includes the grounded coordinate identity as well as the displayed constraint form.
 
 ## Correction behavior
 
-The test deliberately added counterevidence to a previously stable process-termination anatomy. The new observation conflicted with the earlier `running: true -> false` transition. The derived mathematical signature changed and the defeated false postcondition was no longer retained as if certain.
+The first gate deliberately added counterevidence to a previously stable process-termination anatomy. The new observation conflicted with the earlier `running: true -> false` transition. The derived mathematical signature changed and the defeated false postcondition was no longer retained as if certain.
 
 Thus the mathematical anatomy is corrigible reality-grounded structure, not a frozen dictionary entry.
 
@@ -156,7 +196,7 @@ when the current English/contact does not uniquely determine one stabilized rela
 
 ## What this establishes
 
-This checkpoint establishes, in bounded grounded state-transition cases, a stronger bridge than classification:
+This checkpoint establishes, in sixteen bounded grounded executable/state-transition families, a stronger bridge than classification:
 
 ```text
 English surface
@@ -164,7 +204,7 @@ English surface
     -> inspectable mathematical predicate over reality-grounded coordinates
 ```
 
-The mathematical predicate itself distinguishes the tested neighboring meanings and survives removal of the English surface wording.
+The mathematical object itself distinguishes the tested neighboring meanings and survives removal of the English surface wording.
 
 ## What this does not establish
 
@@ -177,8 +217,8 @@ It also does not prove that human-named sensor coordinates such as `running` are
 Therefore preserve the evidence boundary:
 
 ```text
-bounded English correlation                  demonstrated
-bounded grounded state-transition anatomy    demonstrated
-full abstract/compositional intent anatomy   open
-universal mathematical language              target
+bounded English correlation                              demonstrated
+bounded grounded executable/state-transition anatomy     demonstrated (16 anti-cheat families)
+full abstract/compositional intent anatomy               open
+universal mathematical language                          target
 ```
