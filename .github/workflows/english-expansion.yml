@@ -3,11 +3,13 @@ name: English expansion school
 on:
   pull_request:
     paths:
+      - 'universal-language.js'
       - 'english-expansion.js'
       - '.github/workflows/english-expansion.yml'
   push:
     branches: [main]
     paths:
+      - 'universal-language.js'
       - 'english-expansion.js'
       - '.github/workflows/english-expansion.yml'
   workflow_dispatch:
