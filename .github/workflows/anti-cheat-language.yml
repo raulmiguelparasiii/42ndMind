@@ -6,6 +6,7 @@ on:
       - 'universal-language.js'
       - 'anti-cheat-language.test.js'
       - 'wide-opaque-english.test.js'
+      - 'wide-opaque-english-2.test.js'
       - '.github/workflows/anti-cheat-language.yml'
   workflow_dispatch:
 
@@ -15,7 +16,7 @@ permissions:
 jobs:
   falsification:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -23,3 +24,4 @@ jobs:
           node-version: '24'
       - run: node anti-cheat-language.test.js
       - run: node wide-opaque-english.test.js
+      - run: node wide-opaque-english-2.test.js
