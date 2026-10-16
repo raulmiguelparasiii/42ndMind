@@ -72,8 +72,10 @@ assert(recurrentBySig.get(subsetSig)?.occurrence_count>=2,'same lower relation d
 assert(recurrentBySig.get(neqSig)?.occurrence_count>=2,'same lower relation did not recur across intent spaces');
 
 // Surface language can remain attached to an unresolved whole while exposing
-// only the mathematics that has actually stabilized. The bridge still owns no
-// copied graph or local status.
+// only the mathematics that has actually stabilized. The base bridge stays
+// conservative: a pending space with no independently usable whole candidate is
+// unresolved. This derived view may expose warranted lower mathematics without
+// changing that upstream whole-intent verdict.
 const Ustate={
   whole:1,
   relations:{xi:{support:1,lexical:{'txt:u:opaque':1}}},
@@ -82,7 +84,7 @@ const Ustate={
 };
 const B=oneEnglishMathBridge();
 bindEnglishMathSpace(B,Ustate,L,'xi','muA');
-assert.strictEqual(mathForRelation(B,Ustate,L,'xi').status,'ambiguous');
+assert.strictEqual(mathForRelation(B,Ustate,L,'xi').status,'unresolved');
 const surface=stabilizedMathForRelation(B,Ustate,L,'xi',opts);
 assert.strictEqual(surface.status,'partially-stabilized-math');
 const surfaceSigs=new Set(surface.stabilized_relations.map(x=>x.signature));
