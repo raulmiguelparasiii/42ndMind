@@ -96,6 +96,7 @@ generic mathematical type checking                          demonstrated on curr
 recursive nested intent composition                          all 13 current candidates through one live math-hypothesis authority
 opaque live mathematical alternative spaces                 bounded correction/convergence demonstrated
 categorical relation stabilization inside unresolved spaces bounded complete-constraint/recurrent relation demonstration
+live reuse/refactoring of stabilized complete relations      bounded correction/restore demonstration
 full arbitrary abstract/compositional intention anatomy     not yet demonstrated
 all Stone structures grounded from unrestricted raw reality not demonstrated
 universal mathematical language                             target, not established result
@@ -651,16 +652,90 @@ that recurrence alone grounds semantics in reality, or that the current operator
 vocabulary is metaphysically final.
 ```
 
-## 17. Current frontier
+## 17. Live reuse of stabilized relations inside later intents
 
-Do not claim completion. Major open fronts:
+PR #29, merge `7a27badaf8bbf23b6ad04119126023fd4812e9d0`, adds `universal-relation-reuse.js` as a **connection** over the existing stabilization field. It creates no Universal-Language relation registry, copied semantic definition, or local truth/status authority.
+
+A later intent may compress a complete asserted mathematical constraint through a currently stabilized canonical relation signature:
+
+```text
+complete local occurrence
+ -> canonical stabilized relation signature
+ -> relation-use handle
+```
+
+Each use stores two things only:
+
+```text
+canonical relation signature
+local mathematical occurrence
+```
+
+The signature supplies structural identity. The occurrence preserves the higher intent's actual variable binding. The occurrence is a use-site instantiation, not a copied semantic definition.
+
+Top-level conjunction structure may be factored into reusable relation uses while unmatched complete constraints remain raw. Nested subformulae are not silently promoted into asserted relations.
+
+`expandFactoredIntent(...)` reconstructs the exact original mathematical intent from the use-site occurrences and raw remainder. Factorization is therefore compression/reuse, not replacement of the underlying mathematics.
+
+`inspectFactoredIntent(...)` derives current validity live from the current stabilized relation field. No `active`, `status`, or revision flag is stored on the factorization. If a lower relation ceases to be stabilized after upstream correction:
+
+```text
+relation-use becomes stale
+ -> local occurrence expands back to raw mathematics
+ -> higher intent remains mathematically intact
+ -> refresh drops the stale handle
+```
+
+If the same canonical relation later becomes warranted again from another live space, the old signature becomes live again and the raw intent can refactor through it without semantic rebinding.
+
+The reuse view deliberately asks the existing stabilizer only for categorical complete relations and short-circuits expensive provisional common-core diagnostics. This is an optimization of a read path, not a new stabilization mechanism. Graph-only common structural cores remain provisional and cannot become reusable relation dependencies.
+
+The bounded falsification drives correction only through upstream math-space contact and verifies:
+
+```text
+two stabilized complete lower relations are reused inside a later intent
+unmatched complete constraint remains raw
+factorization reconstructs the exact original anonymous math graph
+arbitrary variable renaming preserves reusable relation identity
+incomplete nonmatching contact leaves live dependencies intact
+complete upstream countercontact makes downstream relation uses stale
+refresh safely expands stale handles back to raw mathematics
+higher intent math is unchanged by lower-relation correction
+later recurrence of the same canonical relations restores/refactors reuse
+no semantic family names enter stabilization or reuse
+whole = 1
+```
+
+This closes the immediate stabilization-to-vocabulary loop:
+
+```text
+intent alternatives
+ -> warranted common complete relations stabilize
+ -> recurring canonical relations become reusable structural vocabulary
+ -> later intents factor through that vocabulary
+ -> lower correction reopens/decompresses dependent factorizations
+ -> corrected recurrence can compact them again
+```
+
+Evidence boundary:
+
+```text
+This demonstrates bounded live reuse and correction propagation for complete
+stabilized mathematical relations. It does not autonomously invent every missing
+relation, prove that every human intent has the correct mathematical anatomy,
+or turn a reusable handle into independent semantic authority.
+```
+
+## 18. Current frontier
+
+Do not claim empirical or metaphysical completion. Major open fronts:
 
 ```text
 independent reality/formal support for the 13 abstract candidate anatomies
 stronger evidence that candidate relation decompositions are correct rather than merely coherent
 generic candidate generation/correction beyond bounded conjunctive ablation
-recursive factoring/reuse of stabilized lower relations as live definitions/dependencies
 complete-relation recovery/refactoring from graph-only structural invariants
+using stabilized reusable relations directly in generic candidate proposal/generation
 richer recursive composition across structurally different meanings using the one live authority
 open questions beyond yes/no partitions
 conditional and counterfactual belief/intention
@@ -669,7 +744,7 @@ permission/denial/normative authority
 strong negation/quantification/modality anatomy
 general action intention beyond the 16 bounded executable families
 arbitrary compositional/discourse English
-cross-language convergence into the same stabilized math structures
+cross-language convergence into the same stabilized reusable math structures
 autonomous relation discovery without an LLM proposer
 reality/formal validation of newly proposed lower relations
 reality grounding of the remaining Stone structures
@@ -680,9 +755,9 @@ proof/disproof of a complete universal structural normal form
 proof/disproof of universality for every possible meaning/relation
 ```
 
-Immediate next technical direction: keep the one live hypothesis authority and make stabilized lower relations themselves reusable, corrigible inputs to subsequent candidate generation, recursive definitions, and cross-expression convergence. Use provisional graph-only invariants to propose complete relational factorizations rather than silently treating serialization fragments as semantics. Increase generic proposition/quantifier/modality structure and correction operators only when a concrete structural failure requires them. Use formal or reality contact to discriminate live alternatives and validate proposed relations. Do not merely add more family names, do not reintroduce copied downstream semantic/status authority, and do not treat richer toy sensory worlds as the prerequisite for Universal-Language progress.
+Immediate next technical direction: use the now-reusable stabilized relation vocabulary inside generic candidate generation and correction, so new meanings can be proposed directly in terms of already-warranted lower relations plus explicit unresolved remainder. Use provisional graph-only invariants to propose complete relational factorizations rather than silently treating serialization fragments as semantics. Increase generic proposition/quantifier/modality structure only when a concrete structural failure requires it. Use formal or reality contact to discriminate live alternatives and validate proposed relations. Do not merely add more family names, do not reintroduce copied downstream semantic/status authority, and do not treat richer toy sensory worlds as the prerequisite for Universal-Language progress.
 
-## 18. Evidence discipline
+## 19. Evidence discipline
 
 Keep these non-identities explicit:
 
@@ -693,6 +768,8 @@ whole-intent ambiguity != surface unresolvedness
 surface unresolvedness != absence of stabilized lower mathematics
 shared graph fragment != complete mathematical relation
 stabilized lower relation != resolved whole intent
+relation-use handle != independent semantic authority
+stale reusable relation != destroyed higher intent
 recurrence across intents != empirical semantic grounding
 encoding/address != mathematical anatomy
 candidate anatomy != stabilized semantic equivalence
@@ -709,7 +786,7 @@ Names/dictionaries are teaching or display handles. They do not define mathemati
 
 With a score, state denominator and supervision/leakage conditions. Never describe `54/56` or `83/88` as a percentage of English.
 
-## 19. Context-loss procedure
+## 20. Context-loss procedure
 
 This procedure is unconditional; model confidence is not a substitute for repository recovery. Before changing architecture or declaring a capability absent:
 
