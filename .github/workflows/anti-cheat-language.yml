@@ -7,6 +7,7 @@ on:
       - 'relational-math.js'
       - 'stone-closed-math.js'
       - 'stone-reality-contact.js'
+      - 'stone-referent-frame.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
       - 'anti-cheat-language.test.js'
@@ -17,6 +18,7 @@ on:
       - 'stone-pole-math.test.js'
       - 'stone-closed-math.test.js'
       - 'empathy-reality-contact.test.js'
+      - 'stone-referent-frame.test.js'
       - 'relation-hypotheses.test.js'
       - 'relational-normal-form.test.js'
       - 'UNIVERSAL_LANGUAGE_TRACK.md'
@@ -44,5 +46,6 @@ jobs:
       - run: node stone-pole-math.test.js
       - run: node stone-closed-math.test.js
       - run: node empathy-reality-contact.test.js
+      - run: node stone-referent-frame.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
