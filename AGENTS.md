@@ -184,7 +184,7 @@ richer thought/pragmatic intent candidate anatomy           13 distinct candidat
 corrigibility for full anonymous mathematical graphs        demonstrated
 bounded English -> live corrigible candidate math            13/13 through generic contrastive bridge; base F 10/13
 generic mathematical type checking                          demonstrated on current candidate/Stone math
-recursive nested mathematical content                       demonstrated via QUOTE/EXTENSION
+recursive nested mathematical content across 13 candidates  demonstrated through one live math-hypothesis authority
 full arbitrary abstract/compositional intention anatomy     not demonstrated
 all Stone structures grounded from unrestricted raw reality not demonstrated
 universal mathematical language                             target, not established result
@@ -214,11 +214,13 @@ Do not add a new mechanism merely because a downstream component needs a capabil
 
 `relation-hypotheses.js` is the older corrigible ledger for anonymous O0..O10 motifs.
 
-`math-hypotheses.js` is the current correction mechanism for full anonymous `universal-math-graph` candidate structures. It already provides open/supported/defeated/contested/usable status, targeted evidence, incomplete-evidence preservation, complete support/counterevidence, subgraph support, candidate revision, replay of all stored evidence after revision, and alpha-equivalent proposal merging. **For richer mathematical candidates, this ledger is the authoritative corrigibility source unless a later documented replacement explicitly supersedes it.**
+`math-hypotheses.js` is the current correction mechanism for full anonymous `universal-math-graph` candidate structures. It provides open/supported/defeated/contested/usable status, targeted evidence, incomplete-evidence preservation, complete support/counterevidence, subgraph support, candidate revision, replay of all stored evidence after revision, alpha-equivalent proposal merging, and the current source-expression/composition interface for any candidate that can participate in larger formulas. **For richer mathematical candidates, this ledger is the sole live corrigibility/status authority unless a later documented replacement explicitly supersedes it.**
 
-`abstract-intent-kernel.js` contains the current 13 candidate mathematical anatomies. These are proposer-side candidate definitions, not semantic authority.
+`abstract-intent-kernel.js` contains the current 13 proposer-side candidate mathematical anatomies and generic composition-port proposals. These are scaffolding for proposing a candidate into the ledger, not a second semantic or correction authority.
 
 `english-math-bridge.js` intentionally stores an opaque surface-relation reference -> opaque math-hypothesis ID and dereferences the current graph live from `math-hypotheses.js`; it does not freeze a copied math definition. Revision/defeat can therefore suspend an old English->math attachment, and later support can restore the revised math without reteaching English. This live-dereference design is an important precedent: **prefer one live authority over copied local truth.**
+
+`recursive-intent-composition.js` follows the same rule. Recursive nodes store only an opaque math-hypothesis reference plus subject/content references. Every compilation dereferences the current usable hypothesis from `math-hypotheses.js`; the recursive state has no copied candidate definitions, no local `active` flags, and no local revision/status authority.
 
 `universal-math-types.js` is the content-neutral mathematical type checker. It knows generic operator contracts, not Stone poles or semantic intent-family truth.
 
@@ -270,26 +272,15 @@ Do not use `r` as development. The older helper `delta(a,b)=(a-b)/(a+b)` / surfa
 
 The current Universal Language Stone kernel also preserves entity/referent/orientation, anonymous opposed pairs, the octahedral L1 bound, L1 development, L2 experience, null/interior/stance, realization, `L_perp=|x|+|z|`, `F_perp=sqrt(x^2+z^2)`, `L2^2=F_perp^2+y^2`, maturity/collapse, vertical sign regions, evidence-warranted region distinct from actual `Phi(q,r)`, contextual emphasis distinct from structural displacement, and surface decoding. This is mathematical serialization/equivalence, not an evidence->human-coordinate psychometric instrument.
 
-### Recursive composition — genuine result and current architectural defect
+### Recursive composition — result, failure, and resolved authority
 
 PR #22 (merge `704f88f776553531096cdc9a42676935aaa37f07`) introduced generic type checking and the first bounded recursive mathematical composition. A clause may take another clause's full mathematical formula as first-class content. `belief(P)`, `belief(doubt(P))`, and `doubt(belief(P))` have distinct anonymous mathematical structure. Subject identity is structural while arbitrary renaming is irrelevant. The inner formula is embedded through `QUOTE`/`EXTENSION`, not by family name, string, hash, or frozen graph signature.
 
-PR #24 (merge `9b952222cab07641a1e48abc4678ededfda00a9f`) generalized this recursive construction across all 13 current candidate anatomies. The all-13 compositional extension itself is useful and should be preserved. However, PR #24 also exposed a serious architecture mistake that must be corrected before building further on that path.
+PR #24 (merge `9b952222cab07641a1e48abc4678ededfda00a9f`) generalized this recursive construction across all 13 current candidate anatomies, but also accidentally duplicated correction/status authority inside `recursive-intent-composition.js`: copied candidate templates, local `revision`/`active` fields, `reviseDefinition(...)`, and `setDefinitionActive(...)` existed beside the already-authoritative `math-hypotheses.js` ledger.
 
-The mistake: `recursive-intent-composition.js` creates a local recursive state containing copied candidate templates plus local `revision` and `active` fields, with `reviseDefinition(...)` and `setDefinitionActive(...)`. That duplicates corrigibility/status authority already owned by `math-hypotheses.js`.
+That defect was real. The PR #24 tests only proved the duplicate local correction mechanism worked; they did not prove that revision/defeat performed solely through `math-hypotheses.js` propagated into an already-existing recursive composition.
 
-Therefore two authorities can diverge:
-
-```text
-math-hypotheses ledger: candidate defeated/revised
-recursive local state:  old copied definition still active
-```
-
-The existing PR #24 tests do **not** disprove this risk. They call the recursive layer's own `reviseDefinition(...)` / `setDefinitionActive(...)`, proving that the duplicate local mechanism works. They do not prove that revision/defeat performed only through `math-hypotheses.js` automatically propagates into an already-existing recursive composition.
-
-This defect was discovered only after the user challenged the assistant's repeated use of phrases like “now add/use the same recursive mechanism” and asked whether context loss had caused already-solved functions to be reintroduced. Repository inspection then showed that the project memory had explicitly identified `math-hypotheses.js` as the current richer-candidate correction mechanism. The assistant had not read the required repository memory before making PR #24. This is a process failure as well as an architecture defect.
-
-**Do not build further on the duplicate correction authority.** The required cleanup is:
+PR #26 repairs the implementation rather than leaving this as a future note. The architecture is now:
 
 ```text
 one live math-hypothesis ledger
@@ -301,20 +292,13 @@ recursive nodes store only opaque hypothesis reference + subject/content referen
 compiler dereferences current live usable hypothesis mathematics
 ```
 
-If the authoritative ledger revises a lower hypothesis, recompilation of every enclosing meaning must change automatically without editing/retraining the enclosing node. If the ledger makes a hypothesis unusable through defeat/contestation, dependent composition must become unresolved/unavailable automatically. No separate recursive `active` flag or local semantic revision authority should be needed.
+`math-hypotheses.js` now owns the current graph, status, revision, source expressions, and optional generic composition interface on one candidate record. `recursive-intent-composition.js` has no local semantic definition/status authority. A graph-only authoritative revision clears source/composition scaffolding rather than allowing stale templates to survive.
 
-A required regression for the cleanup is:
+The repair regression drives **only** the upstream ledger. Across all 13 current candidates it revises through `reviseMath(...)`, verifies enclosing mathematical structure changes without editing the enclosing node, restores through the same ledger, and verifies the old enclosing structure returns. A complete targeted countercontact makes a candidate contested/unusable and automatically suspends enclosing composition; restoring support through the ledger recovers the old enclosing structure. No recursive-specific correction/status function participates.
 
-```text
-1. build nested meaning
-2. revise or defeat ONLY through math-hypotheses.js
-3. make ZERO recursive-specific correction/status calls
-4. verify inner and enclosing math change/suspend automatically
-5. restore/support through the same ledger
-6. verify enclosing math recovers without editing the outer node
-```
+The genuine recursive properties from PR #24 remain: full child-formula embedding, QUOTE/EXTENSION single-copy binding, nesting-order distinction, arbitrary-renaming invariance, same-vs-distinct subject identity, all-13 candidate composability, generic type validity, cycle rejection, zero semantic family labels in the pure graph, and bounded depth-six source construction/type checking. Do not overclaim depth-six exact canonical graph isomorphism; that remains a separate bounded computation.
 
-Preserve the genuinely solved recursive properties while removing duplicate authority: full child-formula embedding, QUOTE/EXTENSION single-copy binding, nesting-order distinction, arbitrary-renaming invariance, same-vs-distinct subject identity, all-13 candidate composability, generic type validity, cycle rejection, zero semantic family labels in the pure graph, and bounded depth-six source construction/type checking. Do not overclaim depth-six exact canonical graph isomorphism; that remains a separate bounded computation.
+The process failure that caused the defect remains important history: the assistant did not read the required repository memory before PR #24 even though it already named `math-hypotheses.js` as the richer-candidate correction mechanism. The repair does not erase that failure; it removes its runtime consequence and preserves the lesson below.
 
 ### Evidence discipline for this track
 
@@ -394,7 +378,7 @@ Search/recompression/storage bounds are engineering constraints, not cognitive a
 7. Stored bidirectional semantic bridges were weaker than actual use; partial contact and generic `M.current` completion were added so learned relations can genuinely translate incomplete contact without a language-specific branch.
 8. The first first-class-knowledge draft deactivated categorical schemas directly when a counterexample appeared. That passed tests but effectively smuggled T10 into `C`. It was rejected. The replacement makes T10 itself a relation in `M`; its self-defeat test proves the epistemic authority is in `M`, not generic machinery.
 9. The first compositional language-school run exposed dependency-blind finite retention: an equally predictive context-dependent `§` handle could crowd out a directly usable relation because tie ordering ignored what base information was needed to reconstruct the antecedent. A first attempted fix globally charged compressed relations for reconstruction cost; that broke legitimate compound semantic grounding and was rejected. The accepted fix leaves predictive/compression authority unchanged and uses ultimate dependency count **only as a tie-break among equal predictive candidates**. The unchanged language-school test then passed.
-10. **Universal Language context-loss / duplicate-authority failure (2026-10-16).** The repository already required reading project memory before changes and already documented `math-hypotheses.js` as the richer-candidate correction authority. The assistant failed to read those rules before PR #24, then added local recursive `revision/active` correction controls and described them as new capability. The user noticed the risk from context loss. Repository inspection confirmed the duplicate-authority defect. Preserve this failure permanently as a warning: subjective model confidence is never a valid trigger for whether repository recovery is necessary; recovery is mandatory before every architectural change.
+10. **Universal Language context-loss / duplicate-authority failure (2026-10-16).** The repository already required reading project memory before changes and already documented `math-hypotheses.js` as the richer-candidate correction authority. The assistant failed to read those rules before PR #24, then added local recursive `revision/active` correction controls and described them as new capability. The user noticed the risk from context loss. Repository inspection confirmed the duplicate-authority defect. PR #26 removed the duplicate runtime authority and connected recursive composition to the live ledger. Preserve this failure permanently as a warning: subjective model confidence is never a valid trigger for whether repository recovery is necessary; recovery is mandatory before every architectural change.
 
 ## Frozen checkpoints
 
@@ -519,14 +503,12 @@ This establishes bounded fixed-slot compositional language learning/generalizati
 
 ### Universal Language Track
 
-Before new semantic families or additional recursive machinery, first repair PR #24's duplicate corrigibility authority by wiring recursive composition to the live `math-hypotheses.js` ledger and adding the upstream-only correction regression described above.
-
-After that, legitimate open fronts include:
+The duplicate PR #24 corrigibility authority is resolved by PR #26; do not re-add local recursive correction/status state. Legitimate open fronts now include:
 
 ```text
 independent reality/formal support for the 13 abstract candidate anatomies
 stronger evidence that candidate decompositions are correct, not merely coherent
-recursive composition across structurally different meanings using one live authority
+richer recursive composition across structurally different meanings using the one live authority
 open questions beyond yes/no partitions
 conditional/counterfactual belief and intention
 categorical vs graded/probabilistic belief
@@ -548,13 +530,12 @@ proof/disproof of universality for every possible meaning/relation
 
 1. Preserve all frozen checkpoints.
 2. Obey the mandatory repository recovery protocol before any architecture change.
-3. Keep the language-school failure history as a regression: do not restore dependency-blind retention or weaken held-out composition tests.
-4. For the Universal Language Track, fix PR #24's duplicate correction/status authority before extending recursive intent work. Preserve the real composition result while making `math-hypotheses.js` the sole live richer-candidate correction authority.
-5. Extend the **same** first-class relation substrate only where a generic representational limitation is demonstrated, especially propositions, alternatives, live possibility sets, and variable-length relational expression.
-6. Make more formal OneLogic content executable through that generic substrate rather than theorem-specific code.
-7. Use the same substrate for source-mediated learning and richer language contact.
-8. Make stable concepts and meta-relations cheap query-relative handles instead of repeatedly scanning the full lifetime.
-9. Continue the existing single-life experiment for longer spans once scaling permits; inspect stabilization rather than adding cognitive modules.
-10. After every generic change, rerun self-correction, no-cheat structured knowledge, semantic translation/composition, Universal Language anti-cheat/corrigibility, micro-world agency, temporal, and later multi-seed falsification.
+3. Keep the language-school failure history and the PR #24 duplicate-authority failure as regressions; do not restore dependency-blind retention, weaken held-out composition tests, or reintroduce downstream correction authority.
+4. Extend the **same** first-class relation and live-hypothesis substrates only where a generic representational limitation is demonstrated, especially propositions, alternatives, live possibility sets, variable-length relational expression, and richer nested meaning.
+5. Make more formal OneLogic content executable through that generic substrate rather than theorem-specific code.
+6. Use the same substrate for source-mediated learning and richer language contact.
+7. Make stable concepts and meta-relations cheap query-relative handles instead of repeatedly scanning the full lifetime.
+8. Continue the existing single-life experiment for longer spans once scaling permits; inspect stabilization rather than adding cognitive modules.
+9. After every generic change, rerun self-correction, no-cheat structured knowledge, semantic translation/composition, Universal Language anti-cheat/corrigibility, micro-world agency, temporal, and later multi-seed falsification.
 
 Do not declare a capability proved because desired behavior appears once. Remove shortcuts, isolate the claim, and preserve earlier regressions.
