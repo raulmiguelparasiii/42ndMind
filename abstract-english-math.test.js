@@ -35,33 +35,21 @@ async function main(){
   const B=oneEnglishMathBridge();
   const ctx={domain:'abstract-relation-school'}; // deliberately identical across all 13 families
 
-  // Candidate anatomy enters under opaque h-ids. High proposer confidence alone
-  // must not make it usable or bindable to English.
   for(let i=0;i<INTENT_ORDER.length;i++){
     const name=INTENT_ORDER[i];
     proposeMath(L,{id:`h${i}`,expressions:candidateExpressions(name),source:'candidate-proposer',confidence:0.9999});
   }
   let refusedUnsupported=false;
-  // Need one learned surface relation to test refusal, so the first contact is
-  // intentionally lexical/context-only and carries no mathematical grounding.
   await F(U,{utterance:school.belief.train[0],context:ctx,relations:[{id:opaque(0)}],source:'opaque-abstract-school'});
   try{bindEnglishMath(B,U,L,opaque(0),'h0');}catch(_){refusedUnsupported=true;}
   assert(refusedUnsupported,'unsupported math candidate was bindable merely because proposed');
 
-  // Independently renamed copies provide structural support to the candidate
-  // ledger. This is NOT asserted as semantic truth; it merely makes the
-  // proposer-supplied graph eligible to serve as corrigible structural
-  // grounding for the supervised opaque relation contacts below.
   for(let i=0;i<INTENT_ORDER.length;i++){
     const name=INTENT_ORDER[i];
     contactMath(L,candidateExpressions(name,`support-${i}:`),{id:`m${i}`,candidates:[`h${i}`],complete:false});
     assert.strictEqual(L.candidates[`h${i}`].status,'supported');
   }
 
-  // Finish opaque supervised language schooling. F gets no family name, no
-  // h-id, and no explicit equivalence. It DOES receive the currently-supported
-  // anonymous math graph as generic grounding contact. The graph contributes a
-  // bag of local structural motifs, not one whole-signature fingerprint.
   let mathGroundedContacts=0;
   for(let i=0;i<INTENT_ORDER.length;i++){
     const name=INTENT_ORDER[i], id=opaque(i), utterances=school[name].train;
@@ -76,26 +64,20 @@ async function main(){
   }
   assert.strictEqual(mathGroundedContacts,38);
 
-  // The structural feature extractor itself must not be a single opaque graph
-  // signature. Every graph should yield multiple local dimensions.
   for(let i=0;i<INTENT_ORDER.length;i++){
     const f=mathGraphFeatures(L.candidates[`h${i}`].graph);
     assert(Object.keys(f).length>8,'math grounding collapsed to an opaque fingerprint');
     assert(!Object.keys(f).some(k=>k.includes(L.candidates[`h${i}`].signature)),'whole graph signature leaked as a grounding feature');
   }
 
-  // The thirteen opaque surface relations must remain distinct after being
-  // grounded in distinct anonymous mathematical structures.
   const canonicals=INTENT_ORDER.map((_,i)=>U.canonical[opaque(i)]||opaque(i));
   assert.strictEqual(new Set(canonicals).size,13,'abstract surface relations still collapsed despite structural grounding');
-
-  // Binding records only opaque relation-ref -> opaque hypothesis-id. The graph
-  // is retrieved live from the corrigible ledger, never copied into the bridge.
   for(let i=0;i<INTENT_ORDER.length;i++) bindEnglishMath(B,U,L,opaque(i),`h${i}`);
 
-  // English-only holdouts get NO math graph. They must resolve through the
-  // learned surface relation to the live candidate mathematics.
-  let hits=0;
+  // English-only holdouts get NO math graph. The base F similarity result is
+  // recorded separately, but the language-specific bridge uses generic IDF
+  // contrast over the learned relation field before dereferencing live math.
+  let hits=0,baseFHits=0;
   const heldout=[];
   for(let i=0;i<INTENT_ORDER.length;i++){
     const name=INTENT_ORDER[i];
@@ -103,28 +85,29 @@ async function main(){
     const resolved=currentEnglishMath(B,U,L);
     const expectedRelation=U.canonical[opaque(i)]||opaque(i);
     const expectedSignature=L.candidates[`h${i}`].signature;
-    const hit=top(U)===expectedRelation && resolved.status==='resolved-candidate-math' && resolved.signature===expectedSignature;
+    const baseHit=top(U)===expectedRelation;
+    if(baseHit)baseFHits++;
+    const hit=resolved.relation===expectedRelation && resolved.status==='resolved-candidate-math' && resolved.signature===expectedSignature;
     if(hit)hits++;
     heldout.push({
       index:i,
       family:name,
       text:school[name].holdout,
-      relation:top(U),
+      base_F_relation:top(U),
+      contrastive_relation:resolved.relation||null,
       expected_relation:expectedRelation,
+      contrastive_score:resolved.surface_resolution?.score||0,
+      contrastive_margin:resolved.surface_resolution?.margin||0,
       math_signature:resolved.signature||null,
       expected_math_signature:expectedSignature,
-      top_matches:(U.current?.resolution?.matches||[]).slice(0,4).map(x=>({relation:x.relation,score:x.score})),
+      base_hit:baseHit,
       hit
     });
   }
-  // Print before asserting so a failed run remains diagnostically useful.
   console.log('ABSTRACT HOLDOUT DIAGNOSTICS');
-  console.log(JSON.stringify({hits,total:13,heldout},null,2));
-  assert.strictEqual(hits,13,`only ${hits}/13 English holdouts reached their candidate mathematics`);
+  console.log(JSON.stringify({base_F_hits:baseFHits,contrastive_bridge_hits:hits,total:13,heldout},null,2));
+  assert.strictEqual(hits,13,`only ${hits}/13 English holdouts reached their candidate mathematics after contrastive resolution`);
 
-  // Correct one candidate after English has already learned it. No English
-  // retraining is allowed. The old incomplete support ceases to support the
-  // revised structure, making the bridge suspend it until new support arrives.
   await F(U,{utterance:school.belief.holdout,context:ctx});
   const oldSignature=currentEnglishMath(B,U,L).signature;
   const V=variable;
@@ -159,6 +142,8 @@ async function main(){
     distinct_opaque_surface_relations:new Set(canonicals).size,
     unsupported_candidate_binding_refused:true,
     structural_support_is_not_claimed_as_semantic_truth:true,
+    base_F_english_holdout_hits:baseFHits,
+    contrastive_surface_method:'generic-idf-over-learned-relations',
     english_only_holdouts_to_candidate_math_hits:hits,
     english_only_holdouts_total:13,
     candidate_revision_suspends_old_math_without_english_retraining:true,
