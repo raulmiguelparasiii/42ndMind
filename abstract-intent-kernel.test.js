@@ -42,11 +42,12 @@ assert(recurring.length>=3,'expected several recurring anonymous mathematical co
 assert(recurring[0].family_count>=10,'expected at least one broad cross-family mathematical relation');
 
 // Structural reuse: richer families literally preserve the mathematical
-// constraints of simpler candidate cores and add further relations.
+// constraints of simpler candidate cores and add further connected relations.
 const desireS=constraintSignatures('desire');
 const intendS=constraintSignatures('intend');
 assert(subsetOf(desireS,intendS),'intention candidate should preserve desire-ranking core');
-assert(intendS.size>desireS.size,'intention must add action-realization structure beyond desire');
+assert(candidateExpressions('intend').length>candidateExpressions('desire').length,'intention must add constraints beyond desire');
+assert(compiled[INTENT_ORDER.indexOf('intend')].graph.vertex_count>compiled[INTENT_ORDER.indexOf('desire')].graph.vertex_count,'intention must add connected mathematical structure beyond desire');
 
 const doubtS=constraintSignatures('doubt');
 assert(subsetOf(doubtS,constraintSignatures('consider')),'consideration should preserve unresolved possibility partition');
