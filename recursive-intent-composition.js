@@ -15,10 +15,10 @@
 // it without editing those outer nodes.
 
 const {
-  MOP, variable, app, validateExpr, compileMathGraph
+  MOP, variable, constant, app, validateExpr, compileMathGraph
 }=require('./universal-math-graph');
 
-const V=variable, A=app;
+const V=variable, C=constant, A=app;
 const eq=(a,b)=>A(MOP.EQ,a,b);
 const neq=(a,b)=>A(MOP.NEQ,a,b);
 const neg=a=>A(MOP.NEG,a);
@@ -32,15 +32,7 @@ const intersect=(a,b)=>A(MOP.INTERSECT,a,b);
 const complement=(a,U)=>A(MOP.COMPLEMENT,a,U);
 const quote=f=>A(MOP.QUOTE,f);
 const extension=(f,U)=>A(MOP.EXTENSION,f,U);
-const nonempty=S=>lt(variable('__zero'),card(S));
-
-// nonempty() above deliberately avoids a privileged semantic constant, but the
-// numeric zero must still be the actual cardinal lower bound. Replace the
-// placeholder with a literal constant at construction time so the source graph
-// carries ordinary mathematics rather than a named magic variable.
-const {constant}=require('./universal-math-graph');
-const C=constant;
-const nonemptySet=S=>lt(C(0),card(S));
+const nonempty=S=>lt(C(0),card(S));
 
 const SLOT=Object.freeze({CONTENT:'@content',UNIVERSE:'@universe',SUBJECT:'@subject'});
 const DEF=Object.freeze({BELIEF:0,DOUBT:1});
@@ -51,7 +43,7 @@ function beliefTemplate(){
   return [
     subset(P,U),
     eq(NP,complement(P,U)),
-    subset(K,U), nonemptySet(K),
+    subset(K,U), nonempty(K),
     subset(K,P),
     inSet(P,H),
     eq(frame,tuple(subject,K,H,P))
@@ -64,10 +56,10 @@ function doubtTemplate(){
   return [
     subset(P,U),
     eq(NP,complement(P,U)),
-    subset(K,U), nonemptySet(K),
+    subset(K,U), nonempty(K),
     eq(KP,intersect(K,P)),
     eq(KN,intersect(K,NP)),
-    nonemptySet(KP), nonemptySet(KN),
+    nonempty(KP), nonempty(KN),
     neg(inSet(P,H)), neg(inSet(NP,H)),
     eq(frame,tuple(subject,K,H,P))
   ];
@@ -98,7 +90,9 @@ function oneRecursiveIntentState(){
   };
 }
 
-function assertState(S){if(!S||S.whole!==1||!S.definitions||!S.nodes)throw new Error('invalid recursive intent state');}
+function assertState(S){
+  if(!S||S.whole!==1||!S.definitions||!S.nodes)throw new Error('invalid recursive intent state');
+}
 
 function addAtom(S,id,token=id){
   assertState(S);id=String(id);
@@ -168,9 +162,10 @@ function buildRecursiveSource(S,rootId,options={}){
     if(node.type===0){
       out={id,type:0,proposition:atomTerm(node.token),formula:null,depth:0};
     }else if(node.type===1){
-      const d=S.definitions[node.definition];if(!d)throw new Error(`missing recursive definition ${node.definition}`);
+      const d=S.definitions[node.definition];
+      if(!d)throw new Error(`missing recursive definition ${node.definition}`);
       const child=build(node.content);
-      // Atomic content is already a proposition-set. A clause-content is the
+      // Atomic content is already a proposition-set. Clause content is the
       // extension, in the shared universe, of the child's quoted full formula.
       // QUOTE preserves the actual child anatomy as a subexpression.
       const content=child.formula?extension(quote(child.formula),U):child.proposition;
@@ -182,7 +177,10 @@ function buildRecursiveSource(S,rootId,options={}){
       const prefix=`${ns}node:${id}:`;
       const constraints=d.template.map(e=>instantiate(e,bindings,prefix));
       const formula=and(...constraints);
-      out={id,type:1,definition:node.definition,definition_revision:d.revision,content:child,formula,proposition:extension(quote(formula),U),depth:child.depth+1};
+      out={
+        id,type:1,definition:node.definition,definition_revision:d.revision,
+        content:child,formula,proposition:extension(quote(formula),U),depth:child.depth+1
+      };
       nodeFormulas[id]=formula;
     }else throw new Error(`unknown recursive node type ${String(node.type)}`);
     visiting.delete(id);cache.set(id,out);return out;
@@ -228,5 +226,5 @@ module.exports={
   DEF,SLOT,oneRecursiveIntentState,addAtom,addClause,reviseDefinition,
   defaultDefinitionTemplate,recursiveIntentLegend,buildRecursiveSource,
   compileRecursiveIntent,anonymousRecursiveIntent,
-  helpers:{eq,neq,neg,and,inSet,subset,card,lt,tuple,intersect,complement,quote,extension,nonempty:nonemptySet,V,C,A}
+  helpers:{eq,neq,neg,and,inSet,subset,card,lt,tuple,intersect,complement,quote,extension,nonempty,V,C,A}
 };
