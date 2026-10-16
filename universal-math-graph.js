@@ -4,8 +4,8 @@
 // the Universal Language Track.
 //
 // Surface variable names are scaffolding only. The compiled object is a finite
-// directed labelled graph in which mathematical operators/argument positions
-// are relation labels and all expression nodes are anonymous. Canonical graph
+// directed labelled graph in which mathematical operators/argument roles are
+// relation labels and all expression nodes are anonymous. Canonical graph
 // labelling therefore removes variable names, construction order, and node
 // identities. This is a serialization substrate, not a claim that the current
 // math operator vocabulary is metaphysically final.
@@ -35,7 +35,7 @@ const MOP = Object.freeze({
   DELTA:19
 });
 
-const COMMUTATIVE = new Set([MOP.ADD,MOP.EQ,MOP.AND]);
+const COMMUTATIVE = new Set([MOP.ADD,MOP.EQ,MOP.AND,MOP.MAX]);
 
 const variable = name => Object.freeze({kind:'var',name:String(name)});
 const constant = value => Object.freeze({kind:'const',value});
@@ -91,7 +91,10 @@ function compileMathGraph(expressions,options={}){
     }
     const n=node();
     self(['o',expr.op],n);
-    expr.args.forEach((arg,i)=>graph.edges.push([['a',i],n,walk(arg)]));
+    expr.args.forEach((arg,i)=>{
+      const role=COMMUTATIVE.has(expr.op)?['a','*']:['a',i];
+      graph.edges.push([role,n,walk(arg)]);
+    });
     return n;
   }
 
@@ -117,4 +120,4 @@ function equivalentMathSystems(a,b,options={}){
   return {equivalent:A.signature===B.signature,A,B};
 }
 
-module.exports={MOP,variable,constant,app,validateExpr,canonicalSourceExpr,compileMathGraph,equivalentMathSystems};
+module.exports={MOP,COMMUTATIVE,variable,constant,app,validateExpr,canonicalSourceExpr,compileMathGraph,equivalentMathSystems};
