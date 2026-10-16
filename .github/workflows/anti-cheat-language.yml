@@ -31,6 +31,7 @@ on:
       - 'universal-math-types.test.js'
       - 'recursive-intent-composition.test.js'
       - 'math-hypotheses.test.js'
+      - 'meaning-space.test.js'
       - 'abstract-english-math.test.js'
       - 'relation-hypotheses.test.js'
       - 'relational-normal-form.test.js'
@@ -66,5 +67,6 @@ jobs:
       - run: node universal-math-types.test.js
       - run: node recursive-intent-composition.test.js
       - run: node math-hypotheses.test.js
+      - run: node meaning-space.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
