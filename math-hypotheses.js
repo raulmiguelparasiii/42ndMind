@@ -115,6 +115,9 @@ function candidateMaterial(input,priorComposition=null,options={}){
   const graph=asCompiledMath(rawMath,options);
   const expressions=sourceExpressions(input);
 
+  // If both a compiled graph and source expressions are supplied, they must
+  // describe the same mathematics. Never let a stale source template ride next
+  // to a different authoritative graph.
   if(expressions && input && !Array.isArray(input) && input.graph!==undefined){
     const fromSource=compileMathGraph(expressions,options);
     if(fromSource.signature!==graph.signature) throw new Error('source expressions do not match supplied math graph');
@@ -125,6 +128,9 @@ function candidateMaterial(input,priorComposition=null,options={}){
   if(expressions){
     if(supplied.present) composition=normalizeComposition(supplied.value,expressions);
     else if(priorComposition){
+      // Preserve the old interface only if every referenced variable still
+      // exists in the revised source. If it no longer fits, composition becomes
+      // explicitly unavailable rather than silently binding stale semantics.
       try{composition=normalizeComposition(priorComposition,expressions);}catch{composition=null;}
     }
   }else if(supplied.present && supplied.value!==null){
@@ -135,6 +141,8 @@ function candidateMaterial(input,priorComposition=null,options={}){
 
 function edgeKey(label,a,b){return `${stable(label)}|${String(a)}|${String(b)}`;}
 
+// Generic injective directed labelled subgraph match. Exact canonical identity
+// exits immediately. The matcher knows nothing about English or intent kinds.
 function matchCompiledSubgraph(patternInput,graphInput,options={}){
   const pattern=asCompiledMath(patternInput,options);
   const graph=asCompiledMath(graphInput,options);
@@ -211,6 +219,9 @@ function proposeMath(L,proposal,options={}){
   if(existing){
     const c=L.candidates[existing];
     c.proposals.push(record);
+    // Equivalent graph proposals may contribute a source representation when
+    // the existing record only had a compiled graph. Mathematical identity is
+    // unchanged; this merely restores inspectable/recomposable source form.
     if(!c.expressions && material.expressions){
       c.expressions=material.expressions;
       c.composition=material.composition;
@@ -247,6 +258,9 @@ function evaluateMathCandidate(c,evidence,options={}){
   if(!targetsCandidate(metadata,c)) return {kind:'untested'};
   const match=matchCompiledSubgraph(c.graph,evidence.graph,options);
   if(match) return {kind:'support',match};
+  // Space contacts are positive structural support for the mathematical object,
+  // but a failure to fit one referent does not globally falsify that object.
+  // The assignment-level negative is derived by currentMathSpace instead.
   if(metadata.positive_only===true) return {kind:'unresolved',reason:'positive-only-contact-nonmatch'};
   return metadata.complete===true
     ? {kind:'defeat',reason:'complete-targeted-counterexample'}
@@ -311,6 +325,9 @@ function reviseMath(L,id,input,note=null,options={}){
   return c;
 }
 
+// Read-only snapshot for downstream consumers. In particular, recursive
+// composition uses this function on every compilation so correction/status is
+// owned by this ledger alone.
 function currentMathHypothesis(L,id,requirements={}){
   assertLedger(L);
   const c=L.candidates[String(id)];
@@ -326,6 +343,8 @@ function currentMathHypothesis(L,id,requirements={}){
     spaces:(c.spaces||[]).slice()
   };
 }
+
+// ---------- Opaque alternative spaces over the same live candidate authority ----------
 
 function ensureMathSpace(L,id){
   assertLedger(L); id=String(id);
@@ -344,6 +363,8 @@ function addMathAlternative(L,spaceId,candidateId,options={}){
     s.candidates.push(c.id);
     if(!Array.isArray(c.spaces))c.spaces=[];
     if(!c.spaces.includes(s.id))c.spaces.push(s.id);
+    // Historical space evidence is already in the one ledger. Recompute now so
+    // a late-added alternative cannot evade earlier positive support/contact.
     recomputeMathCandidate(L,c,options);
     L.audit.push({step:++L.step,kind:'space-alternative-added',space:s.id,id:c.id});
   }
@@ -396,6 +417,10 @@ function currentMathSpace(L,spaceId,options={}){
   const suspended=alternatives.filter(a=>a.status==='supported' && !a.globally_usable);
   const eliminated=alternatives.filter(a=>a.status==='defeated'||a.status==='contested'||a.global_status==='defeated'||a.global_status==='contested');
 
+  // If two supported candidates are nested, the weaker one carries no extra
+  // discrimination while the stronger one is still supported by all current
+  // space contact. Keep only structurally maximal live candidates for current
+  // resolution. This is a derived view; no candidate is deleted or deactivated.
   const maximal=viable.filter(a=>{
     const ca=L.candidates[a.id];
     return !viable.some(b=>b.id!==a.id && strictMathSubgraph(ca,L.candidates[b.id],options));
@@ -465,6 +490,14 @@ function proposeRefinement(L,spaceId,parent,expressions,options={}){
   return {candidate:c,created:true,added_to_space:true};
 }
 
+// Bounded structural correction search. A complete space counterexample never
+// edits the failed candidate in place. It proposes strictly weaker one-step
+// conjunctive alternatives into the same live ledger, replays all historical
+// evidence through that authority, and continues only while those alternatives
+// are also defeated. New structure can still arrive from any proposer; this
+// routine only tests whether deleting unsupported conjunctive structure is
+// sufficient. It therefore cannot invent missing relations or claim semantic
+// completeness.
 function refineMathSpace(L,spaceId,evidenceId,options={}){
   assertLedger(L); spaceId=String(spaceId); evidenceId=String(evidenceId);
   const s=L.spaces[spaceId];
