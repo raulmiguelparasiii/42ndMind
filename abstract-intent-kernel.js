@@ -265,10 +265,37 @@ const BUILDERS = Object.freeze({
   assertion:assertProposition,command,promise,obligation
 });
 
+// Proposer-side generic composition ports. These do not make the candidate true;
+// they only identify how the current source expression system can be inserted
+// into a larger mathematical formula. The authoritative live copy is stored on
+// the candidate record in math-hypotheses.js, so revisions can invalidate or
+// update this interface instead of leaving recursive composition with a copy.
+const COMPOSITION = Object.freeze({
+  belief:Object.freeze({content:'P',universe:'U',subject:null,frame:Object.freeze(['K','H','P'])}),
+  doubt:Object.freeze({content:'P',universe:'U',subject:null,frame:Object.freeze(['K','H','P'])}),
+  consider:Object.freeze({content:'P',universe:'U',subject:null,frame:Object.freeze(['K','branches','scratch','P'])}),
+  imagine:Object.freeze({content:'P',universe:'U',subject:null,frame:Object.freeze(['K','HYP','scratch','P'])}),
+  remember:Object.freeze({content:'P',universe:'U',subject:null,frame:Object.freeze(['history','held','P'])}),
+  infer:Object.freeze({content:'conclusion',universe:'U',subject:null,frame:Object.freeze(['premise','conclusion','H1'])}),
+  desire:Object.freeze({content:'P',universe:'U',subject:'agent',frame:null}),
+  intend:Object.freeze({content:'P',universe:'U',subject:'agent',frame:null}),
+  question:Object.freeze({content:'P',universe:'U',subject:'speaker',frame:null}),
+  assertion:Object.freeze({content:'P',universe:'U',subject:'speaker',frame:null}),
+  command:Object.freeze({content:'P',universe:'U',subject:'speaker',frame:null}),
+  promise:Object.freeze({content:'P',universe:'U',subject:'speaker',frame:null}),
+  obligation:Object.freeze({content:'P',universe:'U',subject:'agent',frame:null})
+});
+
 function candidateExpressions(name,tag='') {
   const f=BUILDERS[name];
   if(!f) throw new Error(`unknown candidate family ${String(name)}`);
   return f(tag);
+}
+
+function candidateComposition(name){
+  const x=COMPOSITION[name];
+  if(!x) throw new Error(`unknown candidate family ${String(name)}`);
+  return {content:x.content,universe:x.universe,subject:x.subject,frame:x.frame?x.frame.slice():null};
 }
 
 function compileIntentCandidates(options={}) {
@@ -323,8 +350,8 @@ function equivalentCandidateUnderRename(name,a='A:',b='B:',options={}) {
 }
 
 module.exports={
-  INTENT_ORDER, BUILDERS, candidateExpressions, compileIntentCandidates,
-  anonymousIntentBasis, intentLegend, recurringConstraintMotifs,
+  INTENT_ORDER, BUILDERS, COMPOSITION, candidateExpressions, candidateComposition,
+  compileIntentCandidates, anonymousIntentBasis, intentLegend, recurringConstraintMotifs,
   equivalentCandidateUnderRename,
   helpers:{eq,neq,lt,neg,and,inSet,subset,card,tuple,apply,transition,intersect,union,complement,nonempty}
 };
