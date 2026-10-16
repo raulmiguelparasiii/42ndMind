@@ -111,10 +111,10 @@ contactMathSpace(L,'muA',[eq(V('m'),V('n'))],{id:'muA-incomplete',complete:false
 const afterIncomplete=stabilizedIntent(L,'muA',opts);
 assert(afterIncomplete.stabilized_relations.some(x=>x.signature===subsetSig),'incomplete contact erased warranted relation');
 
-// Graph-only candidates have no proposer-side source expressions. Their whole
-// meaning may still be unresolved because candidate support is not invented.
-// Stabilization nevertheless has a structural fallback: the exact bounded
-// maximum common subgraph plus independent space-contact warrant for that core.
+// Graph-only candidates have no proposer-side source expressions. The space can
+// still be genuinely ambiguous when both assignments are live. Stabilization
+// therefore falls back to the exact bounded maximum common subgraph plus
+// independent space-contact warrant for that common structure.
 const R=V('R'),S=V('S'),T=V('T');
 const g1=compileMathGraph([subset(R,T),lt(card(R),card(T))]);
 const g2=compileMathGraph([subset(R,T),eq(card(R),card(S))]);
@@ -122,9 +122,9 @@ proposeMathAlternative(L,'muC',{id:'hc1',graph:g1,source:'graph-only'});
 proposeMathAlternative(L,'muC',{id:'hc2',graph:g2,source:'graph-only'});
 contactMathSpace(L,'muC',[subset(R,T),lt(card(R),card(T)),eq(card(R),card(S))],{id:'muC-contact',complete:true},{autoRefine:false});
 const sC=stabilizedIntent(L,'muC',opts);
-assert.strictEqual(sC.status,'unresolved','derived stabilization must not promote open whole candidates');
+assert.strictEqual(sC.status,'ambiguous');
 assert.strictEqual(sC.common_core.search_complete,true);
-assert(sC.stabilized_relations.some(x=>x.kind==='maximum-common-relational-core'),'graph-only unresolved whole exposed no warranted structural core');
+assert(sC.stabilized_relations.some(x=>x.kind==='maximum-common-relational-core'),'graph-only ambiguity exposed no warranted structural core');
 
 // Bounded search failure is explicit. A tiny state budget must never return a
 // guessed pseudo-core and call it stabilized meaning.
@@ -148,7 +148,7 @@ const report={
   surface_can_expose_partial_stable_math_before_whole_resolution:true,
   discriminating_contact_resolves_whole_without_erasing_recurring_lower_relations:true,
   incomplete_contact_remains_unknown:true,
-  graph_only_unresolved_whole_preserves_structural_fallback:true,
+  graph_only_structural_fallback:true,
   bounded_search_never_guesses_on_truncation:true,
   semantic_family_labels_in_stabilization:0,
   recurrent_relation_structures:field.metrics.recurrent_relation_structures,
