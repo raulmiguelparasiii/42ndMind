@@ -1,7 +1,7 @@
 'use strict';
 
 const assert=require('assert');
-const {one,F}=require('./universal-language');
+const {one,F,mathGraphFeatures}=require('./universal-language');
 const {MOP,variable,app}=require('./universal-math-graph');
 const {INTENT_ORDER,candidateExpressions}=require('./abstract-intent-kernel');
 const {oneMathHypothesisLedger,proposeMath,contactMath,reviseMath}=require('./math-hypotheses');
@@ -33,7 +33,7 @@ async function main(){
   const U=one({config:{min_equivalence_support:2,history_limit:4096,candidate_floor:0.04}});
   const L=oneMathHypothesisLedger();
   const B=oneEnglishMathBridge();
-  const ctx={domain:'abstract-relation-school'}; // identical across all 13 families
+  const ctx={domain:'abstract-relation-school'}; // deliberately identical across all 13 families
 
   // Candidate anatomy enters under opaque h-ids. High proposer confidence alone
   // must not make it usable or bindable to English.
@@ -42,38 +42,59 @@ async function main(){
     proposeMath(L,{id:`h${i}`,expressions:candidateExpressions(name),source:'candidate-proposer',confidence:0.9999});
   }
   let refusedUnsupported=false;
-  // Need one learned surface relation to test refusal, so teach one contact first.
+  // Need one learned surface relation to test refusal, so the first contact is
+  // intentionally lexical/context-only and carries no mathematical grounding.
   await F(U,{utterance:school.belief.train[0],context:ctx,relations:[{id:opaque(0)}],source:'opaque-abstract-school'});
   try{bindEnglishMath(B,U,L,opaque(0),'h0');}catch(_){refusedUnsupported=true;}
   assert(refusedUnsupported,'unsupported math candidate was bindable merely because proposed');
 
-  // Finish opaque supervised language schooling. F gets no semantic family name,
-  // no candidate graph, and no explicit inter-family equivalence.
-  for(let i=0;i<INTENT_ORDER.length;i++){
-    const name=INTENT_ORDER[i], id=opaque(i), utterances=school[name].train;
-    const start=i===0?1:0;
-    for(let j=start;j<utterances.length;j++){
-      await F(U,{utterance:utterances[j],context:ctx,relations:[{id}],source:'opaque-abstract-school'});
-    }
-  }
-
-  // The thirteen opaque surface relations must remain distinct before any math
-  // is attached; otherwise the bridge could hide a language-side collision.
-  const canonicals=INTENT_ORDER.map((_,i)=>U.canonical[opaque(i)]||opaque(i));
-  assert.strictEqual(new Set(canonicals).size,13,'opaque English relations collapsed before math attachment');
-
-  // A second, independently renamed mathematical representation supplies only
-  // structural support to the corrigible ledger. It is deliberately marked
-  // incomplete: this demonstrates the correction path, not semantic truth.
+  // Independently renamed copies provide structural support to the candidate
+  // ledger. This is NOT asserted as semantic truth; it merely makes the
+  // proposer-supplied graph eligible to serve as corrigible structural
+  // grounding for the supervised opaque relation contacts below.
   for(let i=0;i<INTENT_ORDER.length;i++){
     const name=INTENT_ORDER[i];
     contactMath(L,candidateExpressions(name,`support-${i}:`),{id:`m${i}`,candidates:[`h${i}`],complete:false});
     assert.strictEqual(L.candidates[`h${i}`].status,'supported');
-    bindEnglishMath(B,U,L,opaque(i),`h${i}`);
   }
 
-  // English-only holdouts now resolve through their learned opaque surface
-  // relation to the live candidate mathematical graph.
+  // Finish opaque supervised language schooling. F gets no family name, no
+  // h-id, and no explicit equivalence. It DOES receive the currently-supported
+  // anonymous math graph as generic grounding contact. The graph contributes a
+  // bag of local structural motifs, not one whole-signature fingerprint.
+  let mathGroundedContacts=0;
+  for(let i=0;i<INTENT_ORDER.length;i++){
+    const name=INTENT_ORDER[i], id=opaque(i), utterances=school[name].train;
+    const start=i===0?1:0;
+    for(let j=start;j<utterances.length;j++){
+      await F(U,{
+        utterance:utterances[j],context:ctx,math_graph:L.candidates[`h${i}`].graph,
+        relations:[{id}],source:'opaque-abstract-school'
+      });
+      mathGroundedContacts++;
+    }
+  }
+  assert.strictEqual(mathGroundedContacts,38);
+
+  // The structural feature extractor itself must not be a single opaque graph
+  // signature. Every graph should yield multiple local dimensions.
+  for(let i=0;i<INTENT_ORDER.length;i++){
+    const f=mathGraphFeatures(L.candidates[`h${i}`].graph);
+    assert(Object.keys(f).length>8,'math grounding collapsed to an opaque fingerprint');
+    assert(!Object.keys(f).some(k=>k.includes(L.candidates[`h${i}`].signature)),'whole graph signature leaked as a grounding feature');
+  }
+
+  // The thirteen opaque surface relations must remain distinct after being
+  // grounded in distinct anonymous mathematical structures.
+  const canonicals=INTENT_ORDER.map((_,i)=>U.canonical[opaque(i)]||opaque(i));
+  assert.strictEqual(new Set(canonicals).size,13,'abstract surface relations still collapsed despite structural grounding');
+
+  // Binding records only opaque relation-ref -> opaque hypothesis-id. The graph
+  // is retrieved live from the corrigible ledger, never copied into the bridge.
+  for(let i=0;i<INTENT_ORDER.length;i++) bindEnglishMath(B,U,L,opaque(i),`h${i}`);
+
+  // English-only holdouts get NO math graph. They must resolve through the
+  // learned surface relation to the live candidate mathematics.
   let hits=0;
   const heldout=[];
   for(let i=0;i<INTENT_ORDER.length;i++){
@@ -115,11 +136,14 @@ async function main(){
   const report={
     families:13,
     opaque_relation_supervision_contacts:39,
+    math_structurally_grounded_training_contacts:mathGroundedContacts,
     semantic_family_labels_given_to_F:0,
-    mathematical_graphs_given_to_F:0,
+    hypothesis_ids_given_to_F:0,
+    anonymous_mathematical_graphs_given_to_F:mathGroundedContacts,
+    whole_graph_signature_features_given_to_F:0,
     explicit_equivalences_given_to_F:0,
     shared_context_across_all_families:true,
-    distinct_opaque_surface_relations:13,
+    distinct_opaque_surface_relations:new Set(canonicals).size,
     unsupported_candidate_binding_refused:true,
     structural_support_is_not_claimed_as_semantic_truth:true,
     english_only_holdouts_to_candidate_math_hits:hits,
