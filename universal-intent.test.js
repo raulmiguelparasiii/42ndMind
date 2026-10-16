@@ -10,9 +10,11 @@ const {
 }=require('./english-math-bridge');
 const {
   maximumCommonSubgraphs,stabilizedIntent,universalRelationField,
-  factorIntentExpressions,expandFactoredIntent,inspectFactoredIntent,refreshIntentFactorization,
   stabilizedMathForRelation
 }=require('./universal-intent');
+const {
+  factorIntentExpressions,expandFactoredIntent,inspectFactoredIntent,refreshIntentFactorization
+}=require('./universal-relation-reuse');
 
 const V=variable,A=app;
 const subset=(x,y)=>A(MOP.SUBSET,x,y);
