@@ -94,6 +94,7 @@ corrigibility for full anonymous mathematical graphs        demonstrated
 bounded English -> live corrigible candidate math            13/13 through generic contrastive surface interface
 generic mathematical type checking                          demonstrated on current candidate/Stone math
 recursive nested intent composition                          all 13 current candidates through one live math-hypothesis authority
+opaque live mathematical alternative spaces                 bounded correction/convergence demonstrated
 full arbitrary abstract/compositional intention anatomy     not yet demonstrated
 all Stone structures grounded from unrestricted raw reality not demonstrated
 universal mathematical language                             target, not established result
@@ -161,6 +162,8 @@ whole = 1
 ```
 
 This is the sole live correction/status authority for richer mathematical candidates unless a later documented replacement explicitly supersedes it. After PR #26, a candidate record may also retain its current source-expression representation plus an optional generic composition interface. These are attached to the same live candidate as its graph/status/revision so downstream composition never needs a copied definition or parallel status flag. A graph-only revision explicitly drops source/composition readiness rather than silently carrying stale scaffolding forward.
+
+PR #27 extends this same authority with opaque mathematical alternative spaces. A space stores only candidate references. It owns no independent candidate truth/status/revision. Space evidence is stored in the ledger and space verdicts are recomputed from current candidate mathematics plus current evidence every time they are read.
 
 ## 6. Recursive reduction and canonical form
 
@@ -360,6 +363,8 @@ PR #21, merge `9efafb123df1fa3ad4c031db184d4207d8513617`, added `english-math-br
 
 The bridge stores only an opaque learned surface-relation reference -> opaque math-hypothesis ID. It retrieves the mathematical graph live from `math-hypotheses.js`; it does not freeze a copy. Therefore candidate revision/defeat can invalidate an old English→math attachment, and later support can restore the revised math without retraining the English expression.
 
+After PR #27 the same bridge may instead store an opaque surface-relation reference -> opaque math-space ID before a unique mathematical candidate has won. It still does not copy math or own status. A later space correction is therefore visible through the old surface binding without retraining or rebinding.
+
 ### Preserved falsification history
 
 1. **Lexical/context-only failure:** with identical context across all 13 abstract families, 13 supervised opaque relation IDs collapsed to 4 lexical/context clusters. Conclusion: bag-like lexical similarity is insufficient for neighboring abstract intents.
@@ -495,13 +500,64 @@ and reuses `P_inner` throughout the outer anatomy. Depth-six recursion is tested
 
 The repaired Universal Language anti-cheat gate passed with all prior UL regressions plus the upstream-only recursive correction tests. Evidence boundary: this demonstrates recursively nested mathematical content across the 13 **candidate** anatomies and correct propagation from one live candidate authority. It does not establish arbitrary English recursion, empirical truth of those decompositions, unrestricted sensory grounding, or that `QUOTE`/`EXTENSION` are metaphysically final primitives.
 
-## 15. Current frontier
+## 15. Live mathematical alternative spaces and bounded structural refinement
+
+PR #27 adds a bounded convergence layer **inside** the existing `math-hypotheses.js` authority. This is an extension, not a second semantic authority.
+
+An opaque referent/meaning may now point to a live space of candidate mathematical structures before any one candidate is accepted:
+
+```text
+surface relation -> opaque math-space -> {h1,h2,...}
+```
+
+The space stores candidate references only. Candidate graph/status/revision, source expressions, proposals, and all contact remain in the one ledger.
+
+A crucial distinction is now explicit:
+
+```text
+mathematical structure is supported somewhere
+!=
+mathematical structure is the meaning of this referent
+```
+
+A positive structural match in a space contact can support the mathematical candidate globally. A complete non-match defeats that candidate's **assignment to the targeted space** without globally falsifying the graph, because the same mathematics may be correct for another referent. Assignment status is derived by replaying the space's stored evidence against the candidate each time it is read.
+
+Complete contact can also trigger a bounded structural-ablation search when source expressions are available. The search never edits a failed candidate in place. It proposes weaker alternatives by deleting one top-level conjunctive source constraint at a time, inserts them through the same live ledger, replays historical evidence, and keeps structurally maximal supported alternatives for current resolution.
+
+The bounded falsification demonstrates:
+
+```text
+proposer confidence does not resolve the space
+surface language can attach while math is unresolved
+complete contact can defeat an assignment without globally defeating reusable math
+bounded conjunctive refinement can expose a supported weaker structure
+later complete contact can reopen the former resolution and narrow it again
+the same mathematical graph can remain supported for a different referent
+late high-confidence alternatives replay old evidence immediately
+surface binding follows the new resolved math without retraining/rebinding
+space objects contain no local active/status/revision authority
+```
+
+Evidence boundary:
+
+```text
+This establishes a bounded architecture for correction and convergence over
+supplied candidate relational structures. Structural ablation can remove
+unsupported conjunctive structure. It cannot invent a genuinely missing
+relation, guarantee that the surviving candidate is reality's final meaning,
+or establish universal identifiability from finite contact.
+```
+
+The next major problem is therefore candidate generation/discovery from unrestricted contact, plus richer correction operators than conjunctive deletion, while preserving the same evidence and authority rules.
+
+## 16. Current frontier
 
 Do not claim completion. Major open fronts:
 
 ```text
 independent reality/formal support for the 13 abstract candidate anatomies
 stronger evidence that candidate relation decompositions are correct rather than merely coherent
+richer candidate generation/correction beyond bounded conjunctive ablation
 richer recursive composition across structurally different meanings using the one live authority
 open questions beyond yes/no partitions
 conditional and counterfactual belief/intention
@@ -520,14 +576,15 @@ proof/disproof of a complete universal structural normal form
 proof/disproof of universality for every possible meaning/relation
 ```
 
-Immediate next technical direction: keep the one live hypothesis authority and use richer nested meanings, corrections, contradictions, and external/formal contact to test whether the proposed lower relations survive. Do not merely add more family names, and do not reintroduce copied downstream semantic/status authority.
+Immediate next technical direction: keep the one live hypothesis authority and use richer nested meanings, corrections, contradictions, and external/formal contact to test and generate lower relations. Do not merely add more family names, and do not reintroduce copied downstream semantic/status authority.
 
-## 16. Evidence discipline
+## 17. Evidence discipline
 
 Keep these non-identities explicit:
 
 ```text
 proposal != truth
+mathematical graph validity/support != assignment to a particular referent
 encoding/address != mathematical anatomy
 candidate anatomy != stabilized semantic equivalence
 formal equivalence != empirical grounding
@@ -543,7 +600,7 @@ Names/dictionaries are teaching or display handles. They do not define mathemati
 
 With a score, state denominator and supervision/leakage conditions. Never describe `54/56` or `83/88` as a percentage of English.
 
-## 17. Context-loss procedure
+## 18. Context-loss procedure
 
 This procedure is unconditional; model confidence is not a substitute for repository recovery. Before changing architecture or declaring a capability absent:
 
