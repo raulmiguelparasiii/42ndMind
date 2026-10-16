@@ -47,6 +47,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - run: node abstract-english-math.test.js
       - run: node anti-cheat-language.test.js
       - run: node wide-opaque-english.test.js
       - run: node wide-opaque-english-2.test.js
@@ -59,6 +60,5 @@ jobs:
       - run: node stone-universal-kernel.test.js
       - run: node abstract-intent-kernel.test.js
       - run: node math-hypotheses.test.js
-      - run: node abstract-english-math.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
