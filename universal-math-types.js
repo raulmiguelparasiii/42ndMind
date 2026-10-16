@@ -11,6 +11,7 @@ const {MOP,validateExpr,stable}=require('./universal-math-graph');
 
 const NUM=Object.freeze({kind:'num'});
 const BOOL=Object.freeze({kind:'bool'});
+const FORMULA=Object.freeze({kind:'formula'});
 
 function setOf(of){return{kind:'set',of};}
 function tupleOf(items){return{kind:'tuple',items};}
@@ -42,7 +43,7 @@ class TypeEnv{
     if(a.kind==='var')return this.bind(a,b,why);
     if(b.kind==='var')return this.bind(b,a,why);
     if(a.kind!==b.kind)throw new TypeError(`type mismatch ${showType(a)} vs ${showType(b)} at ${why}`);
-    if(a.kind==='num'||a.kind==='bool')return;
+    if(a.kind==='num'||a.kind==='bool'||a.kind==='formula')return;
     if(a.kind==='set')return this.unify(a.of,b.of,why);
     if(a.kind==='tuple'){
       if(a.items.length!==b.items.length)throw new TypeError(`tuple arity mismatch at ${why}`);
@@ -65,6 +66,7 @@ function showType(t,env=null,names=null){
   }
   if(t.kind==='num')return'Num';
   if(t.kind==='bool')return'Bool';
+  if(t.kind==='formula')return'Formula';
   if(t.kind==='set')return`Set<${showType(t.of,env,names)}>`;
   if(t.kind==='tuple')return`Tuple<${t.items.map(x=>showType(x,env,names)).join(',')}>`;
   if(t.kind==='func')return`(${t.args.map(x=>showType(x,env,names)).join(',')})->${showType(t.ret,env,names)}`;
@@ -135,6 +137,12 @@ function inferExpr(expr,env,path='root'){
     case MOP.COMPLEMENT:{
       requireArity(expr,2);const item=fresh('set-item');env.unify(ts[0],setOf(item),`${path}:set left`);env.unify(ts[1],setOf(item),`${path}:set right`);return setOf(item);
     }
+    case MOP.QUOTE:
+      requireArity(expr,1);env.unify(ts[0],BOOL,`${path}:quote formula`);return FORMULA;
+    case MOP.EXTENSION:{
+      requireArity(expr,2);env.unify(ts[0],FORMULA,`${path}:extension formula`);
+      const item=fresh('extension-item');env.unify(ts[1],setOf(item),`${path}:extension universe`);return setOf(item);
+    }
     default: throw new TypeError(`no generic type contract for mathematical operator ${op} at ${path}`);
   }
 }
@@ -171,4 +179,4 @@ function checkMathTypes(expressions){
   try{return inferMathTypes(expressions);}catch(error){return{well_typed:false,error:String(error.message||error)};}
 }
 
-module.exports={NUM,BOOL,setOf,tupleOf,funcOf,TypeEnv,showType,inferExpr,inferMathTypes,checkMathTypes};
+module.exports={NUM,BOOL,FORMULA,setOf,tupleOf,funcOf,TypeEnv,showType,inferExpr,inferMathTypes,checkMathTypes};
