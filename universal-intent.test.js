@@ -111,10 +111,10 @@ contactMathSpace(L,'muA',[eq(V('m'),V('n'))],{id:'muA-incomplete',complete:false
 const afterIncomplete=stabilizedIntent(L,'muA',opts);
 assert(afterIncomplete.stabilized_relations.some(x=>x.signature===subsetSig),'incomplete contact erased warranted relation');
 
-// Graph-only candidates have no proposer-side source expressions. The space can
-// still be genuinely ambiguous when both assignments are live. Stabilization
-// therefore falls back to the exact bounded maximum common subgraph plus
-// independent space-contact warrant for that common structure.
+// Graph-only candidates have no proposer-side source expressions. Their exact
+// bounded common graph remains useful discovery structure, but arbitrary graph
+// fragments are not promoted to stabilized mathematical relations merely because
+// the same serialization fragment recurs.
 const R=V('R'),S=V('S'),T=V('T');
 const g1=compileMathGraph([subset(R,T),lt(card(R),card(T))]);
 const g2=compileMathGraph([subset(R,T),eq(card(R),card(S))]);
@@ -124,7 +124,11 @@ contactMathSpace(L,'muC',[subset(R,T),lt(card(R),card(T)),eq(card(R),card(S))],{
 const sC=stabilizedIntent(L,'muC',opts);
 assert.strictEqual(sC.status,'ambiguous');
 assert.strictEqual(sC.common_core.search_complete,true);
-assert(sC.stabilized_relations.some(x=>x.kind==='maximum-common-relational-core'),'graph-only ambiguity exposed no warranted structural core');
+assert.strictEqual(sC.stabilized_relations.length,0,'graph-only fragment was promoted without a complete relation representation');
+assert(sC.provisional_invariants.some(x=>x.kind==='maximum-common-structural-core'),'graph-only ambiguity exposed no provisional structural core');
+const fieldWithGraphOnly=universalRelationField(L,opts);
+const muCView=fieldWithGraphOnly.spaces.find(x=>x.space==='muC');
+assert(muCView&&muCView.stabilized_relations.length===0,'universal relation field promoted graph-only structural fragment');
 
 // Bounded search failure is explicit. A tiny state budget must never return a
 // guessed pseudo-core and call it stabilized meaning.
@@ -148,7 +152,7 @@ const report={
   surface_can_expose_partial_stable_math_before_whole_resolution:true,
   discriminating_contact_resolves_whole_without_erasing_recurring_lower_relations:true,
   incomplete_contact_remains_unknown:true,
-  graph_only_structural_fallback:true,
+  graph_only_structural_core_remains_provisional:true,
   bounded_search_never_guesses_on_truncation:true,
   semantic_family_labels_in_stabilization:0,
   recurrent_relation_structures:field.metrics.recurrent_relation_structures,
