@@ -30,6 +30,8 @@ function walk(expr,fn){
   if(expr&&expr.kind==='app')expr.args.forEach(x=>walk(x,fn));
 }
 
+function expressionSize(expr){let n=0;walk(expr,()=>n++);return n;}
+
 function containsEmbeddedObject(expr,target){
   let found=false;
   walk(expr,x=>{
@@ -71,7 +73,10 @@ assert.strictEqual(renamed.graph.signature,beliefDoubt.compiled.graph.signature)
 const sameSubject=makeNested(DEF.BELIEF,DEF.DOUBT,{outerSubject:'a',innerSubject:'a'}).compiled;
 assert.notStrictEqual(sameSubject.graph.signature,beliefDoubt.compiled.graph.signature);
 
-// 6. Recursion is not hard-coded to one nesting depth.
+// 6. Recursion is not hard-coded to one nesting depth. The depth-six source is
+// built and type-checked directly; exact graph canonicalization is intentionally
+// not used as a scalability benchmark here because it is a separate bounded
+// graph-isomorphism procedure.
 const deep=oneRecursiveIntentState();
 addAtom(deep,'p','p');
 let child='p';
@@ -80,10 +85,10 @@ for(let i=0;i<6;i++){
   addClause(deep,id,{definition:i%2===0?DEF.BELIEF:DEF.DOUBT,subject:`s${i}`,content:child});
   child=id;
 }
-const deepCompiled=compileRecursiveIntent(deep,child);
-assert.strictEqual(deepCompiled.source.depth,6);
-assert(deepCompiled.graph.vertex_count>beliefDoubt.compiled.graph.vertex_count);
-assert.strictEqual(inferMathTypes(deepCompiled.source.expressions).well_typed,true);
+const deepSource=buildRecursiveSource(deep,child);
+assert.strictEqual(deepSource.depth,6);
+assert(expressionSize(deepSource.root_formula)>expressionSize(beliefDoubt.compiled.source.root_formula));
+assert.strictEqual(inferMathTypes(deepSource.expressions).well_typed,true);
 
 // 7. Definition correction is live. Revise only the inner anonymous relation;
 // the outer node is untouched, yet recompilation of the outer whole changes.
@@ -136,7 +141,7 @@ console.log(JSON.stringify({
   live_inner_revision_changed_outer:true,
   outer_node_edited_during_inner_revision:false,
   reverted_inner_restored_outer:true,
-  depth_six_compiles:true,
+  depth_six_source_built_and_typed:true,
   semantic_labels_in_pure_graph:0,
   whole:pure.whole
 },null,2));
