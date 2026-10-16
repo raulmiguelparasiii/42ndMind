@@ -73,3 +73,6 @@ jobs:
       - run: node universal-intent.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
+
+# The stabilization test is deliberately inside the same anti-cheat gate so it
+# cannot pass by bypassing the existing live hypothesis authority.
