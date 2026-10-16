@@ -9,8 +9,13 @@
 // evidence stays unresolved, complete non-matching evidence may defeat, and a
 // later revision of a candidate replays all stored evidence against the new
 // structure.
+//
+// When source expressions and a generic compositional interface are supplied,
+// they live on the same candidate record as the authoritative graph/status.
+// Downstream recursive composition must dereference this live record rather
+// than copy definitions or maintain a second correction/status authority.
 
-const {compileMathGraph}=require('./universal-math-graph');
+const {compileMathGraph,validateExpr}=require('./universal-math-graph');
 const {canonicalGraph,stable}=require('./relational-normal-form');
 
 function asCompiledMath(input,options={}){
@@ -30,6 +35,100 @@ function asCompiledMath(input,options={}){
     return {version:1,vertex_count:c.vertex_count,edges:c.edges,signature:c.signature,canonicalization_states:c.states};
   }
   throw new Error('math hypothesis/contact requires expressions or a compiled graph');
+}
+
+function cloneExpr(expr){
+  validateExpr(expr);
+  if(expr.kind==='var') return {kind:'var',name:String(expr.name)};
+  if(expr.kind==='const') return {kind:'const',value:expr.value};
+  return {kind:'app',op:Number(expr.op),args:expr.args.map(cloneExpr)};
+}
+
+function sourceExpressions(input){
+  const xs=Array.isArray(input)
+    ? input
+    : (input && Array.isArray(input.expressions) ? input.expressions : null);
+  if(!xs) return null;
+  xs.forEach(validateExpr);
+  return xs.map(cloneExpr);
+}
+
+function variableNames(expressions){
+  const out=new Set();
+  const walk=e=>{
+    validateExpr(e);
+    if(e.kind==='var'){out.add(String(e.name));return;}
+    if(e.kind==='app')e.args.forEach(walk);
+  };
+  (expressions||[]).forEach(walk);
+  return out;
+}
+
+// A compositional interface is proposer-side scaffolding for binding a current
+// mathematical candidate into a larger formula. It is deliberately generic:
+// content/universe/subject are structural ports, while frame lists source
+// variables to retain subject identity for anatomies that otherwise omit an
+// explicit participant variable. This metadata is not emitted by pureMathLedger.
+function normalizeComposition(spec,expressions){
+  if(spec===undefined || spec===null) return null;
+  if(!Array.isArray(expressions)) throw new Error('composition interface requires source expressions');
+  const vars=variableNames(expressions);
+  const need=(value,label)=>{
+    if(typeof value!=='string' || !value.length) throw new Error(`composition ${label} must be a variable name`);
+    if(!vars.has(value)) throw new Error(`composition ${label} variable ${value} is absent from source expressions`);
+    return value;
+  };
+  const content=need(spec.content,'content');
+  const universe=need(spec.universe,'universe');
+  const subject=spec.subject===undefined||spec.subject===null ? null : need(spec.subject,'subject');
+  let frame=null;
+  if(spec.frame!==undefined && spec.frame!==null){
+    if(!Array.isArray(spec.frame) || !spec.frame.length) throw new Error('composition frame must be a nonempty variable-name array');
+    frame=spec.frame.map((x,i)=>need(x,`frame[${i}]`));
+  }
+  return {content,universe,subject,frame};
+}
+
+function cloneComposition(spec){
+  return spec ? {content:spec.content,universe:spec.universe,subject:spec.subject,frame:spec.frame?spec.frame.slice():null} : null;
+}
+
+function suppliedComposition(input){
+  if(!input || Array.isArray(input) || typeof input!=='object') return {present:false,value:null};
+  return Object.prototype.hasOwnProperty.call(input,'composition')
+    ? {present:true,value:input.composition}
+    : {present:false,value:null};
+}
+
+function candidateMaterial(input,priorComposition=null,options={}){
+  const rawMath=input && !Array.isArray(input) && input.graph!==undefined
+    ? input.graph
+    : (input && !Array.isArray(input) && input.expressions!==undefined ? input.expressions : input);
+  const graph=asCompiledMath(rawMath,options);
+  const expressions=sourceExpressions(input);
+
+  // If both a compiled graph and source expressions are supplied, they must
+  // describe the same mathematics. Never let a stale source template ride next
+  // to a different authoritative graph.
+  if(expressions && input && !Array.isArray(input) && input.graph!==undefined){
+    const fromSource=compileMathGraph(expressions,options);
+    if(fromSource.signature!==graph.signature) throw new Error('source expressions do not match supplied math graph');
+  }
+
+  const supplied=suppliedComposition(input);
+  let composition=null;
+  if(expressions){
+    if(supplied.present) composition=normalizeComposition(supplied.value,expressions);
+    else if(priorComposition){
+      // Preserve the old interface only if every referenced variable still
+      // exists in the revised source. If it no longer fits, composition becomes
+      // explicitly unavailable rather than silently binding stale semantics.
+      try{composition=normalizeComposition(priorComposition,expressions);}catch{composition=null;}
+    }
+  }else if(supplied.present && supplied.value!==null){
+    throw new Error('composition interface requires source expressions');
+  }
+  return {graph,expressions,composition};
 }
 
 function edgeKey(label,a,b){return `${stable(label)}|${String(a)}|${String(b)}`;}
@@ -89,25 +188,30 @@ function matchCompiledSubgraph(patternInput,graphInput,options={}){
 }
 
 function oneMathHypothesisLedger(){
-  return {whole:1,version:1,step:0,candidates:{},signature_index:{},evidence:[],audit:[]};
+  return {whole:1,version:2,step:0,candidates:{},signature_index:{},evidence:[],audit:[]};
 }
 
 function assertLedger(L){if(!L || L.whole!==1) throw new Error('invalid math hypothesis ledger');}
 
 function proposeMath(L,proposal,options={}){
   assertLedger(L);
-  const graph=asCompiledMath(proposal.graph ?? proposal.expressions ?? proposal,options);
+  const material=candidateMaterial(proposal, null, options);
+  const graph=material.graph;
   const existing=L.signature_index[graph.signature];
-  const record={source:proposal.source ?? 'unknown',confidence:proposal.confidence ?? null,note:proposal.note ?? null};
+  const record={source:proposal?.source ?? 'unknown',confidence:proposal?.confidence ?? null,note:proposal?.note ?? null};
   if(existing){
     const c=L.candidates[existing];
     c.proposals.push(record);
     L.audit.push({step:++L.step,kind:'proposal-merged',id:c.id,source:record.source});
     return c;
   }
-  const id=String(proposal.id ?? `h${Object.keys(L.candidates).length+1}`);
+  const id=String(proposal?.id ?? `h${Object.keys(L.candidates).length+1}`);
   if(L.candidates[id]) throw new Error(`duplicate hypothesis id ${id}`);
-  const c={id,revision:1,graph,signature:graph.signature,proposals:[record],support:[],defeat:[],status:'open',usable:false};
+  const c={
+    id,revision:1,graph,signature:graph.signature,
+    expressions:material.expressions,composition:material.composition,
+    proposals:[record],support:[],defeat:[],status:'open',usable:false
+  };
   L.candidates[id]=c; L.signature_index[graph.signature]=id;
   L.audit.push({step:++L.step,kind:'proposed',id,source:record.source});
   return c;
@@ -169,16 +273,40 @@ function reviseMath(L,id,input,note=null,options={}){
   assertLedger(L);
   const c=L.candidates[String(id)];
   if(!c) throw new Error(`unknown hypothesis ${String(id)}`);
-  const graph=asCompiledMath(input,options);
+  const material=candidateMaterial(input,c.composition,options);
+  const graph=material.graph;
   const collision=L.signature_index[graph.signature];
   if(collision && collision!==c.id) throw new Error(`revision converges with existing hypothesis ${collision}; explicit merge required`);
   delete L.signature_index[c.signature];
   const before=c.signature;
-  c.graph=graph; c.signature=graph.signature; c.revision++;
+  c.graph=graph; c.signature=graph.signature;
+  c.expressions=material.expressions; c.composition=material.composition;
+  c.revision++;
   L.signature_index[c.signature]=c.id;
   recomputeMathCandidate(L,c,options);
-  L.audit.push({step:++L.step,kind:'revised',id:c.id,from:before,to:c.signature,revision:c.revision,note,status:c.status});
+  L.audit.push({
+    step:++L.step,kind:'revised',id:c.id,from:before,to:c.signature,
+    revision:c.revision,note,status:c.status,composition_ready:Boolean(c.expressions&&c.composition)
+  });
   return c;
+}
+
+// Read-only snapshot for downstream consumers. In particular, recursive
+// composition uses this function on every compilation so correction/status is
+// owned by this ledger alone.
+function currentMathHypothesis(L,id,requirements={}){
+  assertLedger(L);
+  const c=L.candidates[String(id)];
+  if(!c) throw new Error(`unknown math hypothesis ${String(id)}`);
+  if(requirements.usable && !c.usable) throw new Error(`math hypothesis ${c.id} is not currently usable (${c.status})`);
+  if(requirements.expressions && !c.expressions) throw new Error(`math hypothesis ${c.id} has no current source expressions`);
+  if(requirements.composition && !c.composition) throw new Error(`math hypothesis ${c.id} has no current compositional interface`);
+  return {
+    id:c.id,revision:c.revision,status:c.status,usable:c.usable,
+    graph:c.graph,signature:c.signature,
+    expressions:c.expressions?c.expressions.map(cloneExpr):null,
+    composition:cloneComposition(c.composition)
+  };
 }
 
 function usableMathPatterns(L){
@@ -200,6 +328,7 @@ function pureMathLedger(L){
 
 module.exports={
   asCompiledMath,matchCompiledSubgraph,oneMathHypothesisLedger,proposeMath,
-  evaluateMathCandidate,contactMath,reviseMath,usableMathPatterns,pureMathLedger,
-  recomputeMathCandidate
+  evaluateMathCandidate,contactMath,reviseMath,currentMathHypothesis,
+  usableMathPatterns,pureMathLedger,recomputeMathCandidate,
+  normalizeComposition
 };
