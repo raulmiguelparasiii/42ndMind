@@ -32,10 +32,16 @@ const MOP = Object.freeze({
   MAX:16,
   DIV:17,
   IMPLIES:18,
-  DELTA:19
+  DELTA:19,
+  INTERSECT:20,
+  UNION:21,
+  COMPLEMENT:22,
+  NEQ:23
 });
 
-const COMMUTATIVE = new Set([MOP.ADD,MOP.EQ,MOP.AND,MOP.MAX]);
+const COMMUTATIVE = new Set([
+  MOP.ADD,MOP.EQ,MOP.AND,MOP.MAX,MOP.INTERSECT,MOP.UNION,MOP.NEQ
+]);
 
 const variable = name => Object.freeze({kind:'var',name:String(name)});
 const constant = value => Object.freeze({kind:'const',value});
