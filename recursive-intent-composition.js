@@ -10,13 +10,18 @@
 //
 // Definitions are live and corrigible. A node stores only which anonymous
 // definition it instantiates plus references to its subject/content. Recompiling
-// a root always follows the current definition graph, so revising an inner
-// definition automatically changes every outer mathematical object that embeds
-// it without editing those outer nodes.
+// a root always follows the current definition graph, so revising, suspending,
+// or restoring an inner definition propagates to every outer mathematical
+// object without editing those outer nodes.
+//
+// The thirteen default definitions below are copied from the current candidate
+// anatomies in abstract-intent-kernel.js when a state is created. They remain
+// proposals: every definition is mutable/suspendable inside the recursive state.
 
 const {
   MOP, variable, constant, app, validateExpr, compileMathGraph
 }=require('./universal-math-graph');
+const {INTENT_ORDER,candidateExpressions}=require('./abstract-intent-kernel');
 
 const V=variable, C=constant, A=app;
 const eq=(a,b)=>A(MOP.EQ,a,b);
@@ -35,56 +40,69 @@ const extension=(f,U)=>A(MOP.EXTENSION,f,U);
 const nonempty=S=>lt(C(0),card(S));
 
 const SLOT=Object.freeze({CONTENT:'@content',UNIVERSE:'@universe',SUBJECT:'@subject'});
-const DEF=Object.freeze({BELIEF:0,DOUBT:1});
+const DEF=Object.freeze(Object.fromEntries(INTENT_ORDER.map((name,i)=>[name.toUpperCase(),i])));
 
-function beliefTemplate(){
-  const P=V(SLOT.CONTENT), U=V(SLOT.UNIVERSE), subject=V(SLOT.SUBJECT);
-  const NP=V('NP'), K=V('K'), H=V('H'), frame=V('frame');
-  return [
-    subset(P,U),
-    eq(NP,complement(P,U)),
-    subset(K,U), nonempty(K),
-    subset(K,P),
-    inSet(P,H),
-    eq(frame,tuple(subject,K,H,P))
-  ];
+// This metadata is part of the proposer-side candidate anatomy, not generic
+// recursive authority. It says which proposition variable is the clause content
+// and, when the candidate already contains a participant role, which variable is
+// the clause subject. Candidates without a participant role receive an explicit
+// subject/frame tuple so subject identity remains mathematically represented.
+const DEFINITION_META=Object.freeze({
+  [DEF.BELIEF]:Object.freeze({name:'belief',content:'P',subject:null,frame:['K','H','P']}),
+  [DEF.DOUBT]:Object.freeze({name:'doubt',content:'P',subject:null,frame:['K','H','P']}),
+  [DEF.CONSIDER]:Object.freeze({name:'consider',content:'P',subject:null,frame:['K','branches','scratch','P']}),
+  [DEF.IMAGINE]:Object.freeze({name:'imagine',content:'P',subject:null,frame:['K','HYP','scratch','P']}),
+  [DEF.REMEMBER]:Object.freeze({name:'remember',content:'P',subject:null,frame:['history','held','P']}),
+  [DEF.INFER]:Object.freeze({name:'infer',content:'conclusion',subject:null,frame:['premise','conclusion','H1']}),
+  [DEF.DESIRE]:Object.freeze({name:'desire',content:'P',subject:'agent',frame:null}),
+  [DEF.INTEND]:Object.freeze({name:'intend',content:'P',subject:'agent',frame:null}),
+  [DEF.QUESTION]:Object.freeze({name:'question',content:'P',subject:'speaker',frame:null}),
+  [DEF.ASSERTION]:Object.freeze({name:'assertion',content:'P',subject:'speaker',frame:null}),
+  [DEF.COMMAND]:Object.freeze({name:'command',content:'P',subject:'speaker',frame:null}),
+  [DEF.PROMISE]:Object.freeze({name:'promise',content:'P',subject:'speaker',frame:null}),
+  [DEF.OBLIGATION]:Object.freeze({name:'obligation',content:'P',subject:'agent',frame:null})
+});
+
+function rewriteTemplateExpr(expr,mapping){
+  validateExpr(expr);
+  if(expr.kind==='const')return expr;
+  if(expr.kind==='var')return V(Object.prototype.hasOwnProperty.call(mapping,expr.name)?mapping[expr.name]:expr.name);
+  return A(expr.op,...expr.args.map(x=>rewriteTemplateExpr(x,mapping)));
 }
 
-function doubtTemplate(){
-  const P=V(SLOT.CONTENT), U=V(SLOT.UNIVERSE), subject=V(SLOT.SUBJECT);
-  const NP=V('NP'), K=V('K'), H=V('H'), KP=V('KP'), KN=V('KN'), frame=V('frame');
-  return [
-    subset(P,U),
-    eq(NP,complement(P,U)),
-    subset(K,U), nonempty(K),
-    eq(KP,intersect(K,P)),
-    eq(KN,intersect(K,NP)),
-    nonempty(KP), nonempty(KN),
-    neg(inSet(P,H)), neg(inSet(NP,H)),
-    eq(frame,tuple(subject,K,H,P))
-  ];
+function candidateTemplate(id){
+  id=Number(id);
+  const meta=DEFINITION_META[id];
+  if(!meta)throw new Error(`unknown recursive definition ${String(id)}`);
+  const mapping={U:SLOT.UNIVERSE,[meta.content]:SLOT.CONTENT};
+  if(meta.subject)mapping[meta.subject]=SLOT.SUBJECT;
+  const out=candidateExpressions(meta.name).map(e=>rewriteTemplateExpr(e,mapping));
+  if(meta.frame){
+    const terms=meta.frame.map(name=>V(Object.prototype.hasOwnProperty.call(mapping,name)?mapping[name]:name));
+    out.push(eq(V('frame'),tuple(V(SLOT.SUBJECT),...terms)));
+  }
+  out.forEach(validateExpr);
+  return out;
 }
 
 function defaultDefinitionTemplate(id){
-  id=Number(id);
-  if(id===DEF.BELIEF)return beliefTemplate();
-  if(id===DEF.DOUBT)return doubtTemplate();
-  throw new Error(`unknown recursive definition ${String(id)}`);
+  return candidateTemplate(id).slice();
 }
 
 function recursiveIntentLegend(){
-  return Object.freeze({[DEF.BELIEF]:'belief',[DEF.DOUBT]:'doubt'});
+  return Object.freeze(Object.fromEntries(INTENT_ORDER.map((name,i)=>[i,name])));
 }
 
 function oneRecursiveIntentState(){
+  const definitions={};
+  for(let i=0;i<INTENT_ORDER.length;i++){
+    definitions[i]={id:i,revision:1,active:true,template:defaultDefinitionTemplate(i)};
+  }
   return {
     whole:1,
-    version:1,
+    version:2,
     step:0,
-    definitions:{
-      [DEF.BELIEF]:{id:DEF.BELIEF,revision:1,template:beliefTemplate()},
-      [DEF.DOUBT]:{id:DEF.DOUBT,revision:1,template:doubtTemplate()}
-    },
+    definitions,
     nodes:{},
     audit:[]
   };
@@ -119,6 +137,16 @@ function reviseDefinition(S,id,template,note=null){
   template.forEach(validateExpr);
   d.template=template.slice();d.revision++;
   S.audit.push({step:++S.step,kind:'definition-revised',id,revision:d.revision,note});
+  return d;
+}
+
+function setDefinitionActive(S,id,active,note=null){
+  assertState(S);id=Number(id);
+  const d=S.definitions[id];if(!d)throw new Error(`unknown recursive definition ${id}`);
+  active=Boolean(active);
+  if(d.active===active)return d;
+  d.active=active;d.revision++;
+  S.audit.push({step:++S.step,kind:'definition-status',id,active,revision:d.revision,note});
   return d;
 }
 
@@ -164,6 +192,7 @@ function buildRecursiveSource(S,rootId,options={}){
     }else if(node.type===1){
       const d=S.definitions[node.definition];
       if(!d)throw new Error(`missing recursive definition ${node.definition}`);
+      if(!d.active)throw new Error(`inactive recursive definition ${node.definition}`);
       const child=build(node.content);
       const prefix=`${ns}node:${id}:`;
 
@@ -215,23 +244,24 @@ function buildRecursiveSource(S,rootId,options={}){
     subject_count:agents.size,
     atom_count:atoms.size,
     depth:root.depth,
-    definition_revisions:Object.fromEntries(Object.entries(S.definitions).map(([k,d])=>[k,d.revision]))
+    definition_revisions:Object.fromEntries(Object.entries(S.definitions).map(([k,d])=>[k,d.revision])),
+    definition_active:Object.fromEntries(Object.entries(S.definitions).map(([k,d])=>[k,d.active]))
   };
 }
 
 function compileRecursiveIntent(S,rootId,options={}){
   const source=buildRecursiveSource(S,rootId,options);
   const graph=compileMathGraph(source.expressions,options);
-  return {whole:1,version:1,graph,source};
+  return {whole:1,version:2,graph,source};
 }
 
 function anonymousRecursiveIntent(S,rootId,options={}){
   const x=compileRecursiveIntent(S,rootId,options);
-  return {whole:1,version:1,graph:x.graph};
+  return {whole:1,version:2,graph:x.graph};
 }
 
 module.exports={
-  DEF,SLOT,oneRecursiveIntentState,addAtom,addClause,reviseDefinition,
+  DEF,SLOT,DEFINITION_META,oneRecursiveIntentState,addAtom,addClause,reviseDefinition,setDefinitionActive,
   defaultDefinitionTemplate,recursiveIntentLegend,buildRecursiveSource,
   compileRecursiveIntent,anonymousRecursiveIntent,
   helpers:{eq,neq,neg,and,inSet,subset,card,lt,tuple,intersect,complement,quote,extension,nonempty,V,C,A}
