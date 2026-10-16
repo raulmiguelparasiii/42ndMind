@@ -4,18 +4,12 @@
 // full mathematical-hypothesis ledger.
 //
 // The bridge contains no intent-family semantics. It records that an opaque
-// learned surface relation is attached to an opaque mathematical hypothesis.
-// The mathematical object is fetched live from the corrigible ledger, so if
-// that hypothesis is defeated, reopened, or revised, old English does not keep
-// a frozen copy of the former mathematics.
-//
-// Surface disambiguation is contrastive rather than a second semantic theory:
-// lexical dimensions shared by many learned relations are downweighted, while
-// dimensions that discriminate among the current relation field receive more
-// weight. This is the ordinary information-retrieval IDF principle applied to
-// the language-specific surface interface; no English word or intent family is
-// privileged by the algorithm.
+// learned surface relation is attached either to an opaque mathematical
+// hypothesis or to an opaque unresolved mathematical alternative space. The
+// mathematical object is fetched live from math-hypotheses.js; no graph/status
+// is copied into the bridge.
 
+const {currentMathSpace}=require('./math-hypotheses');
 const EPS=1e-12;
 
 function assertBridge(B){if(!B||B.whole!==1||B.version!==1)throw new Error('invalid English-math bridge');}
@@ -45,12 +39,31 @@ function bindEnglishMath(B,U,L,relationRef,hypothesisId){
   return b;
 }
 
-function candidatesForRelation(B,U,L,relation){
+function bindEnglishMathSpace(B,U,L,relationRef,spaceId){
+  assertBridge(B);assertUniversal(U);assertLedger(L);
+  const relation=canonicalRelation(U,relationRef);
+  if(!relation)throw new Error(`unknown surface relation ${String(relationRef)}`);
+  const id=String(spaceId);
+  const s=L.spaces?.[id];
+  if(!s)throw new Error(`unknown math space ${id}`);
+  if(!Array.isArray(s.candidates)||!s.candidates.length)throw new Error(`math space ${id} has no candidates`);
+  const existing=B.bindings.find(x=>x.relation_ref===String(relationRef)&&x.space_id===id);
+  if(existing)return existing;
+  const b={relation_ref:String(relationRef),space_id:id,created_step:++B.step};
+  B.bindings.push(b);B.audit.push({step:B.step,kind:'space-bound',relation_ref:b.relation_ref,space_id:b.space_id});
+  return b;
+}
+
+function bindingsForRelation(B,U,relation){
   const canon=canonicalRelation(U,relation);
   if(!canon)return[];
+  return B.bindings.filter(b=>canonicalRelation(U,b.relation_ref)===canon);
+}
+
+function candidatesForRelation(B,U,L,relation){
   const out=[];
-  for(const b of B.bindings){
-    if(canonicalRelation(U,b.relation_ref)!==canon)continue;
+  for(const b of bindingsForRelation(B,U,relation)){
+    if(!b.hypothesis_id)continue;
     const h=L.candidates[b.hypothesis_id];
     if(h?.usable)out.push(h);
   }
@@ -58,12 +71,48 @@ function candidatesForRelation(B,U,L,relation){
   return [...bySignature.values()];
 }
 
+function spacesForRelation(B,U,L,relation){
+  const out=[];
+  for(const b of bindingsForRelation(B,U,relation)){
+    if(!b.space_id)continue;
+    if(!L.spaces?.[b.space_id])continue;
+    out.push(currentMathSpace(L,b.space_id));
+  }
+  return out;
+}
+
 function mathForRelation(B,U,L,relation){
   assertBridge(B);assertUniversal(U);assertLedger(L);
-  const hs=candidatesForRelation(B,U,L,relation);
-  if(hs.length!==1)return{whole:1,status:hs.length?'ambiguous':'unresolved',relation:canonicalRelation(U,relation),hypotheses:hs.map(h=>h.id),math:null};
+  const canon=canonicalRelation(U,relation);
+  const direct=candidatesForRelation(B,U,L,relation);
+  const spaces=spacesForRelation(B,U,L,relation);
+  const resolvedSpaces=spaces.filter(s=>s.status==='resolved-candidate-math'&&s.hypothesis_id)
+    .map(s=>L.candidates[s.hypothesis_id]).filter(Boolean);
+  const live=[...direct,...resolvedSpaces];
+  const bySignature=new Map(live.filter(h=>h.usable).map(h=>[h.signature,h]));
+  const hs=[...bySignature.values()];
+  const pending=spaces.filter(s=>s.status!=='resolved-candidate-math');
+
+  if(pending.length){
+    return{
+      whole:1,
+      status:hs.length?'ambiguous':'unresolved',
+      relation:canon,
+      hypotheses:hs.map(h=>h.id),
+      spaces:spaces.map(s=>({space:s.space,status:s.status,hypothesis_id:s.hypothesis_id})),
+      math:null
+    };
+  }
+  if(hs.length!==1)return{
+    whole:1,status:hs.length?'ambiguous':'unresolved',relation:canon,
+    hypotheses:hs.map(h=>h.id),spaces:spaces.map(s=>({space:s.space,status:s.status,hypothesis_id:s.hypothesis_id})),math:null
+  };
   const h=hs[0];
-  return{whole:1,status:'resolved-candidate-math',relation:canonicalRelation(U,relation),hypotheses:[h.id],revision:h.revision,signature:h.signature,math:h.graph};
+  return{
+    whole:1,status:'resolved-candidate-math',relation:canon,hypotheses:[h.id],
+    spaces:spaces.map(s=>({space:s.space,status:s.status,hypothesis_id:s.hypothesis_id})),
+    revision:h.revision,signature:h.signature,math:h.graph
+  };
 }
 
 function unit(v){
@@ -89,27 +138,15 @@ function aggregateCanonicalLexical(U){
 }
 function idfWeights(docs){
   const N=docs.length,df={};
-  for(const d of docs){
-    for(const k of Object.keys(d.lexical||{}))if(Math.abs(d.lexical[k])>EPS)df[k]=(df[k]||0)+1;
-  }
-  const out={};
-  for(const [k,n] of Object.entries(df))out[k]=1+Math.log((N+1)/(n+1));
-  return out;
+  for(const d of docs){for(const k of Object.keys(d.lexical||{}))if(Math.abs(d.lexical[k])>EPS)df[k]=(df[k]||0)+1;}
+  const out={};for(const [k,n] of Object.entries(df))out[k]=1+Math.log((N+1)/(n+1));return out;
 }
 function weightedCos(a,b,w){
-  const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);
-  let dot=0,aa=0,bb=0;
-  for(const k of keys){
-    const weight=w[k]||1,x=a?.[k]||0,y=b?.[k]||0;
-    dot+=weight*x*y;aa+=weight*x*x;bb+=weight*y*y;
-  }
+  const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);let dot=0,aa=0,bb=0;
+  for(const k of keys){const weight=w[k]||1,x=a?.[k]||0,y=b?.[k]||0;dot+=weight*x*y;aa+=weight*x*x;bb+=weight*y*y;}
   const d=Math.sqrt(aa*bb);return d>EPS?Math.max(-1,Math.min(1,dot/d)):0;
 }
 
-// Returns a language-surface relation using only the learned lexical field.
-// Common features (speaker names, articles, generic scaffolding words, etc.)
-// lose discriminating power automatically because they occur across many
-// relation documents. No stop-word list or intent-specific token rule exists.
 function contrastiveSurfaceRelation(U){
   assertUniversal(U);
   const encounter=[...(U.encounters||[])].reverse().find(e=>e.step===U.current?.step)||(U.encounters||[]).at(-1);
@@ -137,11 +174,17 @@ function currentEnglishMath(B,U,L){
 
 function pureEnglishMathBridge(B){
   assertBridge(B);
-  return{whole:1,version:B.version,bindings:B.bindings.map(x=>({relation_ref:x.relation_ref,hypothesis_id:x.hypothesis_id}))};
+  return{
+    whole:1,version:B.version,
+    bindings:B.bindings.map(x=>x.hypothesis_id
+      ? {relation_ref:x.relation_ref,hypothesis_id:x.hypothesis_id}
+      : {relation_ref:x.relation_ref,space_id:x.space_id})
+  };
 }
 
 module.exports={
-  oneEnglishMathBridge,canonicalRelation,bindEnglishMath,candidatesForRelation,
-  mathForRelation,currentEnglishMath,pureEnglishMathBridge,contrastiveSurfaceRelation,
-  aggregateCanonicalLexical,idfWeights,weightedCos
+  oneEnglishMathBridge,canonicalRelation,bindEnglishMath,bindEnglishMathSpace,
+  candidatesForRelation,spacesForRelation,mathForRelation,currentEnglishMath,
+  pureEnglishMathBridge,contrastiveSurfaceRelation,aggregateCanonicalLexical,
+  idfWeights,weightedCos
 };
