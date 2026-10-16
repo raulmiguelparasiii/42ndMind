@@ -1,37 +1,36 @@
 # 42ndMind Universal Language Track — living project memory
 
-This is the single living continuity file for the non-canonical Universal Language Track. Update this file as the project changes. Do not create additional handoff/memory files for conversation continuity. Historical checkpoint/design files are evidence records only.
+This is the **single living continuity file** for the non-canonical Universal Language Track. Update this file as the project changes. Do not create additional handoff/checkpoint memory files for conversational continuity. Historical checkpoint/design files are evidence records only.
 
-If a future conversation says **“continue the 42ndMind Universal Language Track”**, read this file first, then `AGENTS.md`, and inspect implementation/tests only as needed. The repository is authoritative; absence from conversational context is not evidence that a mechanism is absent.
+If a future conversation says **“continue the 42ndMind Universal Language Track”**, read this file first, then `AGENTS.md`, and inspect implementation/tests only as needed. The repository is authoritative; absence from current conversation context is unknown, not evidence that a mechanism is absent.
 
 ## 1. Two related projects
 
 ### Canonical 42ndMind
 
-The older canonical project targets one continuously existing artificial mind:
+Canonical 42ndMind targets one continuously existing artificial mind:
 
 ```text
 M_(t+1) = C(M_t ⊕ R_(t+1))
 ```
 
-`M` is the one developing mind, `R` is reality contact, and `C` is the compact content-neutral developmental transformation: relation discovery/reuse, completion, correction, recompression, and reopening under counterevidence.
+`M` is one developing mind; `R` is new reality contact; `C` is a compact content-neutral developmental transformation for relation discovery/reuse, completion, correction, recompression, and reopening under counterevidence.
 
-Its direction is reality-first:
+Its historical direction is reality-first:
 
 ```text
-reality contact
-  -> foundational relations in one continuing M
-  -> increasingly complex internal structure
-  -> language eventually attaches to / expresses those relations
+reality contact -> foundational relations in one continuing M
+                -> increasingly complex internal structure
+                -> language attaches to / expresses those relations
 ```
 
-It made real bounded progress: reusable internal relations, persistent anonymous concepts, bidirectional arbitrary word attachment, bounded compositional language, and autonomous micro-world behavior. The main bottleneck was the general English ↔ internal-relations seam, plus conversation-context loss as the project became large. The toy/micro-world was useful architecturally but still necessarily encoded a designer-supplied representation of reality.
+It made bounded progress in an artificial micro-world: reusable internal relations, persistent anonymous concepts, bidirectional word attachment, bounded compositional language, and autonomous survival behavior. Its main frontier was the general English ↔ internal-relations seam, and the project eventually became large enough that conversational context loss itself became dangerous. The micro-world was useful as an architectural test but still encoded designer-supplied representations of reality.
 
-Do not replace canonical `one-mind.js`, `M`, or `C` with the Universal Language Track.
+Do **not** silently replace canonical `one-mind.js`, `M`, or `C` with the Universal Language Track.
 
 ### 42ndMind Universal Language Track
 
-The parallel project attacks the language/meaning seam from the other direction:
+This parallel project attacks the language/meaning seam from the other direction:
 
 ```text
 natural language / math notation / code / other expression
@@ -49,116 +48,148 @@ U_(t+1) = F(U_t ⊕ X_(t+1))
 
 with `U.whole = 1`, arbitrary relation intake, stabilization, equivalence/overlap resolution, contradiction/correction, unresolved structure, and inspectable mathematical anatomy.
 
-A key methodological decision is that an LLM, human, text, or other source may propose candidate relations cheaply. Proposal is not truth. The system must still be able to merge, distinguish, support, weaken, defeat, reopen, split, or recursively reduce those candidates. This avoids waiting for a toy world to rediscover relations that a competent proposer can already expose, while preserving correction by reality/formal constraints.
+An LLM, human, text, or other source may propose candidate relations cheaply. **Proposal is not truth.** The system must be able to support, merge, distinguish, weaken, defeat, reopen, split, revise, or recursively reduce those candidates. This avoids waiting for a toy world to rediscover relations a competent proposer can already expose while preserving later correction by reality/formal constraints.
 
 ## 2. Universal-language target
 
-The target is not an English dictionary, not an embedding space, and not a collection of opaque labels. It is a mathematical relational substrate in which the internal structure itself carries meaning.
+The target is not an English dictionary, embedding space, or collection of opaque addresses. It is a mathematical relational substrate in which internal structure itself carries meaning.
 
-Different surface languages may have different interfaces:
+Different surface languages can have different interfaces:
 
 ```text
-English surface -----\
-Indonesian surface ---\
-Tagalog surface ------- > universal relational object <-> reality
-math notation --------/
-programming syntax ---/
+English ---------\
+Indonesian -------\
+Tagalog ----------- > universal relational object <-> reality
+math notation ----/
+programming syntax/
 ```
 
-The dictionaries/parsers are language-specific. The universal object is not. Exact translations/paraphrases should converge because they instantiate the same relational structure.
+The surface dictionaries/parsers are language-specific. The universal object is not. Exact translations/paraphrases should converge because they instantiate the same relational structure.
 
-The universal language is intended to be mathematical in substrate, not a second non-mathematical language beside mathematics. Ordinary mathematical notation is one surface language for the same underlying structures.
+The Universal Language is intended to be **mathematical in substrate**, not a second non-mathematical language beside mathematics. Ordinary mathematical notation is one possible surface representation.
 
-The strongest long-run identity criterion is not a privileged alphabet. It is recursively reduced structural equivalence:
+The strongest long-run identity criterion is recursively reduced structural equivalence rather than a privileged alphabet:
 
 ```text
-surface representation
-  -> expand warranted relation definitions
-  -> preserve unresolved/circular remainder explicitly
-  -> canonicalize anonymous structure
-  -> compare structure-preserving normal forms
+surface relation/object
+ -> recursively expand warranted definitions
+ -> retain undefined/circular remainder explicitly
+ -> canonicalize anonymous structure
+ -> compare structure-preserving normal forms
 ```
 
-## 3. Current evidence
-
-Bounded results currently established:
+## 3. Current bounded evidence
 
 ```text
-broad mathematical encoding/address/correlation              demonstrated in English regressions
+broad mathematical encoding/address/correlation              demonstrated in bounded English regressions
 grounded executable/state-transition mathematical anatomy   16/16 bounded families
 Stone pole relational mathematical anatomy                  7/7
 closed Stone recursive compilation                          7 anonymous structures
 Empathy intervention/reality-contact bridge                 bounded novel anonymous worlds
-corrigible external relation proposals                      demonstrated
+corrigible external O0..O10 relation proposals              demonstrated
 recursive relation reduction + canonical normal form        demonstrated
 canonical Stone formal kernel -> anonymous math graph        demonstrated
 richer thought/pragmatic intent candidate anatomy           13 distinct corrigible candidates
+corrigibility for full anonymous mathematical graphs        demonstrated
+bounded English -> live corrigible candidate math            13/13 through generic contrastive surface interface
 full arbitrary abstract/compositional intention anatomy     not yet demonstrated
 all Stone structures grounded from unrestricted raw reality not demonstrated
 universal mathematical language                             target, not established result
 ```
 
-The broad opaque English regressions remain 54/56 and 83/88. Do not call these percentages of English.
+Broad opaque English regressions remain `54/56` and `83/88`. Never describe these as a percentage of English.
 
-Sixteen executable intent families currently have stronger grounded mathematical anatomy: open, terminate/close, conceal, delete, copy, move, rename, create, save, undo, enable, disable, increase, decrease, pause, and resume.
+Sixteen executable families have stronger grounded mathematical anatomy: open, terminate/close, conceal, delete, copy, move, rename, create, save, undo, enable, disable, increase, decrease, pause, resume.
 
-The newer thirteen thought/propositional/pragmatic families have explicit anonymous **candidate** mathematical anatomy, but are not yet independently reality-grounded/stabilized semantics. Keep that distinction explicit.
+The thirteen newer thought/propositional/pragmatic structures are still **candidate anatomies**, not independently reality-grounded semantic truth.
 
-## 4. Corrigible candidate relations
+## 4. Meaning of `1`
 
-`relation-hypotheses.js` lets a proposer submit anonymous O0..O10 relational patterns without granting semantic authority.
+Do not force heterogeneous semantic relations to become mutually exclusive probability slices merely so they sum to one.
 
-Verified properties:
+For a resolved intention predicate `P_I`:
 
 ```text
-proposer confidence is not truth
+K_I = { omega : P_I(omega) }
+mu_I(K_I) = 1
+```
+
+The constraints jointly define the local whole. Relations can overlap, nest, coincide, contradict, or contain one another.
+
+Useful shorthand:
+
+```text
+add freely, resolve globally
+```
+
+A relation itself can be examined as a local whole `1` containing lower relations.
+
+## 5. Corrigible proposals
+
+### Older motif ledger
+
+`relation-hypotheses.js` accepts anonymous O0..O10 relational motifs. Verified properties:
+
+```text
+proposer confidence is not authority
 alpha-equivalent proposals merge
 incomplete contact remains unknown
-independent matched structure can support
-complete counterevidence can defeat
-later counterevidence can reopen a supported relation
+matched independent structure can support
+complete targeted counterevidence can defeat
+later counterevidence can reopen support
 ```
 
-The intended workflow is:
+### Full mathematical graph ledger
+
+PR #20, merge `de5f34a6f2da1aa1e5686d4439370334dd97b553`, added `math-hypotheses.js`, generalizing corrigibility to full `universal-math-graph` structures.
+
+It verifies:
 
 ```text
-propose -> compare -> ground/test -> preserve/merge/split/defeat -> reuse
+full anonymous graph proposals can remain open despite proposer confidence
+alpha-equivalent full graphs merge
+incomplete targeted evidence does not force a verdict
+matching structural contact can support
+complete targeted non-match can defeat/reopen
+generic subgraph support can occur inside a larger contact
+candidate revision replays stored evidence
+old contrary evidence is not erased by new support
+pure ledger contains no semantic family names
+whole = 1
 ```
 
-This is the main reason the Universal Language Track can advance faster than the old toy-world-first route.
+This is currently the correction mechanism for richer mathematical candidates.
 
-Current frontier: generalize this corrigibility machinery to the richer `universal-math-graph` structures, not only the older O0..O10 motif format. The thirteen abstract-intent candidates should eventually be accepted/rejected/reopened through the same independent-support logic rather than remaining frozen assistant proposals.
+## 6. Recursive reduction and canonical form
 
-## 5. Recursive reduction and canonical form
+`relational-normal-form.js` removes the assumption that the current relation vocabulary is metaphysically final.
 
-`relational-normal-form.js` removes the assumption that current relation symbols are fundamental.
-
-A relation may itself have a relational definition:
+A relation may itself be defined relationally:
 
 ```text
 R -> {R1,R2,...}
 ```
 
-and those relations may recursively expand further. The bounded gate verifies:
+and those relations may recursively expand.
+
+Verified bounded properties:
 
 ```text
-nested relation definitions reduce recursively
+nested definitions reduce recursively
 arbitrary vertex names do not determine identity
 edge order does not determine identity
-lower-definition corrections propagate to dependents
-materially different terminal structures stay different
+corrections to lower definitions alter dependent normal forms
+materially different terminal structure remains different
 cycles terminate as explicit unresolved structure
 ```
 
-Therefore `O0...O10` in the current Stone compiler are a working reduction basis, not a metaphysical claim that reality has exactly eleven primitives.
+Therefore current operator alphabets are working bases, not claims of final irreducibility. The target invariant is the recursively reduced relational structure modulo structure-preserving equivalence.
 
-The target universal invariant is the recursively reduced relational structure modulo structure-preserving equivalence, not the spelling of its operators.
+## 7. Stone pole mathematics
 
-## 6. Stone pole mathematics
+`stone-closed-math.js` recursively compiles seven externally named Stone structures to anonymous finite mathematical objects.
 
-`stone-closed-math.js` recursively compiles the seven externally named basic Stone structures to anonymous finite mathematical objects.
-
-Current generic relation-operator basis:
+Working generic relation-operator basis:
 
 ```text
 O0  membership / set incidence
@@ -174,8 +205,6 @@ O9  composition
 O10 cardinality
 ```
 
-The compiled pure objects use operator numbers, anonymous vertices, incidence relations, and scalars. Stone words appear only in source/audit legends.
-
 External legend only:
 
 ```text
@@ -188,11 +217,11 @@ G5 Insulation
 G6 Absence/null
 ```
 
-Directional pairing is numerically `[[0,1],[4,5],[3,2]]`.
+The pure structures use operator numbers, anonymous vertices, incidence relations, and scalars. Stone words are source/audit annotations, not mathematical identity.
 
-Important correction: the older helper `δ(a,b)=(a-b)/(a+b)` and `projectSurface(...)` are experimental structural projections used by bounded closed-math tests. They are **not** the canonical Stone measurement rule for an arbitrary entity/referent. The Stone paper defines a signed relation `Delta_(q,r)(B,D)` by range, direction, antisymmetry, and structural meaning, but does not supply one universal psychometric formula that turns arbitrary evidence into an exact coordinate. Do not silently promote the normalized-difference helper into the Stone itself.
+The old helper `δ(a,b)=(a-b)/(a+b)` and `projectSurface(...)` are bounded experimental projections. They are **not** the canonical Stone evidence→coordinate rule.
 
-## 7. Correct Stone entity–referent frame
+## 8. Canonical Stone frame
 
 The current Philosopher’s Stone paper is the canonical semantic source for Stone-specific work.
 
@@ -203,7 +232,7 @@ Phi(q,r) = (x,y,z) in O_r
 O_r = { (x,y,z) in R^3 : |x|+|y|+|z| <= 1 }
 ```
 
-Coordinates are the three signed functions:
+Coordinates are signed functions:
 
 ```text
 x = Delta_(q,r)(Empathy, Practicality)      purpose
@@ -211,105 +240,81 @@ y = Delta_(q,r)(Answerability, Insulation) accountability
 z = Delta_(q,r)(Wisdom, Knowledge)         meaning
 ```
 
-The semantic endpoints are backed by anonymous relational structures `G0...G5`, so they need not remain unexplained algebraic words in machine representation.
-
-Development is the L1 magnitude:
+Development:
 
 ```text
 L1(q,r) = ||Phi(q,r)||_1 = |x|+|y|+|z|
 ```
 
-Thus `L1=0` is null, `0<L1<1` is developing orientation, and `L1=1` is formed stance, all relative to `r`.
+`L1=0` is null, `0<L1<1` developing orientation, and `L1=1` stance, all relative to `r`.
 
-Experience is:
+Experience:
 
 ```text
 L2(q,r) = ||Phi(q,r)||_2 = sqrt(x^2+y^2+z^2)
 ```
 
-Realization changes the materially relevant scope:
+Realization changes the referent, not a radial scalar:
 
 ```text
 r -> r'
 Phi(q,r) -> Phi(q,r')
 ```
 
-The same entity `q` is re-situated relative to the revised referent. Existing development may occupy a smaller proportion of the enlarged scope and move inward, or the new reality may reorganize direction.
+The same entity `q` is re-situated relative to revised materially relevant reality. A larger referent may move prior development inward or reorganize direction.
 
-Do not use `r` as an independent radial development scalar. That earlier interpretation was wrong.
+Do not use `r` as development. That earlier interpretation was withdrawn.
 
-`stone-referent-frame.js` enforces this frame numerically when a warranted `Phi(q,r)` is supplied. It does not pretend to infer the coordinate from arbitrary evidence.
+`stone-referent-frame.js` enforces the frame once a warranted `Phi(q,r)` is supplied; it does not invent a psychometric estimator.
 
-## 8. Full canonical Stone kernel in the Universal Language
+## 9. Full Stone kernel in Universal Language math
 
-PR #18 / merge `d33dfcd7111bcbe797372b42e4cb29b0bd9c5ac6` added the generic anonymous mathematical-expression graph compiler `universal-math-graph.js` and `stone-universal-kernel.js`.
+PR #18, merge `d33dfcd7111bcbe797372b42e4cb29b0bd9c5ac6`, added `universal-math-graph.js` and `stone-universal-kernel.js`.
 
-The represented kernel includes:
+The anonymous mathematical kernel preserves:
 
 ```text
-entity / referent / orientation relation
+entity / referent / orientation
 the three signed functions and anonymous opposed pairs
 octahedral L1 bound
 L1 development
 L2 experience
-null / developing interior / stance
-realization r -> r' with the same entity re-situated
+null / interior / stance
+realization r -> r'
 unresolved purpose-meaning load L_perp = |x|+|z|
-friction F_perp = sqrt(x^2+z^2)
+reality-friction F_perp = sqrt(x^2+z^2)
 L2^2 = F_perp^2 + y^2
-stance friction bounds
 maturity (0,1,0)
 collapse (0,-1,0)
 vertical sign regions
 evidence-warranted region distinct from actual Phi(q,r)
-contextual emphasis alpha distinct from structural displacement
+contextual emphasis distinct from structural displacement
 surface directional decoding by positive parts
 ```
 
-The universal math graph canonicalizes away source variable names and assertion order. The gate verifies alpha-renaming/reordering invariance and canonical constraint sensitivity. It also verifies that no normalized ratio is smuggled in as the canonical definition of Stone `Delta`.
+The gate verified 7 anonymous Stone structures, zero semantic labels in the pure object, variable-renaming/order invariance, distinct evidence region, L1/L2 semantics, referent transition, canonical constraint sensitivity, and a 171-vertex canonical math graph.
 
-Latest bounded Stone-kernel gate:
+This is mathematical serialization/equivalence, not an evidence→human-coordinate instrument.
 
-```text
-anonymous_structure_count = 7
-semantic_labels_in_pure_object = 0
-variable_renaming_invariant = true
-constraint_order_invariant = true
-Delta retained without invented ratio = true
-referent transition present = true
-evidence region distinct = true
-L1 development / L2 experience verified = true
-realization can return same entity to interior = true
-canonical constraint sensitivity = true
-math graph vertices = 171
-```
+## 10. Empathy reality-contact result
 
-This is mathematical serialization/equivalence, not a psychometric instrument and not proof that the machine can infer a human being’s exact Stone coordinate from ordinary observations.
+`stone-reality-contact.js` receives anonymous entities/channels and controlled intervention contact without a Stone pole name or semantic relation labels.
 
-## 9. Empathy reality contact
+It can recover a non-self consequence-bearing state channel whose controlled variation changes the queried orientation and match that anonymous motif uniquely to the externally labelled Empathy structure. It transfers to a renamed world and rejects self-only dependence, spurious observational correlation, and a broken consequence chain.
 
-Empathy has a stronger grounding result than the other Stone poles.
-
-`stone-reality-contact.js` receives anonymous entities/channels and controlled intervention contact without being told a Stone pole name or semantic relation labels. It can recover a non-self consequence-bearing state channel whose controlled variation changes the queried orientation and match that motif to exactly the anonymous Stone structure externally labelled Empathy.
-
-Negative controls reject self-only dependence, spurious observational correlation, and a broken consequence chain. Transfer to a novel-ID world also passes.
-
-This establishes a bounded operational bridge:
+This establishes only a bounded bridge:
 
 ```text
-Stone Empathy anatomy
- -> anonymous operator motif
- -> controlled intervention contact
- -> same motif in a renamed world
+Empathy anatomy -> anonymous operator motif -> controlled intervention contact -> renamed-world recurrence
 ```
 
-It does not establish unrestricted raw-sensory human social understanding.
+It is not unrestricted raw-sensory human social understanding.
 
-## 10. Richer propositional / thought / pragmatic intent candidates
+## 11. Richer propositional/thought/pragmatic candidate anatomy
 
-PR #19 / merge `789b16e9dbf97254a3e459b65cc7ced06ec62a94` added `abstract-intent-kernel.js` and extended the generic math graph with set operators (`INTERSECT`, `UNION`, `COMPLEMENT`, `NEQ`). These operator IDs are working serialization vocabulary, not asserted irreducible ontology.
+PR #19, merge `789b16e9dbf97254a3e459b65cc7ced06ec62a94`, added `abstract-intent-kernel.js` and set-style math operators to the generic graph substrate.
 
-Thirteen families now have explicit assistant-proposed, corrigible mathematical anatomy:
+Thirteen assistant-proposed, corrigible candidate families:
 
 ```text
 belief
@@ -327,13 +332,13 @@ promise
 obligation
 ```
 
-The candidate strategy treats proposition content through sets of compatible worlds/states and distinguishes attitudes by additional relations such as live-model restriction, unresolved partitions, hypothetical models, historical contact, entailment/update, future ranking, action-to-outcome realization, communication, commitment transition, and source-imposed constraint.
+The candidates use combinations of compatible-world/state sets, live-model restriction, unresolved proposition partitions, hypothetical models, historical contact, entailment/update, future ranking, action→outcome realization, communication, commitment transition, and source-imposed constraint.
 
-Important examples of candidate structural reuse/non-identity:
+Structural reuse/non-identities currently encoded:
 
 ```text
-intention preserves the desire-ranking core and adds action/outcome realization
-consideration and yes/no question preserve the doubt/unresolved-partition core
+intention preserves desire-ranking core + adds action/outcome realization
+consideration and yes/no question preserve doubt/unresolved-partition core
 belief != assertion
 desire != intention
 question != assertion
@@ -343,110 +348,110 @@ inference != assertion
 memory != belief
 ```
 
-The first PR #19 gate deliberately failed because the test incorrectly assumed intention must introduce a new *single-constraint type* beyond desire. In fact it added new connected structure using already recurring constraint types. The machinery was left unchanged; the test was corrected to require preservation of the desire constraints plus greater connected structure/vertex count. This failure is useful evidence against optimizing the implementation to a preconceived test.
+The first PR #19 gate failed because the test incorrectly assumed intention must add a new *single-constraint type* beyond desire. The implementation was not altered to satisfy that mistake; the test was corrected to require preserved desire constraints plus greater connected structure. Final gate passed with 13 distinct anonymous mathematical structures, zero family labels in the pure object, renaming/order invariance, 13 recurring anonymous constraint motifs, and 365 total pure graph vertices.
 
-Final anti-cheat run `38847401019` passed all Universal Language gates. New gate result:
+Do not call these thirteen semantics solved. They are explicit, structurally falsifiable candidate anatomies.
 
-```text
-candidate_families = 13
-candidate_status = proposed_corrigible_anatomy
-distinct_anonymous_math_structures = 13
-semantic_family_labels_in_pure_object = 0
-all_variable_renaming_invariant = true
-all_constraint_order_invariant = true
-recurring_anonymous_constraint_motifs = 13
-broadest_recurring_motif_family_count = 13
-desire_core_preserved_inside_intention = true
-doubt_core_preserved_inside_consideration_and_question = true
-belief_not_assertion = true
-desire_not_intention = true
-question_not_assertion = true
-command_not_promise = true
-promise_not_obligation = true
-inference_not_assertion = true
-memory_not_belief = true
-pure_graph_vertices_total = 365
-```
+## 12. English -> live corrigible candidate mathematics
 
-Do **not** call these thirteen families solved or reality-grounded. What is established is that coherent, name-independent, mathematically distinct candidate anatomies can be expressed in the same Universal Language substrate, reuse recurring relations, and survive structural falsification. Their semantic correspondence still needs independent support/correction.
+PR #21, merge `9efafb123df1fa3ad4c031db184d4207d8513617`, added `english-math-bridge.js` and a generic `math_graph` grounding surface to `universal-language.js`.
 
-## 11. Meaning of `1`
+The bridge stores only an opaque learned surface-relation reference -> opaque math-hypothesis ID. It retrieves the mathematical graph live from `math-hypotheses.js`; it does not freeze a copy. Therefore candidate revision/defeat can invalidate an old English→math attachment, and later support can restore the revised math without retraining the English expression.
 
-Do not force heterogeneous semantic relations to be mutually exclusive probability slices just so they add to one.
+### Preserved falsification history
 
-For a resolved intention predicate `P_I`:
+1. **Lexical/context-only failure:** with identical context across all 13 abstract families, 13 supervised opaque relation IDs collapsed to 4 lexical/context clusters. Conclusion: bag-like lexical similarity is insufficient for neighboring abstract intents.
+
+2. **Structural-cosine failure:** adding generic anonymous math-graph local features made the rich candidate structures visible, but high structural cosine collapsed all 13 to one relation because related rich graphs share much of their mathematical structure. Correction: when both relations are math-grounded, automatic learned equivalence now requires exact name-invariant math-structure identity; partial structural similarity is overlap, not identity.
+
+3. **English surface ambiguity:** after preserving 13 distinct math-grounded relations, base `F` still resolved only `10/13` English-only holdouts. The misses were belief→obligation, imagination→obligation, and desire→command, all by small margins because common scaffolding words outweighed the discriminating verb. Correction: `english-math-bridge.js` uses a generic IDF-like contrastive projection over the learned relation lexicon. No stopword list or intent-specific rule exists; features shared across many learned relations lose discriminating weight automatically.
+
+### Final bounded gate
+
+Anti-cheat run `38849187676` passed the complete Universal Language suite. English correlation school run `38849187699` also passed.
+
+New gate supervision/evidence:
 
 ```text
-K_I = { omega : P_I(omega) }
-mu_I(K_I) = 1
+families = 13
+opaque relation supervision contacts = 39
+math-structurally-grounded training contacts = 38
+semantic family labels given to F = 0
+hypothesis IDs given to F = 0
+explicit equivalences given to F = 0
+whole-graph-signature fingerprint features given to F = 0
+same context across all 13 = true
+distinct learned opaque surface relations = 13
+base F English-only holdout hits = 10/13
+generic contrastive surface bridge hits = 13/13
+holdout math graphs supplied = 0
+unsupported candidate binding refused = true
+candidate revision suspends stale English->math without English retraining = true
+newly supported revision reaches old English without retraining = true
+semantic family labels in pure bridge = 0
+bridge whole = 1
 ```
 
-The constraints jointly define the whole. Overlapping relations may overlap, nest, coincide, contradict, or contain one another.
+Important evidence boundary:
 
-Useful shorthand: `add freely, resolve globally`.
+```text
+13/13 establishes bounded English attachment to proposer-supplied,
+corrigible candidate mathematics through a generic language-surface interface.
+It does NOT prove those candidate anatomies are semantically true in reality.
+```
 
-A relation can itself be examined as a local whole `1` with subrelations.
+The base F score remains explicitly `10/13`; do not rewrite the result as though F alone achieved 13/13.
 
-## 12. How intent mathematization discovers the universal language
+## 13. How intent mathematization discovers the Universal Language
 
 Intent mathematization and universal-relation discovery are not separate sequential projects.
 
 ```text
-I
+expression/intention
  -> propose/expose relational anatomy
  -> reuse existing relations where possible
  -> recursively reduce definitions
  -> canonicalize
- -> identify genuinely new recurring relations
- -> ground/correct them
+ -> identify recurring or genuinely new relations
+ -> support/defeat/correct them
+ -> strengthen Universal Language
  -> re-resolve old and new intentions
 ```
 
-If another unrelated intention exposes the same structure, that recurrence is evidence that the relation is more general than one phrase-specific decomposition. Relations may later merge, split, weaken, or acquire lower definitions. Older intentions should then be reinterpretable rather than frozen.
+If different intentions expose the same lower structure, recurrence is evidence that the relation is more general than one phrase-specific decomposition. Relations may later merge, split, weaken, or acquire deeper definitions. Older intentions should then change with the improved field rather than remain frozen.
+
+The 13 abstract candidates are the first richer explicit test of this loop: recurring anonymous constraint motifs appeared across all thirteen structures. Recurrence is not semantic proof, but it identifies concrete candidate universal relations.
+
+## 14. Current frontier
+
+Do not claim completion. Major open fronts:
 
 ```text
-solve intentions
- -> expose recurring relations
- -> improve Universal Language
- -> solve intentions more precisely
- -> expose deeper relations
- -> ...
-```
-
-The thirteen abstract-intent candidates are the first explicit test of this loop at a richer level: the compiler found recurring anonymous constraint motifs across all thirteen candidate structures. Recurrence is not proof of semantic truth, but it gives concrete candidates for reusable universal relations.
-
-## 13. What remains unsolved
-
-Do not claim completion.
-
-Major open fronts include:
-
-```text
-independent support/defeat/reopening for full universal-math-graph candidates
-English/paraphrase -> richer candidate math under anti-cheat withholding
-nested attitudes: e.g. Alice believes Bob doubts P
+independent reality/formal support for the 13 abstract candidate anatomies
+stronger evidence that candidate relation decompositions are correct rather than merely coherent
+nested attitudes: Alice believes Bob doubts P
 open questions beyond yes/no partitions
-conditional/counterfactual intention and belief
-degree/probability vs categorical belief
-permission, denial, normative authority/source structure
-negation/quantification/modality at strong mathematical-anatomy level
-general action intention beyond bounded executable families
+conditional and counterfactual belief/intention
+categorical vs graded/probabilistic belief
+permission/denial/normative authority
+strong negation/quantification/modality anatomy
+general action intention beyond the 16 bounded executable families
 arbitrary compositional/discourse English
-autonomous discovery of rich relation candidates without an LLM proposer
-reality grounding of all Stone poles beyond supplied semantic structure
-unrestricted sensory grounding from pixels/audio/etc.
+cross-language convergence into the same math structures
+autonomous relation discovery without an LLM proposer
+reality grounding of the remaining Stone structures
+unrestricted sensory grounding
 exact evidence -> Stone-coordinate instrumentation
-proof that the working mathematical/operator basis is irreducible or complete
-proof of a universal language for every possible meaning/relation
+recursive reduction of the working math operator vocabulary itself
+proof/disproof of a complete universal structural normal form
+proof/disproof of universality for every possible meaning/relation
 ```
 
-For Stone, the paper supplies the semantic/specification target. The remaining technical problem is faithful Universal-Language translation, recursive reduction, grounding, and eventually evidence-sensitive inference of `Phi(q,r)` without inventing a hidden evaluator.
+Immediate next technical direction: use independent constraints/contacts and nested/compositional cases to pressure-test the 13 candidate anatomies and their recurring subrelations. Do not merely add more family names; force reuse, composition, contradiction, correction, and lower reduction.
 
-For richer intent, the immediate priority is to make the new mathematical candidates corrigible by the same support/defeat logic as other proposed relations, then test whether English paraphrases attach to the candidate structures without giving the resolver semantic family labels.
+## 15. Evidence discipline
 
-## 14. Evidence discipline
-
-Keep these distinctions explicit:
+Keep these non-identities explicit:
 
 ```text
 proposal != truth
@@ -456,22 +461,23 @@ formal equivalence != empirical grounding
 primer-grounded structure != autonomous discovery
 controlled intervention grounding != unrestricted sensory grounding
 formal Stone kernel != psychometric coordinate estimator
+surface-language classifier != universal relational ontology
 stable != metaphysically final
 unknown != false
 ```
 
-Names and dictionaries are teaching/display handles. They do not define mathematical identity.
+Names/dictionaries are teaching or display handles. They do not define mathematical identity.
 
-With a score, always state the denominator and leakage/supervision conditions. Never describe the 54/56 or 83/88 regressions as a percentage of English.
+With a score, state denominator and supervision/leakage conditions. Never describe `54/56` or `83/88` as a percentage of English.
 
-## 15. Context-loss procedure
+## 16. Context-loss procedure
 
 Before changing architecture or declaring a capability absent:
 
 1. read this file and `AGENTS.md`;
 2. search the repository for the mechanism/invariant;
-3. recover why it exists and what falsification it survived;
-4. treat absence from current conversation as unknown;
-5. preserve prior tests and failures;
-6. prefer additive bounded experiments when the relation to canonical `one-mind.js` is uncertain;
+3. recover why it exists and what failure/falsification introduced it;
+4. treat absence from current context as unknown;
+5. preserve prior failures/tests;
+6. prefer bounded additive experiments when relation to canonical `one-mind.js` is uncertain;
 7. do not create another continuity/handoff markdown file.
