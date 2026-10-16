@@ -36,7 +36,13 @@ const MOP = Object.freeze({
   INTERSECT:20,
   UNION:21,
   COMPLEMENT:22,
-  NEQ:23
+  NEQ:23,
+  // Generic meta-mathematical operators used for recursive meaning.
+  // QUOTE turns a Boolean formula into a first-class formula object without
+  // collapsing its internal structure. EXTENSION maps such a formula object,
+  // relative to a universe, to the set of states/worlds satisfying it.
+  QUOTE:24,
+  EXTENSION:25
 });
 
 const COMMUTATIVE = new Set([
