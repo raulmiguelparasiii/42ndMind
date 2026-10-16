@@ -8,6 +8,13 @@
 // hypothesis or to an opaque unresolved mathematical alternative space. The
 // mathematical object is fetched live from math-hypotheses.js; no graph/status
 // is copied into the bridge.
+//
+// Surface disambiguation is contrastive rather than a second semantic theory:
+// lexical dimensions shared by many learned relations are downweighted, while
+// dimensions that discriminate among the current relation field receive more
+// weight. This is the ordinary information-retrieval IDF principle applied to
+// the language-specific surface interface; no English word or intent family is
+// privileged by the algorithm.
 
 const {currentMathSpace}=require('./math-hypotheses');
 const EPS=1e-12;
@@ -39,6 +46,9 @@ function bindEnglishMath(B,U,L,relationRef,hypothesisId){
   return b;
 }
 
+// Surface language may attach before one mathematical candidate has won. The
+// bridge stores only the opaque space reference. Resolution/correction remains
+// entirely inside math-hypotheses.js and is dereferenced on every read.
 function bindEnglishMathSpace(B,U,L,relationRef,spaceId){
   assertBridge(B);assertUniversal(U);assertLedger(L);
   const relation=canonicalRelation(U,relationRef);
@@ -138,15 +148,27 @@ function aggregateCanonicalLexical(U){
 }
 function idfWeights(docs){
   const N=docs.length,df={};
-  for(const d of docs){for(const k of Object.keys(d.lexical||{}))if(Math.abs(d.lexical[k])>EPS)df[k]=(df[k]||0)+1;}
-  const out={};for(const [k,n] of Object.entries(df))out[k]=1+Math.log((N+1)/(n+1));return out;
+  for(const d of docs){
+    for(const k of Object.keys(d.lexical||{}))if(Math.abs(d.lexical[k])>EPS)df[k]=(df[k]||0)+1;
+  }
+  const out={};
+  for(const [k,n] of Object.entries(df))out[k]=1+Math.log((N+1)/(n+1));
+  return out;
 }
 function weightedCos(a,b,w){
-  const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);let dot=0,aa=0,bb=0;
-  for(const k of keys){const weight=w[k]||1,x=a?.[k]||0,y=b?.[k]||0;dot+=weight*x*y;aa+=weight*x*x;bb+=weight*y*y;}
+  const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);
+  let dot=0,aa=0,bb=0;
+  for(const k of keys){
+    const weight=w[k]||1,x=a?.[k]||0,y=b?.[k]||0;
+    dot+=weight*x*y;aa+=weight*x*x;bb+=weight*y*y;
+  }
   const d=Math.sqrt(aa*bb);return d>EPS?Math.max(-1,Math.min(1,dot/d)):0;
 }
 
+// Returns a language-surface relation using only the learned lexical field.
+// Common features (speaker names, articles, generic scaffolding words, etc.)
+// lose discriminating power automatically because they occur across many
+// relation documents. No stop-word list or intent-specific token rule exists.
 function contrastiveSurfaceRelation(U){
   assertUniversal(U);
   const encounter=[...(U.encounters||[])].reverse().find(e=>e.step===U.current?.step)||(U.encounters||[]).at(-1);
