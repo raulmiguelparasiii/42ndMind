@@ -5,12 +5,12 @@
 // This file owns no semantic truth, candidate status, revision, or correction.
 // `math-hypotheses.js` remains the sole live authority. This layer reads the
 // current live alternative space and asks a narrower mathematical question:
-// which anonymous relations are forced by every currently maximal live
-// alternative and are themselves warranted by the space's stored contact?
+// which complete lower mathematical relations are forced by every currently
+// maximal live alternative and are themselves warranted by stored contact?
 //
 // For an opaque meaning-space r, let K_r be its current maximal live candidate
-// frontier and let g ⪯ h mean anonymous labelled-graph substructure. A relation
-// is currently stabilized when:
+// frontier and let g ⪯ h mean anonymous labelled-graph substructure. A complete
+// source-backed relation is currently stabilized when:
 //
 //   g ⪯ h for every h in K_r,
 //   some targeted contact structurally supports g, and
@@ -19,8 +19,9 @@
 // The full intent is resolved only when the upstream ledger resolves the space.
 // Before that, stabilized lower relations can coexist with an explicitly
 // unresolved remainder. Across spaces, equal canonical graph signatures are
-// the same anonymous structural relation; recurrence therefore exposes candidate
-// Universal-Language relations without a semantic family dictionary.
+// the same anonymous structural relation. Graph-only maximum-common subgraphs
+// remain provisional discovery structure because arbitrary edge-subgraphs can be
+// serialization fragments rather than complete mathematical relations.
 
 const {MOP,compileMathGraph}=require('./universal-math-graph');
 const {canonicalGraph}=require('./relational-normal-form');
@@ -142,7 +143,10 @@ function commonToAll(pattern,graphs,options={}){
 // Exact within a bounded search budget: breadth-first edge deletion starts at
 // the smallest current frontier graph. The first common level therefore has the
 // maximum number of relational edges among all edge-subgraphs of that graph.
-// If a search/canonicalization budget is exceeded, no pseudo-answer is returned.
+// This is structural-overlap discovery only: an arbitrary edge-subgraph need not
+// be a complete mathematical formula, so callers must not promote it to a
+// stabilized Universal-Language relation by itself. If a search/canonicalization
+// budget is exceeded, no pseudo-answer is returned.
 function maximumCommonSubgraphs(graphInputs,options={}){
   const graphs=graphInputs.map(x=>asCompiledMath(x,options));
   if(!graphs.length)return{complete:true,reason:'no-frontier',edge_count:0,cores:[],states:0};
@@ -208,12 +212,22 @@ function stabilizedIntent(L,spaceId,options={}){
   const constraints=sharedConstraintRelations(L,spaceId,f.frontier,options);
   const core=maximumCommonSubgraphs(graphs,options);
   const coreRelations=core.complete?core.cores.map(graph=>({
-    kind:'maximum-common-relational-core',signature:graph.signature,graph,
-    frontier_support:f.frontier.slice(),evidence:evidenceVerdict(L,spaceId,graph,options)
+    kind:'maximum-common-structural-core',signature:graph.signature,graph,
+    frontier_support:f.frontier.slice(),evidence:evidenceVerdict(L,spaceId,graph,options),
+    provisional_reason:'graph substructure is not necessarily a complete mathematical relation'
   })):[];
-  const invariants=dedupeRelations([...constraints,...coreRelations]);
-  const stabilized=invariants.filter(r=>r.evidence?.warranted);
-  const provisional=invariants.filter(r=>!r.evidence?.warranted);
+
+  // Only complete source-backed mathematical constraints can be promoted into
+  // the categorical stabilized relation field. Graph-only common structure is
+  // still exposed as a discovery invariant, but remains provisional even when
+  // contact happens to contain the same graph fragment.
+  const stabilized=dedupeRelations(constraints.filter(r=>r.evidence?.warranted));
+  const stabilizedSignatures=new Set(stabilized.map(r=>r.signature));
+  const provisional=dedupeRelations([
+    ...constraints.filter(r=>!r.evidence?.warranted),
+    ...coreRelations
+  ]).filter(r=>!stabilizedSignatures.has(r.signature));
+
   const maxEdges=graphs.reduce((n,g)=>Math.max(n,g.edges.length),0);
   const structuralCommonEdgeRatio=core.complete&&core.edge_count!==null&&maxEdges
     ? core.edge_count/maxEdges
@@ -282,6 +296,7 @@ function stabilizedMathForRelation(B,U,L,relation,options={}){
     stabilized_spaces:spaceViews.map(s=>({
       space:s.space,status:s.status,frontier:s.frontier,
       stabilized_relation_signatures:s.stabilized_relations.map(r=>r.signature),
+      provisional_relation_signatures:s.provisional_invariants.map(r=>r.signature),
       common_core:s.common_core,
       structural_common_edge_ratio:s.structural_common_edge_ratio
     }))
