@@ -105,8 +105,21 @@ async function main(){
     const expectedSignature=L.candidates[`h${i}`].signature;
     const hit=top(U)===expectedRelation && resolved.status==='resolved-candidate-math' && resolved.signature===expectedSignature;
     if(hit)hits++;
-    heldout.push({index:i,relation:top(U),expected_relation:expectedRelation,math_signature:resolved.signature||null,hit});
+    heldout.push({
+      index:i,
+      family:name,
+      text:school[name].holdout,
+      relation:top(U),
+      expected_relation:expectedRelation,
+      math_signature:resolved.signature||null,
+      expected_math_signature:expectedSignature,
+      top_matches:(U.current?.resolution?.matches||[]).slice(0,4).map(x=>({relation:x.relation,score:x.score})),
+      hit
+    });
   }
+  // Print before asserting so a failed run remains diagnostically useful.
+  console.log('ABSTRACT HOLDOUT DIAGNOSTICS');
+  console.log(JSON.stringify({hits,total:13,heldout},null,2));
   assert.strictEqual(hits,13,`only ${hits}/13 English holdouts reached their candidate mathematics`);
 
   // Correct one candidate after English has already learned it. No English
