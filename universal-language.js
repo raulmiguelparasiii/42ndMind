@@ -11,6 +11,7 @@
 // supplied to F and is attached to the stabilized relation as an explanation.
 
 const fs = require('fs');
+const { canonicalGraph } = require('./relational-normal-form');
 const EPS = 1e-12;
 const VERSION = 2;
 const INTENT_MATH_VERSION = 1;
@@ -70,7 +71,72 @@ function executionFeatures(ex){
   return vUnit(out);
 }
 function factFeatures(facts){ const out={}; for(const f of facts||[]) out[`rel:${Array.isArray(f)&&f.length===3?stable(f[0])+'|'+stable(f[1])+'|'+stable(f[2]):stable(f)}`]=1; return vUnit(out); }
-function parts(contact){ return {lexical:textFeatures(contact?.utterance||contact?.text||''),context:contextFeatures(contact?.context),ground:vUnit(vAdd(vAdd({},executionFeatures(contact?.execution)),factFeatures(contact?.facts)))}; }
+
+// A mathematical graph is another grounding surface, like an execution trace or
+// structured fact contact. We deliberately do NOT use its whole-graph signature
+// as one categorical fingerprint. Instead we expose name-invariant structural
+// features: operator/edge counts and many local neighbourhood motifs. Arbitrary
+// vertex names therefore cannot create meaning, and two graphs can partially
+// overlap because they share actual mathematical substructure.
+function mathGraphFeatures(graph){
+  const out={};
+  if(!graph)return out;
+  if(!Array.isArray(graph.edges))throw new Error('math_graph requires an edges array');
+  const canonical=canonicalGraph({edges:graph.edges.map(e=>e.slice())},{maxStates:250000});
+  const edges=canonical.edges||[];
+  const add=(k,w=1)=>{out[k]=(out[k]||0)+w;};
+  add('math:vertices',Math.sqrt(Math.max(1,canonical.vertex_count||0)));
+  add('math:edges',Math.sqrt(Math.max(1,edges.length)));
+
+  const vertices=[...new Set(edges.flatMap(e=>[String(e[1]),String(e[2])]))];
+  const self=new Map(vertices.map(v=>[v,[]]));
+  for(const [label,a,b] of edges){
+    const l=stable(label),aa=String(a),bb=String(b);
+    add(`math:label:${l}`,1);
+    if(aa===bb)self.get(aa)?.push(l);
+  }
+  let colors=new Map(vertices.map(v=>[v,stable((self.get(v)||[]).sort())]));
+  for(const c of colors.values())add(`math:node0:${hash32(c)}`,1);
+
+  const nonself=edges.filter(e=>String(e[1])!==String(e[2]));
+  for(const [label,a,b] of nonself){
+    const l=stable(label),aa=String(a),bb=String(b);
+    add(`math:edge0:${hash32(stable([colors.get(aa),l,colors.get(bb)]))}`,1);
+  }
+
+  // Two rounds of Weisfeiler-Lehman-like local refinement yield many local
+  // structural motifs, not one whole-object address.
+  for(let roundIndex=1;roundIndex<=2;roundIndex++){
+    const next=new Map();
+    for(const v of vertices){
+      const outgoing=nonself.filter(e=>String(e[1])===v).map(e=>['o',stable(e[0]),colors.get(String(e[2]))]).sort((a,b)=>stable(a).localeCompare(stable(b)));
+      const incoming=nonself.filter(e=>String(e[2])===v).map(e=>['i',stable(e[0]),colors.get(String(e[1]))]).sort((a,b)=>stable(a).localeCompare(stable(b)));
+      const sig=stable([colors.get(v),outgoing,incoming]);
+      next.set(v,hash32(sig));
+      add(`math:node${roundIndex}:${hash32(sig)}`,1);
+    }
+    colors=next;
+  }
+
+  // Labeled two-edge walks retain argument/order structure while dropping all
+  // vertex identities.
+  for(const e1 of nonself){
+    const mid=String(e1[2]);
+    for(const e2 of nonself){
+      if(String(e2[1])!==mid)continue;
+      add(`math:path2:${hash32(stable([e1[0],e2[0]]))}`,0.5);
+    }
+  }
+  return vUnit(out);
+}
+
+function parts(contact){
+  const ground={};
+  vAdd(ground,executionFeatures(contact?.execution));
+  vAdd(ground,factFeatures(contact?.facts));
+  vAdd(ground,mathGraphFeatures(contact?.math_graph));
+  return {lexical:textFeatures(contact?.utterance||contact?.text||''),context:contextFeatures(contact?.context),ground:vUnit(ground)};
+}
 function evidenceParts(evidence){
   const out={lexical:{},context:{},ground:{}}; const list=Array.isArray(evidence)?evidence:evidence?[evidence]:[];
   for(const e of list){ const k=typeof e==='string'?e:e?.dimension; if(!k) continue; const w=typeof e==='object'?Math.max(EPS,Number(e.weight)||1):1; const dst=k.startsWith('txt:')||k.startsWith('form:')?out.lexical:k.startsWith('ctx:')?out.context:out.ground; dst[k]=(dst[k]||0)+w; }
@@ -232,14 +298,14 @@ function reResolve(U,fieldChanged){
 function refreshMetrics(U,passes){const active=U.relation_order.map(id=>U.relations[id]).filter(r=>r?.active),rs=U.encounters.map(e=>e.resolution).filter(Boolean),unknown=mean(rs.map(r=>r.unknown_mass)),resolution=mean(rs.map(r=>r.matches?.[0]?.score||0)),grounding=active.length?mean(active.map(r=>clamp(r.grounded_support/Math.max(1,r.observations)))):0,stability=active.length?mean(active.map(r=>r.stability)):0,consistency=active.length?clamp(1-mean(active.map(r=>clamp(r.contradiction_support/Math.max(1,r.support))))):1,coverage=1-unknown,vals=[coverage,resolution,grounding,stability,consistency].map(x=>Math.max(EPS,x)),progress=Math.exp(vals.reduce((s,x)=>s+Math.log(x),0)/vals.length),w=30,n=Math.round(w*progress);U.metrics={progress:round(progress),coverage:round(coverage),resolution:round(resolution),grounding:round(grounding),consistency:round(consistency),stability:round(stability),unknown_mass:round(unknown),relations:active.length,canonical_relations:U.equivalence_sets.length,encounters:U.encounters.length,fixed_point_passes:passes,bar:`[${'#'.repeat(n)}${'-'.repeat(w-n)}] ${(100*progress).toFixed(2).padStart(6)}%`};}
 function fixedPoint(U,fieldChanged){let passes=0;for(let i=0;i<U.config.fixed_point_passes;i++){refreshStability(U);const changed=canonicalize(U);refreshContradiction(U);reResolve(U,fieldChanged);passes=i+1;if(!changed)break;}refreshMetrics(U,passes);return passes;}
 function candidates(contact,signal){const out=[];for(const [src,name] of [[contact?.relations,contact?.source||'contact'],[contact?.candidates,contact?.source||'contact'],[signal?.relations,'semantic_signal'],[signal?.candidates,'semantic_signal']])if(Array.isArray(src))for(const c of src)if(c&&typeof c==='object')out.push({candidate:c,source:name});return out;}
-function oracleView(U,contact,p){return{law:'U(t+1)=F(U(t)⊕X(t+1)); whole=1',step:U.step,contact:{utterance:contact.utterance||contact.text||null,context:contact.context||null,execution:contact.execution||null,facts:contact.facts||null},relations:canonicalRelations(U).sort((a,b)=>b.support-a.support).slice(0,128).map(r=>({id:r.id,labels:r.labels,members:r.members,support:round(r.support),stability:round(r.stability),lexical:topVector(r.lexical,5),context:topVector(r.context,5),ground:topVector(r.ground,5),anatomy:r.anatomy?.signature?{status:r.anatomy.status,signature:r.anatomy.signature,formula:r.anatomy.formula}:null})),observed:{lexical:topVector(p.lexical),context:topVector(p.context),ground:topVector(p.ground)},signal_contract:{candidates:[{id:'optional',label:'optional',evidence:['optional dimensions'],parents:['optional'],children:['optional'],equivalent_to:['optional'],contradicts:['optional']}]}};}
+function oracleView(U,contact,p){return{law:'U(t+1)=F(U(t)⊕X(t+1)); whole=1',step:U.step,contact:{utterance:contact.utterance||contact.text||null,context:contact.context||null,execution:contact.execution||null,facts:contact.facts||null,math_graph:contact.math_graph?{vertex_count:contact.math_graph.vertex_count??null,edge_count:Array.isArray(contact.math_graph.edges)?contact.math_graph.edges.length:0}:null},relations:canonicalRelations(U).sort((a,b)=>b.support-a.support).slice(0,128).map(r=>({id:r.id,labels:r.labels,members:r.members,support:round(r.support),stability:round(r.stability),lexical:topVector(r.lexical,5),context:topVector(r.context,5),ground:topVector(r.ground,5),anatomy:r.anatomy?.signature?{status:r.anatomy.status,signature:r.anatomy.signature,formula:r.anatomy.formula}:null})),observed:{lexical:topVector(p.lexical),context:topVector(p.context),ground:topVector(p.ground)},signal_contract:{candidates:[{id:'optional',label:'optional',evidence:['optional dimensions'],parents:['optional'],children:['optional'],equivalent_to:['optional'],contradicts:['optional']}]}};}
 function mathematicalEquivalent(U,ref=null){
   assertState(U);let id=ref?resolveRef(U,ref):U.current?.resolution?.components?.[0]?.relation||null;if(!id&&ref&&U.canonical[String(ref)])id=String(ref);if(!id)return null;const canonical=U.canonical[id]||id;const r=canonicalRelations(U).find(x=>x.id===canonical);return r?{canonical_relation:canonical,...r.anatomy}:null;
 }
 async function F(U,contact,oracle=null){
   assertState(U);if(!contact||typeof contact!=='object')throw new Error('X must be a contact object');U.step++;const p=parts(contact);let signal=null;if(oracle){if(typeof oracle!=='function')throw new Error('oracle must be a function');signal=await oracle(oracleView(U,contact,p));if(signal!=null&&typeof signal!=='object')throw new Error('oracle signal must be object or null');}
-  const proposed=candidates(contact,signal),ids=[];const provenanceBase={step:U.step,utterance:contact.utterance||contact.text||null,execution:clone(contact.execution||null),context:clone(contact.context||{}),facts:clone(contact.facts||null)};for(const {candidate,source} of proposed)ids.push(updateRelation(U,candidate,p,{...provenanceBase,source}));syncHierarchy(U);if((contact.facts||[]).length&&!proposed.length)ids.push(updateRelation(U,{label:`§relation-${U.step}`,facts:contact.facts,support:.35},p,{...provenanceBase,source:'structured_contact'}));
-  const e={id:`i:${U.step}:${hash32(stable({u:contact.utterance||contact.text||null,c:contact.context||null,e:contact.execution||null}))}`,step:U.step,utterance:contact.utterance||contact.text||null,parts:p,hints:ids.slice(),resolution:null,hint_signature:'',resolved_revision:-1};U.encounters.push(e);if(U.encounters.length>U.config.history_limit)U.encounters.splice(0,U.encounters.length-U.config.history_limit);const passes=fixedPoint(U,proposed.length>0);e.resolution=resolveParts(U,p,ids);e.hint_signature=stable(canonicalHints(U,ids));U.current={step:U.step,contact,proposed_relations:ids,resolution:e.resolution,mathematical_equivalent:e.resolution.components?.[0]?.anatomy||null,discrepancies:e.resolution.unresolved_dimensions,metrics:U.metrics};U.audit.push({step:U.step,proposed_relations:ids,canonical:ids.map(id=>U.canonical[id]||id),unknown_mass:round(e.resolution.unknown_mass),progress:U.metrics.progress,fixed_point_passes:passes,anatomy_signature:e.resolution.components?.[0]?.anatomy?.signature||null});if(U.audit.length>U.config.history_limit)U.audit.splice(0,U.audit.length-U.config.history_limit);return U;
+  const proposed=candidates(contact,signal),ids=[];const provenanceBase={step:U.step,utterance:contact.utterance||contact.text||null,execution:clone(contact.execution||null),context:clone(contact.context||{}),facts:clone(contact.facts||null),math_graph:clone(contact.math_graph||null)};for(const {candidate,source} of proposed)ids.push(updateRelation(U,candidate,p,{...provenanceBase,source}));syncHierarchy(U);if((contact.facts||[]).length&&!proposed.length)ids.push(updateRelation(U,{label:`§relation-${U.step}`,facts:contact.facts,support:.35},p,{...provenanceBase,source:'structured_contact'}));
+  const e={id:`i:${U.step}:${hash32(stable({u:contact.utterance||contact.text||null,c:contact.context||null,e:contact.execution||null,m:contact.math_graph?mathGraphFeatures(contact.math_graph):null}))}`,step:U.step,utterance:contact.utterance||contact.text||null,parts:p,hints:ids.slice(),resolution:null,hint_signature:'',resolved_revision:-1};U.encounters.push(e);if(U.encounters.length>U.config.history_limit)U.encounters.splice(0,U.encounters.length-U.config.history_limit);const passes=fixedPoint(U,proposed.length>0);e.resolution=resolveParts(U,p,ids);e.hint_signature=stable(canonicalHints(U,ids));U.current={step:U.step,contact,proposed_relations:ids,resolution:e.resolution,mathematical_equivalent:e.resolution.components?.[0]?.anatomy||null,discrepancies:e.resolution.unresolved_dimensions,metrics:U.metrics};U.audit.push({step:U.step,proposed_relations:ids,canonical:ids.map(id=>U.canonical[id]||id),unknown_mass:round(e.resolution.unknown_mass),progress:U.metrics.progress,fixed_point_passes:passes,anatomy_signature:e.resolution.components?.[0]?.anatomy?.signature||null});if(U.audit.length>U.config.history_limit)U.audit.splice(0,U.audit.length-U.config.history_limit);return U;
 }
 
-module.exports={one,F,save,load,oracleView,deriveAnatomy,mathematicalEquivalent};
+module.exports={one,F,save,load,oracleView,deriveAnatomy,mathematicalEquivalent,mathGraphFeatures};
