@@ -3,9 +3,10 @@
 const assert=require('assert');
 const {MOP}=require('./universal-math-graph');
 const {inferMathTypes}=require('./universal-math-types');
+const {INTENT_ORDER}=require('./abstract-intent-kernel');
 const {
-  DEF,oneRecursiveIntentState,addAtom,addClause,reviseDefinition,
-  defaultDefinitionTemplate,buildRecursiveSource,compileRecursiveIntent,
+  DEF,oneRecursiveIntentState,addAtom,addClause,reviseDefinition,setDefinitionActive,
+  defaultDefinitionTemplate,recursiveIntentLegend,buildRecursiveSource,compileRecursiveIntent,
   anonymousRecursiveIntent,helpers
 }=require('./recursive-intent-composition');
 
@@ -25,6 +26,14 @@ function makeNested(outerDef,innerDef,{outerSubject='a',innerSubject='b',namespa
   return {S,p,inner,root,compiled:compileRecursiveIntent(S,root,{namespace})};
 }
 
+function makeNestedSource(outerDef,innerDef,{outerSubject='a',innerSubject='b'}={}){
+  const S=oneRecursiveIntentState();
+  addAtom(S,'p','p');
+  addClause(S,'inner',{definition:innerDef,subject:innerSubject,content:'p'});
+  addClause(S,'root',{definition:outerDef,subject:outerSubject,content:'inner'});
+  return {S,source:buildRecursiveSource(S,'root')};
+}
+
 function walk(expr,fn){
   fn(expr);
   if(expr&&expr.kind==='app')expr.args.forEach(x=>walk(x,fn));
@@ -39,6 +48,9 @@ function containsEmbeddedObject(expr,target){
   });
   return found;
 }
+
+assert.strictEqual(Object.keys(DEF).length,INTENT_ORDER.length);
+assert.strictEqual(Object.keys(recursiveIntentLegend()).length,INTENT_ORDER.length);
 
 const flatBelief=makeFlat(DEF.BELIEF).compiled;
 const beliefDoubt=makeNested(DEF.BELIEF,DEF.DOUBT);
@@ -62,27 +74,43 @@ assert.strictEqual(inferMathTypes(flatBelief.source.expressions).well_typed,true
 assert.strictEqual(inferMathTypes(beliefDoubt.compiled.source.expressions).well_typed,true);
 assert.strictEqual(inferMathTypes(doubtBelief.compiled.source.expressions).well_typed,true);
 
-// 4. Arbitrary source/node/agent names do not determine mathematical identity.
+// 4. Every current candidate anatomy can now be used as a recursive clause.
+// Flat candidate graphs stay distinct, while each family can also take a full
+// belief formula as nested content without family-specific recursion code.
+const flatSignatures=new Set();
+for(let i=0;i<INTENT_ORDER.length;i++){
+  const flat=makeFlat(i,`agent-${i}`).compiled;
+  assert.strictEqual(inferMathTypes(flat.source.expressions).well_typed,true,`flat definition ${i} ill-typed`);
+  flatSignatures.add(flat.graph.signature);
+
+  const nested=makeNestedSource(i,DEF.BELIEF,{outerSubject:`outer-${i}`,innerSubject:'inner-agent'}).source;
+  assert.strictEqual(nested.depth,2);
+  assert.strictEqual(inferMathTypes(nested.expressions).well_typed,true,`nested definition ${i} ill-typed`);
+  assert(containsEmbeddedObject(nested.root.formula,nested.node_formulas.inner),`definition ${i} did not structurally embed child`);
+}
+assert.strictEqual(flatSignatures.size,INTENT_ORDER.length);
+
+// 5. Arbitrary source/node/agent names do not determine mathematical identity.
 const renamed=makeNested(DEF.BELIEF,DEF.DOUBT,{
   outerSubject:'x7',innerSubject:'y9',namespace:'renamed:',ids:['leaf9','inside4','outside2']
 }).compiled;
 assert.strictEqual(renamed.graph.signature,beliefDoubt.compiled.graph.signature);
 
-// 5. Identity sharing itself does matter: one subject recursively entertaining
+// 6. Identity sharing itself does matter: one subject recursively entertaining
 // another stance is not the same graph as two declared-distinct subjects.
 const sameSubject=makeNested(DEF.BELIEF,DEF.DOUBT,{outerSubject:'a',innerSubject:'a'}).compiled;
 assert.notStrictEqual(sameSubject.graph.signature,beliefDoubt.compiled.graph.signature);
 
-// 6. Recursion is not hard-coded to one nesting depth. The depth-six source is
-// built and type-checked directly; exact graph canonicalization is intentionally
-// not used as a scalability benchmark here because it is a separate bounded
-// graph-isomorphism procedure.
+// 7. Recursion is not hard-coded to one nesting depth or to one pair of families.
+// The heterogeneous depth-six source is built and type-checked directly; exact
+// graph canonicalization remains a separate bounded graph-isomorphism procedure.
 const deep=oneRecursiveIntentState();
 addAtom(deep,'p','p');
 let child='p';
-for(let i=0;i<6;i++){
+const deepDefs=[DEF.BELIEF,DEF.QUESTION,DEF.DESIRE,DEF.COMMAND,DEF.REMEMBER,DEF.OBLIGATION];
+for(let i=0;i<deepDefs.length;i++){
   const id=`n${i}`;
-  addClause(deep,id,{definition:i%2===0?DEF.BELIEF:DEF.DOUBT,subject:`s${i}`,content:child});
+  addClause(deep,id,{definition:deepDefs[i],subject:`s${i}`,content:child});
   child=id;
 }
 const deepSource=buildRecursiveSource(deep,child);
@@ -90,7 +118,7 @@ assert.strictEqual(deepSource.depth,6);
 assert(expressionSize(deepSource.root_formula)>expressionSize(beliefDoubt.compiled.source.root_formula));
 assert.strictEqual(inferMathTypes(deepSource.expressions).well_typed,true);
 
-// 7. Definition correction is live. Revise only the inner anonymous relation;
+// 8. Definition correction is live. Revise only the inner anonymous relation;
 // the outer node is untouched, yet recompilation of the outer whole changes.
 const live=makeNested(DEF.BELIEF,DEF.DOUBT);
 const outerRecordBefore=JSON.stringify(live.S.nodes[live.root]);
@@ -114,23 +142,69 @@ reviseDefinition(live.S,DEF.DOUBT,defaultDefinitionTemplate(DEF.DOUBT),'revert')
 assert.strictEqual(compileRecursiveIntent(live.S,live.root).graph.signature,beforeOuter);
 assert.strictEqual(JSON.stringify(live.S.nodes[live.root]),outerRecordBefore);
 
-// 8. Cycles stay explicit errors rather than disappearing into nontermination.
+// 9. Corrigibility is generic across all thirteen proposals. Every definition
+// can be structurally revised and reverted while its enclosing clause remains
+// untouched. This checks the shared mechanism rather than adding family-specific
+// correction branches.
+let corrigibleFamilies=0;
+for(let i=0;i<INTENT_ORDER.length;i++){
+  const x=makeNestedSource(DEF.BELIEF,i,{outerSubject:'outer',innerSubject:'inner'});
+  const outerBefore=JSON.stringify(x.S.nodes.root);
+  const sourceBefore=JSON.stringify(x.source.root_formula);
+  const probe=defaultDefinitionTemplate(i).concat([
+    helpers.subset(helpers.V('corrigible_probe'),helpers.V('@universe')),
+    helpers.neq(helpers.V('corrigible_probe'),helpers.V('@content'))
+  ]);
+  reviseDefinition(x.S,i,probe,'corrigibility probe');
+  const changed=buildRecursiveSource(x.S,'root');
+  assert.notStrictEqual(JSON.stringify(changed.root_formula),sourceBefore,`definition ${i} did not propagate correction`);
+  assert.strictEqual(inferMathTypes(changed.expressions).well_typed,true,`corrected definition ${i} ill-typed`);
+  assert.strictEqual(JSON.stringify(x.S.nodes.root),outerBefore,`outer node changed for definition ${i}`);
+  reviseDefinition(x.S,i,defaultDefinitionTemplate(i),'revert corrigibility probe');
+  const reverted=buildRecursiveSource(x.S,'root');
+  assert.strictEqual(JSON.stringify(reverted.root_formula),sourceBefore,`definition ${i} failed to restore`);
+  assert.strictEqual(JSON.stringify(x.S.nodes.root),outerBefore,`outer node changed on restore for definition ${i}`);
+  corrigibleFamilies++;
+}
+assert.strictEqual(corrigibleFamilies,INTENT_ORDER.length);
+
+// 10. A proposal can also be suspended/defeated rather than silently remaining
+// authoritative. Any enclosing composition then becomes unavailable until that
+// definition is restored; restoring it recovers the old math without touching
+// the enclosing node.
+const suspend=makeNested(DEF.BELIEF,DEF.PROMISE);
+const suspendBefore=suspend.compiled.graph.signature;
+const suspendOuter=JSON.stringify(suspend.S.nodes[suspend.root]);
+setDefinitionActive(suspend.S,DEF.PROMISE,false,'counterevidence');
+assert.throws(()=>compileRecursiveIntent(suspend.S,suspend.root),/inactive recursive definition/);
+assert.strictEqual(JSON.stringify(suspend.S.nodes[suspend.root]),suspendOuter);
+setDefinitionActive(suspend.S,DEF.PROMISE,true,'restored support');
+assert.strictEqual(compileRecursiveIntent(suspend.S,suspend.root).graph.signature,suspendBefore);
+assert.strictEqual(JSON.stringify(suspend.S.nodes[suspend.root]),suspendOuter);
+
+// 11. Cycles stay explicit errors rather than disappearing into nontermination.
 const cyclic=oneRecursiveIntentState();
 addClause(cyclic,'a',{definition:DEF.BELIEF,subject:'x',content:'b'});
 addClause(cyclic,'b',{definition:DEF.DOUBT,subject:'y',content:'a'});
 assert.throws(()=>compileRecursiveIntent(cyclic,'a'),/cycle/);
 
-// 9. Pure mathematical output contains no family names, subject names, node
+// 12. Pure mathematical output contains no family names, subject names, node
 // names, proposition token, or embedded signature string.
-const pure=anonymousRecursiveIntent(beliefDoubt.S,beliefDoubt.root);
+const rich=makeNested(DEF.PROMISE,DEF.INTEND,{outerSubject:'speaker-x',innerSubject:'agent-y'});
+const pure=anonymousRecursiveIntent(rich.S,rich.root);
 const pureText=JSON.stringify(pure).toLowerCase();
-for(const forbidden of ['belief','doubt','alice','bob','inner','root','atom:p','subject:a','subject:b']){
+for(const forbidden of [...INTENT_ORDER,'alice','bob','inner','root','atom:p','subject:a','subject:b','speaker-x','agent-y']){
   assert(!pureText.includes(forbidden),`pure recursive math leaked ${forbidden}`);
 }
 assert.strictEqual(pure.whole,1);
 
 console.log('RECURSIVE INTENT COMPOSITION TEST: PASS');
 console.log(JSON.stringify({
+  candidate_definitions:INTENT_ORDER.length,
+  distinct_flat_candidate_graphs:flatSignatures.size,
+  all_candidates_accept_recursive_content:true,
+  all_candidates_corrigible:corrigibleFamilies===INTENT_ORDER.length,
+  candidate_suspension_propagates:true,
   flat_belief_vertices:flatBelief.graph.vertex_count,
   belief_of_doubt_vertices:beliefDoubt.compiled.graph.vertex_count,
   doubt_of_belief_vertices:doubtBelief.compiled.graph.vertex_count,
@@ -141,7 +215,7 @@ console.log(JSON.stringify({
   live_inner_revision_changed_outer:true,
   outer_node_edited_during_inner_revision:false,
   reverted_inner_restored_outer:true,
-  depth_six_source_built_and_typed:true,
+  heterogeneous_depth_six_source_built_and_typed:true,
   semantic_labels_in_pure_graph:0,
   whole:pure.whole
 },null,2));
