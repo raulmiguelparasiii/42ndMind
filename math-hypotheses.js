@@ -14,8 +14,16 @@
 // they live on the same candidate record as the authoritative graph/status.
 // Downstream recursive composition must dereference this live record rather
 // than copy definitions or maintain a second correction/status authority.
+//
+// Opaque math spaces group alternative candidate structures for one unresolved
+// referent/meaning without copying candidate truth. Space contact is stored in
+// this same ledger. A positive structural match can support a mathematical
+// candidate globally, while a complete non-match defeats only that candidate's
+// assignment to the space. This matters because one mathematical structure may
+// be correct for a different referent. Space status is always derived live from
+// the ledger; there is no second active/status flag downstream.
 
-const {compileMathGraph,validateExpr}=require('./universal-math-graph');
+const {MOP,compileMathGraph,validateExpr}=require('./universal-math-graph');
 const {canonicalGraph,stable}=require('./relational-normal-form');
 
 function asCompiledMath(input,options={}){
@@ -188,10 +196,19 @@ function matchCompiledSubgraph(patternInput,graphInput,options={}){
 }
 
 function oneMathHypothesisLedger(){
-  return {whole:1,version:2,step:0,candidates:{},signature_index:{},evidence:[],audit:[]};
+  return {whole:1,version:3,step:0,candidates:{},signature_index:{},spaces:{},evidence:[],audit:[]};
 }
 
-function assertLedger(L){if(!L || L.whole!==1) throw new Error('invalid math hypothesis ledger');}
+function assertLedger(L){
+  if(!L || L.whole!==1) throw new Error('invalid math hypothesis ledger');
+  if(!L.spaces)L.spaces={};
+}
+
+function nextCandidateId(L,prefix='h'){
+  let i=Object.keys(L.candidates).length+1;
+  while(L.candidates[`${prefix}${i}`])i++;
+  return `${prefix}${i}`;
+}
 
 function proposeMath(L,proposal,options={}){
   assertLedger(L);
@@ -202,15 +219,23 @@ function proposeMath(L,proposal,options={}){
   if(existing){
     const c=L.candidates[existing];
     c.proposals.push(record);
+    // Equivalent graph proposals may contribute a source representation when
+    // the existing record only had a compiled graph. Mathematical identity is
+    // unchanged; this merely restores inspectable/recomposable source form.
+    if(!c.expressions && material.expressions){
+      c.expressions=material.expressions;
+      c.composition=material.composition;
+    }
     L.audit.push({step:++L.step,kind:'proposal-merged',id:c.id,source:record.source});
     return c;
   }
-  const id=String(proposal?.id ?? `h${Object.keys(L.candidates).length+1}`);
+  const id=String(proposal?.id ?? nextCandidateId(L));
   if(L.candidates[id]) throw new Error(`duplicate hypothesis id ${id}`);
   const c={
     id,revision:1,graph,signature:graph.signature,
     expressions:material.expressions,composition:material.composition,
-    proposals:[record],support:[],defeat:[],status:'open',usable:false
+    proposals:[record],support:[],defeat:[],status:'open',usable:false,
+    spaces:[]
   };
   L.candidates[id]=c; L.signature_index[graph.signature]=id;
   L.audit.push({step:++L.step,kind:'proposed',id,source:record.source});
@@ -219,8 +244,13 @@ function proposeMath(L,proposal,options={}){
 
 function targetsCandidate(metadata,c){
   if(metadata?.candidates==='all') return true;
-  if(!Array.isArray(metadata?.candidates)) return false;
-  return metadata.candidates.map(String).includes(String(c.id));
+  if(Array.isArray(metadata?.candidates) && metadata.candidates.map(String).includes(String(c.id))) return true;
+  if(metadata?.spaces==='all') return Array.isArray(c.spaces)&&c.spaces.length>0;
+  if(Array.isArray(metadata?.spaces)){
+    const own=new Set((c.spaces||[]).map(String));
+    if(metadata.spaces.map(String).some(x=>own.has(x))) return true;
+  }
+  return false;
 }
 
 function evaluateMathCandidate(c,evidence,options={}){
@@ -228,6 +258,10 @@ function evaluateMathCandidate(c,evidence,options={}){
   if(!targetsCandidate(metadata,c)) return {kind:'untested'};
   const match=matchCompiledSubgraph(c.graph,evidence.graph,options);
   if(match) return {kind:'support',match};
+  // Space contacts are positive structural support for the mathematical object,
+  // but a failure to fit one referent does not globally falsify that object.
+  // The assignment-level negative is derived by currentMathSpace instead.
+  if(metadata.positive_only===true) return {kind:'unresolved',reason:'positive-only-contact-nonmatch'};
   return metadata.complete===true
     ? {kind:'defeat',reason:'complete-targeted-counterexample'}
     : {kind:'unresolved',reason:'incomplete-targeted-contact'};
@@ -305,8 +339,211 @@ function currentMathHypothesis(L,id,requirements={}){
     id:c.id,revision:c.revision,status:c.status,usable:c.usable,
     graph:c.graph,signature:c.signature,
     expressions:c.expressions?c.expressions.map(cloneExpr):null,
-    composition:cloneComposition(c.composition)
+    composition:cloneComposition(c.composition),
+    spaces:(c.spaces||[]).slice()
   };
+}
+
+// ---------- Opaque alternative spaces over the same live candidate authority ----------
+
+function ensureMathSpace(L,id){
+  assertLedger(L); id=String(id);
+  if(!L.spaces[id]){
+    L.spaces[id]={id,candidates:[],created_step:++L.step};
+    L.audit.push({step:L.step,kind:'space-created',space:id});
+  }
+  return L.spaces[id];
+}
+
+function addMathAlternative(L,spaceId,candidateId,options={}){
+  const s=ensureMathSpace(L,spaceId);
+  const c=L.candidates[String(candidateId)];
+  if(!c) throw new Error(`unknown math hypothesis ${String(candidateId)}`);
+  if(!s.candidates.includes(c.id)){
+    s.candidates.push(c.id);
+    if(!Array.isArray(c.spaces))c.spaces=[];
+    if(!c.spaces.includes(s.id))c.spaces.push(s.id);
+    // Historical space evidence is already in the one ledger. Recompute now so
+    // a late-added alternative cannot evade earlier positive support/contact.
+    recomputeMathCandidate(L,c,options);
+    L.audit.push({step:++L.step,kind:'space-alternative-added',space:s.id,id:c.id});
+  }
+  return c;
+}
+
+function proposeMathAlternative(L,spaceId,proposal,options={}){
+  const c=proposeMath(L,proposal,options);
+  addMathAlternative(L,spaceId,c.id,options);
+  return c;
+}
+
+function spaceEvidence(L,spaceId){
+  assertLedger(L); spaceId=String(spaceId);
+  return L.evidence.filter(e=>Array.isArray(e.metadata?.spaces)&&e.metadata.spaces.map(String).includes(spaceId));
+}
+
+function evaluateMathSpaceAlternative(L,spaceId,candidateId,options={}){
+  assertLedger(L);
+  const s=L.spaces[String(spaceId)];
+  if(!s) throw new Error(`unknown math space ${String(spaceId)}`);
+  const c=L.candidates[String(candidateId)];
+  if(!c || !s.candidates.includes(c.id)) throw new Error(`math hypothesis ${String(candidateId)} is not in space ${s.id}`);
+  const support=[],defeat=[],unresolved=[];
+  for(const e of spaceEvidence(L,s.id)){
+    const match=matchCompiledSubgraph(c.graph,e.graph,options);
+    if(match) support.push({evidence:e.id,match});
+    else if(e.metadata?.complete===true) defeat.push({evidence:e.id,reason:'complete-space-counterexample'});
+    else unresolved.push({evidence:e.id,reason:'incomplete-space-contact'});
+  }
+  let status='open';
+  if(support.length&&defeat.length)status='contested';
+  else if(support.length)status='supported';
+  else if(defeat.length)status='defeated';
+  return {id:c.id,status,support,defeat,unresolved,globally_usable:c.usable,global_status:c.status};
+}
+
+function strictMathSubgraph(a,b,options={}){
+  if(a.signature===b.signature)return false;
+  return Boolean(matchCompiledSubgraph(a.graph,b.graph,options));
+}
+
+function currentMathSpace(L,spaceId,options={}){
+  assertLedger(L); spaceId=String(spaceId);
+  const s=L.spaces[spaceId];
+  if(!s) throw new Error(`unknown math space ${spaceId}`);
+  const alternatives=s.candidates.map(id=>evaluateMathSpaceAlternative(L,spaceId,id,options));
+  const open=alternatives.filter(a=>a.status==='open' && a.global_status!=='defeated' && a.global_status!=='contested');
+  const viable=alternatives.filter(a=>a.status==='supported' && a.globally_usable);
+  const suspended=alternatives.filter(a=>a.status==='supported' && !a.globally_usable);
+  const eliminated=alternatives.filter(a=>a.status==='defeated'||a.status==='contested'||a.global_status==='defeated'||a.global_status==='contested');
+
+  // If two supported candidates are nested, the weaker one carries no extra
+  // discrimination while the stronger one is still supported by all current
+  // space contact. Keep only structurally maximal live candidates for current
+  // resolution. This is a derived view; no candidate is deleted or deactivated.
+  const maximal=viable.filter(a=>{
+    const ca=L.candidates[a.id];
+    return !viable.some(b=>b.id!==a.id && strictMathSubgraph(ca,L.candidates[b.id],options));
+  });
+
+  let status='unresolved';
+  let chosen=null;
+  if(open.length)status='unresolved';
+  else if(maximal.length===1){status='resolved-candidate-math';chosen=L.candidates[maximal[0].id];}
+  else if(maximal.length>1)status='ambiguous';
+  else if(suspended.length)status='suspended';
+  else if(alternatives.length && eliminated.length===alternatives.length)status='no-live-alternative';
+
+  return {
+    whole:1,space:spaceId,status,
+    candidate_count:alternatives.length,
+    open:open.map(x=>x.id),
+    supported:viable.map(x=>x.id),
+    suspended:suspended.map(x=>x.id),
+    eliminated:eliminated.map(x=>x.id),
+    maximal_supported:maximal.map(x=>x.id),
+    hypothesis_id:chosen?.id ?? null,
+    revision:chosen?.revision ?? null,
+    signature:chosen?.signature ?? null,
+    math:chosen?.graph ?? null,
+    alternatives
+  };
+}
+
+function sourceAblations(c){
+  if(!Array.isArray(c.expressions)||!c.expressions.length)return[];
+  const xs=c.expressions.map(cloneExpr);
+  const out=[];
+  if(xs.length>1){
+    for(let i=0;i<xs.length;i++)out.push(xs.filter((_,j)=>j!==i).map(cloneExpr));
+    return out;
+  }
+  const root=xs[0];
+  if(root.kind==='app' && root.op===MOP.AND && root.args.length>1){
+    for(let i=0;i<root.args.length;i++){
+      const args=root.args.filter((_,j)=>j!==i).map(cloneExpr);
+      out.push([args.length===1?args[0]:{kind:'app',op:MOP.AND,args}]);
+    }
+  }
+  return out;
+}
+
+function proposeRefinement(L,spaceId,parent,expressions,options={}){
+  const graph=compileMathGraph(expressions,options);
+  const existing=L.signature_index[graph.signature];
+  if(existing){
+    const c=L.candidates[existing];
+    const before=(c.spaces||[]).includes(String(spaceId));
+    addMathAlternative(L,spaceId,c.id,options);
+    return {candidate:c,created:false,added_to_space:!before};
+  }
+  const base={
+    id:nextCandidateId(L),expressions,
+    source:'structural-ablation',confidence:null,
+    note:`derived from ${parent.id} by removing one top-level conjunctive source constraint`
+  };
+  let c;
+  if(parent.composition){
+    try{c=proposeMath(L,{...base,composition:parent.composition},options);}catch(_){c=proposeMath(L,base,options);}
+  }else c=proposeMath(L,base,options);
+  addMathAlternative(L,spaceId,c.id,options);
+  return {candidate:c,created:true,added_to_space:true};
+}
+
+// Bounded structural correction search. A complete space counterexample never
+// edits the failed candidate in place. It proposes strictly weaker one-step
+// conjunctive alternatives into the same live ledger, replays all historical
+// evidence through that authority, and continues only while those alternatives
+// are also defeated. New structure can still arrive from any proposer; this
+// routine only tests whether deleting unsupported conjunctive structure is
+// sufficient. It therefore cannot invent missing relations or claim semantic
+// completeness.
+function refineMathSpace(L,spaceId,evidenceId,options={}){
+  assertLedger(L); spaceId=String(spaceId); evidenceId=String(evidenceId);
+  const s=L.spaces[spaceId];
+  if(!s) throw new Error(`unknown math space ${spaceId}`);
+  const evidence=L.evidence.find(e=>e.id===evidenceId);
+  if(!evidence) throw new Error(`unknown evidence ${evidenceId}`);
+  if(!Array.isArray(evidence.metadata?.spaces)||!evidence.metadata.spaces.map(String).includes(spaceId)) throw new Error('refinement evidence does not target this math space');
+  if(evidence.metadata?.complete!==true) return {whole:1,space:spaceId,evidence:evidenceId,generated:0,processed:0,truncated:false,reason:'incomplete-space-contact'};
+
+  const maxNewCandidates=options.maxNewCandidates ?? 256;
+  const queue=s.candidates.filter(id=>evaluateMathSpaceAlternative(L,spaceId,id,options).defeat.some(d=>d.evidence===evidenceId));
+  const processed=new Set();
+  let generated=0,created=0,truncated=false;
+
+  while(queue.length){
+    const id=queue.shift();
+    if(processed.has(id))continue;
+    processed.add(id);
+    const parent=L.candidates[id];
+    if(!parent)continue;
+    for(const expressions of sourceAblations(parent)){
+      if(generated>=maxNewCandidates){truncated=true;break;}
+      const r=proposeRefinement(L,spaceId,parent,expressions,options);
+      if(r.candidate.id===parent.id)continue;
+      if(r.added_to_space)generated++;
+      if(r.created)created++;
+      const fit=evaluateMathSpaceAlternative(L,spaceId,r.candidate.id,options);
+      if(fit.defeat.some(d=>d.evidence===evidenceId))queue.push(r.candidate.id);
+    }
+    if(truncated)break;
+  }
+  L.audit.push({step:++L.step,kind:'space-refined',space:spaceId,evidence:evidenceId,generated,created,processed:processed.size,truncated});
+  return {whole:1,space:spaceId,evidence:evidenceId,generated,created,processed:processed.size,truncated};
+}
+
+function contactMathSpace(L,spaceId,input,metadata={},options={}){
+  assertLedger(L); spaceId=String(spaceId);
+  ensureMathSpace(L,spaceId);
+  if(Object.prototype.hasOwnProperty.call(metadata,'candidates')) throw new Error('space contact targets the space; do not supply candidate ids');
+  const id=String(metadata.id ?? `e${L.evidence.length+1}`);
+  const spaces=[...new Set([spaceId,...(Array.isArray(metadata.spaces)?metadata.spaces.map(String):[])])];
+  const results=contactMath(L,input,{...metadata,id,spaces,positive_only:true},options);
+  const refinement=metadata.complete===true && options.autoRefine!==false
+    ? refineMathSpace(L,spaceId,id,options)
+    : null;
+  return {whole:1,space:spaceId,evidence:id,results,refinement,current:currentMathSpace(L,spaceId,options)};
 }
 
 function usableMathPatterns(L){
@@ -330,5 +567,7 @@ module.exports={
   asCompiledMath,matchCompiledSubgraph,oneMathHypothesisLedger,proposeMath,
   evaluateMathCandidate,contactMath,reviseMath,currentMathHypothesis,
   usableMathPatterns,pureMathLedger,recomputeMathCandidate,
-  normalizeComposition
+  normalizeComposition,
+  ensureMathSpace,addMathAlternative,proposeMathAlternative,spaceEvidence,
+  evaluateMathSpaceAlternative,currentMathSpace,refineMathSpace,contactMathSpace
 };
