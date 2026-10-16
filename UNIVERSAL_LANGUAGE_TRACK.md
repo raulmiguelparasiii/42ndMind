@@ -92,6 +92,8 @@ canonical Stone formal kernel -> anonymous math graph        demonstrated
 richer thought/pragmatic intent candidate anatomy           13 distinct corrigible candidates
 corrigibility for full anonymous mathematical graphs        demonstrated
 bounded English -> live corrigible candidate math            13/13 through generic contrastive surface interface
+generic mathematical type checking                          demonstrated on current candidate/Stone math
+recursive nested intent composition                          demonstrated for belief/doubt candidate anatomy
 full arbitrary abstract/compositional intention anatomy     not yet demonstrated
 all Stone structures grounded from unrestricted raw reality not demonstrated
 universal mathematical language                             target, not established result
@@ -422,14 +424,71 @@ If different intentions expose the same lower structure, recurrence is evidence 
 
 The 13 abstract candidates are the first richer explicit test of this loop: recurring anonymous constraint motifs appeared across all thirteen structures. Recurrence is not semantic proof, but it identifies concrete candidate universal relations.
 
-## 14. Current frontier
+## 14. Generic type checking and recursive intent composition
+
+PR #22, merge `704f88f776553531096cdc9a42676935aaa37f07`, added generic mathematical type checking plus the first bounded recursively compositional intent layer. PR #23 was the stacked recursive-composition development branch and was merged into #22 before #22 landed on `main`.
+
+`universal-math-types.js` is content-neutral. It knows mathematical operator contracts, not Stone poles or intent-family semantics. Current gates require the 13 abstract candidates and canonical Stone kernel to be internally well-sorted under the same rules and reject ordinary mathematical failures such as set/scalar conflicts, recursive infinite types, and malformed arity.
+
+Two generic meta-mathematical operators were added to `universal-math-graph.js`:
+
+```text
+QUOTE(F)               Bool -> Formula
+EXTENSION(QUOTE(F), U) Formula x Set<world/state> -> Set<world/state>
+```
+
+`QUOTE` is needed so an inner formula can become first-class mathematical content without collapsing to only its truth value. `EXTENSION` maps that quoted formula, relative to a universe, to the proposition-set consumed by the outer candidate anatomy.
+
+The current recursive gate covers belief and doubt only. Examples have genuinely different anonymous mathematical structure:
+
+```text
+belief(P)
+belief(doubt(P))
+doubt(belief(P))
+```
+
+The inner clause is embedded as its actual formula under `QUOTE`; no family name, string, hash, or frozen graph signature stands in for that anatomy. Subject identity is also structural: the same subject reused at two levels is distinguished from two declared-distinct subjects, while arbitrary renaming of those subjects/nodes leaves mathematical identity unchanged.
+
+Live correction is dependency-based. Nodes store an anonymous definition ID plus subject/content references. If the current lower definition is revised, recompiling the outer whole follows the new lower anatomy automatically. The falsification gate verified that revising only the inner doubt definition changed both the inner and enclosing belief-of-doubt mathematical signatures while the outer node record remained byte-for-byte unchanged; restoring the old lower definition restored the original outer signature.
+
+Preserved failure history: the first recursive implementation substituted the full child formula everywhere the outer template reused its content. That created repeated copies and made deeper exact graph canonicalization unnecessarily expensive. The accepted form binds one local proposition variable once:
+
+```text
+P_inner = EXTENSION(QUOTE(F_inner), U)
+```
+
+and reuses `P_inner` throughout the outer anatomy. Depth-six recursion is therefore tested for source construction and generic type validity. Do **not** describe that as depth-six exact graph-isomorphism/canonicalization; the latter remains a separate bounded computation.
+
+Anti-cheat run `38860946216` passed the complete Universal Language falsification suite after the stacked merge. The recursive gate itself passed with:
+
+```text
+flat_belief_vertices = 22
+belief_of_doubt_vertices = 62
+doubt_of_belief_vertices = 62
+recursive_order_distinct = true
+alpha_rename_invariant = true
+same_vs_distinct_subjects_distinct = true
+inner_formula_embedded_by_structure = true
+live_inner_revision_changed_outer = true
+outer_node_edited_during_inner_revision = false
+reverted_inner_restored_outer = true
+depth_six_source_built_and_typed = true
+semantic_labels_in_pure_graph = 0
+whole = 1
+```
+
+The equal 62-vertex counts do not mean the two nesting orders are equivalent; their canonical graph signatures are distinct.
+
+Evidence boundary: this demonstrates recursively nested mathematical content and correction propagation for the **candidate** belief/doubt anatomy. It does not establish arbitrary English recursion, recursive coverage of all 13 families, empirical truth of the belief/doubt decomposition, unrestricted sensory grounding, or that `QUOTE`/`EXTENSION` are metaphysically final primitives.
+
+## 15. Current frontier
 
 Do not claim completion. Major open fronts:
 
 ```text
 independent reality/formal support for the 13 abstract candidate anatomies
 stronger evidence that candidate relation decompositions are correct rather than merely coherent
-nested attitudes: Alice believes Bob doubts P
+recursive composition beyond belief/doubt and across the other candidate families
 open questions beyond yes/no partitions
 conditional and counterfactual belief/intention
 categorical vs graded/probabilistic belief
@@ -447,9 +506,9 @@ proof/disproof of a complete universal structural normal form
 proof/disproof of universality for every possible meaning/relation
 ```
 
-Immediate next technical direction: use independent constraints/contacts and nested/compositional cases to pressure-test the 13 candidate anatomies and their recurring subrelations. Do not merely add more family names; force reuse, composition, contradiction, correction, and lower reduction.
+Immediate next technical direction: extend recursive composition across structurally different candidate families and use corrections/contradictions to test whether shared lower relations really propagate through larger meanings. Do not merely add more family names; force reuse, composition, contradiction, correction, and lower reduction.
 
-## 15. Evidence discipline
+## 16. Evidence discipline
 
 Keep these non-identities explicit:
 
@@ -470,7 +529,7 @@ Names/dictionaries are teaching or display handles. They do not define mathemati
 
 With a score, state denominator and supervision/leakage conditions. Never describe `54/56` or `83/88` as a percentage of English.
 
-## 16. Context-loss procedure
+## 17. Context-loss procedure
 
 Before changing architecture or declaring a capability absent:
 
