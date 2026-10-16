@@ -70,7 +70,30 @@ jobs:
       - run: node recursive-intent-composition.test.js
       - run: node math-hypotheses.test.js
       - run: node meaning-space.test.js
-      - run: node universal-intent.test.js
+      - name: Capture universal intent stabilization
+        shell: bash
+        run: |
+          set +e
+          node universal-intent.test.js > universal-intent.log 2>&1
+          code=$?
+          echo "$code" > universal-intent.exit
+          exit 0
+      - name: Upload universal intent diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: universal-intent-diagnostic
+          path: |
+            universal-intent.log
+            universal-intent.exit
+      - name: Enforce universal intent stabilization
+        shell: bash
+        run: |
+          code=$(cat universal-intent.exit)
+          if [ "$code" -ne 0 ]; then
+            cat universal-intent.log
+            exit "$code"
+          fi
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
