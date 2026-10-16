@@ -12,6 +12,7 @@ on:
       - 'universal-math-graph.js'
       - 'abstract-intent-kernel.js'
       - 'math-hypotheses.js'
+      - 'english-math-bridge.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
       - 'anti-cheat-language.test.js'
@@ -26,6 +27,7 @@ on:
       - 'stone-universal-kernel.test.js'
       - 'abstract-intent-kernel.test.js'
       - 'math-hypotheses.test.js'
+      - 'abstract-english-math.test.js'
       - 'relation-hypotheses.test.js'
       - 'relational-normal-form.test.js'
       - 'UNIVERSAL_LANGUAGE_TRACK.md'
@@ -45,6 +47,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - run: node abstract-english-math.test.js
       - run: node anti-cheat-language.test.js
       - run: node wide-opaque-english.test.js
       - run: node wide-opaque-english-2.test.js
