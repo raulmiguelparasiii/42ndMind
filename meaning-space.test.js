@@ -37,6 +37,13 @@ const B=oneEnglishMathBridge();
 bindEnglishMathSpace(B,U,L,'xi','mu1');
 assert.strictEqual(mathForRelation(B,U,L,'xi').status,'unresolved');
 
+// Incomplete contact cannot be turned into negative evidence. The meaning stays
+// unresolved until the contact explicitly warrants completeness.
+contactMathSpace(L,'mu1',[subset(V('X'),V('W'))],{id:'contact-partial',complete:false});
+assert.strictEqual(evaluateMathSpaceAlternative(L,'mu1','root').status,'open','incomplete contact became false');
+assert.strictEqual(currentMathSpace(L,'mu1').status,'unresolved');
+assert.strictEqual(mathForRelation(B,U,L,'xi').status,'unresolved');
+
 // First complete contact supports two set-inclusion relations but not the extra
 // inequality. The failed assignment does not globally falsify the graph.
 const c1=contactMathSpace(L,'mu1',[
@@ -110,6 +117,7 @@ for(const space of Object.values(L.spaces)){
 const report={
   proposer_confidence_is_not_authority:true,
   opaque_space_initially_unresolved:true,
+  incomplete_contact_preserves_unknown:true,
   complete_contact_can_defeat_assignment_without_global_graph_defeat:true,
   bounded_conjunctive_refinement_generated:c1.refinement.generated,
   first_resolution_constraints:firstCandidate.expressions.length,
