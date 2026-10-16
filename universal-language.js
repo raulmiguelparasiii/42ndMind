@@ -72,17 +72,22 @@ function executionFeatures(ex){
 }
 function factFeatures(facts){ const out={}; for(const f of facts||[]) out[`rel:${Array.isArray(f)&&f.length===3?stable(f[0])+'|'+stable(f[1])+'|'+stable(f[2]):stable(f)}`]=1; return vUnit(out); }
 
+function canonicalMathStructure(graph){
+  if(!graph||!Array.isArray(graph.edges))throw new Error('math_graph requires an edges array');
+  const c=canonicalGraph({edges:graph.edges.map(e=>e.slice())},{maxStates:250000});
+  return {vertex_count:c.vertex_count,edges:c.edges,signature:c.signature};
+}
+
 // A mathematical graph is another grounding surface, like an execution trace or
 // structured fact contact. We deliberately do NOT use its whole-graph signature
-// as one categorical fingerprint. Instead we expose name-invariant structural
+// as one categorical feature. Instead we expose name-invariant structural
 // features: operator/edge counts and many local neighbourhood motifs. Arbitrary
 // vertex names therefore cannot create meaning, and two graphs can partially
 // overlap because they share actual mathematical substructure.
 function mathGraphFeatures(graph){
   const out={};
   if(!graph)return out;
-  if(!Array.isArray(graph.edges))throw new Error('math_graph requires an edges array');
-  const canonical=canonicalGraph({edges:graph.edges.map(e=>e.slice())},{maxStates:250000});
+  const canonical=canonicalMathStructure(graph);
   const edges=canonical.edges||[];
   const add=(k,w=1)=>{out[k]=(out[k]||0)+w;};
   add('math:vertices',Math.sqrt(Math.max(1,canonical.vertex_count||0)));
@@ -236,16 +241,21 @@ const relationId = c => String(c.id||`r:${hash32(stable(c.label||c))}`);
 function ensureRelation(U,c){
   const id=relationId(c);
   if(!U.relations[id]){
-    U.relations[id]={id,labels:c.label?[String(c.label)]:[],created_at:U.step,updated_at:U.step,support:0,grounded_support:0,observations:0,contradiction_support:0,lexical:{},context:{},ground:{},previous:{lexical:{},context:{},ground:{}},drift:1,stability:0,active:c.active!==false,parents:[],children:[],explicit_equivalents:[],explicit_contradictions:[],provenance:[],grounding_examples:[],anatomy:null};
+    U.relations[id]={id,labels:c.label?[String(c.label)]:[],created_at:U.step,updated_at:U.step,support:0,grounded_support:0,observations:0,contradiction_support:0,lexical:{},context:{},ground:{},previous:{lexical:{},context:{},ground:{}},drift:1,stability:0,active:c.active!==false,parents:[],children:[],explicit_equivalents:[],explicit_contradictions:[],provenance:[],grounding_examples:[],math_structure_signatures:[],anatomy:null};
     U.relation_order.push(id);
   }
   const r=U.relations[id];
   if(!Array.isArray(r.grounding_examples))r.grounding_examples=[];
+  if(!Array.isArray(r.math_structure_signatures))r.math_structure_signatures=[];
   if(c.label&&!r.labels.includes(String(c.label))) r.labels.push(String(c.label));
   return r;
 }
 function blend(oldV,newV,a){ if(!Object.keys(oldV||{}).length) return vUnit(newV); const out=vScale(oldV,1-a);vAdd(out,newV,a);return vUnit(out); }
 function rememberGrounding(r,provenance){
+  if(provenance?.math_graph){
+    const sig=canonicalMathStructure(provenance.math_graph).signature;
+    r.math_structure_signatures=uniq([...(r.math_structure_signatures||[]),sig]);
+  }
   if(!provenance?.execution)return;
   const sample={utterance:provenance.utterance||null,execution:clone(provenance.execution),context:clone(provenance.context||{})};
   r.grounding_examples.push(sample);
@@ -264,10 +274,21 @@ function syncHierarchy(U){ for(const id of U.relation_order){const r=U.relations
 const explicitEq=(a,b)=>a.explicit_equivalents.includes(b.id)||b.explicit_equivalents.includes(a.id)||a.labels.some(x=>b.explicit_equivalents.includes(x))||b.labels.some(x=>a.explicit_equivalents.includes(x));
 const explicitContra=(a,b)=>a.explicit_contradictions.includes(b.id)||b.explicit_contradictions.includes(a.id)||a.labels.some(x=>b.explicit_contradictions.includes(x))||b.labels.some(x=>a.explicit_contradictions.includes(x));
 function relationSimilarity(a,b){ const gs=vCos(a.ground,b.ground),cs=vCos(a.context,b.context),ls=vCos(a.lexical,b.lexical),g=vNorm(a.ground)>EPS&&vNorm(b.ground)>EPS,c=vNorm(a.context)>EPS&&vNorm(b.context)>EPS; return g?clamp(.82*gs+.11*cs+.07*ls):c?clamp(.6*cs+.4*ls):clamp(ls); }
+function uniqueSameMathStructure(a,b){
+  const A=a.math_structure_signatures||[],B=b.math_structure_signatures||[];
+  return A.length===1&&B.length===1&&A[0]===B[0];
+}
 class UF{constructor(xs){this.p=Object.fromEntries(xs.map(x=>[x,x]));}find(x){let p=this.p[x];while(p!==this.p[p])p=this.p[p];while(x!==p){const n=this.p[x];this.p[x]=p;x=n;}return p;}union(a,b){a=this.find(a);b=this.find(b);if(a!==b)this.p[a<b?b:a]=a<b?a:b;}}
 function canonicalize(U){
   const active=U.relation_order.map(id=>U.relations[id]).filter(r=>r?.active),uf=new UF(active.map(r=>r.id)),overlaps=[],contradictions=[];
-  for(let i=0;i<active.length;i++)for(let j=i+1;j<active.length;j++){const a=active[i],b=active[j],sim=relationSimilarity(a,b),contra=explicitContra(a,b);if(contra)contradictions.push({a:a.id,b:b.id,similarity:round(sim)});if(!contra&&(explicitEq(a,b)||(a.support>=U.config.min_equivalence_support&&b.support>=U.config.min_equivalence_support&&sim>=U.config.equivalence_threshold)))uf.union(a.id,b.id);else if(sim>=U.config.overlap_threshold)overlaps.push({a:a.id,b:b.id,similarity:round(sim)});}
+  for(let i=0;i<active.length;i++)for(let j=i+1;j<active.length;j++){
+    const a=active[i],b=active[j],sim=relationSimilarity(a,b),contra=explicitContra(a,b);
+    const bothMath=(a.math_structure_signatures||[]).length>0&&(b.math_structure_signatures||[]).length>0;
+    const learnedEquivalent=a.support>=U.config.min_equivalence_support&&b.support>=U.config.min_equivalence_support&&(bothMath?uniqueSameMathStructure(a,b):sim>=U.config.equivalence_threshold);
+    if(contra)contradictions.push({a:a.id,b:b.id,similarity:round(sim)});
+    if(!contra&&(explicitEq(a,b)||learnedEquivalent))uf.union(a.id,b.id);
+    else if(sim>=U.config.overlap_threshold)overlaps.push({a:a.id,b:b.id,similarity:round(sim)});
+  }
   const groups=new Map();for(const r of active){const root=uf.find(r.id);if(!groups.has(root))groups.set(root,[]);groups.get(root).push(r.id);}U.canonical={};U.equivalence_sets=[];
   for(const ids of groups.values()){const ms=ids.map(id=>U.relations[id]).sort((a,b)=>b.grounded_support-a.grounded_support||b.support-a.support||a.id.localeCompare(b.id)),rep=ms[0].id;for(const id of ids)U.canonical[id]=rep;U.equivalence_sets.push({representative:rep,members:ids.slice().sort()});}
   U.equivalence_sets.sort((a,b)=>a.representative.localeCompare(b.representative));U.overlaps=overlaps.sort((a,b)=>b.similarity-a.similarity);U.contradictions=contradictions;const sig=stable(U.equivalence_sets),changed=sig!==U.canonical_signature;if(changed){U.canonical_signature=sig;U.canonical_revision++;}return changed;
@@ -275,9 +296,9 @@ function canonicalize(U){
 function canonicalRelations(U){
   const out=[];
   for(const set of U.equivalence_sets){
-    const ms=set.members.map(id=>U.relations[id]).filter(Boolean),v={lexical:{},context:{},ground:{}};let total=0,support=0,grounded=0,stability=0;const labels=[],children=[],parents=[],grounding=[];
-    for(const r of ms){const w=Math.max(EPS,r.support);total+=w;support+=r.support;grounded+=r.grounded_support;stability+=r.stability*w;vAdd(v.lexical,r.lexical,w);vAdd(v.context,r.context,w);vAdd(v.ground,r.ground,w);labels.push(...r.labels);children.push(...r.children);parents.push(...r.parents);grounding.push(...(r.grounding_examples||[]));}
-    out.push({id:set.representative,members:set.members.slice(),labels:uniq(labels),lexical:vUnit(v.lexical),context:vUnit(v.context),ground:vUnit(v.ground),support,grounded_support:grounded,stability:total?stability/total:0,children:uniq(children),parents:uniq(parents),anatomy:deriveAnatomy(grounding)});
+    const ms=set.members.map(id=>U.relations[id]).filter(Boolean),v={lexical:{},context:{},ground:{}};let total=0,support=0,grounded=0,stability=0;const labels=[],children=[],parents=[],grounding=[],mathStructures=[];
+    for(const r of ms){const w=Math.max(EPS,r.support);total+=w;support+=r.support;grounded+=r.grounded_support;stability+=r.stability*w;vAdd(v.lexical,r.lexical,w);vAdd(v.context,r.context,w);vAdd(v.ground,r.ground,w);labels.push(...r.labels);children.push(...r.children);parents.push(...r.parents);grounding.push(...(r.grounding_examples||[]));mathStructures.push(...(r.math_structure_signatures||[]));}
+    out.push({id:set.representative,members:set.members.slice(),labels:uniq(labels),lexical:vUnit(v.lexical),context:vUnit(v.context),ground:vUnit(v.ground),support,grounded_support:grounded,stability:total?stability/total:0,children:uniq(children),parents:uniq(parents),math_structure_count:uniq(mathStructures).length,anatomy:deriveAnatomy(grounding)});
   }
   return out;
 }
@@ -298,7 +319,7 @@ function reResolve(U,fieldChanged){
 function refreshMetrics(U,passes){const active=U.relation_order.map(id=>U.relations[id]).filter(r=>r?.active),rs=U.encounters.map(e=>e.resolution).filter(Boolean),unknown=mean(rs.map(r=>r.unknown_mass)),resolution=mean(rs.map(r=>r.matches?.[0]?.score||0)),grounding=active.length?mean(active.map(r=>clamp(r.grounded_support/Math.max(1,r.observations)))):0,stability=active.length?mean(active.map(r=>r.stability)):0,consistency=active.length?clamp(1-mean(active.map(r=>clamp(r.contradiction_support/Math.max(1,r.support))))):1,coverage=1-unknown,vals=[coverage,resolution,grounding,stability,consistency].map(x=>Math.max(EPS,x)),progress=Math.exp(vals.reduce((s,x)=>s+Math.log(x),0)/vals.length),w=30,n=Math.round(w*progress);U.metrics={progress:round(progress),coverage:round(coverage),resolution:round(resolution),grounding:round(grounding),consistency:round(consistency),stability:round(stability),unknown_mass:round(unknown),relations:active.length,canonical_relations:U.equivalence_sets.length,encounters:U.encounters.length,fixed_point_passes:passes,bar:`[${'#'.repeat(n)}${'-'.repeat(w-n)}] ${(100*progress).toFixed(2).padStart(6)}%`};}
 function fixedPoint(U,fieldChanged){let passes=0;for(let i=0;i<U.config.fixed_point_passes;i++){refreshStability(U);const changed=canonicalize(U);refreshContradiction(U);reResolve(U,fieldChanged);passes=i+1;if(!changed)break;}refreshMetrics(U,passes);return passes;}
 function candidates(contact,signal){const out=[];for(const [src,name] of [[contact?.relations,contact?.source||'contact'],[contact?.candidates,contact?.source||'contact'],[signal?.relations,'semantic_signal'],[signal?.candidates,'semantic_signal']])if(Array.isArray(src))for(const c of src)if(c&&typeof c==='object')out.push({candidate:c,source:name});return out;}
-function oracleView(U,contact,p){return{law:'U(t+1)=F(U(t)⊕X(t+1)); whole=1',step:U.step,contact:{utterance:contact.utterance||contact.text||null,context:contact.context||null,execution:contact.execution||null,facts:contact.facts||null,math_graph:contact.math_graph?{vertex_count:contact.math_graph.vertex_count??null,edge_count:Array.isArray(contact.math_graph.edges)?contact.math_graph.edges.length:0}:null},relations:canonicalRelations(U).sort((a,b)=>b.support-a.support).slice(0,128).map(r=>({id:r.id,labels:r.labels,members:r.members,support:round(r.support),stability:round(r.stability),lexical:topVector(r.lexical,5),context:topVector(r.context,5),ground:topVector(r.ground,5),anatomy:r.anatomy?.signature?{status:r.anatomy.status,signature:r.anatomy.signature,formula:r.anatomy.formula}:null})),observed:{lexical:topVector(p.lexical),context:topVector(p.context),ground:topVector(p.ground)},signal_contract:{candidates:[{id:'optional',label:'optional',evidence:['optional dimensions'],parents:['optional'],children:['optional'],equivalent_to:['optional'],contradicts:['optional']}]}};}
+function oracleView(U,contact,p){return{law:'U(t+1)=F(U(t)⊕X(t+1)); whole=1',step:U.step,contact:{utterance:contact.utterance||contact.text||null,context:contact.context||null,execution:contact.execution||null,facts:contact.facts||null,math_graph:contact.math_graph?{vertex_count:contact.math_graph.vertex_count??null,edge_count:Array.isArray(contact.math_graph.edges)?contact.math_graph.edges.length:0}:null},relations:canonicalRelations(U).sort((a,b)=>b.support-a.support).slice(0,128).map(r=>({id:r.id,labels:r.labels,members:r.members,support:round(r.support),stability:round(r.stability),lexical:topVector(r.lexical,5),context:topVector(r.context,5),ground:topVector(r.ground,5),math_structure_count:r.math_structure_count,anatomy:r.anatomy?.signature?{status:r.anatomy.status,signature:r.anatomy.signature,formula:r.anatomy.formula}:null})),observed:{lexical:topVector(p.lexical),context:topVector(p.context),ground:topVector(p.ground)},signal_contract:{candidates:[{id:'optional',label:'optional',evidence:['optional dimensions'],parents:['optional'],children:['optional'],equivalent_to:['optional'],contradicts:['optional']}]}};}
 function mathematicalEquivalent(U,ref=null){
   assertState(U);let id=ref?resolveRef(U,ref):U.current?.resolution?.components?.[0]?.relation||null;if(!id&&ref&&U.canonical[String(ref)])id=String(ref);if(!id)return null;const canonical=U.canonical[id]||id;const r=canonicalRelations(U).find(x=>x.id===canonical);return r?{canonical_relation:canonical,...r.anatomy}:null;
 }
