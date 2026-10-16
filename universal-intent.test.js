@@ -10,6 +10,7 @@ const {
 }=require('./english-math-bridge');
 const {
   maximumCommonSubgraphs,stabilizedIntent,universalRelationField,
+  factorIntentExpressions,expandFactoredIntent,inspectFactoredIntent,refreshIntentFactorization,
   stabilizedMathForRelation
 }=require('./universal-intent');
 
@@ -30,7 +31,7 @@ const commonA=[subset(P,U),neq(P,Q)];
 const a1=[...commonA,lt(card(P),card(U))];
 const a2=[...commonA,eq(card(P),card(Q))];
 const hA1=proposeMathAlternative(L,'muA',{id:'ha1',expressions:a1,source:'opaque-proposer',confidence:1});
-const hA2=proposeMathAlternative(L,'muA',{id:'ha2',expressions:a2,source:'opaque-proposer',confidence:1});
+proposeMathAlternative(L,'muA',{id:'ha2',expressions:a2,source:'opaque-proposer',confidence:1});
 contactMathSpace(L,'muA',[...commonA,a1[2],a2[2]],{id:'muA-broad-contact',complete:true},{autoRefine:false});
 assert.strictEqual(currentMathSpace(L,'muA').status,'ambiguous','whole intent should remain ambiguous');
 
@@ -71,6 +72,29 @@ const recurrentBySig=new Map(field.recurrent_relations.map(x=>[x.signature,x]));
 assert(recurrentBySig.get(subsetSig)?.occurrence_count>=2,'same lower relation did not recur across intent spaces');
 assert(recurrentBySig.get(neqSig)?.occurrence_count>=2,'same lower relation did not recur across intent spaces');
 
+// A new whole intent may reuse those stabilized relations without copying their
+// truth/status. Local occurrences retain variable binding. Top-level AND shape is
+// preserved exactly, while an unsupported complete constraint remains raw.
+const A0=V('A0'),B0=V('B0'),U0=V('U0');
+const laterIntent=[A(MOP.AND,subset(A0,U0),neq(A0,B0)),le(card(B0),card(U0))];
+const laterSignature=compileMathGraph(laterIntent).signature;
+const factored=factorIntentExpressions(L,laterIntent,opts);
+assert.strictEqual(factored.relation_uses,2,'stable relations were not reused inside later intent');
+assert.strictEqual(factored.raw_constraints,1,'unsupported remainder was incorrectly promoted');
+assert.deepStrictEqual(new Set(factored.relation_signatures),new Set([subsetSig,neqSig]));
+assert.strictEqual(expandFactoredIntent(factored,opts).signature,laterSignature,'factorization changed intent mathematics');
+let factorView=inspectFactoredIntent(L,factored,opts);
+assert.strictEqual(factorView.factoring_current,true);
+assert.strictEqual(factorView.stale_dependencies.length,0);
+
+// Arbitrary variable renaming changes neither reusable relation identity nor the
+// whole mathematical identity of an otherwise identical intent.
+const AA=V('renamedA'),BB=V('renamedB'),UU=V('renamedU');
+const renamedIntent=[A(MOP.AND,subset(AA,UU),neq(AA,BB)),le(card(BB),card(UU))];
+const renamedFactor=factorIntentExpressions(L,renamedIntent,opts);
+assert.deepStrictEqual(new Set(renamedFactor.relation_signatures),new Set(factored.relation_signatures));
+assert.strictEqual(renamedFactor.source_signature,factored.source_signature);
+
 // Surface language can remain attached to an unresolved whole while exposing
 // only the mathematics that has actually stabilized. The base bridge stays
 // conservative: a pending space with no independently usable whole candidate is
@@ -110,6 +134,35 @@ assert(field.recurrent_relations.some(x=>x.signature===subsetSig&&x.occurrence_c
 contactMathSpace(L,'muA',[eq(V('m'),V('n'))],{id:'muA-incomplete',complete:false},{autoRefine:false});
 const afterIncomplete=stabilizedIntent(L,'muA',opts);
 assert(afterIncomplete.stabilized_relations.some(x=>x.signature===subsetSig),'incomplete contact erased warranted relation');
+assert.strictEqual(inspectFactoredIntent(L,factored,opts).factoring_current,true,'incomplete contact invalidated a live relation dependency');
+
+// Complete countercontact can remove those relations from every current source
+// space. The higher intent's mathematics is not destroyed: its occurrences
+// expand back to raw math and a refresh drops only the no-longer-live handles.
+contactMathSpace(L,'muA',[eq(V('d1'),V('d2'))],{id:'muA-common-defeat',complete:true},{autoRefine:false});
+contactMathSpace(L,'muB',[eq(V('d3'),V('d4'))],{id:'muB-common-defeat',complete:true},{autoRefine:false});
+factorView=inspectFactoredIntent(L,factored,opts);
+assert.strictEqual(factorView.factoring_current,false,'defeated stabilization remained live downstream');
+assert.strictEqual(factorView.stale_dependencies.length,2,'not all corrected lower dependencies became stale');
+const rawAgain=refreshIntentFactorization(L,factored,opts);
+assert.strictEqual(rawAgain.relation_uses,0,'refresh retained stale relation handles');
+assert.strictEqual(rawAgain.source_signature,laterSignature,'correction changed the higher intent mathematics');
+assert.strictEqual(expandFactoredIntent(rawAgain,opts).signature,laterSignature);
+
+// The same relations can later become warranted again from another live space.
+// The old factored intent needs no semantic rebinding: its signatures become
+// live again; the raw-expanded version can also be refactored back into them.
+const D=V('D'),E=V('E'),Z=V('Z');
+const d1=[subset(D,Z),neq(D,E),le(card(D),card(Z))];
+const d2=[subset(D,Z),neq(D,E),eq(card(E),card(Z))];
+proposeMathAlternative(L,'muD',{id:'hd1',expressions:d1,source:'opaque-proposer'});
+proposeMathAlternative(L,'muD',{id:'hd2',expressions:d2,source:'opaque-proposer'});
+contactMathSpace(L,'muD',[...d1,d2[2]],{id:'muD-broad-contact',complete:true},{autoRefine:false});
+assert.strictEqual(currentMathSpace(L,'muD').status,'ambiguous');
+assert.strictEqual(inspectFactoredIntent(L,factored,opts).factoring_current,true,'old relation handles did not revive from live structure');
+const compactAgain=refreshIntentFactorization(L,rawAgain,opts);
+assert.strictEqual(compactAgain.relation_uses,2,'corrected field did not refactor higher intent back through live relations');
+assert.strictEqual(compactAgain.source_signature,laterSignature);
 
 // Graph-only candidates have no proposer-side source expressions. Their exact
 // bounded common graph remains useful discovery structure, but arbitrary graph
@@ -141,7 +194,8 @@ assert.strictEqual(bounded.cores.length,0);
 const pure=JSON.stringify({
   muA:{status:sA.status,relations:sA.stabilized_relations.map(x=>x.signature)},
   muB:{status:sB.status,relations:sB.stabilized_relations.map(x=>x.signature)},
-  field:field.relations.map(x=>({signature:x.signature,occurrence_count:x.occurrence_count}))
+  factor:{relation_signatures:factored.relation_signatures,roots:factored.roots.map(x=>x.kind)},
+  field:universalRelationField(L,opts).relations.map(x=>({signature:x.signature,occurrence_count:x.occurrence_count}))
 }).toLowerCase();
 for(const semantic of ['belief','desire','intention','promise','obligation'])assert(!pure.includes(semantic));
 
@@ -149,14 +203,18 @@ const report={
   ambiguous_whole_can_contain_warranted_stable_relations:true,
   stable_relations_survive_variable_renaming:true,
   recurrent_structure_unifies_across_different_intent_spaces:true,
+  later_intent_reuses_stabilized_relations_as_live_dependencies:true,
+  factorization_preserves_exact_intent_math:true,
+  lower_relation_correction_reopens_higher_intent_factorization:true,
+  higher_intent_survives_by_expanding_stale_handles_to_raw_math:true,
+  restored_relation_structure_refactors_higher_intent_without_semantic_rebinding:true,
   surface_can_expose_partial_stable_math_before_whole_resolution:true,
   discriminating_contact_resolves_whole_without_erasing_recurring_lower_relations:true,
   incomplete_contact_remains_unknown:true,
   graph_only_structural_core_remains_provisional:true,
   bounded_search_never_guesses_on_truncation:true,
-  semantic_family_labels_in_stabilization:0,
-  recurrent_relation_structures:field.metrics.recurrent_relation_structures,
+  semantic_family_labels_in_stabilization_or_reuse:0,
   whole:L.whole
 };
 console.log(JSON.stringify(report,null,2));
-console.log('UNIVERSAL INTENT STABILIZATION TEST: PASS');
+console.log('UNIVERSAL INTENT STABILIZATION + REUSE TEST: PASS');
