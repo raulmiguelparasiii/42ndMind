@@ -95,7 +95,7 @@ bounded English -> live corrigible candidate math            13/13 through gener
 generic mathematical type checking                          demonstrated on current candidate/Stone math
 recursive nested intent composition                          all 13 current candidates through one live math-hypothesis authority
 opaque live mathematical alternative spaces                 bounded correction/convergence demonstrated
-categorical relation stabilization inside unresolved spaces bounded shared/recurrent relation demonstration
+categorical relation stabilization inside unresolved spaces bounded complete-constraint/recurrent relation demonstration
 full arbitrary abstract/compositional intention anatomy     not yet demonstrated
 all Stone structures grounded from unrestricted raw reality not demonstrated
 universal mathematical language                             target, not established result
@@ -567,12 +567,13 @@ and let:
 g ⪯ h
 ```
 
-mean that anonymous mathematical graph `g` is a structure-preserving subgraph of candidate `h`. The current categorical stabilized relation set is:
+mean that anonymous mathematical graph `g` is a structure-preserving subgraph of candidate `h`. Let `Complete(g)` mean that `g` comes from a complete source-backed mathematical constraint rather than an arbitrary serialization fragment. The current categorical stabilized relation set is:
 
 ```text
 Stab(r) = {
   g :
-    for every h in K_r, g ⪯ h
+    Complete(g)
+    and for every h in K_r, g ⪯ h
     and targeted space contact supports g
     and no complete targeted space contact defeats g
 }
@@ -580,53 +581,57 @@ Stab(r) = {
 
 This is deliberately weaker than resolving the whole intent. The space may remain ambiguous while `Stab(r)` contains lower relations that every live interpretation already requires. The unresolved remainder stays explicit.
 
-Two generic extraction paths are used:
+Two generic views are derived:
 
 ```text
 source expressions available
  -> shared complete top-level mathematical constraints
+ -> eligible for categorical stabilization after evidence
 
-graph-only or differently factored candidates
+all current candidate graphs
  -> exact bounded maximum common anonymous graph core
+ -> structural discovery invariant only; remains provisional by itself
 ```
 
-The common-core search is exhaustive only within its declared finite search/canonicalization budgets. If a budget is exceeded, it returns an explicit incomplete result and **no guessed pseudo-core**.
+The common-core search is exhaustive only within its declared finite search/canonicalization budgets. If a budget is exceeded, it returns an explicit incomplete result and **no guessed pseudo-core**. Even when the graph-only core is found completely and matched by contact, it is not promoted into `Stab(r)` merely because an arbitrary edge-subgraph may be a serialization fragment rather than a complete mathematical relation.
 
-Cross-intent relation identity is structural rather than name-based. `universalRelationField(...)` quotients currently warranted stabilized relations by canonical anonymous graph signature:
+Cross-intent relation identity is structural rather than name-based. `universalRelationField(...)` quotients currently warranted **complete stabilized relations** by canonical anonymous graph signature:
 
 ```text
-same canonical anonymous stabilized graph
+same canonical anonymous complete stabilized graph
  -> same current Universal-Language relation structure
 ```
 
 Thus two different whole intents can remain distinct or unresolved while exposing the same lower relation. Recurrence across intents is evidence of reusable structure; it is not by itself semantic truth.
 
-Surface-language behavior preserves the same authority split. `english-math-bridge.js` may correctly report an attached unresolved math-space as `unresolved` because no whole candidate is yet usable. `stabilizedMathForRelation(...)` can simultaneously report `partially-stabilized-math` and expose only the warranted lower mathematics. It does not promote a whole candidate or copy status downstream.
+Surface-language behavior preserves the same authority split. `english-math-bridge.js` may correctly report an attached unresolved math-space as `unresolved` because no whole candidate is yet usable. `stabilizedMathForRelation(...)` can simultaneously report `partially-stabilized-math` and expose only the warranted complete lower mathematics. It does not promote a whole candidate or copy status downstream.
 
 The bounded falsification verifies:
 
 ```text
-an ambiguous whole can contain warranted stable lower relations
+an ambiguous whole can contain warranted stable lower complete relations
 stable lower relations survive arbitrary variable renaming
 the same lower anonymous relation recurs as one structure across different intent spaces
 a surface expression can expose partial stable math before whole-intent resolution
 discriminating contact can resolve one whole without erasing recurring lower relations
 incomplete nonmatching contact remains unknown
-graph-only ambiguity still exposes an exact bounded common structural core
+graph-only ambiguity can expose an exact bounded common structural core
+graph-only structural core remains provisional and outside the stabilized relation field
 search truncation returns unresolved/incomplete rather than a guessed core
 semantic family labels in stabilization = 0
 whole = 1
 ```
 
-Preserved failure history: early versions of the new test incorrectly conflated three different states. The underlying graph-only space can be `ambiguous` while a surface bridge attached only to that pending space is `unresolved`; lower relations common to all live interpretations can nevertheless be `partially-stabilized-math`. The implementation was not changed to erase those distinctions. The test was corrected to preserve them.
+Preserved failure history: early versions of the new test incorrectly conflated three different states. The underlying graph-only space can be `ambiguous` while a surface bridge attached only to that pending space is `unresolved`; complete lower relations common to all live interpretations can nevertheless be `partially-stabilized-math`. The implementation was not changed to erase those distinctions. The test was corrected to preserve them. A later diff review exposed a separate risk: arbitrary graph-edge common cores could be syntactic serialization fragments. Those cores were therefore kept as provisional discovery invariants rather than admitted into the stabilized relation field without a complete relation representation.
 
 This changes the broad architecture in an important way:
 
 ```text
 arbitrary expression / intent
  -> live candidate mathematical space
- -> stabilize every relation already forced across surviving interpretations
- -> reuse recurring anonymous structure across other meanings
+ -> stabilize every complete relation already forced across surviving interpretations
+ -> retain provisional shared graph structure for further candidate discovery
+ -> reuse recurring warranted anonymous relations across other meanings
  -> preserve unresolved remainder
  -> let later formal/reality contact split, defeat, refine, or resolve the whole
 ```
@@ -638,11 +643,12 @@ Evidence boundary:
 ```text
 This is a general stabilization rule over the candidate mathematics currently
 present in the ledger. It demonstrates that broad intent can be represented as
-live mathematical alternatives while warranted common relations stabilize and
-recur structurally. It does not establish that every human intent has already
-been correctly proposed/decomposed, that finite evidence identifies a unique
-final meaning, that recurrence alone grounds semantics in reality, or that the
-current operator vocabulary is metaphysically final.
+live mathematical alternatives while warranted common complete relations
+stabilize and recur structurally. Graph-only common fragments remain provisional.
+It does not establish that every human intent has already been correctly
+proposed/decomposed, that finite evidence identifies a unique final meaning,
+that recurrence alone grounds semantics in reality, or that the current operator
+vocabulary is metaphysically final.
 ```
 
 ## 17. Current frontier
@@ -654,6 +660,7 @@ independent reality/formal support for the 13 abstract candidate anatomies
 stronger evidence that candidate relation decompositions are correct rather than merely coherent
 generic candidate generation/correction beyond bounded conjunctive ablation
 recursive factoring/reuse of stabilized lower relations as live definitions/dependencies
+complete-relation recovery/refactoring from graph-only structural invariants
 richer recursive composition across structurally different meanings using the one live authority
 open questions beyond yes/no partitions
 conditional and counterfactual belief/intention
@@ -673,7 +680,7 @@ proof/disproof of a complete universal structural normal form
 proof/disproof of universality for every possible meaning/relation
 ```
 
-Immediate next technical direction: keep the one live hypothesis authority and make stabilized lower relations themselves reusable, corrigible inputs to subsequent candidate generation, recursive definitions, and cross-expression convergence. Increase generic proposition/quantifier/modality structure and correction operators only when a concrete structural failure requires them. Use formal or reality contact to discriminate live alternatives and validate proposed relations. Do not merely add more family names, do not reintroduce copied downstream semantic/status authority, and do not treat richer toy sensory worlds as the prerequisite for Universal-Language progress.
+Immediate next technical direction: keep the one live hypothesis authority and make stabilized lower relations themselves reusable, corrigible inputs to subsequent candidate generation, recursive definitions, and cross-expression convergence. Use provisional graph-only invariants to propose complete relational factorizations rather than silently treating serialization fragments as semantics. Increase generic proposition/quantifier/modality structure and correction operators only when a concrete structural failure requires them. Use formal or reality contact to discriminate live alternatives and validate proposed relations. Do not merely add more family names, do not reintroduce copied downstream semantic/status authority, and do not treat richer toy sensory worlds as the prerequisite for Universal-Language progress.
 
 ## 18. Evidence discipline
 
@@ -684,6 +691,7 @@ proposal != truth
 mathematical graph validity/support != assignment to a particular referent
 whole-intent ambiguity != surface unresolvedness
 surface unresolvedness != absence of stabilized lower mathematics
+shared graph fragment != complete mathematical relation
 stabilized lower relation != resolved whole intent
 recurrence across intents != empirical semantic grounding
 encoding/address != mathematical anatomy
