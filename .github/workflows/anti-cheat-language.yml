@@ -16,6 +16,7 @@ on:
       - 'math-hypotheses.js'
       - 'english-math-bridge.js'
       - 'universal-intent.js'
+      - 'universal-relation-reuse.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
       - 'anti-cheat-language.test.js'
@@ -74,5 +75,5 @@ jobs:
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# The stabilization test is deliberately inside the same anti-cheat gate so it
-# cannot pass by bypassing the existing live hypothesis authority.
+# Stabilization and reuse stay inside the same anti-cheat gate so neither can
+# pass by bypassing the existing live hypothesis authority.
