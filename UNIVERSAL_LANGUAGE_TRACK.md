@@ -80,6 +80,7 @@ Stone-pole primer-grounded relational mathematical anatomy   = demonstrated 7/7
 closed Stone recursive mathematical compilation              = demonstrated for all 7 Stone structures
 Empathy intervention/reality-contact bridge                  = demonstrated in bounded anonymous novel worlds
 corrigible external relation proposals                       = demonstrated
+recursive relation reduction + canonical normal form         = demonstrated in bounded structural tests
 full arbitrary abstract/compositional intention anatomy      = not yet demonstrated
 all Stone structures grounded from unrestricted raw reality  = not demonstrated
 universal mathematical language                              = target, not established result
@@ -137,20 +138,43 @@ C(d) = |d1|+|d2|+|d3|
      = d/C(d)              otherwise
 ```
 
-This is the compressed orientation kernel without requiring `E`, `P`, `W`, `K`, `A`, or `I` as unexplained algebraic placeholders. `Gi` denotes an actual anonymous finite relational structure, not a semantic name.
+This is a compressed anonymous directional/structural projection without requiring `E`, `P`, `W`, `K`, `A`, or `I` as unexplained algebraic placeholders. `Gi` denotes an actual anonymous finite relational structure, not a semantic name. It must not automatically be identified with the full Stone orientation unless its magnitude relative to the active referent is warranted.
 
-Null/absence compiles to zero entity-referent relational cardinality and gives `d=(0,0,0)`; it is not Collapse/Insulation.
+Null/absence compiles to zero entity-referent relational cardinality and gives zero directional structure; it is not Collapse/Insulation.
 
-For the full closed octahedron rather than only the normalized orientation direction, the intended completion/development coordinate should be represented separately as `r∈[0,1]`:
+#### Correct Stone frame: entity q, referent r, development, realization
+
+Do **not** use `r` as an independent scalar for development. In the Stone source, `q` is the entity and `r` is the materially relevant referent/scope. The actual orientation is the entity–referent relation
 
 ```text
-p = 0             if r=0
-p = r Π(d)         if r>0
-
-||p||_1 = r
+Φ(q,r) = (x,y,z) ∈ O_r
+O_r = { (x,y,z) ∈ R^3 : |x|+|y|+|z| <= 1 }
 ```
 
-Thus the entire geometric state lies in `{p : ||p||_1 <= 1}`; `r=0` is null, `0<r<1` is developing orientation, and `r=1` is a formed boundary stance. The present implementation already compiles the anonymous directional structures and surface projection; independently grounding the interior completion variable is a further step rather than something to fake by naming it.
+Development is already the L1 magnitude of that relative orientation:
+
+```text
+L1(q,r) = ||Φ(q,r)||_1 = |x|+|y|+|z|
+```
+
+so:
+
+```text
+L1(q,r) = 0       null relative to r
+0 < L1(q,r) < 1   developing orientation relative to r
+L1(q,r) = 1       formed stance relative to r
+```
+
+Realization extends the frame by changing the materially relevant reality itself:
+
+```text
+r -> r'
+Φ(q,r) -> Φ(q,r')
+```
+
+The entity `q` remains the same while the scope against which it is situated changes. A broadened `r'` may make unchanged prior development occupy a smaller proportion of the now-relevant reality and therefore place the entity closer to null relative to that larger scope; realization can also reorganize the orientation itself.
+
+Therefore the previous living-memory idea `p = r Π(d)` with `r∈[0,1]` as a free completion scalar was a notation/structural mistake and is withdrawn. The full interior should eventually be obtained by grounding `Φ(q,r)` itself relative to the active referent, not by attaching an independently named radial variable to a normalized direction. The current `projectSurface(d)` utility is a surface/direction projection for the bounded closed-math experiment; it must not be cited as proof that an arbitrary developing orientation has already reached the stance boundary.
 
 ### Empathy reality contact
 
@@ -170,6 +194,24 @@ later counterevidence can reopen a previously supported proposal
 ```
 
 This is the scaffold for broad relation seeding. The proposer may be useful precisely because it can translate a concept into many candidate relations faster than a toy world can rediscover them, while the live system remains responsible for correction.
+
+### Recursive reduction / canonical relational normal form
+
+`relational-normal-form.js` addresses the fact that even the current operator vocabulary must not be treated as metaphysically final merely because it is convenient. A relation symbol may itself have a relational definition, and that definition may recursively contain other defined relations.
+
+The generic pipeline is:
+
+```text
+surface relation pattern
+    -> recursively expand warranted relation definitions
+    -> preserve undefined/circular remainder explicitly
+    -> canonicalize the resulting directed labelled structure
+    -> compare canonical normal forms
+```
+
+The bounded falsification gate verifies that independently named nested relation systems converge when they reduce to the same terminal structure; arbitrary vertex names and edge order do not matter; corrections to a lower definition change dependent normal forms; materially different terminal structure stays different; and circular definitions terminate as explicit unresolved reduction rather than being guessed away.
+
+This does **not** prove that `O0...O10` are the final irreducible relations. It supplies machinery for reducing them too if later warranted definitions are discovered. The universal invariant is therefore intended to be the recursively reduced relational structure up to structure-preserving equivalence, not a privileged alphabet of operator names.
 
 ## 4. Meaning of `1`
 
@@ -207,6 +249,7 @@ So the loop is approximately:
 expression/intention
     -> propose/expose relational anatomy
     -> compare with existing relations
+    -> recursively reduce / canonicalize when definitions exist
     -> merge/reuse/split as warranted
     -> ground/correct against reality and formal constraints
     -> strengthen the universal relation field
@@ -223,12 +266,13 @@ For an expression/intention `I`, a convincing universal result should produce an
 2. paraphrases/translations converge because of those relations;
 3. relevant differences produce corresponding mathematical differences;
 4. objects compose recursively from stabilized relations when possible;
-5. unknown/underdetermined parts remain unresolved instead of guessed;
-6. grounding can correct them later without manually patching a semantic dictionary;
-7. the resolved object closes as the relevant whole `1` without falsely treating overlapping relations as disjoint mass;
-8. non-temporal evidence order should not arbitrarily change the resolved result;
-9. surviving structure is inspectable enough to explain what each relation contributes;
-10. source confidence, prestige, or fluency cannot substitute for independent support.
+5. relation symbols themselves can recursively reduce when warranted, so arbitrary operator vocabulary does not define identity;
+6. unknown/underdetermined parts remain unresolved instead of guessed;
+7. grounding can correct them later without manually patching a semantic dictionary;
+8. the resolved object closes as the relevant whole `1` without falsely treating overlapping relations as disjoint mass;
+9. non-temporal evidence order should not arbitrarily change the resolved result;
+10. surviving structure is inspectable enough to explain what each relation contributes;
+11. source confidence, prestige, or fluency cannot substitute for independent support.
 
 ## 7. Context-loss rule
 

@@ -8,6 +8,7 @@ on:
       - 'stone-closed-math.js'
       - 'stone-reality-contact.js'
       - 'relation-hypotheses.js'
+      - 'relational-normal-form.js'
       - 'anti-cheat-language.test.js'
       - 'wide-opaque-english.test.js'
       - 'wide-opaque-english-2.test.js'
@@ -17,6 +18,7 @@ on:
       - 'stone-closed-math.test.js'
       - 'empathy-reality-contact.test.js'
       - 'relation-hypotheses.test.js'
+      - 'relational-normal-form.test.js'
       - 'UNIVERSAL_LANGUAGE_TRACK.md'
       - 'STONE_CLOSED_MATH_DESIGN.md'
       - '.github/workflows/anti-cheat-language.yml'
@@ -43,3 +45,4 @@ jobs:
       - run: node stone-closed-math.test.js
       - run: node empathy-reality-contact.test.js
       - run: node relation-hypotheses.test.js
+      - run: node relational-normal-form.test.js
