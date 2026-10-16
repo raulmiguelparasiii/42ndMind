@@ -165,17 +165,25 @@ function buildRecursiveSource(S,rootId,options={}){
       const d=S.definitions[node.definition];
       if(!d)throw new Error(`missing recursive definition ${node.definition}`);
       const child=build(node.content);
-      // Atomic content is already a proposition-set. Clause content is the
-      // extension, in the shared universe, of the child's quoted full formula.
-      // QUOTE preserves the actual child anatomy as a subexpression.
-      const content=child.formula?extension(quote(child.formula),U):child.proposition;
+      const prefix=`${ns}node:${id}:`;
+
+      // Keep the recursively embedded child formula single-copy. The local
+      // content proposition is bound once to the extension of the quoted child,
+      // then the outer anatomy reuses that proposition variable. This preserves
+      // the actual inner structure while avoiding exponential syntactic copying.
+      let content=child.proposition;
+      const bridge=[];
+      if(child.formula){
+        content=V(`${prefix}content`);
+        bridge.push(eq(content,extension(quote(child.formula),U)));
+      }
+
       const bindings={
         [SLOT.CONTENT]:content,
         [SLOT.UNIVERSE]:U,
         [SLOT.SUBJECT]:subjectTerm(node.subject)
       };
-      const prefix=`${ns}node:${id}:`;
-      const constraints=d.template.map(e=>instantiate(e,bindings,prefix));
+      const constraints=bridge.concat(d.template.map(e=>instantiate(e,bindings,prefix)));
       const formula=and(...constraints);
       out={
         id,type:1,definition:node.definition,definition_revision:d.revision,
