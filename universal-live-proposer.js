@@ -36,6 +36,7 @@ const {
   proposeRelationGuidedAlternative,queryRelationalField
 }=require('./universal-relational-completion');
 const {summarizeHistoricalContacts}=require('./relational-history-resolution');
+const {abstractHistoricalContacts}=require('./relational-history-abstraction');
 
 function assertUniversal(U){
   if(!U||U.whole!==1||!U.relations)throw new Error('invalid universal-language state');
@@ -75,18 +76,20 @@ function liveMathVocabularyView(L,options={}){
   };
 }
 
-function enrichCompletion(view){
+function enrichCompletion(L,view,options={}){
   if(!view)return null;
+  const historicalContacts=view.historical_contacts||[];
   return{
     ...view,
-    historical_resolution:summarizeHistoricalContacts(view.historical_contacts||[])
+    historical_resolution:summarizeHistoricalContacts(historicalContacts),
+    historical_abstraction:abstractHistoricalContacts(L,historicalContacts,options)
   };
 }
 
 function cueView(L,contact,options={}){
   const cue=contact?.math_graph??contact?.math_cue??null;
   if(!cue)return null;
-  return enrichCompletion(queryRelationalField(L,cue,options));
+  return enrichCompletion(L,queryRelationalField(L,cue,options),options);
 }
 
 function normalizeSurfaceSignal(signal){
@@ -135,7 +138,7 @@ function proposalAlternatives(spec){
 
 function currentCompletion(L,current,options={}){
   if(!current||current.status!=='resolved-candidate-math'||!current.math)return null;
-  return enrichCompletion(queryRelationalField(L,current.math,options));
+  return enrichCompletion(L,queryRelationalField(L,current.math,options),options);
 }
 
 function sourceExpressionsFromContactInput(input){
