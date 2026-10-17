@@ -22,6 +22,7 @@ on:
       - 'relational-history-resolution.js'
       - 'relational-history-abstraction.js'
       - 'relational-cue-accessibility.js'
+      - 'relational-source-coherence.js'
       - 'universal-live-proposer.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
@@ -47,6 +48,7 @@ on:
       - 'relational-history-resolution.test.js'
       - 'relational-history-abstraction.test.js'
       - 'cue-accessibility-interference.test.js'
+      - 'source-coherence-reconstruction.test.js'
       - 'live-episodic-reaccess.test.js'
       - 'natural-language-episodic-frontier.test.js'
       - 'universal-live-proposer.test.js'
@@ -93,13 +95,13 @@ jobs:
       - run: node relational-history-resolution.test.js
       - run: node relational-history-abstraction.test.js
       - run: node cue-accessibility-interference.test.js
+      - run: node source-coherence-reconstruction.test.js
       - run: node live-episodic-reaccess.test.js
       - run: node natural-language-episodic-frontier.test.js
       - run: node universal-live-proposer.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# Stabilization, reuse, relational completion, occurrence-safe history,
-# source-backed abstraction, cue accessibility/interference, ambiguity-preserving
-# language frontiers, live experience reaccess, and cognitive surface
-# falsification share one upstream mathematical authority.
+# Stabilization, completion, occurrence-safe history, source-backed abstraction,
+# cue accessibility/interference, source-coherence checking, ambiguity-preserving
+# language frontiers, and live experience reaccess share one upstream authority.
