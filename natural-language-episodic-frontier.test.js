@@ -32,10 +32,6 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
   ];
   const eastGraph=compileMathGraph(east,opts),westGraph=compileMathGraph(west,opts);
 
-  // Each first ordinary-language experience creates an opaque surface relation,
-  // proposes its mathematics, and carries independent source-backed contact in
-  // the SAME live step. Proposal is installed before explicit contact is routed,
-  // but the proposal itself does not count as evidence.
   const eastFirst=await liveUniversalStep(U,L,B,{
     utterance:'I left the folder beside the east entrance.',context:ctx,math_graph:eastGraph,
     math_contact:{input:east,id:'east-experience',complete:true,kind:'observed-contact',spaces:['east-space']}
@@ -56,9 +52,6 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
   assert.strictEqual(westFirst.mathematical.entered_contact.id,'west-experience');
   assert.strictEqual(westFirst.mathematical.current.status,'resolved-candidate-math');
 
-  // Symmetric, structurally grounded language schooling gives the surface layer
-  // enough varied wording to separate context-rich cues without naming either
-  // relation semantically inside the runtime.
   const pairs=[
     ['The folder was beside the east entrance.','The folder was beside the west entrance.'],
     ['I remember the folder near the east entrance.','I remember the folder near the west entrance.'],
@@ -72,8 +65,6 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
   const westCanon=U.canonical['surface-west']||'surface-west';
   assert.notStrictEqual(eastCanon,westCanon,'different contextual episode meanings collapsed during surface schooling');
 
-  // A context-rich English-only cue should collapse to one mathematical episode
-  // and reaccess its source occurrence without any explicit math cue.
   const eastCue=await liveUniversalStep(U,L,B,{
     utterance:'I left the folder near the east entrance.',context:ctx
   },null,opts);
@@ -84,10 +75,6 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
   assert.strictEqual(eastCue.mathematical.active_completion_frontier.status,'resolved-candidate-math');
   assert.deepStrictEqual(eastCue.mathematical.active_completion_frontier.historical_resolution.candidate_occurrence_ids,['east-experience']);
 
-  // Remove only the distinguishing context word. Both learned surface meanings
-  // are now exactly equally supported. Deterministic lexical ordering may still
-  // have a first row internally, but the bridge is forbidden to turn that tie
-  // into one mathematical/source answer.
   const ambiguous=await liveUniversalStep(U,L,B,{
     utterance:'I left the folder beside the entrance.',context:ctx
   },null,opts);
@@ -106,20 +93,20 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
   assert.strictEqual(ambiguous.mathematical.active_completion_frontier.historical_resolution.occurrence_status,'ambiguous');
   assert.strictEqual(ambiguous.mathematical.active_completion_frontier.historical_resolution.competing_structures,true);
 
-  // Even while source is ambiguous, repeated episode structure can expose safe
-  // common complete relations. The east/west bound context itself must not leak
-  // into that common abstraction.
-  const common=ambiguous.mathematical.active_completion_frontier.historical_abstraction;
-  assert.strictEqual(common.status,'derived-common-relations');
+  // Safe recurrence may survive source ambiguity, but it is explicitly a
+  // proposal clue rather than semantic truth/status. Episode-specific context
+  // must remain outside that common recurrence.
+  const common=ambiguous.mathematical.active_completion_frontier.historical_recurrence;
+  assert.strictEqual(common.result,'recurrent-complete-relations');
+  assert.strictEqual(common.authority,'proposal-only');
+  assert(common.relations.every(r=>r.authority==='proposal-only'));
   const folderSig=compileMathGraph([eq(V('item'),C('folder'))],opts).signature;
   const eastContextSig=compileMathGraph([eq(V('place'),C('east-entrance'))],opts).signature;
   const westContextSig=compileMathGraph([eq(V('place'),C('west-entrance'))],opts).signature;
   const commonSigs=new Set(common.relations.map(r=>r.signature));
-  assert(commonSigs.has(folderSig),'ambiguous recall lost the complete relation common to both episodes');
-  assert(!commonSigs.has(eastContextSig)&&!commonSigs.has(westContextSig),'episode-specific source context leaked into common abstraction');
+  assert(commonSigs.has(folderSig),'ambiguous recall lost the complete relation recurrent across both episodes');
+  assert(!commonSigs.has(eastContextSig)&&!commonSigs.has(westContextSig),'episode-specific source context leaked into recurrence');
 
-  // Reinstating one context word collapses the surface->math frontier and source
-  // ambiguity without rebinding or writing any new evidence.
   const evidenceBefore=L.evidence.length;
   const westCue=await liveUniversalStep(U,L,B,{
     utterance:'I left the folder near the west entrance.',context:ctx
@@ -139,8 +126,8 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
     exact_surface_tie_returns_ambiguous_not_arbitrary_math:true,
     ambiguous_english_cue_keeps_two_live_completion_alternatives:true,
     ambiguous_source_does_not_fabricate_occurrence:true,
-    common_relations_can_survive_source_ambiguity:true,
-    episode_specific_context_stays_outside_common_abstraction:true,
+    common_relations_survive_source_ambiguity_as_proposal_only_recurrence:true,
+    episode_specific_context_stays_outside_common_recurrence:true,
     richer_english_context_collapses_frontier_without_rebinding:true,
     english_only_reaccess_writes_new_evidence:0,
     separate_memory_or_source_controller:0,
