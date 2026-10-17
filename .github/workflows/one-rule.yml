@@ -47,5 +47,5 @@ jobs:
       - run: node micro-world-open.js
       - run: node one-mind.test.js
       - run: node relational-occurrence-completion.test.js
-      - run: node micro-world-single-life.js
       - run: node one-rule.stress.js
+      - run: node micro-world-single-life.js
