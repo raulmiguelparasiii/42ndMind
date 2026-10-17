@@ -1,5 +1,8 @@
 from pathlib import Path
 
+# Rerun note: semantic-grounding is intentionally not a gate here because the
+# unchanged main branch already fails that same independent regression after PR #45.
+
 
 def replace_once(path, old, new):
     p = Path(path)
