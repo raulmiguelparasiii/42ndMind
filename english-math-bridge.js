@@ -292,10 +292,20 @@ function surfaceMathFrontier(B,U,L,options={}){
 
 function currentEnglishMath(B,U,L){
   assertBridge(B);assertUniversal(U);assertLedger(L);
+  const frontier=surfaceRelationFrontier(U);
   const surface=surfaceResolution(U);
-  if(!surface.relation)return{whole:1,status:'unresolved',relation:null,hypotheses:[],math:null,surface_resolution:surface};
-  const out=mathForRelation(B,U,L,surface.relation);
-  return{...out,surface_resolution:surface};
+  if(frontier.status==='ambiguous'){
+    const alternatives=frontier.relations.map(relation=>mathForRelation(B,U,L,relation));
+    const hypotheses=[...new Set(alternatives.flatMap(x=>x.hypotheses||[]))];
+    return{
+      whole:1,status:'ambiguous',relation:null,hypotheses,math:null,
+      surface_resolution:surface,surface_frontier:frontier
+    };
+  }
+  const relation=frontier.relations[0]||surface.relation||null;
+  if(!relation)return{whole:1,status:'unresolved',relation:null,hypotheses:[],math:null,surface_resolution:surface,surface_frontier:frontier};
+  const out=mathForRelation(B,U,L,relation);
+  return{...out,surface_resolution:surface,surface_frontier:frontier};
 }
 
 function pureEnglishMathBridge(B){
