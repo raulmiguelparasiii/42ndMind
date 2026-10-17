@@ -58,6 +58,54 @@ A learned pattern may guide attention or expectation, but it cannot remove a com
 
 This prevents a frequent shortcut from turning itself into certainty merely because it is familiar.
 
+## Occurrence-preserving relational completion
+
+Reality-preserving recompression also has to preserve the distinction between an abstract relation and the separate occasions on which that relation occurred.
+
+Let the retained occurrence history at time `t` be:
+
+```text
+H_t = (e_1, e_2, ..., e_n)
+```
+
+and let `R` be the present partial relational contact. The same relational machinery can derive the query-relative historical frontier:
+
+```text
+Q(R, H_t) = {
+  e_i in H_t : R embeds consistently in e_i
+}
+```
+
+"Consistently" uses the same variable/co-reference binding machinery already used for ordinary relational completion. It does not mean that each cue component may be matched independently to unrelated entities.
+
+This is not a second cognitive operator or a memory authority. `Q` is a derived view of the one current `M`, produced while `C` assimilates present reality-contact. In particular:
+
+```text
+computing Q(R, H_t) does not add a fact to L_t
+computing Q(R, H_t) does not activate or defeat a rule
+computing Q(R, H_t) does not change W_t
+```
+
+The occurrence identity invariant is:
+
+```text
+e_i and e_j may instantiate the same anonymous relation
+without implying i = j
+```
+
+So two identical contacts remain two historical occurrences rather than collapsing into one event.
+
+The refinement invariant is:
+
+```text
+if R' contains all of R plus additional compatible present structure,
+then Q(R', H_t) is a subset of Q(R, H_t)
+```
+
+A coarse present relation can therefore reopen several earlier occurrences. Additional present structure can narrow that set. If several compatible occurrences remain, the mind retains the alternatives rather than selecting one by recency, repetition, or familiarity.
+
+This gives the one developmental law a tested occurrence-aware consequence without adding `memory`, `remember`, `recollect`, or an attention controller to `C`. Whether richer human memory phenomena emerge from the same general structure remains a further falsification problem; this result establishes the more basic mathematical substrate.
+
 ## Numerical invariant
 
 The tested invariant is not that every heterogeneous mental relation globally adds to `1`. Relations overlap and can describe the same reality at different resolutions, so that would double-count them.
@@ -201,7 +249,7 @@ If incompatible interpretations enter the ledger, the mind remains `1` while the
 
 ## Verified results
 
-GitHub Actions now verifies the original exact kernel, self-learning and refinement, recursive self-recompression, and the scaling stress suite.
+GitHub Actions now verifies the original exact kernel, self-learning and refinement, recursive self-recompression, occurrence-aware relational completion, and the scaling stress suite.
 
 Current verified behaviors include:
 
@@ -214,6 +262,10 @@ Current verified behaviors include:
 - a level-2 description was learned from a level-1 description;
 - a higher relation requiring six raw conditions was learned despite a three-condition search limit by reusing the level-2 representation;
 - circular self-prediction through learned symbols is rejected;
+- present partial structured contact reopens every compatible earlier relational occurrence rather than selecting one by familiarity or recency;
+- additional present structure narrows that historical occurrence frontier through the existing relation matcher;
+- identical relational content can remain multiple distinct retained occurrences;
+- occurrence reaccess does not manufacture facts or change relational rule authority;
 - all original contradiction/recovery tests continue to pass;
 - 500 randomized exact-growth trials continue to pass;
 - the factored kernel still avoids explicit `2^1000` independent-world enumeration;
@@ -243,6 +295,6 @@ conviction
 empathy
 ```
 
-The implementation still contains finite engineering search limits and a generic representation vocabulary for observed feature/value relations. Those are computational interfaces and bounds, not learned conclusions.
+Occurrence-aware relational completion is part of the generic contact-preservation/completion machinery, not a named memory facility. The implementation still contains finite engineering search limits and a generic representation vocabulary for observed feature/value relations. Those are computational interfaces and bounds, not learned conclusions.
 
 The next legitimate tests should continue in the same direction: do not add faculties. Increase the diversity and temporal depth of experience, then test what structures repeated recursive recompression can discover on its own and where the one law actually fails.
