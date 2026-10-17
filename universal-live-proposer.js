@@ -14,6 +14,9 @@
 // completion view. Its proposal is not evidence. Mathematical alternatives are
 // routed through the existing relation-guided proposal path and remain open
 // until the authoritative ledger receives independent/formal/reality contact.
+// Once the current surface input resolves to live mathematics, that mathematics
+// itself becomes the present structural cue and derives a current completion
+// frontier automatically. No attention state or controller is stored.
 
 const {F}=require('./universal-language');
 const {
@@ -110,6 +113,11 @@ function proposalAlternatives(spec){
   return xs;
 }
 
+function currentCompletion(L,current,options={}){
+  if(!current||current.status!=='resolved-candidate-math'||!current.math)return null;
+  return queryRelationalField(L,current.math,options);
+}
+
 // One ordinary F step plus optional mathematical proposal routing. The proposer
 // receives the ordinary F oracle view augmented by a live read-only mathematical
 // field. F sees only the surface portion of the returned signal. The math ledger
@@ -121,7 +129,7 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
 
   let fullSignal=null;
   const vocabulary=liveMathVocabularyView(L,options);
-  const cue=cueView(L,contact,options);
+  const suppliedCue=cueView(L,contact,options);
 
   const oracle=proposer?async baseView=>{
     const view={
@@ -129,7 +137,7 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
       universal_math:{
         whole:1,
         vocabulary,
-        cue_completion:cue,
+        cue_completion:suppliedCue,
         proposal_contract:{
           surface:{candidates:'ordinary F candidates/relations'},
           math_spaces:[{
@@ -172,6 +180,9 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
     });
   }
 
+  const current=currentEnglishMath(B,U,L);
+  const active=currentCompletion(L,current,options);
+
   return{
     whole:1,
     surface:{
@@ -180,9 +191,10 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
     },
     mathematical:{
       stabilized_relation_count:vocabulary.relations.length,
-      cue_completion:cue,
+      supplied_cue_completion:suppliedCue,
+      active_completion:active,
       routed_spaces:routed,
-      current:currentEnglishMath(B,U,L)
+      current
     }
   };
 }
