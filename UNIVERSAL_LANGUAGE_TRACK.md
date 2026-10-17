@@ -98,6 +98,9 @@ opaque live mathematical alternative spaces                 bounded correction/c
 categorical relation stabilization inside unresolved spaces bounded complete-constraint/recurrent relation demonstration
 live reuse/refactoring of stabilized complete relations      bounded correction/restore demonstration
 relation-guided candidate construction + cue reaccess       bounded one-ledger completion/history demonstration
+generic F/oracle -> live stabilized math proposal path       bounded evidence-separated demonstration
+ordered occurrence history under one relation identity      bounded one-ledger demonstration
+memory/attention/focus/broad-intent candidate split          7 distinct corrigible candidate structures
 full arbitrary abstract/compositional intention anatomy     not yet demonstrated
 all Stone structures grounded from unrestricted raw reality not demonstrated
 universal mathematical language                             target, not established result
@@ -107,7 +110,7 @@ Broad opaque English regressions remain `54/56` and `83/88`. Never describe thes
 
 Sixteen executable families have stronger grounded mathematical anatomy: open, terminate/close, conceal, delete, copy, move, rename, create, save, undo, enable, disable, increase, decrease, pause, resume.
 
-The thirteen newer thought/propositional/pragmatic structures are still **candidate anatomies**, not independently reality-grounded semantic truth.
+The thirteen newer thought/propositional/pragmatic structures and the newer seven-way cognitive split are still **candidate anatomies**, not independently reality-grounded semantic truth.
 
 ## 4. Meaning of `1`
 
@@ -727,11 +730,11 @@ relation, prove that every human intent has the correct mathematical anatomy,
 or turn a reusable handle into independent semantic authority.
 ```
 
-## 18. Relation-guided completion and history reaccess
+## 18. Relation-guided completion, reaccess, and occurrence history
 
-PR #31 adds `universal-relational-completion.js` as a **connection** between the stabilized reusable vocabulary and new candidate construction. It does not create a memory store, attention controller, semantic registry, or second truth/status/revision authority.
+PR #31, merge `a18b44f6f443ee44cd938f56946a22079c42bfde`, adds `universal-relational-completion.js` as a **connection** between the stabilized reusable vocabulary and new candidate construction. It does not create a memory store, attention controller, semantic registry, or second truth/status/revision authority.
 
-A proposer can now construct new candidate mathematics directly from currently stabilized relation uses plus explicit unresolved/raw remainder:
+A proposer can construct new candidate mathematics directly from currently stabilized relation uses plus explicit unresolved/raw remainder:
 
 ```text
 stabilized relation use(s) + raw unresolved constraint(s)
@@ -740,9 +743,9 @@ stabilized relation use(s) + raw unresolved constraint(s)
  -> propose through math-hypotheses.js
 ```
 
-The factored representation is therefore proposal-time structure/compression only. Before a candidate enters the live ledger it is expanded back to ordinary source mathematics. `math-hypotheses.js` remains the only authority that owns the candidate, its evidence, revision, and usability.
+The factored representation is proposal-time structure/compression only. Before a candidate enters the live ledger it is expanded back to ordinary source mathematics. `math-hypotheses.js` remains the only authority that owns the candidate, its evidence, revision, and usability.
 
-The same connection also exposes query-relative relational completion. A partial mathematical cue can be compared against the current live candidate field and the ledger's retained evidence contacts:
+The same connection exposes query-relative relational completion:
 
 ```text
 partial relational cue
@@ -751,21 +754,35 @@ partial relational cue
  -> retained historical contacts containing the cue
 ```
 
-This query writes no activation state and stores no separate retrieval index. In the bounded falsification, a coarse cue reopens multiple compatible live wholes while a more specific cue narrows the current completion frontier. The behavior follows from the cue's relational structure rather than a hand-written `attention` or `focus` controller.
+A coarse cue can reopen several compatible wholes while a more specific cue narrows the completion frontier. The query writes no activation state and stores no separate retrieval index.
 
-Historical contact and current warrant are deliberately non-identical. Complete countercontact can remove a lower relation from the currently stabilized/reusable vocabulary while the earlier evidence contact that contained that relation remains retained in the one ledger. A higher candidate already constructed from the relation keeps its exact mathematics. If the same anonymous relation is later warranted again elsewhere, the same canonical signature becomes reusable again without semantic rebinding.
+PR #33, merge `b90f09fa57715e93601d5d195b7bbbd719e9e468`, extends the same read path so abstract relation identity and occurrence identity are non-identical. Two evidence contacts may carry exactly the same anonymous graph and therefore instantiate one mathematical relation while remaining two distinct ordered historical occurrences. The read view derives from the existing ledger/audit only:
 
-Graph-only provisional structure remains weaker. The first PR #31 falsification failed because the initial implementation assumed a maximum-common graph fragment could itself map into and justify a complete source-backed relation. That repeated the exact serialization-fragment risk identified in PR #28. The implementation, not the older stabilizer, was corrected. A graph-only core now only signals that unresolved shared structure exists. A proposer-supplied **complete** relation is returned as a proposal clue only if that complete relation independently embeds in every current maximal live whole. Even then its status is only `proposal-only`; it receives no truth or stabilization from the clue.
+```text
+occurrence id
+occurrence index
+ledger step
+anonymous relation signature
+provenance metadata
+structural completion gain relative to the cue
+```
 
-The bounded falsification verifies:
+Ledger order is bookkeeping order, not an externally measured physical-time claim. Current correction may remove a relation from reusable warrant without deleting or reordering earlier occurrences.
+
+Graph-only provisional structure remains weaker. The first PR #31 falsification failed because the initial implementation assumed a maximum-common graph fragment could itself map into and justify a complete source-backed relation. That repeated the serialization-fragment risk from PR #28. The implementation was corrected: a graph-only core only signals unresolved shared structure. A proposer-supplied **complete** relation is returned as a proposal clue only if that complete relation independently embeds in every current maximal live whole. Even then it remains `proposal-only`.
+
+The combined bounded falsification verifies:
 
 ```text
 stabilized vocabulary can directly construct a new mathematical candidate
 unsupported remainder stays explicit and raw
 expanded candidate enters the existing live math-hypothesis authority unchanged
 a partial cue reopens larger live relational completions
-retained evidence can be reaccessed from the same ledger without a second memory store
+retained evidence can be reaccessed from the same ledger without a second store
 more specific relational cues can narrow the live completion frontier
+same mathematical relation can have multiple distinct ordered occurrences
+occurrence provenance survives current correction
+larger historical contact can expose positive structural completion gain
 lower-relation correction removes current reuse without erasing retained history
 already-proposed higher mathematics survives lower-relation correction
 later recurrence restores the same canonical reusable relation signature
@@ -774,18 +791,108 @@ semantic memory/remember/recollect/attention/focus labels in the generic connect
 whole = 1
 ```
 
-This is architecturally relevant to future genuine memory/remembering/recollection/attention/focus work because persistence and relational reaccess no longer require a separately invented storage or retrieval authority. It does **not** establish that those English concepts have been semantically solved, that query-relative completion is already human memory, or that a current active relational frontier is already a complete theory of attention. Those meanings must still be proposed, distinguished, grounded, corrected, and stabilized through the Universal Language itself.
+This provides a generic substrate relevant to memory without declaring memory solved: relational persistence, occurrence-preserving history, cue-dependent reaccess, completion, and correction all arise from the same ledger.
 
-## 19. Current frontier
+## 19. Ordinary F/oracle proposal through the live mathematical field
+
+PR #32, merge `34ad69649efdaf4439cb6a8cdd9c666633e5f5f7`, adds `universal-live-proposer.js` as an orchestration **connection**, not a merged authority.
+
+The ordinary `universal-language.js` `F`/oracle path can now see the current stabilized anonymous mathematical vocabulary. A proposer may use that vocabulary to propose one or more mathematical alternatives plus explicit unresolved remainder. `F` still owns only surface relation learning/resolution; `math-hypotheses.js` still owns mathematical candidates/evidence/status/revision; `english-math-bridge.js` still stores only opaque live attachments.
+
+Crucially:
+
+```text
+surface/oracle proposal -> mathematical alternatives
+!=
+mathematical evidence
+```
+
+Proposer confidence cannot resolve the math space. Independent formal/reality contact must do that through the existing upstream authority.
+
+Once a present surface input already resolves through the bridge to warranted live mathematics, that present mathematics automatically becomes the structural cue for `queryRelationalField(...)`. The resulting `active_completion` is derived on read:
+
+```text
+present resolved relation
+ -> present mathematical cue
+ -> current compatible completion frontier
+ -> matching retained contacts
+```
+
+No `attention` object, active flag, focus controller, or copied mathematical state is stored. This is strong substrate evidence for an always-current relational frontier, but it is not yet a semantic proof that this frontier is human attention.
+
+The bounded gate verifies:
+
+```text
+ordinary F oracle sees the stabilized mathematical vocabulary
+proposed alternatives reuse already-stable lower relations
+unresolved/raw remainder remains explicit
+proposal creates zero mathematical evidence
+independent upstream contact resolves the old surface binding
+later ordinary occurrence of resolved surface math derives active completion automatically
+explicit partial cue can also reopen the same live ledger/history
+U contains no copied math-hypothesis authority
+bridge contains no copied graph/status authority
+semantic memory/attention/focus labels in the generic connection = 0
+whole = 1
+```
+
+## 20. Corrigible memory, retrieval, attention, focus, and broad-intent split
+
+PR #34, merge `8043d3ba4313eb3559a55a30be3317b0bc590739`, adds `cognitive-relation-candidates.js` as a proposer-side candidate layer. It does **not** add cognitive faculties to the runtime.
+
+The older 13-family candidate set contained one broad memory candidate. The new work asks whether the now-demonstrated generic substrate warrants a finer split. Seven explicit mathematical hypotheses are proposed:
+
+```text
+memory       retained historical occurrence + later structural availability
+memorize     acquisition/encoding transition that changes later retention
+remember     present partial cue completes to retained content
+recollect    remembering + recovery of context bound to the earlier occurrence
+attention    present target-dependent selection of a nonempty live subset
+focus        attention preserved around the same target across ordered contact
+broad intent attention/current frontier + target-directed admissible restriction
+```
+
+The broad-intent candidate is deliberately distinct from the older action-intention candidate. It is a hypothesis about directed completion generally, not action realization specifically.
+
+Structural relations currently proposed and falsifiable:
+
+```text
+memory ⪯ remember ⪯ recollect
+memory ⪯ memorize
+remember != memorize
+attention ⪯ focus
+attention ⪯ broad-intent
+memory != attention
+broad-intent != action-intention
+```
+
+All seven are generically type-valid, alpha-renaming invariant, and anonymously structurally distinct. Their pure mathematical basis contains no English cognitive labels.
+
+The test then routes all seven through the existing `math-hypotheses.js` space authority. Proposer confidence alone leaves them unresolved. Complete formal structural probes can discriminate retention-only, cue retrieval, context retrieval, acquisition, current selection, persistent selection, and directed completion, resolving the structurally maximal fitting candidate in each bounded probe.
+
+Evidence boundary:
+
+```text
+These are better-separated, research-compatible mathematical hypotheses.
+Formal structural discriminability != empirical semantic grounding.
+The words memory/remember/recollect/memorize/attention/focus/intent are not yet
+proven to denote exactly these graphs in unrestricted human use.
+```
+
+## 21. Current frontier
 
 Do not claim empirical or metaphysical completion. Major open fronts:
 
 ```text
 independent reality/formal support for the 13 abstract candidate anatomies
+independent behavioral/reality support for the newer seven cognitive candidates
+English surface convergence onto memory/remember/recollect/memorize/attention/focus/broad-intent candidate spaces through the generic live proposer
 stronger evidence that candidate relation decompositions are correct rather than merely coherent
 generic candidate generation/correction beyond bounded conjunctive ablation
-generic use of stabilized vocabulary inside the ordinary U/F-oracle candidate intake rather than only the new connection helper
-semantic stabilization of memory/remember/recollect/memorize/attention/focus/broad intent against the generic completion/history substrate
+focus-like persistence derived across actual consecutive U encounters rather than only candidate anatomy
+memorize/encoding tested as a change in later retrievability rather than only a proposed transition graph
+recollection tested against occurrence-specific contextual recovery and false-familiarity counterexamples
+broad intent tested across non-action meanings and contrasted with attention/question/desire/action-intention
 complete-relation proposal/recovery from graph-only structural invariants without promoting fragments
 richer recursive composition across structurally different meanings using the one live authority
 open questions beyond yes/no partitions
@@ -806,9 +913,9 @@ proof/disproof of a complete universal structural normal form
 proof/disproof of universality for every possible meaning/relation
 ```
 
-Immediate next technical direction: connect relation-guided construction/completion into the ordinary generic candidate intake so a blind new meaning can be proposed preferentially in terms of already-warranted lower relations plus explicit unresolved remainder, while keeping every proposal corrigible in the one live ledger. Then use that same generic path to propose and falsify the relations behind memory/remember/recollect/memorize/attention/focus/broad intent rather than coding those faculties by name. Treat retained history and cue-relative completion as substrate evidence only. Increase temporal/provenance or modality structure only when a concrete semantic falsification requires it. Do not reintroduce copied downstream semantic/status authority or a toy sensory world as a prerequisite.
+Immediate next technical direction: use the ordinary live `F`/oracle path to expose these seven candidate spaces to varied natural-language and operational cases while keeping semantic labels outside the pure runtime. Drive discrimination through independent structural/behavioral contact, especially cases that separate retention from retrieval, remembering from recollection, acquisition from retrieval, current selection from persistent focus, and attention from broad target-directed intent. Let failures weaken/split the candidates. Do not introduce a separate memory database, attention controller, focus state, or copied semantic/status authority unless the one-formula path is first falsified.
 
-## 20. Evidence discipline
+## 22. Evidence discipline
 
 Keep these non-identities explicit:
 
@@ -824,8 +931,15 @@ stabilized lower relation != resolved whole intent
 relation-use handle != independent semantic authority
 stale reusable relation != destroyed higher intent
 retained historical contact != currently warranted truth
+same abstract relation != same historical occurrence
+ledger chronology != externally measured physical time
 query-relative structural reaccess != proven human memory
+structural completion gain != proven recollection
 active relational frontier != hand-written/proven attention faculty
+persistent selected frontier != proven focus semantics
+formal discrimination of cognitive candidates != empirical semantic grounding
+memorize candidate transition != demonstrated human encoding mechanism
+broad-intent candidate != established universal theory of intent
 recurrence across intents != empirical semantic grounding
 encoding/address != mathematical anatomy
 candidate anatomy != stabilized semantic equivalence
@@ -842,7 +956,7 @@ Names/dictionaries are teaching or display handles. They do not define mathemati
 
 With a score, state denominator and supervision/leakage conditions. Never describe `54/56` or `83/88` as a percentage of English.
 
-## 21. Context-loss procedure
+## 23. Context-loss procedure
 
 This procedure is unconditional; model confidence is not a substitute for repository recovery. Before changing architecture or declaring a capability absent:
 
