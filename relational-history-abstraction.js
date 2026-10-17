@@ -32,17 +32,22 @@ function flattenTop(expr,out=[]){
 
 function evidenceById(L,id){return (L.evidence||[]).find(e=>String(e.id)===String(id))||null;}
 
-function completeConstraintMap(evidence,options={}){
-  const xs=evidence?.metadata?.source_expressions;
-  if(evidence?.metadata?.complete!==true||!Array.isArray(xs))return null;
+function constraintMapFromExpressions(expressions,options={}){
+  if(!Array.isArray(expressions))return null;
   const map=new Map();
-  for(const top of xs){
+  for(const top of expressions){
     for(const expr of flattenTop(top,[])){
       const graph=compileMathGraph([expr],options);
       if(!map.has(graph.signature))map.set(graph.signature,{signature:graph.signature,graph,expression:cloneExpr(expr)});
     }
   }
   return map;
+}
+
+function completeConstraintMap(evidence,options={}){
+  const xs=evidence?.metadata?.source_expressions;
+  if(evidence?.metadata?.complete!==true||!Array.isArray(xs))return null;
+  return constraintMapFromExpressions(xs,options);
 }
 
 function abstractHistoricalContacts(L,historicalContacts,options={}){
@@ -111,4 +116,7 @@ function abstractRelationalHistory(L,cueInput,options={}){
   };
 }
 
-module.exports={completeConstraintMap,abstractHistoricalContacts,abstractRelationalHistory};
+module.exports={
+  constraintMapFromExpressions,completeConstraintMap,
+  abstractHistoricalContacts,abstractRelationalHistory
+};
