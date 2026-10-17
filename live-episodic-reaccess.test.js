@@ -52,9 +52,9 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
 
   // Later, only a coarse cue is supplied. It must reopen BOTH compatible past
   // occurrences and remain ambiguous rather than selecting the newest one.
-  // At the same time, the source-backed cross-occurrence view may expose only
-  // complete relations shared by both episodes; their different context values
-  // remain outside that common abstraction.
+  // At the same time, source-backed recurrence may expose complete relations
+  // shared by both episodes, but only as proposal clues. Their different context
+  // values remain outside that recurrence set.
   const coarseCue=[subset(V('cueP'),V('cueW'))];
   let coarse=null;
   await liveUniversalStep(U,L,B,{
@@ -68,17 +68,19 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
   assert.strictEqual(coarse.historical_resolution.structure_status,'ambiguous');
   assert.strictEqual(coarse.historical_resolution.occurrence_status,'ambiguous');
   assert.deepStrictEqual(new Set(coarse.historical_resolution.candidate_occurrence_ids),new Set(['live-east','live-west']));
-  assert.strictEqual(coarse.historical_abstraction.status,'derived-common-relations');
+  assert.strictEqual(coarse.historical_recurrence.result,'recurrent-complete-relations');
+  assert.strictEqual(coarse.historical_recurrence.authority,'proposal-only');
   const subsetSig=compileMathGraph([subset(V('s'),V('u'))],opts).signature;
-  assert(coarse.historical_abstraction.relations.some(r=>r.signature===subsetSig),'live cross-occurrence view lost the complete relation shared by both episodes');
+  assert(coarse.historical_recurrence.relations.some(r=>r.signature===subsetSig),'live cross-occurrence view lost the complete relation shared by both episodes');
+  assert(coarse.historical_recurrence.relations.every(r=>r.authority==='proposal-only'));
   const eastContextSig=compileMathGraph([eq(V('c'),C('east-entrance'))],opts).signature;
   const westContextSig=compileMathGraph([eq(V('c'),C('west-entrance'))],opts).signature;
-  assert(!coarse.historical_abstraction.relations.some(r=>r.signature===eastContextSig||r.signature===westContextSig),'episode-specific context leaked into common live abstraction');
+  assert(!coarse.historical_recurrence.relations.some(r=>r.signature===eastContextSig||r.signature===westContextSig),'episode-specific context leaked into common live recurrence');
 
   // Reinstating the east-bound contextual relation identifies the east episode.
   // This uses the mathematical content of the earlier contact, not its id. A
-  // single resolved occurrence is deliberately insufficient for cross-episode
-  // abstraction.
+  // single resolved occurrence is deliberately insufficient for cross-occurrence
+  // recurrence.
   let eastRecall=null;
   await liveUniversalStep(U,L,B,{
     utterance:'opaque contextual cue',context:{stream:'ordinary-live-input'},
@@ -88,12 +90,12 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
   assert.strictEqual(eastRecall.historical_resolution.structure_status,'resolved');
   assert.strictEqual(eastRecall.historical_resolution.occurrence_status,'resolved');
   assert.deepStrictEqual(eastRecall.historical_resolution.candidate_occurrence_ids,['live-east']);
-  assert.strictEqual(eastRecall.historical_abstraction.status,'insufficient-recurrence');
+  assert.strictEqual(eastRecall.historical_recurrence.result,'insufficient-recurrence');
 
   // A later recurrence of the identical east-bound content is a new occurrence.
   // Content recognition remains resolved, while source occurrence becomes
-  // ambiguous. Shared structure can now be derived across those two occurrences
-  // without erasing the fact that they remain distinct episodes.
+  // ambiguous. Shared complete structure can be exposed across those two
+  // occurrences without becoming semantic truth or erasing episode identity.
   const P3=V('P3'),W3=V('W3'),ctx3=V('ctx3');
   const eastAgain=[subset(P3,W3),eq(ctx3,C('east-entrance'))];
   await liveUniversalStep(U,L,B,{
@@ -110,8 +112,9 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
   assert.strictEqual(repeated.historical_resolution.occurrence_status,'ambiguous');
   assert.strictEqual(repeated.historical_resolution.repeated_same_structure,true);
   assert.deepStrictEqual(new Set(repeated.historical_resolution.candidate_occurrence_ids),new Set(['live-east','live-east-repeat']));
-  assert.strictEqual(repeated.historical_abstraction.status,'derived-common-relations');
-  assert(repeated.historical_abstraction.relation_count>=2,'identical repeated episode content did not expose its shared complete relations');
+  assert.strictEqual(repeated.historical_recurrence.result,'recurrent-complete-relations');
+  assert.strictEqual(repeated.historical_recurrence.authority,'proposal-only');
+  assert(repeated.historical_recurrence.relation_count>=2,'identical repeated episode content did not expose its shared complete recurrence');
 
   // Reaccess itself remains read-only. Only explicit later contact adds an entry.
   const before=L.evidence.length;
@@ -127,12 +130,12 @@ const opts={maxCoreStates:200000,maxMatchStates:250000,maxCanonicalStates:250000
     later_partial_cue_reaccesses_prior_live_contacts:true,
     overlapping_prior_contacts_compete:true,
     recency_does_not_choose_source:true,
-    common_complete_relations_derive_across_competing_episodes:true,
-    episode_specific_context_stays_outside_common_abstraction:true,
+    common_complete_relations_exposed_as_proposal_only_recurrence:true,
+    episode_specific_context_stays_outside_common_recurrence:true,
     reinstated_context_identifies_prior_occurrence:true,
     one_occurrence_does_not_generalize:true,
     repeated_identical_content_does_not_invent_occurrence_identity:true,
-    repeated_identical_content_can_expose_shared_relations:true,
+    repeated_identical_content_can_expose_shared_recurrence:true,
     cue_only_reaccess_is_read_only:true,
     separate_history_or_semantic_store:0,
     semantic_faculty_labels_in_generic_output:0,
