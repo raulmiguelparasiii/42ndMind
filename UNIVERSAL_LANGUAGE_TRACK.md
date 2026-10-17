@@ -879,6 +879,25 @@ The words memory/remember/recollect/memorize/attention/focus/intent are not yet
 proven to denote exactly these graphs in unrestricted human use.
 ```
 
+### 20a. Subsequent source-history work and the persistence correction
+
+PRs #36-#44 extended the same one-ledger read/proposal architecture with occurrence/source resolution, ambiguous surface frontiers, cue accessibility, source coherence, binding-consistent whole-source checks, proposal-only cross-occurrence recurrence, and recurrence-guided proposal scaffolding. These results remain useful bounded tests of relational persistence, provenance, ambiguity, co-reference, and candidate formation. They do **not** establish that the runtime needs a human-style memory faculty.
+
+A later canonical bridge (PR #45) exposed the key distinction more sharply. The canonical mind already retains structured occurrences inside `M`. PR #45 initially added an eager `occurrence_frontier` scan after every structured contact. The user noticed that this made a human access limitation look like a requirement of the formula. A preserved falsification confirmed that the eager projection was an additional runtime behavior rather than a prerequisite of existing cognition. The canonical correction therefore keeps occurrence identity/history but removes the automatic frontier.
+
+Keep the following distinction explicit going forward:
+
+```text
+retained reality contact / distinct occurrence identity = part of the one state
+query-relative historical/source projection            = derived only when needed
+memory / remember / recollect / attention / focus      = external semantic hypotheses, not runtime faculties
+```
+
+The seven cognitive candidate graphs from PR #34 remain falsifiable semantic candidates for what human words may denote. They are **not an implementation checklist**. If one of those words appears to expose a useful result, first strip away the label and ask what content-neutral relational invariant is actually required. Only a preserved failure of the generic substrate licenses a generic change.
+
+This correction also sharpens the compute direction: do not repeatedly scan the whole retained lifetime to simulate retrieval. Stable relations, local connected structure, and rebuildable/query-relative indexes may accelerate access, but those are implementation representations of the same `U`/`M`, never additional semantic or epistemic authority.
+
+
 ## 21. Current frontier
 
 Do not claim empirical or metaphysical completion. Major open fronts:
@@ -913,7 +932,7 @@ proof/disproof of a complete universal structural normal form
 proof/disproof of universality for every possible meaning/relation
 ```
 
-Immediate next technical direction: use the ordinary live `F`/oracle path to expose these seven candidate spaces to varied natural-language and operational cases while keeping semantic labels outside the pure runtime. Drive discrimination through independent structural/behavioral contact, especially cases that separate retention from retrieval, remembering from recollection, acquisition from retrieval, current selection from persistent focus, and attention from broad target-directed intent. Let failures weaken/split the candidates. Do not introduce a separate memory database, attention controller, focus state, or copied semantic/status authority unless the one-formula path is first falsified.
+Immediate technical direction: treat the seven cognitive words only as external falsifiable semantic surfaces, not as capabilities to implement. Continue improving the universal relational substrate, stabilization/correction, recursive reduction, source/provenance structure, and scaling. When a cognitive-looking behavior appears, ask which general relation already present in the one whole produces it; add generic machinery only after a preserved falsification shows the substrate cannot express the required reality distinction. Do not introduce a memory database, retrieval state, attention controller, focus state, or copied semantic/status authority merely because human cognition uses those words.
 
 ## 22. Evidence discipline
 
@@ -931,6 +950,8 @@ stabilized lower relation != resolved whole intent
 relation-use handle != independent semantic authority
 stale reusable relation != destroyed higher intent
 retained historical contact != currently warranted truth
+retained history != a required memory faculty
+query-relative historical projection != a required persistent cognitive state
 same abstract relation != same historical occurrence
 ledger chronology != externally measured physical time
 query-relative structural reaccess != proven human memory
