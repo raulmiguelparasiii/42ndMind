@@ -186,12 +186,45 @@ function contrastiveSurfaceRelation(U){
   };
 }
 
+// Base F and the contrastive bridge are two generic surface estimators over the
+// same learned field. The bridge must not automatically overwrite F merely
+// because its top score is microscopically larger than its own runner-up. When
+// the estimators disagree, compare their separation margins and keep the more
+// discriminating decision. This arbitration is relation/name agnostic.
+function baseSurfaceRelation(U){
+  assertUniversal(U);
+  const matches=U.current?.resolution?.matches||[];
+  const top=matches[0]||null;
+  if(!top)return{relation:null,score:0,margin:0,ranked:[]};
+  return{
+    relation:top.relation,
+    score:Number(top.score)||0,
+    margin:Math.max(0,(Number(top.score)||0)-(Number(matches[1]?.score)||0)),
+    ranked:matches.slice(0,8).map(x=>({relation:x.relation,score:Number(x.score)||0}))
+  };
+}
+
+function surfaceResolution(U){
+  const base=baseSurfaceRelation(U),contrastive=contrastiveSurfaceRelation(U);
+  if(!base.relation)return{method:'contrastive-idf',...contrastive,base,contrastive};
+  if(!contrastive.relation)return{method:'base-f',...base,base,contrastive};
+  if(base.relation===contrastive.relation){
+    return{method:'base+contrastive-agree',...contrastive,relation:base.relation,base,contrastive};
+  }
+  const chooseContrastive=contrastive.margin>base.margin+EPS;
+  const chosen=chooseContrastive?contrastive:base;
+  return{
+    method:chooseContrastive?'contrastive-idf-margin':'base-f-margin',
+    ...chosen,base,contrastive
+  };
+}
+
 function currentEnglishMath(B,U,L){
   assertBridge(B);assertUniversal(U);assertLedger(L);
-  const surface=contrastiveSurfaceRelation(U);
+  const surface=surfaceResolution(U);
   if(!surface.relation)return{whole:1,status:'unresolved',relation:null,hypotheses:[],math:null,surface_resolution:surface};
   const out=mathForRelation(B,U,L,surface.relation);
-  return{...out,surface_resolution:{method:'contrastive-idf',...surface}};
+  return{...out,surface_resolution:surface};
 }
 
 function pureEnglishMathBridge(B){
@@ -207,6 +240,6 @@ function pureEnglishMathBridge(B){
 module.exports={
   oneEnglishMathBridge,canonicalRelation,bindEnglishMath,bindEnglishMathSpace,
   candidatesForRelation,spacesForRelation,mathForRelation,currentEnglishMath,
-  pureEnglishMathBridge,contrastiveSurfaceRelation,aggregateCanonicalLexical,
-  idfWeights,weightedCos
+  pureEnglishMathBridge,contrastiveSurfaceRelation,baseSurfaceRelation,
+  surfaceResolution,aggregateCanonicalLexical,idfWeights,weightedCos
 };

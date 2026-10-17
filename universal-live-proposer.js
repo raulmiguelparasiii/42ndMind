@@ -17,8 +17,15 @@
 // Once the current surface input resolves to live mathematics, that mathematics
 // itself becomes the present structural cue and derives a current completion
 // frontier automatically. No attention state or controller is stored.
+//
+// An ordinary live contact may additionally carry an explicit `math_contact`.
+// That is routed after proposal handling through the EXISTING contactMath(...)
+// authority. It is therefore a normal reality/formal contact entering the same
+// live step, not a second history/memory store. Proposal data is never silently
+// converted into contact.
 
 const {F}=require('./universal-language');
+const {contactMath}=require('./math-hypotheses');
 const {
   canonicalRelation,bindEnglishMathSpace,currentEnglishMath
 }=require('./english-math-bridge');
@@ -26,6 +33,7 @@ const {reusableRelationField}=require('./universal-relation-reuse');
 const {
   proposeRelationGuidedAlternative,queryRelationalField
 }=require('./universal-relational-completion');
+const {summarizeHistoricalContacts}=require('./relational-history-resolution');
 
 function assertUniversal(U){
   if(!U||U.whole!==1||!U.relations)throw new Error('invalid universal-language state');
@@ -63,10 +71,18 @@ function liveMathVocabularyView(L,options={}){
   };
 }
 
+function enrichCompletion(view){
+  if(!view)return null;
+  return{
+    ...view,
+    historical_resolution:summarizeHistoricalContacts(view.historical_contacts||[])
+  };
+}
+
 function cueView(L,contact,options={}){
   const cue=contact?.math_graph??contact?.math_cue??null;
   if(!cue)return null;
-  return queryRelationalField(L,cue,options);
+  return enrichCompletion(queryRelationalField(L,cue,options));
 }
 
 function normalizeSurfaceSignal(signal){
@@ -115,13 +131,35 @@ function proposalAlternatives(spec){
 
 function currentCompletion(L,current,options={}){
   if(!current||current.status!=='resolved-candidate-math'||!current.math)return null;
-  return queryRelationalField(L,current.math,options);
+  return enrichCompletion(queryRelationalField(L,current.math,options));
 }
 
-// One ordinary F step plus optional mathematical proposal routing. The proposer
-// receives the ordinary F oracle view augmented by a live read-only mathematical
-// field. F sees only the surface portion of the returned signal. The math ledger
-// sees only expanded mathematical proposals through its existing authority.
+function routeMathContact(L,contact,options={}){
+  const spec=contact?.math_contact;
+  if(spec===undefined||spec===null)return null;
+  if(typeof spec!=='object'||Array.isArray(spec))throw new Error('math_contact must be an object');
+  const input=Object.prototype.hasOwnProperty.call(spec,'input')?spec.input:spec.math;
+  if(input===undefined||input===null)throw new Error('math_contact requires input or math');
+  const metadata={...(spec.metadata||{})};
+  for(const key of ['id','complete','kind','candidates','spaces','positive_only']){
+    if(Object.prototype.hasOwnProperty.call(spec,key)&&!Object.prototype.hasOwnProperty.call(metadata,key))metadata[key]=spec[key];
+  }
+  const before=L.evidence.length;
+  const candidateResults=contactMath(L,input,metadata,options);
+  const evidence=L.evidence[before];
+  if(!evidence)throw new Error('math_contact did not enter the authoritative evidence ledger');
+  return{
+    id:evidence.id,
+    signature:evidence.graph.signature,
+    candidate_results:candidateResults.map(x=>({id:x.id,result:x.result,status:x.status,usable:x.usable}))
+  };
+}
+
+// One ordinary F step plus optional mathematical proposal/contact routing. The
+// proposer receives the ordinary F oracle view augmented by a live read-only
+// mathematical field. F sees only the surface portion of the returned signal.
+// Proposals enter as proposals; an explicit math_contact enters later through
+// contactMath(...). Keeping those paths separate preserves proposal != evidence.
 async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
   assertUniversal(U);assertLedger(L);assertBridge(B);
   if(!contact||typeof contact!=='object')throw new Error('contact must be an object');
@@ -145,7 +183,7 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
             space_id:'optional opaque math-space id',
             alternatives:'one or more ordinary relation-guided mathematical proposals'
           }],
-          evidence_rule:'proposal is not evidence; math remains unresolved until upstream contact warrants it'
+          evidence_rule:'proposal is not evidence; only explicit upstream/math_contact enters the evidence ledger'
         }
       }
     };
@@ -180,6 +218,12 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
     });
   }
 
+  // Explicit contact is routed only after proposal handling, so the proposer
+  // cannot manufacture evidence merely by returning a candidate. If a caller
+  // intentionally targets a newly proposed candidate/space in math_contact, that
+  // target is evaluated by the one authoritative ledger in this same step.
+  const enteredContact=routeMathContact(L,contact,options);
+
   const current=currentEnglishMath(B,U,L);
   const active=currentCompletion(L,current,options);
 
@@ -194,6 +238,7 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
       supplied_cue_completion:suppliedCue,
       active_completion:active,
       routed_spaces:routed,
+      entered_contact:enteredContact,
       current
     }
   };

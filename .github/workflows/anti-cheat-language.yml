@@ -19,6 +19,7 @@ on:
       - 'universal-intent.js'
       - 'universal-relation-reuse.js'
       - 'universal-relational-completion.js'
+      - 'relational-history-resolution.js'
       - 'universal-live-proposer.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
@@ -34,12 +35,15 @@ on:
       - 'stone-universal-kernel.test.js'
       - 'abstract-intent-kernel.test.js'
       - 'cognitive-relation-candidates.test.js'
+      - 'cognitive-english-live.test.js'
       - 'universal-math-types.test.js'
       - 'recursive-intent-composition.test.js'
       - 'math-hypotheses.test.js'
       - 'meaning-space.test.js'
       - 'universal-intent.test.js'
       - 'universal-relational-completion.test.js'
+      - 'relational-history-resolution.test.js'
+      - 'live-episodic-reaccess.test.js'
       - 'universal-live-proposer.test.js'
       - 'abstract-english-math.test.js'
       - 'relation-hypotheses.test.js'
@@ -74,15 +78,20 @@ jobs:
       - run: node stone-universal-kernel.test.js
       - run: node abstract-intent-kernel.test.js
       - run: node cognitive-relation-candidates.test.js
+      - run: node cognitive-english-live.test.js
       - run: node universal-math-types.test.js
       - run: node recursive-intent-composition.test.js
       - run: node math-hypotheses.test.js
       - run: node meaning-space.test.js
       - run: node universal-intent.test.js
       - run: node universal-relational-completion.test.js
+      - run: node relational-history-resolution.test.js
+      - run: node live-episodic-reaccess.test.js
       - run: node universal-live-proposer.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# Stabilization, reuse, relational completion, generic live proposal, and proposed
-# cognitive relation splits share one anti-cheat gate and the same math authority.
+# Stabilization, reuse, relational completion, occurrence-safe historical
+# resolution, live experience reaccess, generic live proposal, and cognitive
+# relation/surface falsification share one anti-cheat gate and one upstream math
+# authority.

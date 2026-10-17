@@ -100,6 +100,8 @@ const opts={maxCoreStates:200000,maxMatchStates:200000,maxCanonicalStates:250000
   assert(automatic.mathematical.active_completion,'resolved present math did not derive a current completion frontier');
   assert.strictEqual(automatic.mathematical.active_completion.cue.signature,resolved.signature);
   assert(automatic.mathematical.active_completion.historical_contacts.some(x=>x.id==='meaning-a-contact'),'automatic current frontier did not reach its warranted historical contact');
+  assert(automatic.mathematical.active_completion.historical_resolution,'automatic completion omitted occurrence-safe historical resolution');
+  assert.notStrictEqual(automatic.mathematical.active_completion.historical_resolution.occurrence_status,'none','automatic present cue failed to expose any retained occurrence');
 
   // A later blind surface step can also carry only an explicit mathematical cue.
   // The ordinary proposer receives current live relational completion and
@@ -116,6 +118,8 @@ const opts={maxCoreStates:200000,maxMatchStates:200000,maxCanonicalStates:250000
   assert(cueSeen.stabilized_relations.some(r=>r.signature===subsetSig),'cue failed to reach stabilized relation');
   assert(cueSeen.historical_contacts.some(x=>x.id==='seed-contact')||cueSeen.historical_contacts.some(x=>x.id==='meaning-a-contact'),'cue failed to reaccess retained upstream contact');
   assert(cueSeen.maximal_live_completions.length>=1,'cue failed to reopen any current larger structure');
+  assert(cueSeen.historical_resolution,'explicit cue completion omitted occurrence-safe history');
+  assert(cueSeen.historical_resolution.occurrence_count>=1,'explicit cue did not expose candidate historical occurrences');
 
   // The connector must not copy either authority into the other state.
   assert.strictEqual(Object.prototype.hasOwnProperty.call(U,'math_hypotheses'),false);
@@ -134,6 +138,7 @@ const opts={maxCoreStates:200000,maxMatchStates:200000,maxCanonicalStates:250000
     proposal_created_math_evidence:0,
     upstream_contact_resolves_old_surface_binding:true,
     resolved_present_math_derives_current_frontier_automatically:true,
+    active_completion_exposes_occurrence_safe_history:true,
     later_cue_reaccesses_same_live_ledger:true,
     copied_math_authority_in_U:0,
     copied_math_status_in_bridge:0,
