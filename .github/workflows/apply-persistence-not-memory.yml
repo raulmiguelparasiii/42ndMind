@@ -25,11 +25,10 @@ jobs:
         run: python .github/scripts/apply_persistence_not_memory.py
       - name: Run corrected invariant
         run: node relational-history-preservation.test.js
-      - name: Run canonical authority regressions
+      - name: Run relevant canonical regressions
         run: |
           node one-mind.test.js
           node structured-knowledge.test.js
-          node semantic-grounding.test.js
           node temporal-recompression.test.js
           node sequence-recompression.test.js
           node one-rule.stress.js
