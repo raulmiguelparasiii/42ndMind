@@ -22,7 +22,9 @@
 // That is routed after proposal handling through the EXISTING contactMath(...)
 // authority. It is therefore a normal reality/formal contact entering the same
 // live step, not a second history/memory store. Proposal data is never silently
-// converted into contact.
+// converted into contact. When source expressions are supplied, their exact
+// source representation is retained as contact provenance so later derived
+// abstraction can use complete formula boundaries instead of graph fragments.
 
 const {F}=require('./universal-language');
 const {contactMath}=require('./math-hypotheses');
@@ -34,6 +36,7 @@ const {
   proposeRelationGuidedAlternative,queryRelationalField
 }=require('./universal-relational-completion');
 const {summarizeHistoricalContacts}=require('./relational-history-resolution');
+const {abstractHistoricalContacts}=require('./relational-history-abstraction');
 
 function assertUniversal(U){
   if(!U||U.whole!==1||!U.relations)throw new Error('invalid universal-language state');
@@ -54,6 +57,8 @@ function cloneGraph(graph){
   };
 }
 
+function cloneJson(v){return v==null?v:JSON.parse(JSON.stringify(v));}
+
 // Pure proposer-facing snapshot. Signatures identify anonymous structures only;
 // they are not semantic names or a second registry. No writable status is copied.
 function liveMathVocabularyView(L,options={}){
@@ -71,18 +76,20 @@ function liveMathVocabularyView(L,options={}){
   };
 }
 
-function enrichCompletion(view){
+function enrichCompletion(L,view,options={}){
   if(!view)return null;
+  const historicalContacts=view.historical_contacts||[];
   return{
     ...view,
-    historical_resolution:summarizeHistoricalContacts(view.historical_contacts||[])
+    historical_resolution:summarizeHistoricalContacts(historicalContacts),
+    historical_abstraction:abstractHistoricalContacts(L,historicalContacts,options)
   };
 }
 
 function cueView(L,contact,options={}){
   const cue=contact?.math_graph??contact?.math_cue??null;
   if(!cue)return null;
-  return enrichCompletion(queryRelationalField(L,cue,options));
+  return enrichCompletion(L,queryRelationalField(L,cue,options),options);
 }
 
 function normalizeSurfaceSignal(signal){
@@ -131,7 +138,13 @@ function proposalAlternatives(spec){
 
 function currentCompletion(L,current,options={}){
   if(!current||current.status!=='resolved-candidate-math'||!current.math)return null;
-  return enrichCompletion(queryRelationalField(L,current.math,options));
+  return enrichCompletion(L,queryRelationalField(L,current.math,options),options);
+}
+
+function sourceExpressionsFromContactInput(input){
+  if(Array.isArray(input))return cloneJson(input);
+  if(input&&typeof input==='object'&&Array.isArray(input.expressions))return cloneJson(input.expressions);
+  return null;
 }
 
 function routeMathContact(L,contact,options={}){
@@ -144,6 +157,10 @@ function routeMathContact(L,contact,options={}){
   for(const key of ['id','complete','kind','candidates','spaces','positive_only']){
     if(Object.prototype.hasOwnProperty.call(spec,key)&&!Object.prototype.hasOwnProperty.call(metadata,key))metadata[key]=spec[key];
   }
+  const sourceExpressions=sourceExpressionsFromContactInput(input);
+  if(sourceExpressions&&!Object.prototype.hasOwnProperty.call(metadata,'source_expressions')){
+    metadata.source_expressions=sourceExpressions;
+  }
   const before=L.evidence.length;
   const candidateResults=contactMath(L,input,metadata,options);
   const evidence=L.evidence[before];
@@ -151,6 +168,7 @@ function routeMathContact(L,contact,options={}){
   return{
     id:evidence.id,
     signature:evidence.graph.signature,
+    source_backed:Boolean(sourceExpressions),
     candidate_results:candidateResults.map(x=>({id:x.id,result:x.result,status:x.status,usable:x.usable}))
   };
 }
