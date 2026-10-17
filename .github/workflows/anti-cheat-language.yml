@@ -17,6 +17,7 @@ on:
       - 'english-math-bridge.js'
       - 'universal-intent.js'
       - 'universal-relation-reuse.js'
+      - 'universal-relational-completion.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
       - 'anti-cheat-language.test.js'
@@ -35,6 +36,7 @@ on:
       - 'math-hypotheses.test.js'
       - 'meaning-space.test.js'
       - 'universal-intent.test.js'
+      - 'universal-relational-completion.test.js'
       - 'abstract-english-math.test.js'
       - 'relation-hypotheses.test.js'
       - 'relational-normal-form.test.js'
@@ -72,8 +74,10 @@ jobs:
       - run: node math-hypotheses.test.js
       - run: node meaning-space.test.js
       - run: node universal-intent.test.js
+      - run: node universal-relational-completion.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# Stabilization and reuse stay inside the same anti-cheat gate so neither can
-# pass by bypassing the existing live hypothesis authority.
+# Stabilization, reuse, and relation-guided completion stay inside the same
+# anti-cheat gate so none can pass by bypassing the existing live hypothesis
+# authority.
