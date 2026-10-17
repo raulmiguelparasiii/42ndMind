@@ -3,12 +3,14 @@
 // Read-only source coherence for a proposed/reconstructed source-backed cue.
 //
 // A cue may be composed entirely of familiar complete relations while no single
-// retained occurrence ever contained that combination. This module detects that
-// case without declaring the cue false in reality: it reports only whether the
-// retained source history supports the cue AS ONE occurrence.
+// retained occurrence ever contained that combination. Component familiarity is
+// inspected through the established complete-relation boundary, while whole-
+// source support additionally requires one binding-consistent embedding of the
+// COMPLETE cue into one retained occurrence.
 //
-// No source truth/status is stored. No composite episode is created.
+// This module stores no source truth/status and creates no composite episode.
 
+const {asCompiledMath,matchCompiledSubgraph}=require('./math-hypotheses');
 const {constraintMapFromExpressions}=require('./relational-history-abstraction');
 const {sourceCueExpressions,sourceBackedOccurrenceMaps}=require('./relational-cue-accessibility');
 
@@ -36,11 +38,25 @@ function sourceCoherence(L,cueInput,options={}){
     occurrence_ids:occurrences.filter(x=>x.map.has(signature)).map(x=>x.id).sort()
   }));
   const unsupported=constraintSources.filter(x=>!x.occurrence_ids.length).map(x=>x.signature);
-  const whole=occurrences.filter(x=>cueSignatures.every(sig=>x.map.has(sig))).map(x=>x.id).sort();
+
+  // Co-located component signatures are useful diagnostics, but they are not
+  // sufficient for whole-source support because independent canonicalization can
+  // erase co-reference between top-level constraints. Preserve that distinction.
+  const componentColocated=occurrences.filter(x=>cueSignatures.every(sig=>x.map.has(sig)));
+
+  // Reuse the existing generic whole-graph matcher. Compiling the cue as one
+  // graph preserves repeated source-variable identity, so one retained
+  // occurrence supports the whole cue only when all constraints can embed under
+  // one consistent anonymous-node mapping.
+  const cueGraph=asCompiledMath(expressions,options);
+  const whole=componentColocated.filter(x=>Boolean(matchCompiledSubgraph(cueGraph,x.evidence.graph,options)));
+  const wholeIds=whole.map(x=>x.id).sort();
+  const componentColocatedIds=componentColocated.map(x=>x.id).sort();
 
   let status;
   if(unsupported.length)status='partially-unsupported';
-  else if(whole.length)status='source-supported';
+  else if(wholeIds.length)status='source-supported';
+  else if(componentColocatedIds.length)status='binding-incoherent-source';
   else status='cross-source-composite';
 
   return{
@@ -50,8 +66,9 @@ function sourceCoherence(L,cueInput,options={}){
     cue_constraint_count:cueSignatures.length,
     retained_source_occurrence_count:occurrences.length,
     all_constraints_individually_sourced:unsupported.length===0,
-    whole_source_supported:whole.length>0,
-    whole_source_occurrence_ids:whole,
+    whole_source_supported:wholeIds.length>0,
+    whole_source_occurrence_ids:wholeIds,
+    component_colocated_occurrence_ids:componentColocatedIds,
     unsupported_constraint_signatures:unsupported,
     constraint_sources:constraintSources
   };
