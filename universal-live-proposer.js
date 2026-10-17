@@ -15,7 +15,7 @@ const {
   proposeRelationGuidedAlternative,queryRelationalField
 }=require('./universal-relational-completion');
 const {summarizeHistoricalContacts}=require('./relational-history-resolution');
-const {abstractHistoricalContacts}=require('./relational-history-abstraction');
+const {recurrentHistoricalRelations}=require('./relational-history-abstraction');
 const {cueAccessibility}=require('./relational-cue-accessibility');
 const {sourceCoherence}=require('./relational-source-coherence');
 
@@ -39,7 +39,7 @@ function enrichCompletion(L,view,options={}){
   return{
     ...view,
     historical_resolution:summarizeHistoricalContacts(historicalContacts),
-    historical_abstraction:abstractHistoricalContacts(L,historicalContacts,options)
+    historical_recurrence:recurrentHistoricalRelations(L,historicalContacts,options)
   };
 }
 
@@ -97,7 +97,7 @@ function completionFrontier(L,surfaceFrontier,options={}){
   const completions=alternatives.map(x=>x.completion).filter(Boolean),contacts=uniqueContacts(completions);
   const signatures=[...new Set(alternatives.filter(x=>x.completion&&x.signature).map(x=>x.signature))];
   let status='unresolved';if(signatures.length>1)status='ambiguous';else if(signatures.length===1&&alternatives.length===1)status='resolved-candidate-math';else if(alternatives.length>1)status='ambiguous';
-  return{whole:1,status,surface_status:surfaceFrontier.surface_status,alternative_count:alternatives.length,resolved_signature_count:signatures.length,alternatives,historical_contacts:contacts,historical_resolution:summarizeHistoricalContacts(contacts),historical_abstraction:abstractHistoricalContacts(L,contacts,options)};
+  return{whole:1,status,surface_status:surfaceFrontier.surface_status,alternative_count:alternatives.length,resolved_signature_count:signatures.length,alternatives,historical_contacts:contacts,historical_resolution:summarizeHistoricalContacts(contacts),historical_recurrence:recurrentHistoricalRelations(L,contacts,options)};
 }
 
 function sourceExpressionsFromContactInput(input){
