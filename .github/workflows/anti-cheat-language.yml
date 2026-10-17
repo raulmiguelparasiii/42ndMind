@@ -21,6 +21,7 @@ on:
       - 'universal-relational-completion.js'
       - 'relational-history-resolution.js'
       - 'relational-history-abstraction.js'
+      - 'relational-cue-accessibility.js'
       - 'universal-live-proposer.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
@@ -45,6 +46,7 @@ on:
       - 'universal-relational-completion.test.js'
       - 'relational-history-resolution.test.js'
       - 'relational-history-abstraction.test.js'
+      - 'cue-accessibility-interference.test.js'
       - 'live-episodic-reaccess.test.js'
       - 'natural-language-episodic-frontier.test.js'
       - 'universal-live-proposer.test.js'
@@ -90,6 +92,7 @@ jobs:
       - run: node universal-relational-completion.test.js
       - run: node relational-history-resolution.test.js
       - run: node relational-history-abstraction.test.js
+      - run: node cue-accessibility-interference.test.js
       - run: node live-episodic-reaccess.test.js
       - run: node natural-language-episodic-frontier.test.js
       - run: node universal-live-proposer.test.js
@@ -97,6 +100,6 @@ jobs:
       - run: node relational-normal-form.test.js
 
 # Stabilization, reuse, relational completion, occurrence-safe history,
-# source-backed cross-occurrence abstraction, ambiguity-preserving language
-# frontiers, live experience reaccess, and cognitive relation/surface
+# source-backed abstraction, cue accessibility/interference, ambiguity-preserving
+# language frontiers, live experience reaccess, and cognitive surface
 # falsification share one upstream mathematical authority.
