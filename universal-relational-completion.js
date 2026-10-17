@@ -10,8 +10,9 @@
 //    stabilized relation uses plus explicit raw/unresolved remainder;
 // 2. a partial mathematical cue can reopen larger live structures and matching
 //    historical contact from the same ledger, without a separate memory store;
-// 3. graph-only common cores may guide a proposer toward a complete source-backed
-//    constraint, but remain provisional and are never promoted automatically.
+// 3. graph-only common cores may tell a proposer where completion is needed, but
+//    only a complete proposed relation independently shared by every live whole
+//    is returned as a proposal clue; the fragment itself is never promoted.
 //
 // `math-hypotheses.js` remains the sole live candidate/evidence/status authority.
 
@@ -121,9 +122,13 @@ function flattenTopConjuncts(expr,out=[]){
   return out;
 }
 
-// A provisional graph core is allowed to point at a complete source-backed
-// constraint that contains it. The complete constraint is returned as a proposal
-// target only. Nothing here adds it to the stabilized field or marks it true.
+// Graph-only maximum common cores are unsafe as semantic relation boundaries:
+// an edge core can cut across formula serialization. Therefore a core never has
+// to map into a proposed complete formula and never certifies one. Its only role
+// here is to say that a graph-only space contains unresolved shared structure.
+// A proposer's complete source expression becomes a proposal clue only if that
+// complete expression independently embeds in every current maximal live whole.
+// It still enters no authority and receives no truth/status from this function.
 function provisionalCompletionSuggestions(L,expressions,options={}){
   if(!Array.isArray(expressions))throw new Error('provisional guidance requires expressions');
   expressions.forEach(validateExpr);
@@ -138,23 +143,28 @@ function provisionalCompletionSuggestions(L,expressions,options={}){
   const out=[];
   const seen=new Set();
   for(const s of field.spaces){
-    for(const provisional of s.provisional_invariants||[]){
-      if(provisional.kind!=='maximum-common-structural-core')continue;
-      for(const c of complete){
-        if(!matchCompiledSubgraph(provisional.graph,c.graph,options))continue;
-        const key=`${s.space}|${provisional.signature}|${c.signature}`;
-        if(seen.has(key))continue;seen.add(key);
-        out.push({
-          space:s.space,
-          provisional_signature:provisional.signature,
-          complete_constraint_signature:c.signature,
-          complete_expression:c.expression,
-          status:'proposal-only'
-        });
-      }
+    const clues=(s.provisional_invariants||[])
+      .filter(x=>x.kind==='maximum-common-structural-core');
+    if(!clues.length)continue;
+    const frontier=(s.frontier||[])
+      .map(id=>L.candidates?.[id]?.graph)
+      .filter(Boolean);
+    if(!frontier.length)continue;
+    for(const c of complete){
+      if(!frontier.every(graph=>matchCompiledSubgraph(c.graph,graph,options)))continue;
+      const key=`${s.space}|${c.signature}`;
+      if(seen.has(key))continue;seen.add(key);
+      out.push({
+        space:s.space,
+        provisional_signatures:clues.map(x=>x.signature).sort(),
+        complete_constraint_signature:c.signature,
+        complete_expression:c.expression,
+        frontier_support:(s.frontier||[]).slice(),
+        status:'proposal-only'
+      });
     }
   }
-  return out.sort((a,b)=>a.space.localeCompare(b.space)||a.provisional_signature.localeCompare(b.provisional_signature)||a.complete_constraint_signature.localeCompare(b.complete_constraint_signature));
+  return out.sort((a,b)=>a.space.localeCompare(b.space)||a.complete_constraint_signature.localeCompare(b.complete_constraint_signature));
 }
 
 function preparedProposalObject(proposal,expressions){
