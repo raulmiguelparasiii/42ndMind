@@ -24,7 +24,8 @@
 // live step, not a second history/memory store. Proposal data is never silently
 // converted into contact. When source expressions are supplied, their exact
 // source representation is retained as contact provenance so later derived
-// abstraction can use complete formula boundaries instead of graph fragments.
+// abstraction/accessibility can use complete formula boundaries instead of graph
+// fragments.
 
 const {F}=require('./universal-language');
 const {contactMath}=require('./math-hypotheses');
@@ -37,6 +38,7 @@ const {
 }=require('./universal-relational-completion');
 const {summarizeHistoricalContacts}=require('./relational-history-resolution');
 const {abstractHistoricalContacts}=require('./relational-history-abstraction');
+const {cueAccessibility}=require('./relational-cue-accessibility');
 
 function assertUniversal(U){
   if(!U||U.whole!==1||!U.relations)throw new Error('invalid universal-language state');
@@ -59,8 +61,6 @@ function cloneGraph(graph){
 
 function cloneJson(v){return v==null?v:JSON.parse(JSON.stringify(v));}
 
-// Pure proposer-facing snapshot. Signatures identify anonymous structures only;
-// they are not semantic names or a second registry. No writable status is copied.
 function liveMathVocabularyView(L,options={}){
   assertLedger(L);
   const field=reusableRelationField(L,options);
@@ -89,7 +89,11 @@ function enrichCompletion(L,view,options={}){
 function cueView(L,contact,options={}){
   const cue=contact?.math_graph??contact?.math_cue??null;
   if(!cue)return null;
-  return enrichCompletion(L,queryRelationalField(L,cue,options),options);
+  const strict=enrichCompletion(L,queryRelationalField(L,cue,options),options);
+  return{
+    ...strict,
+    cue_accessibility:cueAccessibility(L,cue,options)
+  };
 }
 
 function normalizeSurfaceSignal(signal){
@@ -149,10 +153,6 @@ function uniqueContacts(completions){
   return [...byId.values()];
 }
 
-// Preserve all equally best-supported surface->math alternatives through the
-// completion layer. A deterministic surface tie must not fabricate one episode
-// source. Each alternative is read independently from the same live ledger; the
-// combined history summarizes what remains unresolved across the whole frontier.
 function completionFrontier(L,surfaceFrontier,options={}){
   if(!surfaceFrontier||!Array.isArray(surfaceFrontier.alternatives))return null;
   const alternatives=[];
@@ -220,11 +220,6 @@ function routeMathContact(L,contact,options={}){
   };
 }
 
-// One ordinary F step plus optional mathematical proposal/contact routing. The
-// proposer receives the ordinary F oracle view augmented by a live read-only
-// mathematical field. F sees only the surface portion of the returned signal.
-// Proposals enter as proposals; an explicit math_contact enters later through
-// contactMath(...). Keeping those paths separate preserves proposal != evidence.
 async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
   assertUniversal(U);assertLedger(L);assertBridge(B);
   if(!contact||typeof contact!=='object')throw new Error('contact must be an object');
@@ -283,10 +278,6 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
     });
   }
 
-  // Explicit contact is routed only after proposal handling, so the proposer
-  // cannot manufacture evidence merely by returning a candidate. If a caller
-  // intentionally targets a newly proposed candidate/space in math_contact, that
-  // target is evaluated by the one authoritative ledger in this same step.
   const enteredContact=routeMathContact(L,contact,options);
 
   const current=currentEnglishMath(B,U,L);
