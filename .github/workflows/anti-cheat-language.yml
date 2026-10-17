@@ -12,6 +12,7 @@ on:
       - 'universal-math-graph.js'
       - 'universal-math-types.js'
       - 'abstract-intent-kernel.js'
+      - 'cognitive-relation-candidates.js'
       - 'recursive-intent-composition.js'
       - 'math-hypotheses.js'
       - 'english-math-bridge.js'
@@ -32,6 +33,7 @@ on:
       - 'stone-referent-frame.test.js'
       - 'stone-universal-kernel.test.js'
       - 'abstract-intent-kernel.test.js'
+      - 'cognitive-relation-candidates.test.js'
       - 'universal-math-types.test.js'
       - 'recursive-intent-composition.test.js'
       - 'math-hypotheses.test.js'
@@ -71,6 +73,7 @@ jobs:
       - run: node stone-referent-frame.test.js
       - run: node stone-universal-kernel.test.js
       - run: node abstract-intent-kernel.test.js
+      - run: node cognitive-relation-candidates.test.js
       - run: node universal-math-types.test.js
       - run: node recursive-intent-composition.test.js
       - run: node math-hypotheses.test.js
@@ -81,5 +84,5 @@ jobs:
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# Stabilization, reuse, relational completion, and the generic live proposer
-# connection share one anti-cheat gate and the same upstream math authority.
+# Stabilization, reuse, relational completion, generic live proposal, and proposed
+# cognitive relation splits share one anti-cheat gate and the same math authority.
