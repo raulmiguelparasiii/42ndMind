@@ -97,6 +97,7 @@ recursive nested intent composition                          all 13 current cand
 opaque live mathematical alternative spaces                 bounded correction/convergence demonstrated
 categorical relation stabilization inside unresolved spaces bounded complete-constraint/recurrent relation demonstration
 live reuse/refactoring of stabilized complete relations      bounded correction/restore demonstration
+relation-guided candidate construction + cue reaccess       bounded one-ledger completion/history demonstration
 full arbitrary abstract/compositional intention anatomy     not yet demonstrated
 all Stone structures grounded from unrestricted raw reality not demonstrated
 universal mathematical language                             target, not established result
@@ -726,7 +727,56 @@ relation, prove that every human intent has the correct mathematical anatomy,
 or turn a reusable handle into independent semantic authority.
 ```
 
-## 18. Current frontier
+## 18. Relation-guided completion and history reaccess
+
+PR #31 adds `universal-relational-completion.js` as a **connection** between the stabilized reusable vocabulary and new candidate construction. It does not create a memory store, attention controller, semantic registry, or second truth/status/revision authority.
+
+A proposer can now construct new candidate mathematics directly from currently stabilized relation uses plus explicit unresolved/raw remainder:
+
+```text
+stabilized relation use(s) + raw unresolved constraint(s)
+ -> exact factored intent
+ -> expand to ordinary source mathematics
+ -> propose through math-hypotheses.js
+```
+
+The factored representation is therefore proposal-time structure/compression only. Before a candidate enters the live ledger it is expanded back to ordinary source mathematics. `math-hypotheses.js` remains the only authority that owns the candidate, its evidence, revision, and usability.
+
+The same connection also exposes query-relative relational completion. A partial mathematical cue can be compared against the current live candidate field and the ledger's retained evidence contacts:
+
+```text
+partial relational cue
+ -> current larger live structures containing the cue
+ -> structurally maximal live completions
+ -> retained historical contacts containing the cue
+```
+
+This query writes no activation state and stores no separate retrieval index. In the bounded falsification, a coarse cue reopens multiple compatible live wholes while a more specific cue narrows the current completion frontier. The behavior follows from the cue's relational structure rather than a hand-written `attention` or `focus` controller.
+
+Historical contact and current warrant are deliberately non-identical. Complete countercontact can remove a lower relation from the currently stabilized/reusable vocabulary while the earlier evidence contact that contained that relation remains retained in the one ledger. A higher candidate already constructed from the relation keeps its exact mathematics. If the same anonymous relation is later warranted again elsewhere, the same canonical signature becomes reusable again without semantic rebinding.
+
+Graph-only provisional structure remains weaker. The first PR #31 falsification failed because the initial implementation assumed a maximum-common graph fragment could itself map into and justify a complete source-backed relation. That repeated the exact serialization-fragment risk identified in PR #28. The implementation, not the older stabilizer, was corrected. A graph-only core now only signals that unresolved shared structure exists. A proposer-supplied **complete** relation is returned as a proposal clue only if that complete relation independently embeds in every current maximal live whole. Even then its status is only `proposal-only`; it receives no truth or stabilization from the clue.
+
+The bounded falsification verifies:
+
+```text
+stabilized vocabulary can directly construct a new mathematical candidate
+unsupported remainder stays explicit and raw
+expanded candidate enters the existing live math-hypothesis authority unchanged
+a partial cue reopens larger live relational completions
+retained evidence can be reaccessed from the same ledger without a second memory store
+more specific relational cues can narrow the live completion frontier
+lower-relation correction removes current reuse without erasing retained history
+already-proposed higher mathematics survives lower-relation correction
+later recurrence restores the same canonical reusable relation signature
+graph-only invariants can guide complete proposals without being promoted
+semantic memory/remember/recollect/attention/focus labels in the generic connection = 0
+whole = 1
+```
+
+This is architecturally relevant to future genuine memory/remembering/recollection/attention/focus work because persistence and relational reaccess no longer require a separately invented storage or retrieval authority. It does **not** establish that those English concepts have been semantically solved, that query-relative completion is already human memory, or that a current active relational frontier is already a complete theory of attention. Those meanings must still be proposed, distinguished, grounded, corrected, and stabilized through the Universal Language itself.
+
+## 19. Current frontier
 
 Do not claim empirical or metaphysical completion. Major open fronts:
 
@@ -734,8 +784,9 @@ Do not claim empirical or metaphysical completion. Major open fronts:
 independent reality/formal support for the 13 abstract candidate anatomies
 stronger evidence that candidate relation decompositions are correct rather than merely coherent
 generic candidate generation/correction beyond bounded conjunctive ablation
-complete-relation recovery/refactoring from graph-only structural invariants
-using stabilized reusable relations directly in generic candidate proposal/generation
+generic use of stabilized vocabulary inside the ordinary U/F-oracle candidate intake rather than only the new connection helper
+semantic stabilization of memory/remember/recollect/memorize/attention/focus/broad intent against the generic completion/history substrate
+complete-relation proposal/recovery from graph-only structural invariants without promoting fragments
 richer recursive composition across structurally different meanings using the one live authority
 open questions beyond yes/no partitions
 conditional and counterfactual belief/intention
@@ -755,9 +806,9 @@ proof/disproof of a complete universal structural normal form
 proof/disproof of universality for every possible meaning/relation
 ```
 
-Immediate next technical direction: use the now-reusable stabilized relation vocabulary inside generic candidate generation and correction, so new meanings can be proposed directly in terms of already-warranted lower relations plus explicit unresolved remainder. Use provisional graph-only invariants to propose complete relational factorizations rather than silently treating serialization fragments as semantics. Increase generic proposition/quantifier/modality structure only when a concrete structural failure requires it. Use formal or reality contact to discriminate live alternatives and validate proposed relations. Do not merely add more family names, do not reintroduce copied downstream semantic/status authority, and do not treat richer toy sensory worlds as the prerequisite for Universal-Language progress.
+Immediate next technical direction: connect relation-guided construction/completion into the ordinary generic candidate intake so a blind new meaning can be proposed preferentially in terms of already-warranted lower relations plus explicit unresolved remainder, while keeping every proposal corrigible in the one live ledger. Then use that same generic path to propose and falsify the relations behind memory/remember/recollect/memorize/attention/focus/broad intent rather than coding those faculties by name. Treat retained history and cue-relative completion as substrate evidence only. Increase temporal/provenance or modality structure only when a concrete semantic falsification requires it. Do not reintroduce copied downstream semantic/status authority or a toy sensory world as a prerequisite.
 
-## 19. Evidence discipline
+## 20. Evidence discipline
 
 Keep these non-identities explicit:
 
@@ -767,9 +818,14 @@ mathematical graph validity/support != assignment to a particular referent
 whole-intent ambiguity != surface unresolvedness
 surface unresolvedness != absence of stabilized lower mathematics
 shared graph fragment != complete mathematical relation
+provisional graph clue != completed/stabilized relation
+relation-guided proposal != truth
 stabilized lower relation != resolved whole intent
 relation-use handle != independent semantic authority
 stale reusable relation != destroyed higher intent
+retained historical contact != currently warranted truth
+query-relative structural reaccess != proven human memory
+active relational frontier != hand-written/proven attention faculty
 recurrence across intents != empirical semantic grounding
 encoding/address != mathematical anatomy
 candidate anatomy != stabilized semantic equivalence
@@ -786,7 +842,7 @@ Names/dictionaries are teaching or display handles. They do not define mathemati
 
 With a score, state denominator and supervision/leakage conditions. Never describe `54/56` or `83/88` as a percentage of English.
 
-## 20. Context-loss procedure
+## 21. Context-loss procedure
 
 This procedure is unconditional; model confidence is not a substitute for repository recovery. Before changing architecture or declaring a capability absent:
 
