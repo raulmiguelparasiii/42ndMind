@@ -10,15 +10,25 @@
 
 const {constraintMapFromExpressions,completeConstraintMap}=require('./relational-history-abstraction');
 
-function cueExpressions(input){
+function sourceCueExpressions(input){
   if(Array.isArray(input))return input;
   if(input&&typeof input==='object'&&Array.isArray(input.expressions))return input.expressions;
   return null;
 }
 
+function sourceBackedOccurrenceMaps(L,options={}){
+  if(!L||L.whole!==1||!Array.isArray(L.evidence))throw new Error('invalid math hypothesis ledger');
+  const out=[];
+  for(const evidence of L.evidence){
+    const map=completeConstraintMap(evidence,options);
+    if(map)out.push({id:String(evidence.id),evidence,map});
+  }
+  return out;
+}
+
 function cueAccessibility(L,cueInput,options={}){
   if(!L||L.whole!==1||!Array.isArray(L.evidence))throw new Error('invalid math hypothesis ledger');
-  const expressions=cueExpressions(cueInput);
+  const expressions=sourceCueExpressions(cueInput);
   if(!expressions){
     return{
       whole:1,status:'incomplete-source-cue',complete:false,
@@ -36,18 +46,13 @@ function cueAccessibility(L,cueInput,options={}){
     };
   }
 
-  const sourceBacked=[];
-  for(const e of L.evidence){
-    const map=completeConstraintMap(e,options);
-    if(map)sourceBacked.push({e,map});
-  }
-
+  const sourceBacked=sourceBackedOccurrenceMaps(L,options);
   const candidates=[];
-  for(const {e,map} of sourceBacked){
+  for(const {id,map} of sourceBacked){
     const matched=cueSignatures.filter(sig=>map.has(sig));
     if(!matched.length)continue;
     candidates.push({
-      id:String(e.id),
+      id,
       cue_coverage:matched.length/cueSignatures.length,
       matched_constraint_count:matched.length,
       cue_constraint_count:cueSignatures.length,
@@ -79,4 +84,4 @@ function cueAccessibility(L,cueInput,options={}){
   };
 }
 
-module.exports={cueAccessibility};
+module.exports={sourceCueExpressions,sourceBackedOccurrenceMaps,cueAccessibility};
