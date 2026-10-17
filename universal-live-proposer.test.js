@@ -76,6 +76,7 @@ const opts={maxCoreStates:200000,maxMatchStates:200000,maxCanonicalStates:250000
   // evidence. The math space must remain unresolved/open after proposal.
   assert.notStrictEqual(currentMathSpace(L,'meaning-a').status,'resolved-candidate-math');
   assert.strictEqual(first.mathematical.current.status,'unresolved');
+  assert.strictEqual(first.mathematical.active_completion,null,'unresolved math fabricated a current completion frontier');
   assert.strictEqual(L.candidates['meaning-a1'].support.length,0);
   assert.strictEqual(L.candidates['meaning-a2'].support.length,0);
 
@@ -88,9 +89,21 @@ const opts={maxCoreStates:200000,maxMatchStates:200000,maxCanonicalStates:250000
   assert.strictEqual(resolved.hypotheses.length,1);
   assert.strictEqual(resolved.hypotheses[0],'meaning-a1');
 
-  // A later blind surface step can carry only a mathematical cue. The ordinary
-  // proposer receives current live relational completion and retained historical
-  // contact from the same ledger. No separate retrieval index is introduced.
+  // With no explicit mathematical cue and no proposer, a later occurrence of an
+  // already-learned surface relation resolves through ordinary F. Its live math
+  // automatically becomes the present structural cue and derives a completion
+  // frontier. No separately stored controller chooses it.
+  const automatic=await liveUniversalStep(U,L,B,{
+    utterance:'tovan relu',context:{stream:'opaque'}
+  },null,opts);
+  assert.strictEqual(automatic.mathematical.current.status,'resolved-candidate-math');
+  assert(automatic.mathematical.active_completion,'resolved present math did not derive a current completion frontier');
+  assert.strictEqual(automatic.mathematical.active_completion.cue.signature,resolved.signature);
+  assert(automatic.mathematical.active_completion.historical_contacts.some(x=>x.id==='meaning-a-contact'),'automatic current frontier did not reach its warranted historical contact');
+
+  // A later blind surface step can also carry only an explicit mathematical cue.
+  // The ordinary proposer receives current live relational completion and
+  // retained historical contact from the same ledger. No retrieval index exists.
   let cueSeen=null;
   await liveUniversalStep(U,L,B,{
     utterance:'nemi tovan',context:{stream:'opaque'},
@@ -111,7 +124,7 @@ const opts={maxCoreStates:200000,maxMatchStates:200000,maxCanonicalStates:250000
 
   // Generic mechanism/output remains free of the semantic faculties that may be
   // investigated later through this same path.
-  const pure=JSON.stringify({first,cueSeen}).toLowerCase();
+  const pure=JSON.stringify({first,automatic,cueSeen}).toLowerCase();
   for(const word of ['memory','remember','recollect','attention','focus'])assert(!pure.includes(word));
 
   console.log(JSON.stringify({
@@ -120,6 +133,7 @@ const opts={maxCoreStates:200000,maxMatchStates:200000,maxCanonicalStates:250000
     unresolved_remainder_preserved:true,
     proposal_created_math_evidence:0,
     upstream_contact_resolves_old_surface_binding:true,
+    resolved_present_math_derives_current_frontier_automatically:true,
     later_cue_reaccesses_same_live_ledger:true,
     copied_math_authority_in_U:0,
     copied_math_status_in_bridge:0,
