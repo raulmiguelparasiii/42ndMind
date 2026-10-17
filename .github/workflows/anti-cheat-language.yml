@@ -20,6 +20,7 @@ on:
       - 'universal-relation-reuse.js'
       - 'universal-relational-completion.js'
       - 'relational-history-resolution.js'
+      - 'relational-history-abstraction.js'
       - 'universal-live-proposer.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
@@ -43,6 +44,7 @@ on:
       - 'universal-intent.test.js'
       - 'universal-relational-completion.test.js'
       - 'relational-history-resolution.test.js'
+      - 'relational-history-abstraction.test.js'
       - 'live-episodic-reaccess.test.js'
       - 'universal-live-proposer.test.js'
       - 'abstract-english-math.test.js'
@@ -86,12 +88,13 @@ jobs:
       - run: node universal-intent.test.js
       - run: node universal-relational-completion.test.js
       - run: node relational-history-resolution.test.js
+      - run: node relational-history-abstraction.test.js
       - run: node live-episodic-reaccess.test.js
       - run: node universal-live-proposer.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# Stabilization, reuse, relational completion, occurrence-safe historical
-# resolution, live experience reaccess, generic live proposal, and cognitive
-# relation/surface falsification share one anti-cheat gate and one upstream math
-# authority.
+# Stabilization, reuse, relational completion, occurrence-safe history,
+# source-backed cross-occurrence abstraction, live experience reaccess, generic
+# live proposal, and cognitive relation/surface falsification share one upstream
+# mathematical authority.
