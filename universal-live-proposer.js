@@ -23,8 +23,9 @@
 // authority. It is therefore a normal reality/formal contact entering the same
 // live step, not a second history/memory store. Proposal data is never silently
 // converted into contact. When source expressions are supplied, their exact
-// source representation is retained as contact provenance so later derived
-// abstraction can use complete formula boundaries instead of graph fragments.
+// source representation is retained as contact provenance. Cross-occurrence
+// recurrence later reuses the established complete-relation boundary and remains
+// proposal-only until the existing stabilization/evidence path warrants it.
 
 const {F}=require('./universal-language');
 const {contactMath}=require('./math-hypotheses');
@@ -36,7 +37,7 @@ const {
   proposeRelationGuidedAlternative,queryRelationalField
 }=require('./universal-relational-completion');
 const {summarizeHistoricalContacts}=require('./relational-history-resolution');
-const {abstractHistoricalContacts}=require('./relational-history-abstraction');
+const {recurrentHistoricalRelations}=require('./relational-history-abstraction');
 
 function assertUniversal(U){
   if(!U||U.whole!==1||!U.relations)throw new Error('invalid universal-language state');
@@ -82,7 +83,7 @@ function enrichCompletion(L,view,options={}){
   return{
     ...view,
     historical_resolution:summarizeHistoricalContacts(historicalContacts),
-    historical_abstraction:abstractHistoricalContacts(L,historicalContacts,options)
+    historical_recurrence:recurrentHistoricalRelations(L,historicalContacts,options)
   };
 }
 
