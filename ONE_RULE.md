@@ -58,53 +58,34 @@ A learned pattern may guide attention or expectation, but it cannot remove a com
 
 This prevents a frequent shortcut from turning itself into certainty merely because it is familiar.
 
-## Occurrence-preserving relational completion
+## Occurrence preservation without a memory operation
 
-Reality-preserving recompression also has to preserve the distinction between an abstract relation and the separate occasions on which that relation occurred.
-
-Let the retained occurrence history at time `t` be:
+Reality-preserving recompression must preserve the distinction between an abstract relation and the separate occasions on which that relation occurred. Let:
 
 ```text
 H_t = (e_1, e_2, ..., e_n)
 ```
 
-and let `R` be the present partial relational contact. The same relational machinery can derive the query-relative historical frontier:
+be the retained occurrence history already contained in the one mind `M_t`. The required invariant is only:
 
 ```text
-Q(R, H_t) = {
-  e_i in H_t : R embeds consistently in e_i
-}
+reality-distinct occurrences remain reality-distinct in M_t
+e_i and e_j may instantiate the same anonymous relation without implying i = j
 ```
 
-"Consistently" uses the same variable/co-reference binding machinery already used for ordinary relational completion. It does not mean that each cue component may be matched independently to unrelated entities.
+Nothing in the developmental law therefore requires a separate operation called memory, remembering, recollection, retrieval, or recall. Past contact does not have to be fetched into the mind: it is already part of the continuing `M_t`.
 
-This is not a second cognitive operator or a memory authority. `Q` is a derived view of the one current `M`, produced while `C` assimilates present reality-contact. In particular:
+A later relation may make only part of that history materially relevant. A finite implementation may then derive a query-relative projection, for example:
 
 ```text
-computing Q(R, H_t) does not add a fact to L_t
-computing Q(R, H_t) does not activate or defeat a rule
-computing Q(R, H_t) does not change W_t
+Q_R(M_t) = { e_i in H_t : R embeds consistently in e_i }
 ```
 
-The occurrence identity invariant is:
+but `Q_R` is not a new cognitive operator and is not persistent semantic state. It is an authority-free projection of information already in `M_t`. It must not add facts, activate or defeat rules, or alter the admissible truth set. If no present relation requires that distinction, there is no reason to compute the projection at all.
 
-```text
-e_i and e_j may instantiate the same anonymous relation
-without implying i = j
-```
+This corrects an over-specialization introduced by PR #45. That implementation eagerly scanned retained structured episodes after every structured contact and stored an `occurrence_frontier` in `knowledge.current`. The user correctly pointed out that the one formula already contains its retained history. The eager frontier was therefore not required by the cognition law and imposed unnecessary lifetime-dependent work. It has been removed; exact occurrence identity remains preserved in `M`.
 
-So two identical contacts remain two historical occurrences rather than collapsing into one event.
-
-The refinement invariant is:
-
-```text
-if R' contains all of R plus additional compatible present structure,
-then Q(R', H_t) is a subset of Q(R, H_t)
-```
-
-A coarse present relation can therefore reopen several earlier occurrences. Additional present structure can narrow that set. If several compatible occurrences remain, the mind retains the alternatives rather than selecting one by recency, repetition, or familiarity.
-
-This gives the one developmental law a tested occurrence-aware consequence without adding `memory`, `remember`, `recollect`, or an attention controller to `C`. Whether richer human memory phenomena emerge from the same general structure remains a further falsification problem; this result establishes the more basic mathematical substrate.
+The scaling consequence is important: stable relational structure should make relevant parts of the whole cheap to reach through local/incremental structure or rebuildable indexes, not force a full autobiographical scan on every contact. Such indexes are implementation accelerators only and cannot become truth or semantic authority.
 
 ## Numerical invariant
 
@@ -249,7 +230,7 @@ If incompatible interpretations enter the ledger, the mind remains `1` while the
 
 ## Verified results
 
-GitHub Actions now verifies the original exact kernel, self-learning and refinement, recursive self-recompression, occurrence-aware relational completion, and the scaling stress suite.
+GitHub Actions now verifies the original exact kernel, self-learning and refinement, recursive self-recompression, exact occurrence preservation without an eager memory projection, and the scaling stress suite.
 
 Current verified behaviors include:
 
@@ -262,10 +243,10 @@ Current verified behaviors include:
 - a level-2 description was learned from a level-1 description;
 - a higher relation requiring six raw conditions was learned despite a three-condition search limit by reusing the level-2 representation;
 - circular self-prediction through learned symbols is rejected;
-- present partial structured contact reopens every compatible earlier relational occurrence rather than selecting one by familiarity or recency;
-- additional present structure narrows that historical occurrence frontier through the existing relation matcher;
-- identical relational content can remain multiple distinct retained occurrences;
-- occurrence reaccess does not manufacture facts or change relational rule authority;
+- distinct structured reality contacts remain distinct retained occurrences inside the one `M`;
+- repeated identical relational content remains identical content across distinct occurrences;
+- canonical `C` does not eagerly materialize a memory/retrieval frontier on every structured contact;
+- historical/query projections, when needed, must remain derived views with no truth or rule authority;
 - all original contradiction/recovery tests continue to pass;
 - 500 randomized exact-growth trials continue to pass;
 - the factored kernel still avoids explicit `2^1000` independent-world enumeration;
@@ -295,6 +276,6 @@ conviction
 empathy
 ```
 
-Occurrence-aware relational completion is part of the generic contact-preservation/completion machinery, not a named memory facility. The implementation still contains finite engineering search limits and a generic representation vocabulary for observed feature/value relations. Those are computational interfaces and bounds, not learned conclusions.
+Occurrence identity is part of generic reality preservation. No eager memory-shaped projection is part of the canonical law. The implementation still contains finite engineering search limits and a generic representation vocabulary for observed feature/value relations. Those are computational interfaces and bounds, not learned conclusions.
 
 The next legitimate tests should continue in the same direction: do not add faculties. Increase the diversity and temporal depth of experience, then test what structures repeated recursive recompression can discover on its own and where the one law actually fails.

@@ -932,48 +932,15 @@ function isRelationalControlFact(fact) {
   return relRefName(fact.subject) !== null && same(fact.relation, REL_ACTIVE) && typeof fact.object === 'boolean';
 }
 
-// Query-relative occurrence completion is a generic consequence of preserving
-// relational contact, not a separate cognitive faculty. Present ordinary facts
-// are treated as the current partial relation. Earlier contact episodes that
-// contain that relation remain distinct alternatives; this read never promotes
-// their additional facts into current truth or relational authority.
+// Structured-contact occurrences are retained exactly inside M. This helper
+// preserves nested relational terms when recording an occurrence; it does not
+// create a retrieval state, memory frontier, or second cognitive authority.
 function cloneRelFactRecord(fact) {
   return {
     ...fact,
     subject: cloneRelTerm(fact.subject),
     relation: cloneRelTerm(fact.relation),
     object: cloneRelTerm(fact.object),
-  };
-}
-function relationalOccurrenceFrontier(state, cueFacts, excludeEpisodeIndex = null) {
-  const ordinaryCue = (cueFacts || []).filter(fact => !isRelationalControlFact(fact));
-  const cuePatterns = ordinaryCue.map(normalizeRelPattern);
-  const cueKeys = new Set(ordinaryCue.map(relFactKey));
-  const candidates = [];
-
-  if (cuePatterns.length) {
-    for (let i = 0; i < state.knowledge.episodes.length; i++) {
-      if (i === excludeEpisodeIndex) continue;
-      const episode = state.knowledge.episodes[i];
-      const episodeFacts = (episode.facts || []).filter(fact => !isRelationalControlFact(fact));
-      const bindings = relPremiseBindings(cuePatterns, episodeFacts);
-      if (!bindings.length) continue;
-      candidates.push({
-        episode_id: String(episode.id || `relation-episode:${i + 1}`),
-        episode_index: i,
-        binding_count: bindings.length,
-        bindings: bindings.map(cloneRelTerm),
-        occurrence_facts: episodeFacts.map(cloneRelFactRecord),
-        completion_facts: episodeFacts.filter(fact => !cueKeys.has(relFactKey(fact))).map(cloneRelFactRecord),
-      });
-    }
-  }
-
-  return {
-    cue_facts: ordinaryCue.map(cloneRelFactRecord),
-    candidate_count: candidates.length,
-    unique_occurrence: candidates.length === 1,
-    candidates,
   };
 }
 function applyRelationalControlFacts(state, facts, provenance = 'derived') {
@@ -1109,14 +1076,12 @@ function ingestRelationalContact(state, contact) {
     state.knowledge.facts.push(fact);
     existingFactKeys.add(key);
   }
-  const episodeIndex = state.knowledge.episodes.length;
   state.knowledge.episodes.push({
     id: `relation-episode:${episodeNumber}`,
     facts: episodeFacts.map(cloneRelFactRecord),
     rules: incomingRules.map(rule => rule.id),
   });
   refreshRelationalKnowledge(state);
-  state.knowledge.current.occurrence_frontier = relationalOccurrenceFrontier(state, ordinaryFacts, episodeIndex);
 }
 
 function one(actionCount, concernCount = 1) {

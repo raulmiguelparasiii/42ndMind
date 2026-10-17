@@ -16,7 +16,7 @@ on:
       - 'micro-world-open.js'
       - 'one-mind.js'
       - 'one-mind.test.js'
-      - 'relational-occurrence-completion.test.js'
+      - 'relational-history-preservation.test.js'
       - 'micro-world.js'
       - 'micro-world-single-life.js'
       - '.github/workflows/one-rule.yml'
@@ -46,6 +46,6 @@ jobs:
       - run: node open-development-scalar.js
       - run: node micro-world-open.js
       - run: node one-mind.test.js
-      - run: node relational-occurrence-completion.test.js
+      - run: node relational-history-preservation.test.js
       - run: node one-rule.stress.js
       - run: node micro-world-single-life.js
