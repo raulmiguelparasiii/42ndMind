@@ -26,6 +26,7 @@ const {reusableRelationField}=require('./universal-relation-reuse');
 const {
   proposeRelationGuidedAlternative,queryRelationalField
 }=require('./universal-relational-completion');
+const {summarizeHistoricalContacts}=require('./relational-history-resolution');
 
 function assertUniversal(U){
   if(!U||U.whole!==1||!U.relations)throw new Error('invalid universal-language state');
@@ -63,10 +64,18 @@ function liveMathVocabularyView(L,options={}){
   };
 }
 
+function enrichCompletion(view){
+  if(!view)return null;
+  return{
+    ...view,
+    historical_resolution:summarizeHistoricalContacts(view.historical_contacts||[])
+  };
+}
+
 function cueView(L,contact,options={}){
   const cue=contact?.math_graph??contact?.math_cue??null;
   if(!cue)return null;
-  return queryRelationalField(L,cue,options);
+  return enrichCompletion(queryRelationalField(L,cue,options));
 }
 
 function normalizeSurfaceSignal(signal){
@@ -115,7 +124,7 @@ function proposalAlternatives(spec){
 
 function currentCompletion(L,current,options={}){
   if(!current||current.status!=='resolved-candidate-math'||!current.math)return null;
-  return queryRelationalField(L,current.math,options);
+  return enrichCompletion(queryRelationalField(L,current.math,options));
 }
 
 // One ordinary F step plus optional mathematical proposal routing. The proposer
