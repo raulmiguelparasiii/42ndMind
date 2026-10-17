@@ -22,7 +22,9 @@
 // That is routed after proposal handling through the EXISTING contactMath(...)
 // authority. It is therefore a normal reality/formal contact entering the same
 // live step, not a second history/memory store. Proposal data is never silently
-// converted into contact.
+// converted into contact. When source expressions are supplied, their exact
+// source representation is retained as contact provenance so later derived
+// abstraction can use complete formula boundaries instead of graph fragments.
 
 const {F}=require('./universal-language');
 const {contactMath}=require('./math-hypotheses');
@@ -53,6 +55,8 @@ function cloneGraph(graph){
     signature:String(graph.signature)
   };
 }
+
+function cloneJson(v){return v==null?v:JSON.parse(JSON.stringify(v));}
 
 // Pure proposer-facing snapshot. Signatures identify anonymous structures only;
 // they are not semantic names or a second registry. No writable status is copied.
@@ -134,6 +138,12 @@ function currentCompletion(L,current,options={}){
   return enrichCompletion(queryRelationalField(L,current.math,options));
 }
 
+function sourceExpressionsFromContactInput(input){
+  if(Array.isArray(input))return cloneJson(input);
+  if(input&&typeof input==='object'&&Array.isArray(input.expressions))return cloneJson(input.expressions);
+  return null;
+}
+
 function routeMathContact(L,contact,options={}){
   const spec=contact?.math_contact;
   if(spec===undefined||spec===null)return null;
@@ -144,6 +154,10 @@ function routeMathContact(L,contact,options={}){
   for(const key of ['id','complete','kind','candidates','spaces','positive_only']){
     if(Object.prototype.hasOwnProperty.call(spec,key)&&!Object.prototype.hasOwnProperty.call(metadata,key))metadata[key]=spec[key];
   }
+  const sourceExpressions=sourceExpressionsFromContactInput(input);
+  if(sourceExpressions&&!Object.prototype.hasOwnProperty.call(metadata,'source_expressions')){
+    metadata.source_expressions=sourceExpressions;
+  }
   const before=L.evidence.length;
   const candidateResults=contactMath(L,input,metadata,options);
   const evidence=L.evidence[before];
@@ -151,6 +165,7 @@ function routeMathContact(L,contact,options={}){
   return{
     id:evidence.id,
     signature:evidence.graph.signature,
+    source_backed:Boolean(sourceExpressions),
     candidate_results:candidateResults.map(x=>({id:x.id,result:x.result,status:x.status,usable:x.usable}))
   };
 }
