@@ -50,6 +50,7 @@ on:
       - 'cue-accessibility-interference.test.js'
       - 'source-coherence-reconstruction.test.js'
       - 'source-binding-coherence.test.js'
+      - 'recurrence-guided-proposal.test.js'
       - 'live-episodic-reaccess.test.js'
       - 'natural-language-episodic-frontier.test.js'
       - 'universal-live-proposer.test.js'
@@ -98,12 +99,13 @@ jobs:
       - run: node cue-accessibility-interference.test.js
       - run: node source-coherence-reconstruction.test.js
       - run: node source-binding-coherence.test.js
+      - run: node recurrence-guided-proposal.test.js
       - run: node live-episodic-reaccess.test.js
       - run: node natural-language-episodic-frontier.test.js
       - run: node universal-live-proposer.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# Source reconstruction must preserve whole-cue variable binding. The test shares
-# the same upstream ledger and complete-relation boundary; no source-memory
-# authority is added by this gate.
+# Cross-occurrence recurrence remains proposal-only. This gate checks whether a
+# complete recurrence clue can enter the existing proposer path without becoming
+# its own evidence, truth, status, or semantic-generalization authority.

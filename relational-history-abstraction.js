@@ -12,18 +12,54 @@
 // math-space evidence/stabilization authority. If any selected occurrence lacks
 // complete source boundaries, no categorical recurrence clue is emitted.
 
+const {MOP,compileMathGraph}=require('./universal-math-graph');
 const {candidateConstraintGraphs}=require('./universal-intent');
 const {queryRelationalField}=require('./universal-relational-completion');
 
 function evidenceById(L,id){return (L.evidence||[]).find(e=>String(e.id)===String(id))||null;}
 
-// Compatibility utility used by cue-accessibility/source-coherence. It now
-// delegates to the same complete top-level relation extraction used by PR #28,
-// rather than maintaining a parallel definition of mathematical completeness.
+function cloneExpr(expr){
+  if(!expr||typeof expr!=='object')return expr;
+  if(expr.kind==='var')return{kind:'var',name:String(expr.name)};
+  if(expr.kind==='const')return{kind:'const',value:expr.value};
+  if(expr.kind==='app')return{kind:'app',op:Number(expr.op),args:(expr.args||[]).map(cloneExpr)};
+  return JSON.parse(JSON.stringify(expr));
+}
+
+// This helper does NOT decide which expressions count as complete relations.
+// candidateConstraintGraphs(...) has already made that decision. We only project
+// those authorized signatures back onto one original source conjunct so a later
+// proposer can reuse the complete formula without reverse-engineering a graph.
+function sourceScaffolds(expressions,allowedSignatures,options={}){
+  const out=new Map();
+  const walk=expr=>{
+    if(expr&&expr.kind==='app'&&expr.op===MOP.AND){
+      for(const a of expr.args||[])walk(a);
+      return;
+    }
+    const graph=compileMathGraph([expr],options);
+    if(allowedSignatures.has(graph.signature)&&!out.has(graph.signature)){
+      out.set(graph.signature,cloneExpr(expr));
+    }
+  };
+  for(const top of expressions||[])walk(top);
+  return out;
+}
+
+// Compatibility utility used by cue-accessibility/source-coherence. Completeness
+// delegates to the same complete top-level relation extraction used by PR #28.
+// `expression` is merely representative source scaffolding; anonymous signature
+// remains the mathematical identity.
 function constraintMapFromExpressions(expressions,options={}){
   if(!Array.isArray(expressions))return null;
   const relations=candidateConstraintGraphs({expressions},options);
-  return new Map(relations.map(r=>[r.signature,{signature:r.signature,graph:r.graph}]));
+  const allowed=new Set(relations.map(r=>r.signature));
+  const scaffolds=sourceScaffolds(expressions,allowed,options);
+  return new Map(relations.map(r=>[r.signature,{
+    signature:r.signature,
+    graph:r.graph,
+    expression:scaffolds.has(r.signature)?scaffolds.get(r.signature):null
+  }]));
 }
 
 function completeConstraintMap(evidence,options={}){
@@ -66,11 +102,13 @@ function recurrentHistoricalRelations(L,historicalContacts,options={}){
   const relations=[...common].sort().map(signature=>{
     const occurrence_ids=[];
     for(let i=0;i<maps.length;i++)if(maps[i].has(signature))occurrence_ids.push(ids[i]);
+    const representative=maps[0].get(signature);
     return{
       kind:'cross-occurrence-complete-recurrence-clue',
       authority:'proposal-only',
       signature,
-      graph:maps[0].get(signature).graph,
+      graph:representative.graph,
+      complete_expression:representative.expression?cloneExpr(representative.expression):null,
       occurrence_ids,
       occurrence_count:occurrence_ids.length
     };
