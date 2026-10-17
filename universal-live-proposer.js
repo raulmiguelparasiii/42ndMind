@@ -29,7 +29,7 @@
 const {F}=require('./universal-language');
 const {contactMath}=require('./math-hypotheses');
 const {
-  canonicalRelation,bindEnglishMathSpace,currentEnglishMath
+  canonicalRelation,bindEnglishMathSpace,currentEnglishMath,surfaceMathFrontier
 }=require('./english-math-bridge');
 const {reusableRelationField}=require('./universal-relation-reuse');
 const {
@@ -141,6 +141,53 @@ function currentCompletion(L,current,options={}){
   return enrichCompletion(L,queryRelationalField(L,current.math,options),options);
 }
 
+function uniqueContacts(completions){
+  const byId=new Map();
+  for(const c of completions){
+    for(const h of c?.historical_contacts||[])if(!byId.has(String(h.id)))byId.set(String(h.id),h);
+  }
+  return [...byId.values()];
+}
+
+// Preserve all equally best-supported surface->math alternatives through the
+// completion layer. A deterministic surface tie must not fabricate one episode
+// source. Each alternative is read independently from the same live ledger; the
+// combined history summarizes what remains unresolved across the whole frontier.
+function completionFrontier(L,surfaceFrontier,options={}){
+  if(!surfaceFrontier||!Array.isArray(surfaceFrontier.alternatives))return null;
+  const alternatives=[];
+  for(const a of surfaceFrontier.alternatives){
+    const completion=a.status==='resolved-candidate-math'&&a.math
+      ? enrichCompletion(L,queryRelationalField(L,a.math,options),options)
+      : null;
+    alternatives.push({
+      relation:a.relation,
+      status:a.status,
+      signature:a.signature,
+      hypotheses:(a.hypotheses||[]).slice(),
+      completion
+    });
+  }
+  const completions=alternatives.map(x=>x.completion).filter(Boolean);
+  const contacts=uniqueContacts(completions);
+  const signatures=[...new Set(alternatives.filter(x=>x.completion&&x.signature).map(x=>x.signature))];
+  let status='unresolved';
+  if(signatures.length>1)status='ambiguous';
+  else if(signatures.length===1&&alternatives.length===1)status='resolved-candidate-math';
+  else if(alternatives.length>1)status='ambiguous';
+  return{
+    whole:1,
+    status,
+    surface_status:surfaceFrontier.surface_status,
+    alternative_count:alternatives.length,
+    resolved_signature_count:signatures.length,
+    alternatives,
+    historical_contacts:contacts,
+    historical_resolution:summarizeHistoricalContacts(contacts),
+    historical_abstraction:abstractHistoricalContacts(L,contacts,options)
+  };
+}
+
 function sourceExpressionsFromContactInput(input){
   if(Array.isArray(input))return cloneJson(input);
   if(input&&typeof input==='object'&&Array.isArray(input.expressions))return cloneJson(input.expressions);
@@ -244,6 +291,8 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
 
   const current=currentEnglishMath(B,U,L);
   const active=currentCompletion(L,current,options);
+  const mathFrontier=surfaceMathFrontier(B,U,L,options);
+  const activeFrontier=completionFrontier(L,mathFrontier,options);
 
   return{
     whole:1,
@@ -255,6 +304,8 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
       stabilized_relation_count:vocabulary.relations.length,
       supplied_cue_completion:suppliedCue,
       active_completion:active,
+      surface_math_frontier:mathFrontier,
+      active_completion_frontier:activeFrontier,
       routed_spaces:routed,
       entered_contact:enteredContact,
       current
@@ -262,4 +313,4 @@ async function liveUniversalStep(U,L,B,contact,proposer=null,options={}){
   };
 }
 
-module.exports={liveMathVocabularyView,liveUniversalStep};
+module.exports={liveMathVocabularyView,completionFrontier,liveUniversalStep};

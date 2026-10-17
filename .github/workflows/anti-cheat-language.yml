@@ -46,6 +46,7 @@ on:
       - 'relational-history-resolution.test.js'
       - 'relational-history-abstraction.test.js'
       - 'live-episodic-reaccess.test.js'
+      - 'natural-language-episodic-frontier.test.js'
       - 'universal-live-proposer.test.js'
       - 'abstract-english-math.test.js'
       - 'relation-hypotheses.test.js'
@@ -90,11 +91,12 @@ jobs:
       - run: node relational-history-resolution.test.js
       - run: node relational-history-abstraction.test.js
       - run: node live-episodic-reaccess.test.js
+      - run: node natural-language-episodic-frontier.test.js
       - run: node universal-live-proposer.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
 # Stabilization, reuse, relational completion, occurrence-safe history,
-# source-backed cross-occurrence abstraction, live experience reaccess, generic
-# live proposal, and cognitive relation/surface falsification share one upstream
-# mathematical authority.
+# source-backed cross-occurrence abstraction, ambiguity-preserving language
+# frontiers, live experience reaccess, and cognitive relation/surface
+# falsification share one upstream mathematical authority.

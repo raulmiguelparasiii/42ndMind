@@ -219,12 +219,93 @@ function surfaceResolution(U){
   };
 }
 
+function tiedMaxRelations(ranked,tolerance=1e-9){
+  if(!Array.isArray(ranked)||!ranked.length)return[];
+  const best=Number(ranked[0].score)||0;
+  return ranked.filter(x=>Math.abs(best-(Number(x.score)||0))<=tolerance).map(x=>String(x.relation));
+}
+
+// Preserve genuinely tied surface meanings as a frontier rather than letting
+// deterministic relation-id ordering fabricate a unique meaning. This is a
+// derived read of the two existing generic estimators. It stores no ambiguity
+// state and does not weaken a clearly separated winner.
+function surfaceRelationFrontier(U,options={}){
+  assertUniversal(U);
+  const tolerance=options.surfaceTieTolerance??1e-9;
+  const s=surfaceResolution(U);
+  let relations=[];
+  if(s.base?.relation&&s.contrastive?.relation&&s.base.relation===s.contrastive.relation){
+    relations=[...new Set([
+      ...tiedMaxRelations(s.base.ranked,tolerance),
+      ...tiedMaxRelations(s.contrastive.ranked,tolerance)
+    ])];
+  }else if(s.method==='contrastive-idf-margin'||s.method==='contrastive-idf'){
+    relations=tiedMaxRelations(s.contrastive?.ranked||s.ranked,tolerance);
+  }else{
+    relations=tiedMaxRelations(s.base?.ranked||s.ranked,tolerance);
+  }
+  if(!relations.length&&s.relation)relations=[String(s.relation)];
+  relations=[...new Set(relations.map(r=>canonicalRelation(U,r)||r))].sort();
+  return{
+    whole:1,
+    status:relations.length===0?'unresolved':relations.length===1?'resolved':'ambiguous',
+    relations,
+    relation_count:relations.length,
+    chosen_relation:s.relation||null,
+    method:s.method,
+    base_margin:s.base?.margin??0,
+    contrastive_margin:s.contrastive?.margin??0
+  };
+}
+
+function surfaceMathFrontier(B,U,L,options={}){
+  assertBridge(B);assertUniversal(U);assertLedger(L);
+  const surface=surfaceRelationFrontier(U,options);
+  const alternatives=surface.relations.map(relation=>{
+    const math=mathForRelation(B,U,L,relation);
+    return{
+      relation,
+      status:math.status,
+      hypotheses:(math.hypotheses||[]).slice(),
+      signature:math.signature||null,
+      revision:math.revision??null,
+      math:math.math||null
+    };
+  });
+  const resolved=alternatives.filter(x=>x.status==='resolved-candidate-math'&&x.signature&&x.math);
+  const signatures=[...new Set(resolved.map(x=>x.signature))];
+  const pending=alternatives.filter(x=>x.status!=='resolved-candidate-math');
+  let status='unresolved';
+  if(signatures.length>1)status='ambiguous';
+  else if(signatures.length===1&&!pending.length)status='resolved-candidate-math';
+  else if(signatures.length||pending.length>1)status='ambiguous';
+  return{
+    whole:1,
+    status,
+    surface_status:surface.status,
+    chosen_relation:surface.chosen_relation,
+    relation_count:surface.relation_count,
+    resolved_signature_count:signatures.length,
+    alternatives
+  };
+}
+
 function currentEnglishMath(B,U,L){
   assertBridge(B);assertUniversal(U);assertLedger(L);
+  const frontier=surfaceRelationFrontier(U);
   const surface=surfaceResolution(U);
-  if(!surface.relation)return{whole:1,status:'unresolved',relation:null,hypotheses:[],math:null,surface_resolution:surface};
-  const out=mathForRelation(B,U,L,surface.relation);
-  return{...out,surface_resolution:surface};
+  if(frontier.status==='ambiguous'){
+    const alternatives=frontier.relations.map(relation=>mathForRelation(B,U,L,relation));
+    const hypotheses=[...new Set(alternatives.flatMap(x=>x.hypotheses||[]))];
+    return{
+      whole:1,status:'ambiguous',relation:null,hypotheses,math:null,
+      surface_resolution:surface,surface_frontier:frontier
+    };
+  }
+  const relation=frontier.relations[0]||surface.relation||null;
+  if(!relation)return{whole:1,status:'unresolved',relation:null,hypotheses:[],math:null,surface_resolution:surface,surface_frontier:frontier};
+  const out=mathForRelation(B,U,L,relation);
+  return{...out,surface_resolution:surface,surface_frontier:frontier};
 }
 
 function pureEnglishMathBridge(B){
@@ -241,5 +322,6 @@ module.exports={
   oneEnglishMathBridge,canonicalRelation,bindEnglishMath,bindEnglishMathSpace,
   candidatesForRelation,spacesForRelation,mathForRelation,currentEnglishMath,
   pureEnglishMathBridge,contrastiveSurfaceRelation,baseSurfaceRelation,
-  surfaceResolution,aggregateCanonicalLexical,idfWeights,weightedCos
+  surfaceResolution,surfaceRelationFrontier,surfaceMathFrontier,
+  aggregateCanonicalLexical,idfWeights,weightedCos
 };
