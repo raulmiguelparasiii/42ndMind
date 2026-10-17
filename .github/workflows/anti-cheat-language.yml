@@ -94,7 +94,5 @@ jobs:
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# Stabilization, reuse, relational completion, occurrence-safe history,
-# source-backed cross-occurrence abstraction, live experience reaccess, generic
-# live proposal, and cognitive relation/surface falsification share one upstream
-# mathematical authority.
+# Cross-occurrence recurrence is proposal-only and reuses the existing complete-
+# relation boundary. Stabilization, correction, and truth/status stay upstream.
