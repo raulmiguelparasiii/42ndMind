@@ -14,6 +14,10 @@
 //    only a complete proposed relation independently shared by every live whole
 //    is returned as a proposal clue; the fragment itself is never promoted.
 //
+// Historical contacts remain occurrence records rather than collapsing into the
+// abstract relation they may share. Their order is derived from the existing
+// ledger/audit; this file adds no second history store.
+//
 // `math-hypotheses.js` remains the sole live candidate/evidence/status authority.
 
 const {MOP,compileMathGraph,validateExpr}=require('./universal-math-graph');
@@ -92,9 +96,6 @@ function summarizeNodes(roots){
   };
 }
 
-// Build the existing factored-intent representation directly from live relation
-// uses. The representation is still only compression: expansion reconstructs the
-// exact mathematical expressions, and no dependency status is stored here.
 function buildFactoredIntent(L,roots,options={}){
   if(!Array.isArray(roots)||!roots.length)throw new Error('relation-guided intent requires roots');
   const live=liveRelationMap(L,options);
@@ -122,13 +123,6 @@ function flattenTopConjuncts(expr,out=[]){
   return out;
 }
 
-// Graph-only maximum common cores are unsafe as semantic relation boundaries:
-// an edge core can cut across formula serialization. Therefore a core never has
-// to map into a proposed complete formula and never certifies one. Its only role
-// here is to say that a graph-only space contains unresolved shared structure.
-// A proposer's complete source expression becomes a proposal clue only if that
-// complete expression independently embeds in every current maximal live whole.
-// It still enters no authority and receives no truth/status from this function.
 function provisionalCompletionSuggestions(L,expressions,options={}){
   if(!Array.isArray(expressions))throw new Error('provisional guidance requires expressions');
   expressions.forEach(validateExpr);
@@ -176,10 +170,6 @@ function preparedProposalObject(proposal,expressions){
   return out;
 }
 
-// Existing complete expressions can be factored automatically, or a proposer can
-// submit an already-factored structure built directly from stabilized relation
-// uses. Either route expands to ordinary source mathematics before entering the
-// one authoritative hypothesis ledger.
 function prepareRelationGuidedProposal(L,proposal,options={}){
   if(!proposal||typeof proposal!=='object')throw new Error('relation-guided proposal must be an object');
   let factored,expanded;
@@ -239,9 +229,28 @@ function classifyAgainstCue(cue,graph,options={}){
   return null;
 }
 
+function evidenceStepMap(L){
+  const out=new Map();
+  for(const a of L.audit||[]){
+    if(a?.kind==='evidence'&&a.id!==undefined)out.set(String(a.id),Number(a.step));
+  }
+  return out;
+}
+
+function completionGain(cue,graph,relation){
+  if(relation!=='cue-contained-in-structure')return{vertices:0,edges:0};
+  return{
+    vertices:Math.max(0,Number(graph.vertex_count)-Number(cue.vertex_count)),
+    edges:Math.max(0,(graph.edges||[]).length-(cue.edges||[]).length)
+  };
+}
+
 // Query-relative access to the same relational field. A cue does not copy or
-// activate semantic memory state; it simply asks which current live structures
-// and which retained evidence contacts stand in a structural relation to it.
+// activate semantic memory state; it asks which current live structures and
+// which retained evidence occurrences stand in a structural relation to it.
+// Distinct evidence occurrences stay distinct even when they carry exactly the
+// same anonymous mathematical graph. Ledger chronology is bookkeeping order,
+// not a claim about externally measured physical time.
 function queryRelationalField(L,cueInput,options={}){
   const cue=asCompiledMath(cueInput,options);
   const stable=reusableRelationField(L,options).relations;
@@ -261,11 +270,23 @@ function queryRelationalField(L,cueInput,options={}){
   }
   const maximal=maximalCompletions(live,options).map(x=>({id:x.id,signature:x.signature,relation:x.relation,revision:x.revision}));
 
+  const steps=evidenceStepMap(L);
   const historical_contacts=[];
-  for(const e of L.evidence||[]){
+  for(let i=0;i<(L.evidence||[]).length;i++){
+    const e=L.evidence[i];
     const relation=classifyAgainstCue(cue,e.graph,options);
     if(relation==='exact'||relation==='cue-contained-in-structure'){
-      historical_contacts.push({id:e.id,signature:e.graph.signature,relation,metadata:{...(e.metadata||{})}});
+      historical_contacts.push({
+        id:e.id,
+        occurrence_index:i,
+        ledger_step:steps.get(String(e.id))??null,
+        signature:e.graph.signature,
+        relation,
+        vertex_count:e.graph.vertex_count,
+        edge_count:(e.graph.edges||[]).length,
+        completion_gain:completionGain(cue,e.graph,relation),
+        metadata:{...(e.metadata||{})}
+      });
     }
   }
 
