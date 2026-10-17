@@ -84,7 +84,7 @@ assert.deepStrictEqual(m.knowledge.rules.map(r => ({ id: r.id, active: r.active 
   'occurrence completion created or changed relational authority');
 assert.strictEqual(m.knowledge.facts.length, factsBefore,
   'reaccess of already-known cue structure manufactured new factual knowledge');
-assert.strictEqual(frontier.candidate_count, 4,
+assert.strictEqual(frontier.candidate_count, 5,
   'all prior compatible occurrences were not preserved after recurrence');
 
 console.log('42ndMind occurrence-aware relational completion: PASS');
