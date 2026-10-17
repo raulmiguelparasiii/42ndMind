@@ -19,6 +19,7 @@ on:
       - 'universal-intent.js'
       - 'universal-relation-reuse.js'
       - 'universal-relational-completion.js'
+      - 'relational-history-resolution.js'
       - 'universal-live-proposer.js'
       - 'relation-hypotheses.js'
       - 'relational-normal-form.js'
@@ -40,6 +41,7 @@ on:
       - 'meaning-space.test.js'
       - 'universal-intent.test.js'
       - 'universal-relational-completion.test.js'
+      - 'relational-history-resolution.test.js'
       - 'universal-live-proposer.test.js'
       - 'abstract-english-math.test.js'
       - 'relation-hypotheses.test.js'
@@ -80,9 +82,11 @@ jobs:
       - run: node meaning-space.test.js
       - run: node universal-intent.test.js
       - run: node universal-relational-completion.test.js
+      - run: node relational-history-resolution.test.js
       - run: node universal-live-proposer.test.js
       - run: node relation-hypotheses.test.js
       - run: node relational-normal-form.test.js
 
-# Stabilization, reuse, relational completion, generic live proposal, and proposed
-# cognitive relation splits share one anti-cheat gate and the same math authority.
+# Stabilization, reuse, relational completion, occurrence-safe historical
+# resolution, generic live proposal, and proposed cognitive relation splits share
+# one anti-cheat gate and the same upstream mathematical authority.
