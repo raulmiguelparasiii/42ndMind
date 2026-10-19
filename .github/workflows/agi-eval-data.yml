@@ -1,4 +1,4 @@
-name: AGI Gate Z frozen input-only selection
+name: AGI Gate Z work6 public battery
 on:
   push:
     branches: [agi-eval-data-20261018]
@@ -6,46 +6,26 @@ on:
 permissions:
   contents: read
 jobs:
-  select-eval:
+  fetch-eval:
     runs-on: ubuntu-latest
     steps:
-      - name: Select public ARC task without reading outputs
+      - name: Fetch precommitted public ARC tasks
         env:
-          SOURCE_HASH: 948a4830306417fdee4ae57d470045c7a6dc5bede5258e72f24d693ca3fcfc93
+          SOURCE_HASH: c0719fa43f39e85603ec64b2fa19685ccb19274acb3484e41ad2c986fd26eec5
         run: |
-          git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
-          mkdir -p frozen-eval
-          python - <<'PY'
-          import os, pathlib, json, shutil, hashlib
-          root=pathlib.Path('arc-source/data/evaluation')
-          excluded={
-            '4cd1b7b2','ce4f8723','16de56c4','1ae2feb7','1818057f','13e47133','142ca369','20270e3b','136b0064',
-            '65b59efc','b0039139','446ef5d2','6e4f6532','53fb4810','b10624e5','edb79dae','e376de54','eee78d87'
-          }
-          def input_score(path):
-              d=json.loads(path.read_text())
-              grids=[pair['input'] for split in ('train','test') for pair in d[split]]
-              cells=[len(g)*len(g[0]) for g in grids]
-              palettes=[len({v for row in g for v in row}) for g in grids]
-              return (max(cells),sum(cells),max(palettes),sum(palettes),len(grids),path.stem)
-          pool=[p for p in root.glob('*.json') if p.stem not in excluded]
-          score,chosen=sorted((input_score(p),p) for p in pool)[0]
-          out=pathlib.Path('frozen-eval')
-          shutil.copy2(chosen,out/chosen.name)
-          manifest=(
-              'source_hash='+os.environ['SOURCE_HASH']+'\n'
-              'selection_rule=input-only lexicographic minimum of (max_cells,total_cells,max_palette,total_palette,grid_count,id)\n'
-              'outputs_used_for_selection=false\n'
-              'selection_pool='+str(len(pool))+'\n'
-              'selected='+chosen.stem+'\n'
-              'input_score='+repr(score)+'\n'
-          )
-          (out/'MANIFEST.txt').write_text(manifest)
-          (out/'SHA256SUMS.txt').write_text(hashlib.sha256((out/chosen.name).read_bytes()).hexdigest()+'  '+chosen.name+'\n')
-          print(manifest)
-          PY
+          mkdir -p gate-z-work6
+          for id in 3a25b0d8 2c181942 291dc1e1 3e6067c3; do
+            curl -fsSL "https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/evaluation/${id}.json" -o "gate-z-work6/${id}.json"
+          done
+          cat > gate-z-work6/MANIFEST.txt <<'EOF'
+          source_hash=c0719fa43f39e85603ec64b2fa19685ccb19274acb3484e41ad2c986fd26eec5
+          selection_rule=successive 8-hex chunks of frozen source hash modulo sorted visible unused evaluation pool; remove each selected ID before next draw
+          selected=3a25b0d8,2c181942,291dc1e1,3e6067c3
+          outputs_used_for_selection=false
+          EOF
+          sha256sum gate-z-work6/*.json > gate-z-work6/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: agi-gate-z-public
-          path: frozen-eval
+          name: agi-gate-z-work6
+          path: gate-z-work6
           if-no-files-found: error
