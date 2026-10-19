@@ -8,14 +8,14 @@ jobs:
   fetch-data:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch precommitted public ARC training tasks
+      - name: Fetch public ARC evaluation set
         run: |
-          mkdir -p eval-data-2
-          curl -fsSL https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/training/68b16354.json -o eval-data-2/68b16354.json
-          curl -fsSL https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/training/3c9b0459.json -o eval-data-2/3c9b0459.json
-          sha256sum eval-data-2/*.json | tee eval-data-2/SHA256SUMS.txt
+          git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
+          mkdir -p eval-all
+          cp arc-source/data/evaluation/*.json eval-all/
+          sha256sum eval-all/*.json > eval-all/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: agi-eval-data-2
-          path: eval-data-2
+          name: arc-evaluation-all
+          path: eval-all
           if-no-files-found: error
