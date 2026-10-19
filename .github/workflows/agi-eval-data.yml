@@ -28,7 +28,7 @@ jobs:
               inputs=[x['input'] for x in d.get('train',[])]+[x['input'] for x in d.get('test',[])]
               if not inputs: continue
               minw=min(len(g[0]) for g in inputs)
-              if minw==3: pool.append(p)
+              if minw<=6: pool.append(p)
           if len(pool)<2:
               raise SystemExit(f'input-only pool too small: {len(pool)}')
           h=os.environ['SOURCE_HASH']
@@ -38,7 +38,7 @@ jobs:
           chosen=[pool[i],pool[j]]
           out=pathlib.Path('frozen-eval')
           for p in chosen:shutil.copy2(p,out/p.name)
-          (out/'MANIFEST.txt').write_text('source_hash='+h+'\nselection_rule=ntrain==2 AND minimum_input_width==3; outputs unread by selector\nselection_pool='+str(len(pool))+'\nselected='+','.join(p.stem for p in chosen)+'\n')
+          (out/'MANIFEST.txt').write_text('source_hash='+h+'\nselection_rule=ntrain==2 AND minimum_input_width<=6; outputs unread by selector\nselection_pool='+str(len(pool))+'\nselected='+','.join(p.stem for p in chosen)+'\n')
           with (out/'SHA256SUMS.txt').open('w') as f:
               for p in chosen:f.write(hashlib.sha256((out/p.name).read_bytes()).hexdigest()+'  '+p.name+'\n')
           print((out/'MANIFEST.txt').read_text())
