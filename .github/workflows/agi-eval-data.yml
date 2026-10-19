@@ -9,27 +9,38 @@ jobs:
   select-eval:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch ARC-AGI-2 evaluation split and select from frozen source hash
+      - name: Fetch ARC-AGI-2 evaluation split and input-only select from frozen source hash
         env:
-          SOURCE_HASH: c515f0082f2c2a0f011b71db30f6059e52e4c6ea8ba78b14d77c918497e98f0d
+          SOURCE_HASH: 89b18fd466d2d180b4daa279fa36d9b469ed548a6ae9d1bc01dfee9d41e01b21
         run: |
           git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
           mkdir -p frozen-eval
           python - <<'PY'
-          import os, pathlib, shutil, hashlib
+          import os, pathlib, shutil, hashlib, json
           root=pathlib.Path('arc-source/data/evaluation')
           excluded={'4cd1b7b2','ce4f8723','16de56c4','1ae2feb7','1818057f','13e47133','142ca369','20270e3b','136b0064','65b59efc','b0039139'}
-          files=sorted(p for p in root.glob('*.json') if p.stem not in excluded)
+          pool=[]
+          for p in sorted(root.glob('*.json')):
+              if p.stem in excluded: continue
+              d=json.loads(p.read_text())
+              # Selection reads inputs only. Outputs are not consulted.
+              if len(d.get('train',[]))!=2: continue
+              inputs=[x['input'] for x in d.get('train',[])]+[x['input'] for x in d.get('test',[])]
+              if not inputs: continue
+              minw=min(len(g[0]) for g in inputs)
+              if minw==3: pool.append(p)
+          if len(pool)<2:
+              raise SystemExit(f'input-only pool too small: {len(pool)}')
           h=os.environ['SOURCE_HASH']
-          i=int(h[:16],16)%len(files)
-          j=int(h[16:32],16)%(len(files)-1)
+          i=int(h[:16],16)%len(pool)
+          j=int(h[16:32],16)%(len(pool)-1)
           if j>=i:j+=1
-          chosen=[files[i],files[j]]
+          chosen=[pool[i],pool[j]]
           out=pathlib.Path('frozen-eval')
           for p in chosen:shutil.copy2(p,out/p.name)
-          (out/'MANIFEST.txt').write_text('source_hash='+h+'\nselection_pool='+str(len(files))+'\nselected='+','.join(p.stem for p in chosen)+'\n')
+          (out/'MANIFEST.txt').write_text('source_hash='+h+'\nselection_rule=ntrain==2 AND minimum_input_width==3; outputs unread by selector\nselection_pool='+str(len(pool))+'\nselected='+','.join(p.stem for p in chosen)+'\n')
           with (out/'SHA256SUMS.txt').open('w') as f:
-            for p in chosen:f.write(hashlib.sha256((out/p.name).read_bytes()).hexdigest()+'  '+p.name+'\n')
+              for p in chosen:f.write(hashlib.sha256((out/p.name).read_bytes()).hexdigest()+'  '+p.name+'\n')
           print((out/'MANIFEST.txt').read_text())
           PY
       - uses: actions/upload-artifact@v4
