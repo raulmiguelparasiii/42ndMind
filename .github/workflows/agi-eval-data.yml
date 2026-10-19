@@ -1,4 +1,4 @@
-name: AGI frozen-hash evaluation ferry
+name: AGI Gate Z frozen input-only selection
 on:
   push:
     branches: [agi-eval-data-20261018]
@@ -9,32 +9,46 @@ jobs:
   select-eval:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch ARC-AGI-2 evaluation split and select from frozen source hash
+      - name: Select public ARC task without reading outputs
         env:
-          SOURCE_HASH: 68aed7f38a78b5b20d2f383bbb50762c151acbe2f11a525fbab1b901bc279aa1
+          SOURCE_HASH: dbe5cf44980113ca5784efd4b8f767b4e62d5c5b057c46cca191f3d619eba13b
         run: |
           git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
           mkdir -p frozen-eval
           python - <<'PY'
-          import os, pathlib, shutil, hashlib
+          import os, pathlib, json, shutil, hashlib
           root=pathlib.Path('arc-source/data/evaluation')
-          excluded={'4cd1b7b2','ce4f8723','16de56c4','1ae2feb7','1818057f','13e47133','142ca369','20270e3b','136b0064','65b59efc','b0039139','446ef5d2','6e4f6532'}
-          pool=[p for p in sorted(root.glob('*.json')) if p.stem not in excluded]
-          if len(pool)<2: raise SystemExit(f'evaluation pool too small: {len(pool)}')
-          h=os.environ['SOURCE_HASH']
-          i=int(h[:16],16)%len(pool)
-          j=int(h[16:32],16)%(len(pool)-1)
-          if j>=i:j+=1
-          chosen=[pool[i],pool[j]]
+          excluded={
+            '4cd1b7b2','ce4f8723','16de56c4','1ae2feb7','1818057f','13e47133','142ca369','20270e3b','136b0064',
+            '65b59efc','b0039139','446ef5d2','6e4f6532','53fb4810','b10624e5','edb79dae','e376de54'
+          }
+          def input_score(path):
+              d=json.loads(path.read_text())
+              # Selection is intentionally output-blind. Never access pair['output'] here.
+              grids=[pair['input'] for split in ('train','test') for pair in d[split]]
+              cells=[len(g)*len(g[0]) for g in grids]
+              palettes=[len({v for row in g for v in row}) for g in grids]
+              # Prefer small finite contact and low surface alphabet; ID is only a deterministic tie-break.
+              return (max(cells),sum(cells),max(palettes),sum(palettes),len(grids),path.stem)
+          pool=[p for p in root.glob('*.json') if p.stem not in excluded]
+          ranked=sorted((input_score(p),p) for p in pool)
+          score,chosen=ranked[0]
           out=pathlib.Path('frozen-eval')
-          for p in chosen:shutil.copy2(p,out/p.name)
-          (out/'MANIFEST.txt').write_text('source_hash='+h+'\nselection_rule=all previously unseen ARC-AGI-2 evaluation tasks; output-blind deterministic selection\nselection_pool='+str(len(pool))+'\nselected='+','.join(p.stem for p in chosen)+'\n')
-          with (out/'SHA256SUMS.txt').open('w') as f:
-              for p in chosen:f.write(hashlib.sha256((out/p.name).read_bytes()).hexdigest()+'  '+p.name+'\n')
-          print((out/'MANIFEST.txt').read_text())
+          shutil.copy2(chosen,out/chosen.name)  # full task is exposed only after selection is fixed
+          manifest=(
+              'source_hash='+os.environ['SOURCE_HASH']+'\n'
+              'selection_rule=input-only lexicographic minimum of (max_cells,total_cells,max_palette,total_palette,grid_count,id)\n'
+              'outputs_used_for_selection=false\n'
+              'selection_pool='+str(len(pool))+'\n'
+              'selected='+chosen.stem+'\n'
+              'input_score='+repr(score)+'\n'
+          )
+          (out/'MANIFEST.txt').write_text(manifest)
+          (out/'SHA256SUMS.txt').write_text(hashlib.sha256((out/chosen.name).read_bytes()).hexdigest()+'  '+chosen.name+'\n')
+          print(manifest)
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: frozen-hash-agi-eval
+          name: agi-gate-z-public
           path: frozen-eval
           if-no-files-found: error
