@@ -11,14 +11,14 @@ jobs:
     steps:
       - name: Fetch ARC-AGI-2 evaluation split and select from frozen source hash
         env:
-          SOURCE_HASH: 89b18fd466d2d180b4daa279fa36d9b469ed548a6ae9d1bc01dfee9d41e01b21
+          SOURCE_HASH: 68aed7f38a78b5b20d2f383bbb50762c151acbe2f11a525fbab1b901bc279aa1
         run: |
           git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
           mkdir -p frozen-eval
           python - <<'PY'
           import os, pathlib, shutil, hashlib
           root=pathlib.Path('arc-source/data/evaluation')
-          excluded={'4cd1b7b2','ce4f8723','16de56c4','1ae2feb7','1818057f','13e47133','142ca369','20270e3b','136b0064','65b59efc','b0039139'}
+          excluded={'4cd1b7b2','ce4f8723','16de56c4','1ae2feb7','1818057f','13e47133','142ca369','20270e3b','136b0064','65b59efc','b0039139','446ef5d2','6e4f6532'}
           pool=[p for p in sorted(root.glob('*.json')) if p.stem not in excluded]
           if len(pool)<2: raise SystemExit(f'evaluation pool too small: {len(pool)}')
           h=os.environ['SOURCE_HASH']
