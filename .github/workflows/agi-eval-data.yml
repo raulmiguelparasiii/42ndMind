@@ -1,4 +1,4 @@
-name: AGI evaluation data ferry
+name: AGI frozen-hash evaluation ferry
 on:
   push:
     branches: [agi-eval-data-20261018]
@@ -6,41 +6,36 @@ on:
 permissions:
   contents: read
 jobs:
-  fetch-data:
+  select-eval:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Fetch precommitted public ARC tasks
-        run: |
-          mkdir -p eval-data
-          curl -fsSL https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/evaluation/13e47133.json -o eval-data/13e47133.json
-          curl -fsSL https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/evaluation/142ca369.json -o eval-data/142ca369.json
-          sha256sum eval-data/*.json | tee eval-data/SHA256SUMS.txt
-      - name: Fetch ARC public training split for development only
+      - name: Fetch ARC-AGI-2 evaluation split and select from frozen source hash
+        env:
+          SOURCE_HASH: 5cc4ac3a6e8a3fc0ce34c245b99920001e3741df6e64ac7fb18a7b6a4ac9365e
         run: |
           git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
-          mkdir -p arc-training
-          cp arc-source/data/training/*.json arc-training/
-          sha256sum arc-training/*.json | sort > arc-training/SHA256SUMS.txt
-      - name: Stage ULT source snapshot
-        run: |
-          mkdir -p ult-source
-          cp *.js ult-source/ 2>/dev/null || true
-          cp AGENTS.md UNIVERSAL_LANGUAGE_TRACK.md ult-source/
-          git rev-parse HEAD > ult-source/GIT_COMMIT.txt
-          sha256sum ult-source/* | sort > ult-source/SHA256SUMS.txt
+          mkdir -p frozen-eval
+          python - <<'PY'
+          import os, pathlib, shutil, hashlib
+          root=pathlib.Path('arc-source/data/evaluation')
+          excluded={'4cd1b7b2','ce4f8723','16de56c4','1ae2feb7','1818057f','13e47133','142ca369','20270e3b','136b0064'}
+          files=sorted(p for p in root.glob('*.json') if p.stem not in excluded)
+          h=os.environ['SOURCE_HASH']
+          i=int(h[:16],16)%len(files)
+          j=int(h[16:32],16)%(len(files)-1)
+          if j>=i:j+=1
+          chosen=[files[i],files[j]]
+          out=pathlib.Path('frozen-eval')
+          for p in chosen:shutil.copy2(p,out/p.name)
+          manifest=out/'MANIFEST.txt'
+          manifest.write_text('source_hash='+h+'\nselection_pool='+str(len(files))+'\nselected='+','.join(p.stem for p in chosen)+'\n')
+          with (out/'SHA256SUMS.txt').open('w') as f:
+            for p in chosen:
+              f.write(hashlib.sha256((out/p.name).read_bytes()).hexdigest()+'  '+p.name+'\n')
+          print(manifest.read_text())
+          PY
       - uses: actions/upload-artifact@v4
         with:
-          name: agi-eval-data
-          path: eval-data
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        with:
-          name: arc-training-development
-          path: arc-training
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ult-source-snapshot
-          path: ult-source
+          name: frozen-hash-agi-eval
+          path: frozen-eval
           if-no-files-found: error
