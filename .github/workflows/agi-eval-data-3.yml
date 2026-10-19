@@ -1,0 +1,22 @@
+name: AGI evaluation data ferry 3
+on:
+  push:
+    branches: [agi-eval-data-20261018]
+permissions:
+  contents: read
+jobs:
+  fetch-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch precommitted public ARC training tasks
+        run: |
+          mkdir -p eval-data-3
+          for id in a85d4709 c8cbb738 8e1813be a699fb00; do
+            curl -fsSL "https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/training/${id}.json" -o "eval-data-3/${id}.json"
+          done
+          sha256sum eval-data-3/*.json | tee eval-data-3/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agi-eval-data-3
+          path: eval-data-3
+          if-no-files-found: error
