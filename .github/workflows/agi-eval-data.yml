@@ -16,6 +16,12 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/evaluation/13e47133.json -o eval-data/13e47133.json
           curl -fsSL https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/evaluation/142ca369.json -o eval-data/142ca369.json
           sha256sum eval-data/*.json | tee eval-data/SHA256SUMS.txt
+      - name: Fetch ARC public training split for development only
+        run: |
+          git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
+          mkdir -p arc-training
+          cp arc-source/data/training/*.json arc-training/
+          sha256sum arc-training/*.json | sort > arc-training/SHA256SUMS.txt
       - name: Stage ULT source snapshot
         run: |
           mkdir -p ult-source
@@ -27,6 +33,11 @@ jobs:
         with:
           name: agi-eval-data
           path: eval-data
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arc-training-development
+          path: arc-training
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
