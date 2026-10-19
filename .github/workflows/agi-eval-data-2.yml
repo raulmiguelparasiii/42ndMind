@@ -8,12 +8,19 @@ jobs:
   fetch-data:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch ARC-AGI-1 public evaluation set
+      - name: Fetch ARC public corpora for offline development
         run: |
           git clone --depth 1 https://github.com/fchollet/ARC-AGI.git arc-source
-          mkdir -p eval-v1
+          mkdir -p training-v1 eval-v1
+          cp arc-source/data/training/*.json training-v1/
           cp arc-source/data/evaluation/*.json eval-v1/
+          sha256sum training-v1/*.json > training-v1/SHA256SUMS.txt
           sha256sum eval-v1/*.json > eval-v1/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arc-agi-1-training
+          path: training-v1
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: arc-agi-1-evaluation
