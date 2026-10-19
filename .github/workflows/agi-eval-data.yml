@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Select public ARC task without reading outputs
         env:
-          SOURCE_HASH: dbe5cf44980113ca5784efd4b8f767b4e62d5c5b057c46cca191f3d619eba13b
+          SOURCE_HASH: 948a4830306417fdee4ae57d470045c7a6dc5bede5258e72f24d693ca3fcfc93
         run: |
           git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
           mkdir -p frozen-eval
@@ -20,21 +20,18 @@ jobs:
           root=pathlib.Path('arc-source/data/evaluation')
           excluded={
             '4cd1b7b2','ce4f8723','16de56c4','1ae2feb7','1818057f','13e47133','142ca369','20270e3b','136b0064',
-            '65b59efc','b0039139','446ef5d2','6e4f6532','53fb4810','b10624e5','edb79dae','e376de54'
+            '65b59efc','b0039139','446ef5d2','6e4f6532','53fb4810','b10624e5','edb79dae','e376de54','eee78d87'
           }
           def input_score(path):
               d=json.loads(path.read_text())
-              # Selection is intentionally output-blind. Never access pair['output'] here.
               grids=[pair['input'] for split in ('train','test') for pair in d[split]]
               cells=[len(g)*len(g[0]) for g in grids]
               palettes=[len({v for row in g for v in row}) for g in grids]
-              # Prefer small finite contact and low surface alphabet; ID is only a deterministic tie-break.
               return (max(cells),sum(cells),max(palettes),sum(palettes),len(grids),path.stem)
           pool=[p for p in root.glob('*.json') if p.stem not in excluded]
-          ranked=sorted((input_score(p),p) for p in pool)
-          score,chosen=ranked[0]
+          score,chosen=sorted((input_score(p),p) for p in pool)[0]
           out=pathlib.Path('frozen-eval')
-          shutil.copy2(chosen,out/chosen.name)  # full task is exposed only after selection is fixed
+          shutil.copy2(chosen,out/chosen.name)
           manifest=(
               'source_hash='+os.environ['SOURCE_HASH']+'\n'
               'selection_rule=input-only lexicographic minimum of (max_cells,total_cells,max_palette,total_palette,grid_count,id)\n'
