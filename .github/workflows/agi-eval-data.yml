@@ -1,0 +1,22 @@
+name: AGI evaluation data ferry
+on:
+  push:
+    branches: [agi-eval-data-20261018]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fetch-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch precommitted public ARC tasks
+        run: |
+          mkdir -p eval-data
+          curl -fsSL https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/evaluation/13e47133.json -o eval-data/13e47133.json
+          curl -fsSL https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/evaluation/142ca369.json -o eval-data/142ca369.json
+          sha256sum eval-data/*.json | tee eval-data/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agi-eval-data
+          path: eval-data
+          if-no-files-found: error
