@@ -8,14 +8,14 @@ jobs:
   fetch-data:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch public ARC evaluation set
+      - name: Fetch ARC-AGI-1 public evaluation set
         run: |
-          git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc-source
-          mkdir -p eval-all
-          cp arc-source/data/evaluation/*.json eval-all/
-          sha256sum eval-all/*.json > eval-all/SHA256SUMS.txt
+          git clone --depth 1 https://github.com/fchollet/ARC-AGI.git arc-source
+          mkdir -p eval-v1
+          cp arc-source/data/evaluation/*.json eval-v1/
+          sha256sum eval-v1/*.json > eval-v1/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: arc-evaluation-all
-          path: eval-all
+          name: arc-agi-1-evaluation
+          path: eval-v1
           if-no-files-found: error
