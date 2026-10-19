@@ -8,15 +8,13 @@ jobs:
   fetch-data:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch precommitted public ARC training tasks
+      - name: Fetch untouched ConceptARC public corpus
         run: |
-          mkdir -p eval-data-3
-          for id in a85d4709 c8cbb738 8e1813be a699fb00; do
-            curl -fsSL "https://raw.githubusercontent.com/arcprize/ARC-AGI-2/main/data/training/${id}.json" -o "eval-data-3/${id}.json"
-          done
-          sha256sum eval-data-3/*.json | tee eval-data-3/SHA256SUMS.txt
+          git clone --depth 1 https://github.com/victorvikram/ConceptARC.git conceptarc
+          cp -r conceptarc/corpus conceptarc-corpus
+          sha256sum $(find conceptarc-corpus -type f -name '*.json' | sort) > conceptarc-corpus/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: agi-eval-data-3
-          path: eval-data-3
+          name: conceptarc-public-heldout
+          path: conceptarc-corpus
           if-no-files-found: error
