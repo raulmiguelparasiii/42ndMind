@@ -1,0 +1,21 @@
+name: AGI ARC2 training ferry
+on:
+  push:
+    branches: [agi-eval-data-20261018]
+permissions:
+  contents: read
+jobs:
+  fetch-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch public ARC-AGI-2 training set
+        run: |
+          git clone --depth 1 https://github.com/arcprize/ARC-AGI-2.git arc2-source
+          mkdir -p arc2-training
+          cp arc2-source/data/training/*.json arc2-training/
+          sha256sum arc2-training/*.json > arc2-training/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arc-agi-2-training
+          path: arc2-training
+          if-no-files-found: error
