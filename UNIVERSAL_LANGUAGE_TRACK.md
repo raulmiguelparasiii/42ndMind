@@ -1143,3 +1143,55 @@ The Universal Language Track remains a strong bounded research substrate with re
 The immediate priority is now precise:
 
 > Demonstrate, using the existing authorities, that newly warranted relational descriptions can recursively enlarge the system's own hypothesis language and remain corrigible through the same live ledger. Then connect that result to canonical `M/C` and test end-to-end generalization without task filtering.
+
+## 25. PR #47 result and the one-live-M consequence
+
+PR #47 (`experiment/recursive-hypothesis-growth-20261019`, head `89e2ec333418fb7bf101cd3c7203c2472fd2cf26`) completed the bounded recursive-hypothesis-language experiment described above.
+
+The preserved baseline established the pre-change gap:
+
+```text
+recursive recompression invents h1
+recursive recompression reuses h1 to invent h2
+ULT candidates = 0
+ULT evidence = 0
+```
+
+The connection then demonstrated, to depth three:
+
+```text
+learned h1 -> proposed into existing live ULT authority
+proposal creates no evidence
+independent contact warrants h1
+warranted h1 participates in h2 construction
+independent contact warrants h2
+warranted h2 participates in h3 construction
+lower defeat makes unchanged higher factorization stale
+later recurrence of the same warranted structure restores it
+arbitrary learned-feature renaming preserves relation identity
+```
+
+The first implementation did not pass unchanged: the gate exposed that shallow anonymous serialization could give distinct higher learned relations the same identity. The test was not weakened. Recursively grounded lower definition structure was added to the reified relation identity, after which the clean gate passed.
+
+This is real bounded evidence that the language in which later hypotheses are formed can grow from earlier learned and warranted relations without a benchmark-specific operation catalog. It remains a structured-core result, not an AGI result.
+
+### Architectural consequence
+
+The intended endpoint is no longer well described as canonical M plus a permanently parallel ULT mind. The Universal Language Track remains valuable experimental machinery, but the universal relational graph should ultimately be **canonical M itself**.
+
+Use the following distinction during migration:
+
+```text
+fundamental candidate/evidence/provenance/alternative/definition relation -> first-class M content
+derived current status/stabilization/frontier/ranking                        -> view of M
+reverse dependency/signature/occurrence lookup/cache                         -> zero-authority index
+proposer/transducer                                                          -> proposal/contact boundary
+parallel copied truth/status                                                 -> defect to eliminate
+```
+
+Existing `math-hypotheses.js` algorithms can be reused while their fundamental state migrates into M; `universal-intent.js`, relation reuse, completion, and bridge logic are already mostly derived/read connections and should not be promoted into independent faculties. Likewise the surface relation field in `universal-language.js` must eventually be decomposed so legitimate expression occurrences/attachments/provenance belong to M while similarity vectors, rankings, stability metrics, and current resolutions remain derived working descriptions.
+
+Canonical `one-mind.js` already supplies a bounded precedent for the desired fixed-point behavior: relational closure is recomputed from base facts and currently active schemas, so a higher conclusion can survive the loss of one lower route when another independent route still warrants it. This should be generalized rather than replaced by a separate dependency truth system.
+
+PR #48 is an unmerged experiment that begins testing this state-authority migration. Do not treat it as canonical evidence until its branch gates pass and it is merged. The larger target remains one persistent relational M and one content-neutral C, with ULT mechanisms becoming uses/views of that same relational whole rather than a second mind.
+

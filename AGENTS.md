@@ -720,3 +720,82 @@ AGI demonstrated              NO
 ```
 
 The project hypothesis that one sufficiently closed, reality-governed relational developmental law can yield general intelligence remains live. What failed was the evidence and implementation route used to claim completion, not the logical permission to continue testing that hypothesis.
+
+## One live relational M target and PR #47 bounded result (2026-10-20)
+
+### Stronger endpoint: the universal live graph is canonical M
+
+The intended endpoint is stronger than connecting several cognitive subsystems. Canonical `M` itself should become the one persistent universal live relational state of the individual. Existing source files may remain as algorithms, adapters, transducers, proposers, serializers, indexes, caches, or derived views, but they must not remain independent minds or independent stores of epistemic truth.
+
+A useful realization-level shorthand is:
+
+```text
+M* = Fix_C(M ⊕ R)
+```
+
+After materially relevant reality contact, affected relational structure is reconsidered and completion/correction/recompression/stabilization/reopening propagates until the relevant region settles. CPU scheduling may be event-driven. Arbitrary clocks and polling intervals have no semantic authority. Reverse-dependency tables, queues, caches, memoization, and other acceleration structures are implementation devices only.
+
+The universal relational state must be able to contain first-class occurrences, entities, relations, relation instances, definitions, evidence/counterevidence, provenance, unresolved alternatives, candidate structures, dependencies, equivalence/overlap, temporal/order relations, surface-expression attachments, action/consequence relations, learned abstractions, and relations about relations. These need not be separate primitive node types. Relations themselves must remain legal terms of further relations.
+
+A learned relation belongs in `M`, not as a new branch inside `C`. `C` remains the generic developmental calculus; the individual grows because the relational contents and structure of `M` develop.
+
+### State-ownership rule for future unification
+
+Do not copy every current module object into a larger container and call the result one M. Classify state before moving it:
+
+```text
+A. fundamental first-class relational content -> belongs in M
+B. derived view/current resolution            -> recomputable from M
+C. index/cache/queue                           -> zero semantic authority
+D. proposer/transducer/adapter                 -> may suggest or transport structure, never warrant it
+E. duplicated epistemic authority              -> must be collapsed/retired after preserved falsification
+```
+
+A semantic dependency may itself be first-class M content. A reverse-dependents lookup used to schedule recomputation is only an index. Lower change must cause affected higher structure to be recomputed from all remaining support; do not implement `parent false -> child false` propagation.
+
+### PR #47: recursive hypothesis-language growth
+
+PR #47, `experiment/recursive-hypothesis-growth-20261019`, head `89e2ec333418fb7bf101cd3c7203c2472fd2cf26`, demonstrated a bounded but important connection through the existing ULT authority. The preserved baseline first showed that recursive recompression could invent a lower description and reuse it inside a higher description while creating zero ULT candidates/evidence. The PR then connected those learned descriptions statelessly to the existing live math-hypothesis/stabilization/reuse path.
+
+The clean gate recorded:
+
+```text
+recursive learned-description depth reached              3
+learned relations reified without semantic names         3
+proposal self-warrant                                    0
+independent contact required for warrant                  true
+level-2 construction uses live warranted level-1         true
+level-3 construction uses live warranted level-2         true
+lower defeat stales unchanged higher factorization       true
+later recurrence restores unchanged higher factorization true
+arbitrary learned-feature renaming preserves identity    true
+copied downstream status authority                       0
+benchmark-specific operator vocabulary                   0
+```
+
+The test also found a real implementation defect before passing: a shallow anonymous representation collapsed distinct higher learned relations with the same superficial shape. The test was preserved and the bridge was corrected so recursively grounded lower relational structure contributes to learned relation identity.
+
+Evidence boundary:
+
+```text
+PR #47 demonstrates bounded recursive growth of usable warranted relational vocabulary.
+It does not demonstrate AGI, unrestricted operation discovery, broad language, or a fully unified live M.
+It also does not by itself prove that an already-warranted higher candidate's warrant is automatically recomputed when a lower candidate changes; the demonstrated higher factorization becomes stale through live reuse.
+```
+
+Treat PR #47 as evidence about what canonical M must support: learned definitions are first-class, structural identity is recursively grounded, proposal remains separate from warrant, higher relations reference lower relations live, and copied local status is forbidden. Do not make a permanent special `recursive hypothesis bridge` the architecture.
+
+### Bounded canonical living-property result
+
+The existing canonical relational closure already has an important bounded form of the desired living property. The preserved `living-relational-m.test.js` experiment shows that a chain `R1 -> R2 -> R3 -> expression/prediction/action relations` is recomputed from live rules after a lower route changes. When R2 has a second independent support route, defeating the R1 route removes R1 while R2, R3, and their downstream relations survive. Defeating the remaining independent route then removes the no-longer-supported downstream conclusions without manually editing them.
+
+Therefore do not add a second truth-maintenance/dependency engine merely because ULT state currently lives elsewhere. Reuse and generalize the canonical fixed-point relational semantics.
+
+### Current unification gap
+
+The remaining architecture problem is state/authority separation. ULT currently keeps epistemically meaningful candidate/evidence/alternative state in separate live objects, and `universal-language.js` maintains a parallel `U`. The final direction is to migrate fundamental relational content into canonical M while keeping useful ULT algorithms as derived evaluators/views/proposers over that same state.
+
+PR #48 is an **unmerged bounded connection experiment** toward that migration. It must not be treated as canonical until merged. Its first state-migration gate stores math candidate definitions, proposal provenance, alternative membership, and evidence occurrences as ordinary structured M contact, while reconstructing the old math ledger only as a disposable derived evaluator and persisting no independent support/defeat/status/usable truth. Revision and automatic-refinement migration remain explicitly unproved.
+
+The next architectural seam after state ownership is making current warranted structure ordinary material for canonical C without hard-coding a math-specific warrant engine. Preserve the failure first and solve it through the most generic relational representation possible.
+
