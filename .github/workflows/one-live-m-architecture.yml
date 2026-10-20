@@ -29,8 +29,10 @@ jobs:
         run: node living-relational-m.test.js
       - name: Move bounded math hypothesis state into canonical M
         run: node mind-math-hypotheses.test.js
-      - name: Preserve current M-owned warrant visibility gap
+      - name: Preserve pre-connection M-owned warrant visibility gap
         run: node one-live-m-warrant-baseline.test.js
+      - name: Prove live warrant propagation through generic M support routes
+        run: node one-live-m-warrant-propagation.test.js
       - name: Preserve PR 47 recursive hypothesis-language growth
         run: node recursive-hypothesis-growth.test.js
       - name: Canonical one-mind regression
