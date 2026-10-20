@@ -1,7 +1,7 @@
 'use strict';
 
 // Blueprint gate for the one-live-M architecture.
-// This deliberately imports only canonical one-mind.js as cognitive authority.
+// The experimental entrypoint owns no cognitive state beyond canonical M.
 // The local boundary code is mechanical S/A only: token/code conversion and
 // frame placement. It contains no semantic dictionary, parser, planner, truth
 // ledger, or task-specific rule inside C.
@@ -9,12 +9,15 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const Mind = require('../one-mind.js');
+const Mind = require('./one-live-blueprint.js');
 
 assert.deepStrictEqual(Object.keys(Mind).sort(), ['C', 'one']);
-const source = fs.readFileSync(path.join(__dirname, '..', 'one-mind.js'), 'utf8');
+const sources = [
+  fs.readFileSync(path.join(__dirname, '..', 'one-mind.js'), 'utf8'),
+  fs.readFileSync(path.join(__dirname, 'one-live-blueprint.js'), 'utf8'),
+].join('\n');
 for (const forbidden of ['alpha_entity', 'heldout_alpha', 'question_answer_gate']) {
-  assert.ok(!source.includes(forbidden), `test-specific content leaked into C: ${forbidden}`);
+  assert.ok(!sources.includes(forbidden), `test-specific content leaked into C: ${forbidden}`);
 }
 
 function stable(value) {
@@ -156,6 +159,8 @@ const reply = text.render(outCodes);
 assert.strictEqual(probe.current.completed[`p${ENTITY_SLOT}`], alpha[1], 'surface alpha did not recover its grounded entity relation');
 assert.strictEqual(probe.current.completed[`p${COLOR_SLOT}`], alpha[3], 'entity relation did not recover the held-out color relation');
 assert.strictEqual(reply, 'it is red.', `held-out ordinary-text response was not compositionally completed: ${reply}`);
+assert((probe.current.invariant_completions || []).some(x => x.feature === `p${IN + 1}`), 'zero-entropy grammar channel was not completed generically');
+assert((probe.current.invariant_completions || []).some(x => x.feature === `p${IN + 3}`), 'zero-entropy punctuation channel was not completed generically');
 
 // Exact curriculum contact is still present beneath learned abstractions.
 assert.strictEqual(conversational.contacts.length, conversational.experiences.length + 1);
@@ -171,8 +176,9 @@ console.log(JSON.stringify({
   new_sensor_without_C_change: true,
   cross_channel_relation_discovery: true,
   one_persistent_M: conversational.whole === 1,
-  one_C: true,
+  one_C_entrypoint: true,
   exact_contact_retained: true,
+  zero_entropy_completion_is_generic: true,
   mechanical_text_boundary_only: true,
   heldout_question: 'what color is alpha?',
   heldout_reply: reply,
