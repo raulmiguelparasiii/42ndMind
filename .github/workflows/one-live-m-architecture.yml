@@ -1,5 +1,6 @@
 name: One live M architecture
 
+# Architecture gate for the stacked one-live-M experiment.
 on:
   push:
     branches:
