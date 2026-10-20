@@ -1,18 +1,9 @@
 'use strict';
 
-// Final experimental one-live-M entrypoint for the current blueprint branch.
-//
-// This composes the already-general developmental C in one-live-blueprint.js
-// with one ZERO-STATE bridge: when an ordered surface occurrence and an actual
-// relational fact are contacted together, the fact's generic triple topology
-// (subject, relation, object) becomes three ordinary contact dimensions for that
-// occurrence. No English word, domain relation, or response is hard-coded.
-//
-// On a later surface query, recurrent surface-role evidence identifies the
-// subject/relation terms; canonical current M supplies the object; previously
-// learned expression structure realizes that object. Ordered cross-turn reuse is
-// learned from recurrence rather than hard-coding pronouns. The bridge owns no
-// durable cognition and cannot overrule canonical M.
+// Experimental one-live-M public entrypoint.
+// Durable cognition remains in canonical M. Everything in this file is a
+// zero-state structural bridge over M-owned contact and canonical relational
+// closure; it owns no private language memory, truth store, planner, or ontology.
 
 const Core = require('./one-live-blueprint.js');
 const Surface = require('./surface-template.js');
@@ -28,6 +19,7 @@ function unique(xs) {
   for (const x of xs || []) m.set(stable(x), x);
   return [...m.values()];
 }
+function ref(id) { return { ref: String(id) }; }
 
 function cloneContact(contact) {
   if (Array.isArray(contact)) return contact.slice();
@@ -44,7 +36,8 @@ function cloneContact(contact) {
   return out;
 }
 
-// Generic relation topology only. No domain meaning is supplied here.
+// Generic triple topology only. No domain meaning or English semantics are
+// supplied here.
 function enrichSurfaceWithRelation(contact) {
   const out = cloneContact(contact);
   if (!out || typeof out !== 'object' || !out.surface || Array.isArray(out.surface.channels)) return out;
@@ -54,6 +47,10 @@ function enrichSurfaceWithRelation(contact) {
   return out;
 }
 
+function sequenceEpisodeNumber(id) {
+  const n = Number(String(id).split(':').at(-1));
+  return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
+}
 function sequenceEpisodes(state) {
   const groups = new Map();
   for (const f of state.knowledge?.facts || []) {
@@ -64,10 +61,10 @@ function sequenceEpisodes(state) {
     else if (f.relation === 'ρ:output_tokens' && Array.isArray(f.object)) e.output_tokens = f.object.slice();
     else if (f.relation === 'ρ:contact_channel' && f.object && Number.isInteger(f.object.index)) e.channels.set(f.object.index, f.object.value);
   }
-  return [...groups.values()].sort((a, b) => Number(a.id.split(':').at(-1)) - Number(b.id.split(':').at(-1)));
+  return [...groups.values()].sort((a, b) => sequenceEpisodeNumber(a.id) - sequenceEpisodeNumber(b.id));
 }
 
-// Stable token→channel evidence for a direct role.
+// Stable token→channel evidence for a directly expressed role.
 function directRole(episodes, queryTokens, channel) {
   const candidates = [];
   for (const token of unique(queryTokens || [])) {
@@ -76,15 +73,8 @@ function directRole(episodes, queryTokens, channel) {
     const values = unique(matching.map(e => e.channels.get(channel)));
     if (values.length !== 1) continue;
     const contextual = [];
-    for (const e of matching) {
-      for (const [i, value] of e.channels) if (i !== channel) contextual.push([i, value]);
-    }
-    candidates.push({
-      value: values[0],
-      token,
-      support: matching.length,
-      context_diversity: unique(contextual).length,
-    });
+    for (const e of matching) for (const [i, value] of e.channels) if (i !== channel) contextual.push([i, value]);
+    candidates.push({ value: values[0], token, support: matching.length, context_diversity: unique(contextual).length });
   }
   if (!candidates.length) return undefined;
   candidates.sort((a, b) =>
@@ -103,11 +93,9 @@ function previousEpisodeWithChannel(episodes, before, channel) {
   return null;
 }
 
-// Learn an ordered carry relation rather than a pronoun rule. A surface cue may
-// reuse a prior channel only when, across multiple different values, occurrences
-// carrying that cue repeatedly have the same channel value as the nearest prior
-// episode that exposed that channel. The cue's spelling and the channel's meaning
-// are irrelevant to the mechanism.
+// Ordered cross-turn carry is learned from recurrence, not from a hard-coded
+// pronoun list. A cue qualifies only if across multiple distinct values its
+// contacted channel repeatedly equals the nearest prior episode's same channel.
 function contextualRole(episodes, queryTokens, channel, minSupport = 2) {
   const candidates = [];
   for (const token of unique(queryTokens || [])) {
@@ -120,19 +108,160 @@ function contextualRole(episodes, queryTokens, channel, minSupport = 2) {
       observations.push({ current: e.channels.get(channel), previous: prior.channels.get(channel) });
     }
     if (observations.length < minSupport) continue;
-    const diversity = unique(observations.map(x => x.current)).length;
-    if (diversity < 2) continue;
+    if (unique(observations.map(x => x.current)).length < 2) continue;
     if (!observations.every(x => same(x.current, x.previous))) continue;
-    candidates.push({ token, support: observations.length, diversity });
+    candidates.push({ token, support: observations.length, diversity: unique(observations.map(x => x.current)).length });
   }
   if (!candidates.length) return undefined;
   candidates.sort((a, b) => b.support - a.support || b.diversity - a.diversity || a.token.localeCompare(b.token));
-
-  // The current query occurrence is normally the final episode and has no
-  // semantic channels yet. Reuse the nearest preceding contacted value.
   const prior = previousEpisodeWithChannel(episodes, episodes.length, channel);
-  if (!prior) return undefined;
-  return { value: prior.channels.get(channel), cue: candidates[0].token, support: candidates[0].support };
+  return prior ? { value: prior.channels.get(channel), cue: candidates[0].token, support: candidates[0].support } : undefined;
+}
+
+function setJaccard(a, b) {
+  const A = new Set(a.map(stable)), B = new Set(b.map(stable));
+  if (!A.size && !B.size) return 1;
+  let intersection = 0;
+  for (const x of A) if (B.has(x)) intersection++;
+  return intersection / Math.max(1, A.size + B.size - intersection);
+}
+function bigrams(tokens) {
+  const out = [];
+  for (let i = 0; i + 1 < tokens.length; i++) out.push([tokens[i], tokens[i + 1]]);
+  return out;
+}
+function structuralSimilarity(a, b) {
+  return 0.65 * setJaccard(a || [], b || []) + 0.35 * setJaccard(bigrams(a || []), bigrams(b || []));
+}
+
+// Keep structural forms separate without assigning linguistic categories. This
+// prevents a statement form and a question form about the same relation from
+// contaminating each other's variable spans.
+function structuralNeighbors(episodes, inputTokens, relation, requireOutput = false) {
+  const scored = episodes
+    .filter(e => e.channels.has(1) && same(e.channels.get(1), relation) && Array.isArray(e.input_tokens) && (!requireOutput || Array.isArray(e.output_tokens)))
+    .map(e => ({ e, score: structuralSimilarity(inputTokens, e.input_tokens) }))
+    .sort((a, b) => b.score - a.score || sequenceEpisodeNumber(b.e.id) - sequenceEpisodeNumber(a.e.id));
+  if (!scored.length) return [];
+  const threshold = Math.max(0.12, scored[0].score - 0.12);
+  return scored.filter(x => x.score >= threshold).slice(0, 64).map(x => x.e);
+}
+
+function surfaceTerm(tokens) {
+  if (!Array.isArray(tokens) || !tokens.length) return undefined;
+  if (tokens.length === 1) return tokens[0];
+  return { surface_term: tokens.slice() };
+}
+
+// Infer a raw assertion's generic triple. Known terms use direct recurrent
+// grounding. A genuinely new term may be introduced only through a variable span
+// whose generic channel role was itself learned across prior grounded examples.
+function inferRawSurfaceTriple(episodes, currentEpisode) {
+  if (!currentEpisode || !Array.isArray(currentEpisode.input_tokens)) return null;
+  const tokens = currentEpisode.input_tokens;
+  const known = new Map();
+  for (let channel = 0; channel < 3; channel++) {
+    const value = directRole(episodes, tokens, channel);
+    if (value !== undefined) known.set(channel, value);
+  }
+  const relation = known.get(1);
+  if (relation === undefined) return null;
+
+  const neighbors = structuralNeighbors(episodes.filter(e => e.id !== currentEpisode.id), tokens, relation, false);
+  if (neighbors.length >= 2) {
+    const projected = neighbors.map(e => ({ ...e, output_tokens: e.input_tokens }));
+    const template = Surface.buildTemplate(projected.map(e => e.output_tokens));
+    const match = template && Surface.matchTemplate(tokens, template);
+    if (template && match) {
+      const roles = Surface.inferOutputRoles(projected, template);
+      for (const role of roles) {
+        if (known.has(role.channel) || !match.has(role.slot)) continue;
+        const value = surfaceTerm(match.get(role.slot));
+        if (value !== undefined) known.set(role.channel, value);
+      }
+    }
+  }
+
+  if (![0, 1, 2].every(i => known.has(i))) return null;
+  return { subject: known.get(0), relation: known.get(1), object: known.get(2) };
+}
+
+function proposalRecords(state) {
+  return (state.knowledge?.facts || [])
+    .filter(f => f.relation === 'ρ:proposes_relation' && f.object && typeof f.object === 'object' &&
+      Object.prototype.hasOwnProperty.call(f.object, 'subject') &&
+      Object.prototype.hasOwnProperty.call(f.object, 'relation') &&
+      Object.prototype.hasOwnProperty.call(f.object, 'object'))
+    .map(f => ({ episode: f.subject, triple: f.object }))
+    .sort((a, b) => sequenceEpisodeNumber(a.episode) - sequenceEpisodeNumber(b.episode));
+}
+
+// Proposal is not warrant. Promotion needs recurrence; after alternatives exist,
+// only a repeated current tail can supersede the previous surface-supported route.
+function recurrentProposalObject(records, subject, relation, minSupport = 2) {
+  const values = records
+    .filter(x => same(x.triple.subject, subject) && same(x.triple.relation, relation))
+    .map(x => x.triple.object);
+  if (values.length < minSupport) return undefined;
+  const distinct = unique(values);
+  if (distinct.length === 1) return values[0];
+  const last = values.at(-1);
+  let run = 0;
+  for (let i = values.length - 1; i >= 0 && same(values[i], last); i--) run++;
+  return run >= minSupport ? last : undefined;
+}
+
+function activeSurfaceRoutes(state, subject, relation) {
+  return (state.knowledge?.rules || []).filter(rule =>
+    rule.active !== false && rule.provenance && rule.provenance.kind === 'surface_induction' &&
+    same(rule.provenance.subject, subject) && same(rule.provenance.relation, relation));
+}
+function nextSurfaceRouteId(state) {
+  let max = 0;
+  for (const rule of state.knowledge?.rules || []) {
+    const m = /^surface-induction:(\d+)$/.exec(String(rule.id));
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  return `surface-induction:${max + 1}`;
+}
+
+function settleRawSurfaceProposal(state, proposalEpisode, triple) {
+  Core.C(state, { relations: { facts: [
+    [proposalEpisode, 'ρ:proposes_relation', triple],
+    [proposalEpisode, 'ρ:proposal_provenance', { kind: 'ordered_surface', authority: 'proposal_only' }],
+  ] } });
+
+  const selected = recurrentProposalObject(proposalRecords(state), triple.subject, triple.relation);
+  if (selected === undefined) return;
+  const active = activeSurfaceRoutes(state, triple.subject, triple.relation);
+  if (active.some(rule => same(rule.provenance.object, selected))) return;
+
+  const defeatFacts = active.map(rule => [
+    ref(rule.id),
+    'counterexample',
+    { kind: 'later_recurrent_surface_evidence', proposal_episode: proposalEpisode },
+  ]);
+  const routeId = nextSurfaceRouteId(state);
+  Core.C(state, { relations: {
+    facts: [
+      ...defeatFacts,
+      [ref(routeId), 'surface_support', 'recurrent'],
+      [proposalEpisode, 'ρ:supports', ref(routeId)],
+    ],
+    rules: [{
+      id: routeId,
+      premises: [[ref(routeId), 'surface_support', 'recurrent']],
+      conclusion: [triple.subject, triple.relation, selected],
+      categorical: true,
+      provenance: {
+        kind: 'surface_induction',
+        subject: triple.subject,
+        relation: triple.relation,
+        object: selected,
+        source: 'recurrent_ordered_surface_contact',
+      },
+    }],
+  } });
 }
 
 function currentObjects(state, subject, relation) {
@@ -164,7 +293,6 @@ function groundSurfaceFromCanonicalM(state) {
   const directSubject = directRole(episodes, seq.input_tokens, 0);
   const contextualSubject = directSubject === undefined ? contextualRole(episodes, seq.input_tokens, 0) : undefined;
   const subject = directSubject !== undefined ? directSubject : contextualSubject?.value;
-
   const directRelation = directRole(episodes, seq.input_tokens, 1);
   const contextualRelation = directRelation === undefined ? contextualRole(episodes, seq.input_tokens, 1) : undefined;
   const relation = directRelation !== undefined ? directRelation : contextualRelation?.value;
@@ -173,7 +301,6 @@ function groundSurfaceFromCanonicalM(state) {
   seq.contextual_relation_resolution = !!contextualRelation;
   if (contextualSubject) seq.contextual_subject_evidence = { cue: contextualSubject.cue, support: contextualSubject.support };
   if (contextualRelation) seq.contextual_relation_evidence = { cue: contextualRelation.cue, support: contextualRelation.support };
-
   if (subject === undefined || relation === undefined) return;
 
   const objects = currentObjects(state, subject, relation);
@@ -183,8 +310,7 @@ function groundSurfaceFromCanonicalM(state) {
   }
   const object = objects[0];
 
-  const relationEpisodes = episodes.filter(e =>
-    Array.isArray(e.output_tokens) && e.channels.has(1) && same(e.channels.get(1), relation));
+  const relationEpisodes = structuralNeighbors(episodes, seq.input_tokens, relation, true);
   const template = Surface.buildTemplate(relationEpisodes.map(e => e.output_tokens));
   if (!template) {
     suppressUngroundedSurface(seq, subject, relation, objects, 'object_warranted_expression_unlearned');
@@ -203,11 +329,8 @@ function groundSurfaceFromCanonicalM(state) {
     seq.expression = null;
     seq.unresolved_output_positions = filled.unresolved;
     seq.canonical_grounding = {
-      subject,
-      relation,
-      object,
-      source: 'M.knowledge.current.facts',
-      authority: 'canonical_M',
+      subject, relation, object,
+      source: 'M.knowledge.current.facts', authority: 'canonical_M',
       status: 'object_warranted_expression_unlearned',
     };
     return;
@@ -218,8 +341,7 @@ function groundSurfaceFromCanonicalM(state) {
   seq.inferred_channels = [...channels.entries()]
     .sort((a, b) => a[0] - b[0])
     .map(([index, value]) => ({
-      index,
-      value,
+      index, value,
       source: index === 0
         ? (contextualSubject ? 'ordered_context_relation' : 'direct_surface_role')
         : index === 1
@@ -230,12 +352,8 @@ function groundSurfaceFromCanonicalM(state) {
   seq.unresolved_output_positions = [];
   seq.expression = Surface.renderTokens(filled.tokens);
   seq.canonical_grounding = {
-    subject,
-    relation,
-    object,
-    source: 'M.knowledge.current.facts',
-    authority: 'canonical_M',
-    status: 'grounded',
+    subject, relation, object,
+    source: 'M.knowledge.current.facts', authority: 'canonical_M', status: 'grounded',
   };
 }
 
@@ -245,7 +363,21 @@ function one(actionCount, concernCount = 1) {
 
 function C(state, realityContact) {
   const contact = enrichSurfaceWithRelation(realityContact);
+  const rawSurfaceOnly = !!(contact && typeof contact === 'object' && contact.surface && !Array.isArray(contact.surface.channels));
+
   Core.C(state, contact);
+
+  // Surface-only contact may propose semantics, but cannot directly assert them.
+  // Structural role learning must first recover a complete triple from grounded
+  // prior experience. The proposal itself is written into M; recurrence is what
+  // makes a categorical M route usable.
+  if (rawSurfaceOnly) {
+    const episodes = sequenceEpisodes(state);
+    const currentEpisode = episodes.at(-1);
+    const triple = inferRawSurfaceTriple(episodes, currentEpisode);
+    if (triple) settleRawSurfaceProposal(state, currentEpisode.id, triple);
+  }
+
   if (contact && typeof contact === 'object' && contact.surface &&
       (contact.surface.output === undefined || contact.surface.output === null)) {
     groundSurfaceFromCanonicalM(state);
