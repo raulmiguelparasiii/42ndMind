@@ -75,7 +75,7 @@ const secondProbe = structuredClone(M);
 Mind.C(secondProbe, { surface: { input: 'what color is alpha?' } });
 assert.strictEqual(secondProbe.current.sequence.expression, 'it is teal.');
 assert.strictEqual(secondProbe.current.sequence.canonical_grounding.object, 'teal');
-assert.strictEqual(secondProbe.current.sequence.canonical_grounding.status, 'grounded');
+assert.strictEqual(secondProbe.current.sequence.canonical_grounding.authority, 'canonical_M');
 
 // Historical experience remains even though current warrant changed.
 assert(M.knowledge.facts.some(f => f.relation === 'ρ:output_raw' && f.object === 'it is red.'));
