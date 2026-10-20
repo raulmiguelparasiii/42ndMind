@@ -1,9 +1,8 @@
 'use strict';
 
 // Experimental one-live-M public entrypoint.
-// Durable cognition remains in canonical M. Everything in this file is a
-// zero-state structural bridge over M-owned contact and canonical relational
-// closure; it owns no private language memory, truth store, planner, or ontology.
+// Durable cognition remains in canonical M. Everything here is a zero-state
+// structural bridge over M-owned contact and canonical relational closure.
 
 const Core = require('./one-live-blueprint.js');
 const Surface = require('./surface-template.js');
@@ -14,11 +13,7 @@ function stable(v) {
   return JSON.stringify(v);
 }
 function same(a, b) { return stable(a) === stable(b); }
-function unique(xs) {
-  const m = new Map();
-  for (const x of xs || []) m.set(stable(x), x);
-  return [...m.values()];
-}
+function unique(xs) { const m = new Map(); for (const x of xs || []) m.set(stable(x), x); return [...m.values()]; }
 function ref(id) { return { ref: String(id) }; }
 
 function cloneContact(contact) {
@@ -26,13 +21,11 @@ function cloneContact(contact) {
   if (!contact || typeof contact !== 'object') return contact;
   const out = { ...contact };
   if (contact.surface) out.surface = { ...contact.surface };
-  if (contact.relations) {
-    out.relations = {
-      ...contact.relations,
-      facts: Array.isArray(contact.relations.facts) ? contact.relations.facts.map(x => Array.isArray(x) ? x.slice() : x) : contact.relations.facts,
-      rules: Array.isArray(contact.relations.rules) ? contact.relations.rules.slice() : contact.relations.rules,
-    };
-  }
+  if (contact.relations) out.relations = {
+    ...contact.relations,
+    facts: Array.isArray(contact.relations.facts) ? contact.relations.facts.map(x => Array.isArray(x) ? x.slice() : x) : contact.relations.facts,
+    rules: Array.isArray(contact.relations.rules) ? contact.relations.rules.slice() : contact.relations.rules,
+  };
   return out;
 }
 
@@ -96,8 +89,7 @@ function contextualRole(episodes, queryTokens, channel, minSupport = 2) {
       if (!prior) continue;
       observations.push({ current: e.channels.get(channel), previous: prior.channels.get(channel) });
     }
-    if (observations.length < minSupport) continue;
-    if (unique(observations.map(x => x.current)).length < 2) continue;
+    if (observations.length < minSupport || unique(observations.map(x => x.current)).length < 2) continue;
     if (!observations.every(x => same(x.current, x.previous))) continue;
     candidates.push({ token, support: observations.length, diversity: unique(observations.map(x => x.current)).length });
   }
@@ -114,14 +106,8 @@ function setJaccard(a, b) {
   for (const x of A) if (B.has(x)) intersection++;
   return intersection / Math.max(1, A.size + B.size - intersection);
 }
-function bigrams(tokens) {
-  const out = [];
-  for (let i = 0; i + 1 < tokens.length; i++) out.push([tokens[i], tokens[i + 1]]);
-  return out;
-}
-function structuralSimilarity(a, b) {
-  return 0.65 * setJaccard(a || [], b || []) + 0.35 * setJaccard(bigrams(a || []), bigrams(b || []));
-}
+function bigrams(tokens) { const out = []; for (let i = 0; i + 1 < tokens.length; i++) out.push([tokens[i], tokens[i + 1]]); return out; }
+function structuralSimilarity(a, b) { return 0.65 * setJaccard(a || [], b || []) + 0.35 * setJaccard(bigrams(a || []), bigrams(b || [])); }
 function structuralNeighbors(episodes, inputTokens, relation, requireOutput = false) {
   const scored = episodes
     .filter(e => e.channels.has(1) && same(e.channels.get(1), relation) && Array.isArray(e.input_tokens) && (!requireOutput || Array.isArray(e.output_tokens)))
@@ -141,30 +127,32 @@ function inferRawSurfaceTriple(episodes, currentEpisode) {
   if (!currentEpisode || !Array.isArray(currentEpisode.input_tokens)) return null;
   const tokens = currentEpisode.input_tokens;
 
-  // Relation identity can be recovered from the whole occurrence because it is
-  // needed to select the appropriate learned structural form. Subject/object are
-  // then resolved *inside their learned spans* so a token associated with one
-  // role cannot leak a value into another role.
-  const relation = directRole(episodes, tokens, 1);
+  // Direct evidence is provisional. A learned structural span, when available,
+  // overrides the same channel using only evidence from inside that span. This
+  // preserves already-grounded terms while preventing cross-role leakage.
+  const known = new Map();
+  for (let channel = 0; channel < 3; channel++) {
+    const value = directRole(episodes, tokens, channel);
+    if (value !== undefined) known.set(channel, value);
+  }
+  const relation = known.get(1);
   if (relation === undefined) return null;
-  const known = new Map([[1, relation]]);
 
   const neighbors = structuralNeighbors(episodes.filter(e => e.id !== currentEpisode.id), tokens, relation, false);
-  if (neighbors.length < 2) return null;
-  const projected = neighbors.map(e => ({ ...e, output_tokens: e.input_tokens }));
-  const template = Surface.buildTemplate(projected.map(e => e.output_tokens));
-  const match = template && Surface.matchTemplate(tokens, template);
-  if (!template || !match) return null;
-
-  const roles = Surface.inferOutputRoles(projected, template);
-  for (const role of roles) {
-    if (!match.has(role.slot)) continue;
-    const span = match.get(role.slot);
-    // Prefer already-grounded identity evidence found strictly within the span;
-    // otherwise introduce the span's mechanically reconstructed surface term.
-    const grounded = directRole(episodes, span, role.channel);
-    const value = grounded !== undefined ? grounded : surfaceTerm(span);
-    if (value !== undefined) known.set(role.channel, value);
+  if (neighbors.length >= 2) {
+    const projected = neighbors.map(e => ({ ...e, output_tokens: e.input_tokens }));
+    const template = Surface.buildTemplate(projected.map(e => e.output_tokens));
+    const match = template && Surface.matchTemplate(tokens, template);
+    if (template && match) {
+      const roles = Surface.inferOutputRoles(projected, template);
+      for (const role of roles) {
+        if (!match.has(role.slot)) continue;
+        const span = match.get(role.slot);
+        const grounded = directRole(episodes, span, role.channel);
+        const value = grounded !== undefined ? grounded : surfaceTerm(span);
+        if (value !== undefined) known.set(role.channel, value);
+      }
+    }
   }
 
   if (![0, 1, 2].every(i => known.has(i))) return null;
@@ -204,12 +192,10 @@ function settleRawSurfaceProposal(state, proposalEpisode, triple) {
     [proposalEpisode, 'ρ:proposes_relation', triple],
     [proposalEpisode, 'ρ:proposal_provenance', { kind: 'ordered_surface', authority: 'proposal_only' }],
   ] } });
-
   const selected = recurrentProposalObject(proposalRecords(state), triple.subject, triple.relation);
   if (selected === undefined) return;
   const active = activeSurfaceRoutes(state, triple.subject, triple.relation);
   if (active.some(rule => same(rule.provenance.object, selected))) return;
-
   const defeatFacts = active.map(rule => [ref(rule.id), 'counterexample', { kind: 'later_recurrent_surface_evidence', proposal_episode: proposalEpisode }]);
   const routeId = nextSurfaceRouteId(state);
   Core.C(state, { relations: {
@@ -245,7 +231,6 @@ function groundSurfaceFromCanonicalM(state) {
   const directRelation = directRole(episodes, seq.input_tokens, 1);
   const contextualRelation = directRelation === undefined ? contextualRole(episodes, seq.input_tokens, 1) : undefined;
   const relation = directRelation !== undefined ? directRelation : contextualRelation?.value;
-
   seq.contextual_subject_resolution = !!contextualSubject;
   seq.contextual_relation_resolution = !!contextualRelation;
   if (contextualSubject) seq.contextual_subject_evidence = { cue: contextualSubject.cue, support: contextualSubject.support };
@@ -255,52 +240,40 @@ function groundSurfaceFromCanonicalM(state) {
   const objects = currentObjects(state, subject, relation);
   if (objects.length !== 1) { suppressUngroundedSurface(seq, subject, relation, objects); return; }
   const object = objects[0];
-
   const relationEpisodes = structuralNeighbors(episodes, seq.input_tokens, relation, true);
   const template = Surface.buildTemplate(relationEpisodes.map(e => e.output_tokens));
   if (!template) { suppressUngroundedSurface(seq, subject, relation, objects, 'object_warranted_expression_unlearned'); return; }
   const roles = Surface.inferOutputRoles(relationEpisodes, template);
   const channels = new Map((seq.inferred_channels || []).map(x => [x.index, x.value]));
-  channels.set(0, subject);
-  channels.set(1, relation);
-  channels.set(2, object);
+  channels.set(0, subject); channels.set(1, relation); channels.set(2, object);
   const filled = Surface.fillTemplate(template, relationEpisodes, episodes, channels, roles);
   if (!filled.tokens || filled.unresolved.length) {
-    seq.output_template = template;
-    seq.output_roles = roles;
-    seq.output_tokens = null;
-    seq.expression = null;
+    seq.output_template = template; seq.output_roles = roles; seq.output_tokens = null; seq.expression = null;
     seq.unresolved_output_positions = filled.unresolved;
     seq.canonical_grounding = { subject, relation, object, source: 'M.knowledge.current.facts', authority: 'canonical_M', status: 'object_warranted_expression_unlearned' };
     return;
   }
-
-  seq.output_template = template;
-  seq.output_roles = roles;
+  seq.output_template = template; seq.output_roles = roles;
   seq.inferred_channels = [...channels.entries()].sort((a, b) => a[0] - b[0]).map(([index, value]) => ({
     index, value,
     source: index === 0 ? (contextualSubject ? 'ordered_context_relation' : 'direct_surface_role') : index === 1 ? (contextualRelation ? 'ordered_context_relation' : 'direct_surface_role') : index === 2 ? 'canonical_M_current_fact' : 'surface_completion',
   }));
-  seq.output_tokens = filled.tokens;
-  seq.unresolved_output_positions = [];
+  seq.output_tokens = filled.tokens; seq.unresolved_output_positions = [];
   seq.expression = Surface.renderTokens(filled.tokens);
   seq.canonical_grounding = { subject, relation, object, source: 'M.knowledge.current.facts', authority: 'canonical_M', status: 'grounded' };
 }
 
 function one(actionCount, concernCount = 1) { return Core.one(actionCount, concernCount); }
-
 function C(state, realityContact) {
   const contact = enrichSurfaceWithRelation(realityContact);
   const rawSurfaceOnly = !!(contact && typeof contact === 'object' && contact.surface && !Array.isArray(contact.surface.channels));
   Core.C(state, contact);
-
   if (rawSurfaceOnly) {
     const episodes = sequenceEpisodes(state);
     const currentEpisode = episodes.at(-1);
     const triple = inferRawSurfaceTriple(episodes, currentEpisode);
     if (triple) settleRawSurfaceProposal(state, currentEpisode.id, triple);
   }
-
   if (contact && typeof contact === 'object' && contact.surface && (contact.surface.output === undefined || contact.surface.output === null)) groundSurfaceFromCanonicalM(state);
   return state;
 }
