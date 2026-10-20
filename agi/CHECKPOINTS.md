@@ -4,6 +4,8 @@ Specification law:
 
 `M(t+1) = C(M(t) ⊕ R(t+1))`
 
+The exact engineering specification is pinned at `agi/BLUEPRINT.tex`.
+
 `agi/mind.js` is the current experimental public entrypoint. It returns the same canonical `M` from `../one-mind.js` and exposes one `C`. `one-live-blueprint.js` supplies generic developmental mechanics; `mind.js` adds a zero-state surface↔canonical-M bridge. Neither owns independent truth, memory, planning, or semantic state. Durable cognitive content remains in canonical M.
 
 ## Implemented blueprint commitments
@@ -26,6 +28,7 @@ Specification law:
 - ordinary surface language can read a relation that exists only in canonical current M
 - surface↔relation attachment can be learned from simultaneous generic `(subject, relation, object)` contact without a test-supplied semantic channel array
 - canonical rule closure, not the surface learner, can derive the answer that is later expressed
+- canonical M is authoritative over surface analogy: once subject/relation are identified, an ambiguous or unresolved current M relation cannot be filled by a historical surface guess
 - no private `language_state`, `memory_state`, planner, response table, or modality-specific cognitive authority
 
 ## Falsification gates
@@ -97,6 +100,20 @@ Demonstrates:
 - grounding authority is reported as `canonical_M`, not a language store.
 
 This closes the previous seam where a surface analogizer could answer from its own episode bundle without proving that language was attached to the same live relational state used for general reasoning.
+
+### `public-entrypoint.test.js`
+
+Exercises the actual `agi/mind.js` entrypoint as one continuing life rather than testing lower layers separately. It requires, through that one exported C:
+
+- numeric development first;
+- a new receptor later;
+- a new actuator later;
+- ordinary surface contact attached to canonical relations;
+- a held-out answer derived by canonical rule closure and then expressed;
+- defeat of the old categorical route through canonical counterevidence;
+- a replacement current canonical fact;
+- a later query whose expression follows the corrected current M while historical contact remains retained;
+- no surface fallback when canonical M is ambiguous or unresolved.
 
 ## Current evidence boundary
 
