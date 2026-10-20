@@ -42,14 +42,32 @@ function conjunction(expressions){
 //
 //   learned_handle == true  <->  conjunction(defining atoms)
 //
-// Feature/handle names are source scaffolding only. universal-math-graph removes
-// variable names during canonicalization, so arbitrary renaming does not define
-// relational identity.
-function learnedDefinitionExpression(state,feature){
-  const s=learnedSymbol(state,feature);
+// When a defining atom is itself a positive learned handle, include both the
+// occurrence (handle=true) and that handle's recursively grounded definition.
+// Otherwise two different higher learned relations with the same shallow arity
+// would collapse to one anonymous graph after surface names are removed.
+//
+// Feature/handle names remain source scaffolding only. Identity therefore comes
+// from recursively reduced relational structure, not from the spelling of a
+// learned symbol or raw feature.
+function learnedDefinitionExpression(state,feature,trail=new Set()){
+  const key=String(feature);
+  if(trail.has(key))throw new Error(`cyclic learned definition at ${key}`);
+  const by=symbolMap(state),s=learnedSymbol(state,key);
+  const next=new Set(trail);next.add(key);
   const lhs=equality(s.feature,true);
-  const rhs=conjunction(s.definition.map(atom=>equality(atom.feature,atom.value)));
-  return A(MOP.IFF,lhs,rhs);
+  const defining=[];
+  for(const atom of s.definition){
+    const atomFeature=String(atom.feature);
+    defining.push(equality(atomFeature,atom.value));
+    // recursive-recompression only promotes positive learned conjunction atoms;
+    // a negative learned atom would require disjunctive/negated expansion and is
+    // intentionally left as raw contact rather than changing its semantics here.
+    if(atom.value===true&&by.has(atomFeature)){
+      defining.push(learnedDefinitionExpression(state,atomFeature,next));
+    }
+  }
+  return A(MOP.IFF,lhs,conjunction(defining));
 }
 
 function learnedDefinitionSignature(state,feature,options={}){
@@ -58,7 +76,11 @@ function learnedDefinitionSignature(state,feature,options={}){
 
 function directLearnedDependencies(state,feature){
   const by=symbolMap(state),s=learnedSymbol(state,feature);
-  return [...new Set(s.definition.map(a=>String(a.feature)).filter(f=>by.has(f)))].sort();
+  return [...new Set(
+    s.definition
+      .filter(a=>a.value===true&&by.has(String(a.feature)))
+      .map(a=>String(a.feature))
+  )].sort();
 }
 
 // Build the current higher-definition proposal through any already-stabilized
