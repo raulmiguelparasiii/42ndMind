@@ -16,3 +16,5 @@ jobs:
           node-version: 22
       - name: Blueprint end-to-end bounded gate
         run: node agi/blueprint-e2e.test.js
+      - name: Position-free conversational surface gate
+        run: node agi/free-surface.test.js
