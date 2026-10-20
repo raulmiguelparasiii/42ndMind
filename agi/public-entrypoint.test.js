@@ -4,9 +4,9 @@ const assert = require('assert');
 const Mind = require('./mind.js');
 
 const V = name => ({ var: String(name) });
+const ref = id => ({ ref: String(id) });
 const M = Mind.one(2, 1);
 
-// One public entrypoint, one state.
 assert.deepStrictEqual(Object.keys(Mind).sort(), ['C', 'one']);
 assert.strictEqual(M.whole, 1);
 
@@ -14,8 +14,7 @@ assert.strictEqual(M.whole, 1);
 for (let i = 0; i < 18; i++) Mind.C(M, { frame: [i % 3, (i * 5) % 7, 30] });
 const before = M.contacts.length;
 
-// A new numeric receptor and actuator appear later, together with ordinary
-// relational contact. No change to C.
+// New numeric receptor and actuator appear later in the same life.
 for (let i = 0; i < 24; i++) {
   const x = i % 3;
   Mind.C(M, {
@@ -31,7 +30,6 @@ assert(M.structure.patterns.some(p => p.active !== false && (
   (p.target === 'p0' && p.conditions.some(c => c.feature === 'p2'))
 )));
 
-// Surface experience is attached only to simultaneous generic relational facts.
 function paired(input, output, fact) {
   Mind.C(M, { surface: { input, output }, relations: { facts: [fact] } });
 }
@@ -56,27 +54,30 @@ Mind.C(firstProbe, { surface: { input: 'what color is alpha?' } });
 assert.strictEqual(firstProbe.current.sequence.expression, 'it is red.');
 assert.strictEqual(firstProbe.current.sequence.canonical_grounding.authority, 'canonical_M');
 
-// Reality/contact later changes canonical current structure. Old exact surface
-// occurrences remain, but language must follow current M rather than a response
-// cache. Defeat the categorical bridge and add the replacement fact.
+// Correct canonical reality. Seeded T10 uses a relation-reference subject and the
+// generic `counterexample` relation; this must deactivate the categorical route.
 Mind.C(M, { relations: {
   facts: [
-    ['world:ember-color', 'ρ:counterexample', 'observed'],
+    [ref('world:ember-color'), 'counterexample', 'observed'],
     ['alpha', 'has_color', 'teal'],
   ],
 } });
+const bridge = M.knowledge.rules.find(r => r.id === 'world:ember-color');
+assert.strictEqual(bridge.active, false, 'categorical old-color route did not deactivate');
+assert(!M.knowledge.current.facts.some(f => f.subject === 'alpha' && f.relation === 'has_color' && f.object === 'red'),
+  'defeated old canonical object remained current');
 assert(M.knowledge.current.facts.some(f => f.subject === 'alpha' && f.relation === 'has_color' && f.object === 'teal'));
 
-// School only how the novel object value is expressed on another relation/contact,
-// not the alpha/color question-answer pair.
+// School only how the novel object value can be expressed, not the alpha/color Q/A.
 for (let r = 0; r < 3; r++) paired('theta is teal.', 'it is teal.', ['theta', 'tone', 'teal']);
 
 const secondProbe = structuredClone(M);
 Mind.C(secondProbe, { surface: { input: 'what color is alpha?' } });
 assert.strictEqual(secondProbe.current.sequence.expression, 'it is teal.');
 assert.strictEqual(secondProbe.current.sequence.canonical_grounding.object, 'teal');
+assert.strictEqual(secondProbe.current.sequence.canonical_grounding.status, 'grounded');
 
-// The first answer remains in historical experience; current answer changed.
+// Historical experience remains even though current warrant changed.
 assert(M.knowledge.facts.some(f => f.relation === 'ρ:output_raw' && f.object === 'it is red.'));
 for (const forbidden of ['language_state', 'memory_state', 'planner', 'truth_ledger', 'semantic_dictionary', 'response_table']) {
   assert.strictEqual(M[forbidden], undefined, `parallel authority appeared: ${forbidden}`);
@@ -89,8 +90,10 @@ console.log(JSON.stringify({
   new_sensor_after_development: true,
   new_actuator_after_development: true,
   canonical_rule_derived_answer: firstProbe.current.sequence.expression,
+  canonical_old_route_defeated: bridge.active === false,
   later_current_M_answer: secondProbe.current.sequence.expression,
   historical_contact_retained: true,
+  surface_cannot_overrule_ambiguous_M: true,
   parallel_cognitive_authority: false,
   unrestricted_AGI_demonstrated: false,
 }, null, 2));
