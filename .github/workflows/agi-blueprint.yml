@@ -26,3 +26,5 @@ jobs:
         run: node agi/randomized-generality.test.js
       - name: Canonical-M language grounding gate
         run: node agi/canonical-language-bridge.test.js
+      - name: Public entrypoint whole-life gate
+        run: node agi/public-entrypoint.test.js
