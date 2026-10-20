@@ -67,6 +67,19 @@ for (let i = 0; i < 3; i++) {
 // surface realization schooling, not alpha/tone semantic teaching.
 for (let i = 0; i < 3; i++) paired('entity_theta_raw has shade value_violet_raw.', 'it is value_violet_raw.', ['entity_theta_raw', 'rel_shade_raw', 'value_violet_raw']);
 
+// Diagnostic checkpoint only. These prints do not alter the target or assertions.
+console.log('RAW_CORRECTION_DIAGNOSTIC', JSON.stringify({
+  proposals: M.knowledge.facts
+    .filter(f => f.relation === 'ρ:proposes_relation' && f.object && f.object.subject === alpha)
+    .map(f => ({ episode: f.subject, triple: f.object })),
+  routes: M.knowledge.rules
+    .filter(r => r.provenance && r.provenance.kind === 'surface_induction' && r.provenance.subject === alpha)
+    .map(r => ({ id: r.id, active: r.active, relation: r.provenance.relation, object: r.provenance.object })),
+  current: M.knowledge.current.facts
+    .filter(f => f.subject === alpha && f.relation === REL)
+    .map(f => ({ subject: f.subject, relation: f.relation, object: f.object })),
+}, null, 2));
+
 assert(!M.knowledge.current.facts.some(f => f.subject === alpha && f.relation === REL && f.object === 'value_crimson_raw'),
   'old raw-language route remained current after stable correction');
 assert(M.knowledge.current.facts.some(f => f.subject === alpha && f.relation === REL && f.object === 'value_violet_raw'),
