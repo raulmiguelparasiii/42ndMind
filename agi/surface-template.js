@@ -213,7 +213,20 @@ function fillTemplate(template, neighbors, historical, channels, roles) {
 }
 
 function renderTokens(tokens) {
-  return tokens ? tokens.join(' ').replace(/\s+([?.!,;:])/g, '$1') : null;
+  if (!tokens) return null;
+  let out = '';
+  const tightBoth = new Set(['_', '-', '/', '\\']);
+  const tightLeft = new Set(['?', '.', ',', '!', ';', ':', ')', ']', '}']);
+  const tightRight = new Set(['(', '[', '{']);
+  for (let i = 0; i < tokens.length; i++) {
+    const token = String(tokens[i]);
+    const prev = i ? String(tokens[i - 1]) : null;
+    const needsSpace = i > 0 &&
+      !tightLeft.has(token) && !tightBoth.has(token) &&
+      !tightRight.has(prev) && !tightBoth.has(prev);
+    out += (needsSpace ? ' ' : '') + token;
+  }
+  return out;
 }
 
 module.exports = {
