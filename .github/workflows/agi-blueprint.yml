@@ -28,3 +28,5 @@ jobs:
         run: node agi/canonical-language-bridge.test.js
       - name: Public entrypoint whole-life gate
         run: node agi/public-entrypoint.test.js
+      - name: Variable-length language gate
+        run: node agi/variable-length-language.test.js
