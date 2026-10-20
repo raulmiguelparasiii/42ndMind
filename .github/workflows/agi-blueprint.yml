@@ -32,3 +32,5 @@ jobs:
         run: node agi/variable-length-language.test.js
       - name: Multi-turn contextual dialogue gate
         run: node agi/contextual-dialogue.test.js
+      - name: Raw-language acquisition gate
+        run: node agi/raw-language-acquisition.test.js
