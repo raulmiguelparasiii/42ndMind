@@ -782,7 +782,7 @@ retained evidence can be reaccessed from the same ledger without a second store
 more specific relational cues can narrow the live completion frontier
 same mathematical relation can have multiple distinct ordered occurrences
 occurrence provenance survives current correction
-larger historical contact can expose positive structural completion gain
+larger historical contact can expose positive structural completion gain relative to the cue
 lower-relation correction removes current reuse without erasing retained history
 already-proposed higher mathematics survives lower-relation correction
 later recurrence restores the same canonical reusable relation signature
@@ -990,3 +990,156 @@ This procedure is unconditional; model confidence is not a substitute for reposi
 7. for connection work, test through the upstream authority itself rather than a downstream imitation;
 8. prefer bounded additive experiments when relation to canonical `one-mind.js` is uncertain;
 9. do not create another continuity/handoff markdown file.
+
+## 24. 2026-10-19 AGI false-positive: consequence for the Universal Language Track
+
+An external Python artifact called `AGI Local Individual v1.5` was incorrectly promoted as demonstrated AGI after a long assistant-led integration/evaluation session. Live user interaction and package audit falsified that claim. See the permanent correction in `AGENTS.md` for the full cross-project record.
+
+This failure is directly relevant to the Universal Language Track because the artifact tried to borrow ULT ideas while bypassing the track's strongest evidence boundaries.
+
+### What the failure confirms about the real ULT frontier
+
+The existing `Current frontier` already named the decisive unsolved problems:
+
+```text
+generic candidate generation/correction beyond bounded conjunctive ablation
+autonomous relation discovery without an LLM proposer
+recursive reduction of the working math operator vocabulary itself
+arbitrary compositional/discourse English
+```
+
+Those were not optional polish items. They were exactly where the false AGI artifact ceased to be general.
+
+The Python artifact could reuse relations and solve tasks once the developer supplied a sufficiently rich finite transformation vocabulary. It did **not** demonstrate that a recurrently useful transformation absent from that vocabulary could emerge as a new first-class corrigible relation/operator, become part of the later hypothesis language, compose with other learned transformations, and be revised by later contact. That missing closure is now the highest-priority AGI-relevant ULT question.
+
+### Existing mechanisms to use; do not invent replacements
+
+The repository already contains the parts that should be tested/connected before any new mechanism is proposed:
+
+```text
+one-rule.js
+  exact relational constraint propagation plus defeasible reality-preserving MDL recompression
+
+recursive-recompression.js
+  a winning learned description becomes ordinary M material and C runs again; bounded C*(E)
+
+sequence-recompression.js
+  learned ordered descriptions can themselves participate in later learned descriptions
+
+relational-normal-form.js
+  recursive definition expansion and anonymous structural identity
+
+math-hypotheses.js
+  sole rich candidate/evidence/status/revision authority
+
+universal-intent.js
+  stabilized complete lower relations inside unresolved candidate spaces
+
+universal-relation-reuse.js
+  live reuse of those stabilized relations inside later mathematical structure
+
+universal-relational-completion.js
+  later candidate construction/completion from stabilized relation uses plus explicit unresolved remainder
+
+universal-live-proposer.js
+  ordinary proposer connection; proposal remains non-evidence
+```
+
+The next change should therefore be classified initially as a **connection experiment**. Do not add `operator-learning.js`, an ARC DSL, a second candidate registry, or another semantic status authority unless this existing route is first falsified.
+
+### Exact next ULT experiment: recursive hypothesis-language growth
+
+Before touching ARC or another visual benchmark, preserve a generic failure and test the following loop on opaque relational contact:
+
+```text
+raw/recurrent relational episodes
+ -> one-rule / recursive-recompression exposes a shorter reusable description
+ -> description is proposed into the existing live mathematical/relational hypothesis authority
+ -> proposer output supplies zero evidence
+ -> later independent contact supports, contests, defeats, or revises it
+ -> supported complete structure enters the stabilized relation field
+ -> later candidate construction reuses that relation through the existing reuse/completion path
+ -> the reused learned relation itself participates in another recompression
+ -> a higher relation/transformation is learned
+ -> later defeat/revision of the lower relation propagates into the higher structure
+```
+
+The key test is not whether the system can choose from a developer-written list. The key test is whether the **language in which later hypotheses are formed grows from earlier warranted relations**.
+
+Required properties of the first falsification/gate:
+
+1. All entities, relation handles, and surface symbols are opaque and randomized.
+2. The target transformation is absent from source-code semantic names and absent from a finite benchmark operation catalog.
+3. At least one learned transformation must take or contain a previously learned relation as relational content.
+4. Two independently learned transformations must compose on a novel held-out case.
+5. A later complete countercontact must make the lower transformation unusable or revised through `math-hypotheses.js` and must alter/suspend dependent higher use without editing the dependent object directly.
+6. Arbitrary renaming and construction order must not change identity.
+7. Incomplete evidence must remain unresolved rather than guessed.
+8. Resource truncation must return explicit incomplete/unresolved, not a best-effort pseudo-answer.
+9. The test must drive the upstream authority itself. No downstream copied definition/status table may be introduced.
+10. The unchanged canonical and ULT anti-cheat/corrigibility tests must still pass.
+
+### Candidate generation versus evidence
+
+A major risk is accidentally letting recompression become truth. Preserve this separation:
+
+```text
+recompression/recurrence/LLM/oracle -> candidate proposal
+candidate proposal                  != evidence
+independent formal/reality contact  -> support/defeat/revision
+```
+
+A recurrent structure can justify spending search on a candidate. It cannot warrant itself using the same occurrences that generated it. This is the same evidence-separation principle already used by the live math ledger.
+
+### Connection back to canonical 42ndMind
+
+Do not replace `one-mind.js` with the ULT. If the ULT experiment demonstrates recursive hypothesis-language growth, the canonical next question is whether that demonstrated relation can be connected through ordinary structured `R` so the resulting warranted relation becomes ordinary `M` material available to canonical `C`.
+
+The intended architecture remains:
+
+```text
+reality / surface
+   |
+   v
+S -> R -> canonical C(M ⊕ R) -> M'
+          ^
+          |
+ existing ULT mathematical/corrigibility machinery may provide
+ proposal/normalization/reuse connections without becoming a second mind
+```
+
+A connection is successful only if there remains one continuing canonical `M` and one developmental `C`; ULT ledgers/helpers must not become a parallel cognitive individual.
+
+### Representation parity before AGI evaluation
+
+The false v1.5 artifact also exposed a representation cheat: structured tests could hand the solver relations that the ordinary conversation surface could not derive. Therefore future ULT/canonical evaluation must state which layer is being tested.
+
+```text
+structured relational input -> core reasoning test only
+raw text/image/audio/etc. -> S -> relational R -> same core -> end-to-end test
+```
+
+A strong structured-core result is legitimate, but it must not be described as end-to-end AGI until the claimed ordinary input surface can reach the same structures without hidden human/test-harness interpretation.
+
+An LLM may remain a proposer at the surface, but it cannot be the hidden mind or truth authority. Its proposal must enter the same unresolved/corrigible machinery and be defeasible by later reality/formal contact.
+
+### External evaluation after the generic gate
+
+ARC becomes useful **after** recursive hypothesis-language growth is demonstrated generically. At that point:
+
+1. freeze the exact source;
+2. precommit an untouched official evaluation/private task denominator without filtering on training-time resolvability;
+3. run every selected task once under fixed resource budgets;
+4. report every failure/timeout/unresolved result;
+5. burn the set after inspection;
+6. run unrelated opaque relational/math/causal/language tests on the same frozen source.
+
+Do not choose a `training-resolved frontier` and then report only that frontier as the public score. Do not use public ARC training tasks as final holdout evidence.
+
+### Claim boundary after this correction
+
+The Universal Language Track remains a strong bounded research substrate with real corrigibility, stabilization, reuse, recursive composition, and canonicalization results. It has **not** demonstrated autonomous universal relation/operator discovery, unrestricted language understanding, or AGI.
+
+The immediate priority is now precise:
+
+> Demonstrate, using the existing authorities, that newly warranted relational descriptions can recursively enlarge the system's own hypothesis language and remain corrigible through the same live ledger. Then connect that result to canonical `M/C` and test end-to-end generalization without task filtering.
