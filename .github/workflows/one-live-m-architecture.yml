@@ -26,6 +26,8 @@ jobs:
         run: node one-live-m-baseline.test.js
       - name: Preserve canonical living fixed-point invariant
         run: node living-relational-m.test.js
+      - name: Move bounded math hypothesis state into canonical M
+        run: node mind-math-hypotheses.test.js
       - name: Preserve PR 47 recursive hypothesis-language growth
         run: node recursive-hypothesis-growth.test.js
       - name: Canonical one-mind regression
