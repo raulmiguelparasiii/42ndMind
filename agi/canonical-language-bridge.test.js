@@ -62,6 +62,7 @@ assert.deepStrictEqual(probe.current.sequence.canonical_grounding, {
   object: 'red',
   source: 'M.knowledge.current.facts',
   authority: 'canonical_M',
+  status: 'grounded',
 });
 
 // Anti-cheat: the exact question and answer were never part of lived schooling.
@@ -83,6 +84,7 @@ console.log(JSON.stringify({
   ordinary_surface_read_canonical_M: true,
   reply: probe.current.sequence.expression,
   grounding_authority: probe.current.sequence.canonical_grounding.authority,
+  grounding_status: probe.current.sequence.canonical_grounding.status,
   private_language_authority: false,
   unrestricted_AGI_demonstrated: false,
 }, null, 2));
