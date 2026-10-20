@@ -22,3 +22,5 @@ jobs:
         run: node agi/whole-life.test.js
       - name: Conversational relation-role and correction gate
         run: node agi/conversation-growth.test.js
+      - name: Randomized late-relation generality gate
+        run: node agi/randomized-generality.test.js
