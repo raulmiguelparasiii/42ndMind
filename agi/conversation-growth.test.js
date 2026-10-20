@@ -4,22 +4,23 @@ const assert = require('assert');
 const Mind = require('./one-live-blueprint.js');
 
 const M = Mind.one(1, 1);
+// Deliberately crossed attributes: repeated colors occur with different shapes
+// and repeated shapes occur with different colors. This gives reality enough
+// variation to identify the relational role instead of making every attribute a
+// one-to-one alias of the entity.
 const world = [
-  ['alpha', 101, 'red', 201, 'round', 301],
-  ['beta', 102, 'blue', 202, 'square', 302],
-  ['gamma', 103, 'green', 203, 'triangle', 303],
-  ['delta', 104, 'orange', 204, 'star', 304],
-  ['epsilon', 105, 'purple', 205, 'oval', 305],
-  ['zeta', 106, 'yellow', 206, 'diamond', 306],
+  ['alpha',   101, 'red',   201, 'round',    301],
+  ['beta',    102, 'red',   201, 'square',   302],
+  ['gamma',   103, 'blue',  202, 'round',    301],
+  ['delta',   104, 'blue',  202, 'square',   302],
+  ['epsilon', 105, 'green', 203, 'triangle', 303],
+  ['zeta',    106, 'green', 203, 'round',    301],
 ];
 
 function live(input, output, channels) {
   Mind.C(M, { surface: { input, output, channels } });
 }
 
-// Same individuals possess two independent relations. All channels are present
-// together, so a correct learner must discover which relational role a question
-// selects; merely retrieving an entity bundle is insufficient.
 for (let r = 0; r < 4; r++) {
   for (const [name, entity, color, colorV, shape, shapeV] of world) {
     live(`${name} has color ${color}.`, `${name} is ${color}.`, [entity, colorV, shapeV]);
@@ -46,9 +47,11 @@ const color = ask('what color is alpha?');
 const shape = ask('what shape is alpha?');
 assert.strictEqual(color.expression, 'it is red.', `relation-role confusion on color: ${color.expression}`);
 assert.strictEqual(shape.expression, 'it is round.', `relation-role confusion on shape: ${shape.expression}`);
+assert(color.output_roles?.some(x => x.position === 2 && x.channel === 1), 'color relation role was not structurally identified');
+assert(shape.output_roles?.some(x => x.position === 2 && x.channel === 2), 'shape relation role was not structurally identified');
 
-// Now reality changes. Old contact must remain in M, but the current relation
-// should move after repeated independent new contact. No reset and no deletion.
+// Reality changes. Historical red contact must remain, while the current color
+// relation moves to teal after repeated independent new contact.
 for (let r = 0; r < 4; r++) {
   live('alpha has color teal.', 'alpha is teal.', [101, 211, 301]);
 }
@@ -57,12 +60,13 @@ assert.strictEqual(corrected.expression, 'it is teal.', `current relation did no
 assert(M.knowledge.facts.some(f => f.relation === 'ρ:input_raw' && f.object === 'alpha has color red.'), 'old exact contact was erased');
 assert(M.knowledge.facts.some(f => f.relation === 'ρ:input_raw' && f.object === 'alpha has color teal.'), 'new exact contact was not retained');
 
-// Multi-turn persistence: the SAME M takes a new ordinary-language contact and
-// later answers from it. No clone/reset during the lived turns.
-live('eta has color silver.', 'eta is silver.', [107, 212, 307]);
-live('eta has shape crescent.', 'eta is crescent.', [107, 212, 307]);
-live('what color is eta?', 'it is silver.', [107, 212, 307]);
-live('what shape is eta?', 'it is crescent.', [107, 212, 307]);
+// A later individual is learned in the SAME life, then tested with unseen order.
+for (let r = 0; r < 3; r++) {
+  live('eta has color silver.', 'eta is silver.', [107, 212, 307]);
+  live('eta has shape crescent.', 'eta is crescent.', [107, 212, 307]);
+  live('what color is eta?', 'it is silver.', [107, 212, 307]);
+  live('what shape is eta?', 'it is crescent.', [107, 212, 307]);
+}
 const eta = ask('eta is what shape?');
 assert.strictEqual(eta.expression, 'it is crescent.');
 
