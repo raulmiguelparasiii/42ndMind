@@ -10,16 +10,28 @@ permissions:
   contents: read
 
 jobs:
-  repeat:
+  history:
+    strategy:
+      fail-fast: false
+      matrix:
+        ref:
+          - '242bf79481d641a69691f8434dcabead432c8735'
+          - 'b18a5588114adddfbb0bae11dea6ac283beb2d23'
+          - '1cacc61928ce8349ad1cd79d46f8128850c6f326'
+          - 'b050c66fc8af22ab93fd2761cf77a1e61e90200d'
+        node: ['20','24']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.ref }}
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
-      - name: Semantic grounding run 1
-        run: node semantic-grounding.test.js
-      - name: Semantic grounding run 2
-        run: node semantic-grounding.test.js
-      - name: Semantic grounding run 3
+          node-version: ${{ matrix.node }}
+      - name: Record exact source
+        run: |
+          echo "ref=${{ matrix.ref }} node=${{ matrix.node }}"
+          git rev-parse HEAD
+          git hash-object one-mind.js semantic-grounding.test.js
+      - name: Semantic grounding
         run: node semantic-grounding.test.js
