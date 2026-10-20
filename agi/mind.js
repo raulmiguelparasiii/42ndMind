@@ -140,27 +140,31 @@ function surfaceTerm(tokens) {
 function inferRawSurfaceTriple(episodes, currentEpisode) {
   if (!currentEpisode || !Array.isArray(currentEpisode.input_tokens)) return null;
   const tokens = currentEpisode.input_tokens;
-  const known = new Map();
-  for (let channel = 0; channel < 3; channel++) {
-    const value = directRole(episodes, tokens, channel);
-    if (value !== undefined) known.set(channel, value);
-  }
-  const relation = known.get(1);
+
+  // Relation identity can be recovered from the whole occurrence because it is
+  // needed to select the appropriate learned structural form. Subject/object are
+  // then resolved *inside their learned spans* so a token associated with one
+  // role cannot leak a value into another role.
+  const relation = directRole(episodes, tokens, 1);
   if (relation === undefined) return null;
+  const known = new Map([[1, relation]]);
 
   const neighbors = structuralNeighbors(episodes.filter(e => e.id !== currentEpisode.id), tokens, relation, false);
-  if (neighbors.length >= 2) {
-    const projected = neighbors.map(e => ({ ...e, output_tokens: e.input_tokens }));
-    const template = Surface.buildTemplate(projected.map(e => e.output_tokens));
-    const match = template && Surface.matchTemplate(tokens, template);
-    if (template && match) {
-      const roles = Surface.inferOutputRoles(projected, template);
-      for (const role of roles) {
-        if (known.has(role.channel) || !match.has(role.slot)) continue;
-        const value = surfaceTerm(match.get(role.slot));
-        if (value !== undefined) known.set(role.channel, value);
-      }
-    }
+  if (neighbors.length < 2) return null;
+  const projected = neighbors.map(e => ({ ...e, output_tokens: e.input_tokens }));
+  const template = Surface.buildTemplate(projected.map(e => e.output_tokens));
+  const match = template && Surface.matchTemplate(tokens, template);
+  if (!template || !match) return null;
+
+  const roles = Surface.inferOutputRoles(projected, template);
+  for (const role of roles) {
+    if (!match.has(role.slot)) continue;
+    const span = match.get(role.slot);
+    // Prefer already-grounded identity evidence found strictly within the span;
+    // otherwise introduce the span's mechanically reconstructed surface term.
+    const grounded = directRole(episodes, span, role.channel);
+    const value = grounded !== undefined ? grounded : surfaceTerm(span);
+    if (value !== undefined) known.set(role.channel, value);
   }
 
   if (![0, 1, 2].every(i => known.has(i))) return null;
