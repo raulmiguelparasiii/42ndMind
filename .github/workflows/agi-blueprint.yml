@@ -18,3 +18,5 @@ jobs:
         run: node agi/blueprint-e2e.test.js
       - name: Position-free conversational surface gate
         run: node agi/free-surface.test.js
+      - name: Concurrent whole-life blueprint gate
+        run: node agi/whole-life.test.js
