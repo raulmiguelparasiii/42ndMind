@@ -1,0 +1,34 @@
+name: Recursive hypothesis-language growth
+
+on:
+  push:
+    branches:
+      - 'experiment/recursive-hypothesis-growth-20261019'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: recursive-hypothesis-growth-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Preserve baseline architectural gap
+        run: node recursive-hypothesis-growth-baseline.test.js
+      - name: Existing recursive recompression regression
+        run: node recursive-recompression.test.js
+      - name: Existing ULT recurrence proposal regression
+        run: node recurrence-guided-proposal.test.js
+      - name: Existing ULT relation reuse/completion regression
+        run: node universal-relational-completion.test.js
+      - name: Existing ULT corrigibility regression
+        run: node math-hypotheses.test.js
