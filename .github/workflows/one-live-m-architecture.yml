@@ -33,6 +33,8 @@ jobs:
         run: node one-live-m-warrant-baseline.test.js
       - name: Prove live warrant propagation through generic M support routes
         run: node one-live-m-warrant-propagation.test.js
+      - name: Single-life general-claim falsification
+        run: node one-live-m-general-claim.test.js
       - name: Preserve PR 47 recursive hypothesis-language growth
         run: node recursive-hypothesis-growth.test.js
       - name: Canonical one-mind regression
