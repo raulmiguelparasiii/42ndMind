@@ -11,7 +11,9 @@
 // On a later surface query, direct recurrent surface-role evidence identifies the
 // subject/relation terms; canonical current M supplies the object; previously
 // learned expression structure realizes that object. The bridge owns no durable
-// cognition and cannot overrule canonical M.
+// cognition and cannot overrule canonical M. If canonical M is unresolved or
+// ambiguous for an identified relation, surface analogy is forbidden from
+// inventing an answer: expression remains unresolved until M settles.
 
 const Core = require('./one-live-blueprint.js');
 
@@ -122,18 +124,43 @@ function currentObjects(state, subject, relation) {
     .map(f => f.object));
 }
 
+function suppressUngroundedSurface(seq, subject, relation, objects) {
+  // Once subject/relation are structurally identified, canonical current M is the
+  // authority for their object. A historical surface analogy may propose a shape,
+  // but it may not emit a semantic object that M does not uniquely warrant.
+  seq.output_tokens = null;
+  seq.expression = null;
+  seq.unresolved_output_positions = ['canonical_object'];
+  seq.canonical_grounding = {
+    subject,
+    relation,
+    candidates: objects,
+    source: 'M.knowledge.current.facts',
+    authority: 'canonical_M',
+    status: objects.length ? 'ambiguous' : 'unresolved',
+  };
+}
+
 function groundSurfaceFromCanonicalM(state) {
   const seq = state.current?.sequence;
   if (!seq) return;
   const episodes = sequenceEpisodes(state);
   const subject = directRole(episodes, seq.input_tokens, 0);
   const relation = directRole(episodes, seq.input_tokens, 1);
+  if (subject === undefined || relation === undefined) return;
+
   const objects = currentObjects(state, subject, relation);
-  if (objects.length !== 1) return;
+  if (objects.length !== 1) {
+    suppressUngroundedSurface(seq, subject, relation, objects);
+    return;
+  }
   const object = objects[0];
 
   const template = seq.output_template;
-  if (!Array.isArray(template)) return;
+  if (!Array.isArray(template)) {
+    suppressUngroundedSurface(seq, subject, relation, objects);
+    return;
+  }
   const tokens = [];
   const unresolved = [];
   for (let pos = 0; pos < template.length; pos++) {
@@ -146,7 +173,20 @@ function groundSurfaceFromCanonicalM(state) {
     if (token === undefined) { tokens.push(null); unresolved.push(pos); }
     else tokens.push(token);
   }
-  if (unresolved.length) return;
+  if (unresolved.length) {
+    seq.output_tokens = null;
+    seq.expression = null;
+    seq.unresolved_output_positions = unresolved;
+    seq.canonical_grounding = {
+      subject,
+      relation,
+      object,
+      source: 'M.knowledge.current.facts',
+      authority: 'canonical_M',
+      status: 'object_warranted_expression_unlearned',
+    };
+    return;
+  }
 
   seq.inferred_channels = (seq.inferred_channels || []).filter(x => x.index > 2);
   seq.inferred_channels.push(
@@ -164,6 +204,7 @@ function groundSurfaceFromCanonicalM(state) {
     object,
     source: 'M.knowledge.current.facts',
     authority: 'canonical_M',
+    status: 'grounded',
   };
 }
 
