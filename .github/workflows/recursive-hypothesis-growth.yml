@@ -1,0 +1,61 @@
+name: Recursive hypothesis-language growth
+
+on:
+  push:
+    branches:
+      - 'experiment/recursive-hypothesis-growth-20261019'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: recursive-hypothesis-growth-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Preserve baseline architectural gap
+        run: node recursive-hypothesis-growth-baseline.test.js
+      - name: Prove recursive hypothesis-language growth connection
+        run: node recursive-hypothesis-growth.test.js
+      - name: Existing recursive recompression regression
+        run: node recursive-recompression.test.js
+      - name: Existing ordered recursive recompression regression
+        run: node sequence-recompression.test.js
+      - name: Existing recursive normal-form regression
+        run: node relational-normal-form.test.js
+      - name: Existing ULT recurrence proposal regression
+        run: node recurrence-guided-proposal.test.js
+      - name: Existing ULT relation reuse/completion regression
+        run: node universal-relational-completion.test.js
+      - name: Existing ULT stabilization regression
+        run: node universal-intent.test.js
+      - name: Existing ULT live proposer regression
+        run: node universal-live-proposer.test.js
+      - name: Existing ULT recursive composition regression
+        run: node recursive-intent-composition.test.js
+      - name: Existing ULT corrigibility regression
+        run: node math-hypotheses.test.js
+      - name: Canonical one-mind regression
+        run: node one-mind.test.js
+      - name: Canonical structured-knowledge anti-cheat regression
+        run: node structured-knowledge.test.js
+      - name: Known main-baseline semantic-grounding diagnostic
+        continue-on-error: true
+        run: node semantic-grounding.test.js
+      - name: Canonical compositional language regression
+        run: node language-school.test.js
+      - name: Anti-cheat language regression
+        run: node anti-cheat-language.test.js
+      - name: Temporal recompression regression
+        run: node temporal-recompression.test.js
+      - name: Single-life embodied regression
+        run: node micro-world-single-life.js
