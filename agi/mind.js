@@ -44,7 +44,6 @@ function cloneContact(contact) {
   return out;
 }
 
-// Generic relation topology only. No domain meaning is supplied here.
 function enrichSurfaceWithRelation(contact) {
   const out = cloneContact(contact);
   if (!out || typeof out !== 'object' || !out.surface || Array.isArray(out.surface.channels)) return out;
@@ -82,11 +81,6 @@ function render(tokens) {
   return tokens ? tokens.join(' ').replace(/\s+([?.!,;:])/g, '$1') : null;
 }
 
-// Infer a structural channel directly from the tokens currently present, before
-// any cross-channel completion. Stable token→value candidates are ranked by how
-// many independent contexts they span. This makes a relation word observed across
-// many entities outrank an entity-local accidental association without knowing
-// what either word means.
 function directRole(episodes, queryTokens, channel) {
   const candidates = [];
   for (const token of unique(queryTokens || [])) {
@@ -125,9 +119,6 @@ function currentObjects(state, subject, relation) {
 }
 
 function suppressUngroundedSurface(seq, subject, relation, objects) {
-  // Once subject/relation are structurally identified, canonical current M is the
-  // authority for their object. A historical surface analogy may propose a shape,
-  // but it may not emit a semantic object that M does not uniquely warrant.
   seq.output_tokens = null;
   seq.expression = null;
   seq.unresolved_output_positions = ['canonical_object'];
@@ -204,7 +195,6 @@ function groundSurfaceFromCanonicalM(state) {
     object,
     source: 'M.knowledge.current.facts',
     authority: 'canonical_M',
-    status: 'grounded',
   };
 }
 
