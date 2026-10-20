@@ -8,12 +8,11 @@
 // (subject, relation, object) becomes three ordinary contact dimensions for that
 // occurrence. No English word, domain relation, or response is hard-coded.
 //
-// On a later surface query, direct recurrent surface-role evidence identifies the
+// On a later surface query, recurrent surface-role evidence identifies the
 // subject/relation terms; canonical current M supplies the object; previously
-// learned expression structure realizes that object. The bridge owns no durable
-// cognition and cannot overrule canonical M. If canonical M is unresolved or
-// ambiguous for an identified relation, surface analogy is forbidden from
-// inventing an answer: expression remains unresolved until M settles.
+// learned expression structure realizes that object. Ordered cross-turn reuse is
+// learned from recurrence rather than hard-coding pronouns. The bridge owns no
+// durable cognition and cannot overrule canonical M.
 
 const Core = require('./one-live-blueprint.js');
 const Surface = require('./surface-template.js');
@@ -65,14 +64,10 @@ function sequenceEpisodes(state) {
     else if (f.relation === 'ρ:output_tokens' && Array.isArray(f.object)) e.output_tokens = f.object.slice();
     else if (f.relation === 'ρ:contact_channel' && f.object && Number.isInteger(f.object.index)) e.channels.set(f.object.index, f.object.value);
   }
-  return [...groups.values()];
+  return [...groups.values()].sort((a, b) => Number(a.id.split(':').at(-1)) - Number(b.id.split(':').at(-1)));
 }
 
-// Infer a structural channel directly from the tokens currently present, before
-// any cross-channel completion. Stable token→value candidates are ranked by how
-// many independent contexts they span. This makes a relation word observed across
-// many entities outrank an entity-local accidental association without knowing
-// what either word means.
+// Stable token→channel evidence for a direct role.
 function directRole(episodes, queryTokens, channel) {
   const candidates = [];
   for (const token of unique(queryTokens || [])) {
@@ -103,6 +98,43 @@ function directRole(episodes, queryTokens, channel) {
   return values.length === 1 ? values[0] : undefined;
 }
 
+function previousEpisodeWithChannel(episodes, before, channel) {
+  for (let i = before - 1; i >= 0; i--) if (episodes[i].channels.has(channel)) return episodes[i];
+  return null;
+}
+
+// Learn an ordered carry relation rather than a pronoun rule. A surface cue may
+// reuse a prior channel only when, across multiple different values, occurrences
+// carrying that cue repeatedly have the same channel value as the nearest prior
+// episode that exposed that channel. The cue's spelling and the channel's meaning
+// are irrelevant to the mechanism.
+function contextualRole(episodes, queryTokens, channel, minSupport = 2) {
+  const candidates = [];
+  for (const token of unique(queryTokens || [])) {
+    const observations = [];
+    for (let i = 0; i < episodes.length; i++) {
+      const e = episodes[i];
+      if (!(e.input_tokens || []).includes(token) || !e.channels.has(channel)) continue;
+      const prior = previousEpisodeWithChannel(episodes, i, channel);
+      if (!prior) continue;
+      observations.push({ current: e.channels.get(channel), previous: prior.channels.get(channel) });
+    }
+    if (observations.length < minSupport) continue;
+    const diversity = unique(observations.map(x => x.current)).length;
+    if (diversity < 2) continue;
+    if (!observations.every(x => same(x.current, x.previous))) continue;
+    candidates.push({ token, support: observations.length, diversity });
+  }
+  if (!candidates.length) return undefined;
+  candidates.sort((a, b) => b.support - a.support || b.diversity - a.diversity || a.token.localeCompare(b.token));
+
+  // The current query occurrence is normally the final episode and has no
+  // semantic channels yet. Reuse the nearest preceding contacted value.
+  const prior = previousEpisodeWithChannel(episodes, episodes.length, channel);
+  if (!prior) return undefined;
+  return { value: prior.channels.get(channel), cue: candidates[0].token, support: candidates[0].support };
+}
+
 function currentObjects(state, subject, relation) {
   if (subject === undefined || relation === undefined) return [];
   return unique((state.knowledge?.current?.facts || [])
@@ -111,9 +143,6 @@ function currentObjects(state, subject, relation) {
 }
 
 function suppressUngroundedSurface(seq, subject, relation, objects, status) {
-  // Once subject/relation are structurally identified, canonical current M is the
-  // authority for their object. Historical surface analogy may propose form, but
-  // it may not emit semantic content that M does not uniquely warrant.
   seq.output_tokens = null;
   seq.expression = null;
   seq.unresolved_output_positions = ['canonical_object'];
@@ -131,8 +160,20 @@ function groundSurfaceFromCanonicalM(state) {
   const seq = state.current?.sequence;
   if (!seq) return;
   const episodes = sequenceEpisodes(state);
-  const subject = directRole(episodes, seq.input_tokens, 0);
-  const relation = directRole(episodes, seq.input_tokens, 1);
+
+  const directSubject = directRole(episodes, seq.input_tokens, 0);
+  const contextualSubject = directSubject === undefined ? contextualRole(episodes, seq.input_tokens, 0) : undefined;
+  const subject = directSubject !== undefined ? directSubject : contextualSubject?.value;
+
+  const directRelation = directRole(episodes, seq.input_tokens, 1);
+  const contextualRelation = directRelation === undefined ? contextualRole(episodes, seq.input_tokens, 1) : undefined;
+  const relation = directRelation !== undefined ? directRelation : contextualRelation?.value;
+
+  seq.contextual_subject_resolution = !!contextualSubject;
+  seq.contextual_relation_resolution = !!contextualRelation;
+  if (contextualSubject) seq.contextual_subject_evidence = { cue: contextualSubject.cue, support: contextualSubject.support };
+  if (contextualRelation) seq.contextual_relation_evidence = { cue: contextualRelation.cue, support: contextualRelation.support };
+
   if (subject === undefined || relation === undefined) return;
 
   const objects = currentObjects(state, subject, relation);
@@ -142,9 +183,6 @@ function groundSurfaceFromCanonicalM(state) {
   }
   const object = objects[0];
 
-  // Learn expression structure from all prior occurrences attached to this same
-  // generic relation role. Variable-length spans are induced between recurrent
-  // ordered anchors, so a value can realize as a token, phrase, or longer span.
   const relationEpisodes = episodes.filter(e =>
     Array.isArray(e.output_tokens) && e.channels.has(1) && same(e.channels.get(1), relation));
   const template = Surface.buildTemplate(relationEpisodes.map(e => e.output_tokens));
@@ -182,7 +220,11 @@ function groundSurfaceFromCanonicalM(state) {
     .map(([index, value]) => ({
       index,
       value,
-      source: index === 0 || index === 1 ? 'direct_surface_role' : index === 2 ? 'canonical_M_current_fact' : 'surface_completion',
+      source: index === 0
+        ? (contextualSubject ? 'ordered_context_relation' : 'direct_surface_role')
+        : index === 1
+          ? (contextualRelation ? 'ordered_context_relation' : 'direct_surface_role')
+          : index === 2 ? 'canonical_M_current_fact' : 'surface_completion',
     }));
   seq.output_tokens = filled.tokens;
   seq.unresolved_output_positions = [];
