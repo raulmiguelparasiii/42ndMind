@@ -542,3 +542,181 @@ proof/disproof of universality for every possible meaning/relation
 9. After every generic change, rerun self-correction, no-cheat structured knowledge, semantic translation/composition, Universal Language anti-cheat/corrigibility, micro-world agency, temporal, and later multi-seed falsification.
 
 Do not declare a capability proved because desired behavior appears once. Remove shortcuts, isolate the claim, and preserve earlier regressions.
+
+## Critical correction: external AGI v1.5 false-positive and recovery boundary (2026-10-19)
+
+This section supersedes any generated/package documentation from 2026-10-19 that claimed an external Python artifact named `AGI Local Individual v1.5` had demonstrated AGI. That artifact was produced outside the canonical `one-mind.js` runtime. It is **not** a demonstrated AGI, must not be treated as reconstruction authority, and must not be merged back into canonical 42ndMind merely because some of its tests were green.
+
+### What happened
+
+A long external build/evaluation session progressively added persistence, identity continuity, relational completion, recursive inference, mathematical induction, action/consequence completion, finite-structure solving, Windows packaging, and a UI around a Python runtime. The assistant eventually claimed the package had demonstrated AGI. Live use falsified that claim immediately: ordinary conversation such as `what's yours?` or `can you speak normally?` fell through a narrow rule-based parser and returned a fixed retention template of the form:
+
+```text
+I retained that user expressed <surface text>. Its actuality remains separate from the occurrence itself.
+```
+
+Repository/package audit then showed that the failure was not merely a bad chat UI.
+
+1. The ordinary language surface recognized only a small hand-written set of patterns. The structured test harness could inject relational structures that the normal user-facing path could not autonomously derive from arbitrary language.
+2. The finite-structure path used a developer-supplied vocabulary of grid/sequence operations and relation families. Passing tasks covered by that vocabulary did not demonstrate that `C` could create a genuinely missing transformation language for itself.
+3. The public ARC claim was selectively conditioned. A purported 56-task clean pool was filtered to a **training-resolved frontier of exactly two tasks**, then those two were scored and reported as `2/2`. That is not a 56-task generalization result.
+4. The two IDs used for the final public claim, `9b30e358` and `ad38a9d0`, are in ARC-AGI-2's public `data/training/` split, not a clean official evaluation split.
+5. An earlier preserved v1.4 report had already identified the correct blocker: the finite evaluator still depended on a developer-supplied operator vocabulary, and AGI was **not demonstrated** until `C` could recursively form/reuse its own hypothesis-forming relations/operators. Later work violated that standard instead of clearing it.
+
+Therefore the external v1.5 claim is revoked. Its internal tests remain evidence only for the narrow mechanisms they actually exercised: persistence, identity continuity, storage/locality, some corrigible relation handling, some recursive relation inference, bounded mathematical induction, bounded action/consequence completion, and bounded finite-structure transformations. None of those results, separately or together, establishes general intelligence.
+
+The external package may be retained only as a **negative/evaluation-history artifact**. Do not continue patching it toward an AGI claim. Do not use its generated `AGI_v1.5_Demonstration_and_Reconstruction.*`, reconstruction blueprint, `Gate Z` summary, or `Demonstrated` label as project authority.
+
+### Permanent evaluation rules after this failure
+
+These rules are mandatory for any future AGI claim.
+
+```text
+green internal regressions != AGI
+component competence != end-to-end generality
+structured test injection != autonomous representation
+filtered solvable frontier != held-out score
+training split != evaluation split
+manual operator vocabulary != autonomous operator-language growth
+surface fluency != general cognition
+failure on an unseen task != permission to patch that task and keep it held out
+```
+
+1. **Freeze before selection.** Freeze the exact source before selecting any final external task.
+2. **Precommit the denominator.** Select the complete held-out task set before running it. Report every pass, failure, timeout, refusal, and unresolved case. Never select only tasks that the frozen system can already resolve from their training examples and call that a held-out score.
+3. **Respect official splits and leakage.** Training/development data may guide development only. Final evidence must use an untouched evaluation/private set or another independently generated hidden set. State split, denominator, attempts, and any prior exposure.
+4. **Burn after inspection.** Once a task, answer, or failure influences code or architecture, that task is development evidence forever.
+5. **No privileged representation shortcut.** If a benchmark is supplied as a structured relation/grid while the claimed system is supposed to understand ordinary language/images/etc., separate the scores. Core reasoning may be tested on structured contact, but end-to-end AGI evidence additionally requires the ordinary `S -> R -> C` path to derive the needed representation without a human/test harness silently doing the hard part.
+6. **No capability catalog counted as generality.** A finite hand-written library of rotations, crops, planners, parsers, theorem solvers, semantic templates, or benchmark transforms can establish coverage of that library only. It cannot establish that `C` can create relations/operations outside it.
+7. **Cross-domain evidence.** ARC or any one benchmark is insufficient. A final claim requires frozen-code transfer across unrelated domains such as opaque relational induction, mathematical rule discovery, causal/action completion, variable-length language/meaning, and structured transformation, with no code change between domains.
+8. **Ordinary-interface sanity.** If the artifact is claimed to be a freely conversational or multimodal AGI, ordinary interaction must reach the same general machinery. A canned fallback or narrow parser cannot be excused by success through a privileged test API.
+9. **No benefit-of-doubt promotion.** Generality is the thing being tested. Do not infer unseen generality from an appealing formula or from a collection of compatible mechanisms. Preserve the conceptual expectation, but require falsifiable transfer evidence.
+10. **AGI label is last.** Packaging, UI, installer work, “demonstrated” filenames, reconstruction blueprints, and public claims happen only after the frozen end-to-end gate passes.
+
+### Exact recovery sequence for AGI-directed work
+
+This sequence refines and takes priority over the generic `Next legitimate sequence` above whenever the immediate goal is AGI rather than a bounded subsystem result.
+
+#### 0. Quarantine the false external artifact
+
+Preserve the external Python v1.5 package and its reports only for audit/regression history. Do not make it the new canonical runtime. Do not port its hand-written `finite_structure` vocabulary or canned language surface into `one-mind.js`.
+
+#### 1. Return to the actual canonical authorities
+
+Start from current repository `one-mind.js`, current `M/R/C`, and the existing ULT mechanisms. Re-read this file and `UNIVERSAL_LANGUAGE_TRACK.md` before every architectural change.
+
+The relevant existing mechanisms already include:
+
+```text
+one-mind.js                       canonical continuing M and C
+one-rule.js                       exact relational constraints + defeasible MDL recompression
+recursive-recompression.js        learned descriptions re-enter C; bounded C* fixed-point prototype
+sequence-recompression.js         learned ordered descriptions recursively become later material
+relational-normal-form.js         recursive definition reduction / anonymous structural identity
+math-hypotheses.js                sole live rich candidate/evidence/status/revision authority
+universal-intent.js               stabilized complete lower relations from unresolved spaces
+universal-relation-reuse.js       live reuse of stabilized relations inside later structures
+universal-relational-completion.js relation-guided candidate construction/completion through same ledger
+universal-live-proposer.js        proposer connection; proposal remains non-evidence
+```
+
+Do not invent a second operator-learning subsystem before testing whether these existing mechanisms can be connected.
+
+#### 2. Preserve the missing-capability falsification before adding capability
+
+Create a content-neutral falsification in which the system encounters repeated opaque relational transformations whose useful transformation relation is **not named in code** and is not present in a finite operation menu. The test must require all of the following:
+
+```text
+experience several instances
+-> propose/discover a reusable transformation relation
+-> independent later contact warrants or defeats it
+-> use the learned transformation on novel entities
+-> use that learned transformation as material inside another learned relation
+-> compose multiple learned transformations
+-> later counterevidence revises/defeats the lower transformation
+-> dependent higher structure changes without copied downstream truth
+```
+
+Use arbitrary renamed symbols and multiple representational surfaces so success cannot depend on lexical or grid-specific names. The first gate should be abstract relational data, not ARC, because ARC representation details can hide whether the generic mechanism exists.
+
+#### 3. Make the missing step a `connection`, not a new faculty
+
+The first implementation target is to connect existing recursive recompression/candidate generation to the live ULT hypothesis authority and then to canonical `M`:
+
+```text
+recurrent contact
+ -> generic recompression/proposal clue
+ -> ordinary live math/relational candidate
+ -> independent warrant/defeat in existing authority
+ -> stabilized anonymous relation
+ -> reusable relation-use inside later candidate construction
+ -> resulting learned relation is itself ordinary material for C
+ -> repeat
+```
+
+The critical invariant is closure over the **hypothesis language itself**: a relation/description learned by C must be eligible to participate in later relation discovery, including relations about/compositions of learned relations, without the developer naming a new operation.
+
+`recursive-recompression.js` and `sequence-recompression.js` are prototypes of this closure; `math-hypotheses.js` supplies corrigibility; `universal-relation-reuse.js` and `universal-relational-completion.js` supply live reuse/construction. The next work should test and connect these authorities rather than reimplement their functions in Python.
+
+#### 4. Prove operator-language growth before ARC
+
+A mandatory pre-ARC gate must show the frozen system can acquire at least several genuinely novel opaque transformations from examples and then reuse/combine them on held-out structures. Required subtests:
+
+```text
+new unary transformation
+new multi-premise transformation
+new ordered/sequence transformation
+new transformation whose inputs include a previously learned relation
+composition of two independently learned transformations
+correction of a lower transformation propagates upward
+size/renaming/representation variation
+explicit unresolved result when evidence is insufficient
+```
+
+No transform may be recognized by a benchmark/task ID or semantic name in `C`.
+
+#### 5. Close the ordinary representation path
+
+Separately test whether normal language/other surface contact can form or attach to the same relational structures. Do not solve this by attaching an LLM as the mind. A proposer may suggest structure under ULT rules, but proposer confidence is not evidence and the resulting structure must enter the same live corrigible authority.
+
+For any claimed modality:
+
+```text
+raw/surface input -> S -> relational R -> same C/M
+```
+
+must be tested. If only the core is tested on already-structured relations, call that a core reasoning result, not end-to-end AGI.
+
+#### 6. Re-run canonical/ULT regressions before external AGI evaluation
+
+All existing canonical and ULT anti-cheat/correction tests must remain green. In particular, no new connection may introduce copied status/definition authority, language-specific C logic, benchmark-specific transforms, eager lifetime scans, or theorem-specific solvers.
+
+#### 7. Only then run external frozen evaluation
+
+After the generic operator-growth and representation gates pass:
+
+1. freeze exact source hash;
+2. precommit an untouched official evaluation/private ARC subset or full feasible denominator **without filtering by whether the system already resolves the training examples**;
+3. precommit unrelated opaque math/relational/causal/language tasks;
+4. run once with fixed budgets;
+5. publish the full denominator and every result;
+6. if code changes after any failure, burn the entire inspected task set and choose a new untouched set after the next freeze.
+
+ARC is useful here only as one external structured-generalization probe. It is not the architecture target and must never drive a new named grid operation.
+
+#### 8. AGI packaging comes last
+
+Only after the above frozen cross-domain gate passes may a separate persistent local individual/installer/UI be rebuilt around the demonstrated canonical core. Packaging must preserve the exact tested cognitive bytes. The installer/UI is an embodiment surface, not evidence of intelligence.
+
+### Current claim boundary after the correction
+
+As of 2026-10-19:
+
+```text
+canonical 42ndMind             research architecture with bounded demonstrated capabilities
+Universal Language Track      bounded mathematical-relational/corrigibility research track
+external Python v1.5 artifact experimental relational program; AGI claim revoked
+AGI demonstrated              NO
+```
+
+The project hypothesis that one sufficiently closed, reality-governed relational developmental law can yield general intelligence remains live. What failed was the evidence and implementation route used to claim completion, not the logical permission to continue testing that hypothesis.
