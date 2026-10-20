@@ -16,6 +16,7 @@
 // inventing an answer: expression remains unresolved until M settles.
 
 const Core = require('./one-live-blueprint.js');
+const Surface = require('./surface-template.js');
 
 function stable(v) {
   if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
@@ -44,6 +45,7 @@ function cloneContact(contact) {
   return out;
 }
 
+// Generic relation topology only. No domain meaning is supplied here.
 function enrichSurfaceWithRelation(contact) {
   const out = cloneContact(contact);
   if (!out || typeof out !== 'object' || !out.surface || Array.isArray(out.surface.channels)) return out;
@@ -66,21 +68,11 @@ function sequenceEpisodes(state) {
   return [...groups.values()];
 }
 
-function tokenForObject(episodes, object, position) {
-  const tokens = [];
-  for (const e of episodes) {
-    if (!e.channels.has(2) || !same(e.channels.get(2), object)) continue;
-    if (!e.output_tokens || position >= e.output_tokens.length) continue;
-    tokens.push(e.output_tokens[position]);
-  }
-  const variants = unique(tokens);
-  return variants.length === 1 ? variants[0] : undefined;
-}
-
-function render(tokens) {
-  return tokens ? tokens.join(' ').replace(/\s+([?.!,;:])/g, '$1') : null;
-}
-
+// Infer a structural channel directly from the tokens currently present, before
+// any cross-channel completion. Stable token→value candidates are ranked by how
+// many independent contexts they span. This makes a relation word observed across
+// many entities outrank an entity-local accidental association without knowing
+// what either word means.
 function directRole(episodes, queryTokens, channel) {
   const candidates = [];
   for (const token of unique(queryTokens || [])) {
@@ -118,7 +110,10 @@ function currentObjects(state, subject, relation) {
     .map(f => f.object));
 }
 
-function suppressUngroundedSurface(seq, subject, relation, objects) {
+function suppressUngroundedSurface(seq, subject, relation, objects, status) {
+  // Once subject/relation are structurally identified, canonical current M is the
+  // authority for their object. Historical surface analogy may propose form, but
+  // it may not emit semantic content that M does not uniquely warrant.
   seq.output_tokens = null;
   seq.expression = null;
   seq.unresolved_output_positions = ['canonical_object'];
@@ -128,7 +123,7 @@ function suppressUngroundedSurface(seq, subject, relation, objects) {
     candidates: objects,
     source: 'M.knowledge.current.facts',
     authority: 'canonical_M',
-    status: objects.length ? 'ambiguous' : 'unresolved',
+    status: status || (objects.length ? 'ambiguous' : 'unresolved'),
   };
 }
 
@@ -147,27 +142,28 @@ function groundSurfaceFromCanonicalM(state) {
   }
   const object = objects[0];
 
-  const template = seq.output_template;
-  if (!Array.isArray(template)) {
-    suppressUngroundedSurface(seq, subject, relation, objects);
+  // Learn expression structure from all prior occurrences attached to this same
+  // generic relation role. Variable-length spans are induced between recurrent
+  // ordered anchors, so a value can realize as a token, phrase, or longer span.
+  const relationEpisodes = episodes.filter(e =>
+    Array.isArray(e.output_tokens) && e.channels.has(1) && same(e.channels.get(1), relation));
+  const template = Surface.buildTemplate(relationEpisodes.map(e => e.output_tokens));
+  if (!template) {
+    suppressUngroundedSurface(seq, subject, relation, objects, 'object_warranted_expression_unlearned');
     return;
   }
-  const tokens = [];
-  const unresolved = [];
-  for (let pos = 0; pos < template.length; pos++) {
-    const part = template[pos];
-    if (part && Object.prototype.hasOwnProperty.call(part, 'constant')) {
-      tokens.push(part.constant);
-      continue;
-    }
-    const token = tokenForObject(episodes, object, pos);
-    if (token === undefined) { tokens.push(null); unresolved.push(pos); }
-    else tokens.push(token);
-  }
-  if (unresolved.length) {
+  const roles = Surface.inferOutputRoles(relationEpisodes, template);
+  const channels = new Map((seq.inferred_channels || []).map(x => [x.index, x.value]));
+  channels.set(0, subject);
+  channels.set(1, relation);
+  channels.set(2, object);
+  const filled = Surface.fillTemplate(template, relationEpisodes, episodes, channels, roles);
+  if (!filled.tokens || filled.unresolved.length) {
+    seq.output_template = template;
+    seq.output_roles = roles;
     seq.output_tokens = null;
     seq.expression = null;
-    seq.unresolved_output_positions = unresolved;
+    seq.unresolved_output_positions = filled.unresolved;
     seq.canonical_grounding = {
       subject,
       relation,
@@ -179,22 +175,25 @@ function groundSurfaceFromCanonicalM(state) {
     return;
   }
 
-  seq.inferred_channels = (seq.inferred_channels || []).filter(x => x.index > 2);
-  seq.inferred_channels.push(
-    { index: 0, value: subject, source: 'direct_surface_role' },
-    { index: 1, value: relation, source: 'direct_surface_role' },
-    { index: 2, value: object, source: 'canonical_M_current_fact' }
-  );
-  seq.inferred_channels.sort((a, b) => a.index - b.index);
-  seq.output_tokens = tokens;
+  seq.output_template = template;
+  seq.output_roles = roles;
+  seq.inferred_channels = [...channels.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([index, value]) => ({
+      index,
+      value,
+      source: index === 0 || index === 1 ? 'direct_surface_role' : index === 2 ? 'canonical_M_current_fact' : 'surface_completion',
+    }));
+  seq.output_tokens = filled.tokens;
   seq.unresolved_output_positions = [];
-  seq.expression = render(tokens);
+  seq.expression = Surface.renderTokens(filled.tokens);
   seq.canonical_grounding = {
     subject,
     relation,
     object,
     source: 'M.knowledge.current.facts',
     authority: 'canonical_M',
+    status: 'grounded',
   };
 }
 
