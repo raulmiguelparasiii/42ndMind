@@ -20,3 +20,5 @@ jobs:
         run: node agi/free-surface.test.js
       - name: Concurrent whole-life blueprint gate
         run: node agi/whole-life.test.js
+      - name: Conversational relation-role and correction gate
+        run: node agi/conversation-growth.test.js
