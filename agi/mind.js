@@ -8,13 +8,10 @@
 // (subject, relation, object) becomes three ordinary contact dimensions for that
 // occurrence. No English word, domain relation, or response is hard-coded.
 //
-// On a later surface query, one-live-blueprint may recover subject/relation terms
-// from recurrence. This bridge then constrains the missing object against the
-// CURRENT canonical M closure and realizes it with expression structure learned
-// from prior lived contact. Thus language can read a relation that was derived in
-// M even when that exact question/answer pair never occurred.
-//
-// It owns no memory, truth, planner, semantic dictionary, or response table.
+// On a later surface query, direct recurrent surface-role evidence identifies the
+// subject/relation terms; canonical current M supplies the object; previously
+// learned expression structure realizes that object. The bridge owns no durable
+// cognition and cannot overrule canonical M.
 
 const Core = require('./one-live-blueprint.js');
 
@@ -45,9 +42,7 @@ function cloneContact(contact) {
   return out;
 }
 
-// Generic relational topology, not domain semantics. If exactly one explicit
-// factual triple is simultaneous with a surface occurrence and the caller did
-// not provide another receptor-channel set, expose the triple itself as contact.
+// Generic relation topology only. No domain meaning is supplied here.
 function enrichSurfaceWithRelation(contact) {
   const out = cloneContact(contact);
   if (!out || typeof out !== 'object' || !out.surface || Array.isArray(out.surface.channels)) return out;
@@ -85,9 +80,39 @@ function render(tokens) {
   return tokens ? tokens.join(' ').replace(/\s+([?.!,;:])/g, '$1') : null;
 }
 
-function inferred(seq, index) {
-  const hit = (seq?.inferred_channels || []).find(x => x.index === index);
-  return hit ? hit.value : undefined;
+// Infer a structural channel directly from the tokens currently present, before
+// any cross-channel completion. Stable token→value candidates are ranked by how
+// many independent contexts they span. This makes a relation word observed across
+// many entities outrank an entity-local accidental association without knowing
+// what either word means.
+function directRole(episodes, queryTokens, channel) {
+  const candidates = [];
+  for (const token of unique(queryTokens || [])) {
+    const matching = episodes.filter(e => (e.input_tokens || []).includes(token) && e.channels.has(channel));
+    if (matching.length < 2) continue;
+    const values = unique(matching.map(e => e.channels.get(channel)));
+    if (values.length !== 1) continue;
+    const contextual = [];
+    for (const e of matching) {
+      for (const [i, value] of e.channels) if (i !== channel) contextual.push([i, value]);
+    }
+    candidates.push({
+      value: values[0],
+      token,
+      support: matching.length,
+      context_diversity: unique(contextual).length,
+    });
+  }
+  if (!candidates.length) return undefined;
+  candidates.sort((a, b) =>
+    b.context_diversity - a.context_diversity ||
+    b.support - a.support ||
+    stable(a.value).localeCompare(stable(b.value))
+  );
+  const topScore = `${candidates[0].context_diversity}:${candidates[0].support}`;
+  const top = candidates.filter(x => `${x.context_diversity}:${x.support}` === topScore);
+  const values = unique(top.map(x => x.value));
+  return values.length === 1 ? values[0] : undefined;
 }
 
 function currentObjects(state, subject, relation) {
@@ -97,24 +122,20 @@ function currentObjects(state, subject, relation) {
     .map(f => f.object));
 }
 
-// Constrain surface completion against canonical current M. This may correct a
-// historically suggested object but never changes canonical truth; it only reads
-// what M currently contains.
 function groundSurfaceFromCanonicalM(state) {
   const seq = state.current?.sequence;
   if (!seq) return;
-  const subject = inferred(seq, 0);
-  const relation = inferred(seq, 1);
+  const episodes = sequenceEpisodes(state);
+  const subject = directRole(episodes, seq.input_tokens, 0);
+  const relation = directRole(episodes, seq.input_tokens, 1);
   const objects = currentObjects(state, subject, relation);
   if (objects.length !== 1) return;
   const object = objects[0];
 
   const template = seq.output_template;
   if (!Array.isArray(template)) return;
-  const episodes = sequenceEpisodes(state);
   const tokens = [];
   const unresolved = [];
-
   for (let pos = 0; pos < template.length; pos++) {
     const part = template[pos];
     if (part && Object.prototype.hasOwnProperty.call(part, 'constant')) {
@@ -127,8 +148,12 @@ function groundSurfaceFromCanonicalM(state) {
   }
   if (unresolved.length) return;
 
-  seq.inferred_channels = (seq.inferred_channels || []).filter(x => x.index !== 2);
-  seq.inferred_channels.push({ index: 2, value: object, source: 'canonical_M_current_fact' });
+  seq.inferred_channels = (seq.inferred_channels || []).filter(x => x.index > 2);
+  seq.inferred_channels.push(
+    { index: 0, value: subject, source: 'direct_surface_role' },
+    { index: 1, value: relation, source: 'direct_surface_role' },
+    { index: 2, value: object, source: 'canonical_M_current_fact' }
+  );
   seq.inferred_channels.sort((a, b) => a.index - b.index);
   seq.output_tokens = tokens;
   seq.unresolved_output_positions = [];
