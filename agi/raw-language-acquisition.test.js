@@ -24,8 +24,6 @@ function paired(input, output, fact) {
   Mind.C(M, { surface: { input, output }, relations: { facts: [fact] } });
 }
 
-// Crossed schooling teaches only surface↔generic triple topology. The target
-// alpha/tone relation itself is never supplied as structured contact.
 for (let round = 0; round < 3; round++) {
   for (const [entity, value] of examples) {
     paired(`${entity} has tone ${value}.`, 'noted.', [entity, REL, value]);
@@ -37,8 +35,6 @@ for (let round = 0; round < 3; round++) {
 assert(!M.knowledge.facts.some(f => f.subject === alpha && f.relation === REL),
   'target semantic relation leaked into canonical M before raw-language teaching');
 
-// These teaching turns are surface-only. No relations/channels/semantic object
-// accompany them. First contact is a proposal; recurrence must provide support.
 Mind.C(M, { surface: { input: `${alpha} has tone value_crimson_raw.`, output: 'noted.' } });
 assert(!M.knowledge.current.facts.some(f => f.subject === alpha && f.relation === REL && f.object === 'value_crimson_raw'),
   'one raw utterance was incorrectly promoted to current canonical fact');
@@ -58,27 +54,10 @@ assert.strictEqual(probe.current.sequence.expression, 'it is value_crimson_raw.'
 assert.strictEqual(probe.current.sequence.canonical_grounding.authority, 'canonical_M');
 assert.strictEqual(probe.current.sequence.canonical_grounding.object, 'value_crimson_raw');
 
-// Later recurrent raw correction must defeat the old induced route, retain old
-// occurrences, and establish the new current relation without reset.
 for (let i = 0; i < 3; i++) {
   Mind.C(M, { surface: { input: `${alpha} has tone value_violet_raw.`, output: 'noted.' } });
 }
-// The novel value first needs ordinary expression grounding elsewhere; that is
-// surface realization schooling, not alpha/tone semantic teaching.
 for (let i = 0; i < 3; i++) paired('entity_theta_raw has shade value_violet_raw.', 'it is value_violet_raw.', ['entity_theta_raw', 'rel_shade_raw', 'value_violet_raw']);
-
-// Diagnostic checkpoint only. These prints do not alter the target or assertions.
-console.log('RAW_CORRECTION_DIAGNOSTIC', JSON.stringify({
-  proposals: M.knowledge.facts
-    .filter(f => f.relation === 'ρ:proposes_relation' && f.object && f.object.subject === alpha)
-    .map(f => ({ episode: f.subject, triple: f.object })),
-  routes: M.knowledge.rules
-    .filter(r => r.provenance && r.provenance.kind === 'surface_induction' && r.provenance.subject === alpha)
-    .map(r => ({ id: r.id, active: r.active, relation: r.provenance.relation, object: r.provenance.object })),
-  current: M.knowledge.current.facts
-    .filter(f => f.subject === alpha && f.relation === REL)
-    .map(f => ({ subject: f.subject, relation: f.relation, object: f.object })),
-}, null, 2));
 
 assert(!M.knowledge.current.facts.some(f => f.subject === alpha && f.relation === REL && f.object === 'value_crimson_raw'),
   'old raw-language route remained current after stable correction');
