@@ -34,13 +34,17 @@ for (let seed = 1; seed <= 8; seed++) {
   const bCodes = valsB.map((_, i) => 3000 + seed * 100 + i);
   const lateCodes = valsLate.map((_, i) => 4000 + seed * 100 + i);
 
-  // Cross the properties so a relation role is identifiable independently of
-  // entity identity. Physical channel order is randomized per life.
+  // Independent crossings: neither A nor B is a function of the other, so the
+  // physical role is objectively identifiable rather than merely equivalent.
+  const aPattern = [0, 0, 1, 1, 2, 2, 0, 1];
+  const bPattern = [0, 1, 0, 1, 0, 1, 2, 2];
+  const latePattern = [1, 2, 0, 2, 1, 0, 0, 1];
+
   const channelOrder = shuffle(['entity', 'a', 'b'], random);
   function channels(entity, a, b, late) {
     const map = { entity, a, b };
     const out = channelOrder.map(k => map[k]);
-    if (late !== undefined) out.push(late); // entirely new receptor/relation later.
+    if (late !== undefined) out.push(late);
     return out;
   }
   const channelIndex = Object.fromEntries(channelOrder.map((x, i) => [x, i]));
@@ -48,9 +52,9 @@ for (let seed = 1; seed <= 8; seed++) {
   const rows = entities.map((name, i) => ({
     name,
     entity: entityCodes[i],
-    av: valsA[i % 3], ac: aCodes[i % 3],
-    bv: valsB[(i * 2) % 3], bc: bCodes[(i * 2) % 3],
-    lv: valsLate[(i + 1) % 3], lc: lateCodes[(i + 1) % 3],
+    av: valsA[aPattern[i]], ac: aCodes[aPattern[i]],
+    bv: valsB[bPattern[i]], bc: bCodes[bPattern[i]],
+    lv: valsLate[latePattern[i]], lc: lateCodes[latePattern[i]],
   }));
 
   function live(input, output, ch) { Mind.C(M, { surface: { input, output, channels: ch } }); }
@@ -64,7 +68,6 @@ for (let seed = 1; seed <= 8; seed++) {
     live(`${r.name} ${relA} ${r.av}.`, `it is ${r.av}.`, channels(r.entity, r.ac, r.bc));
     live(`${r.name} ${relB} ${r.bv}.`, `it is ${r.bv}.`, channels(r.entity, r.ac, r.bc));
   }
-  // Hold entity 0 out of question/answer schooling.
   for (let round = 0; round < 3; round++) for (const r of rows.slice(1)) {
     live(`what ${relA} is ${r.name}?`, `it is ${r.av}.`, channels(r.entity, r.ac, r.bc));
     live(`what ${relB} is ${r.name}?`, `it is ${r.bv}.`, channels(r.entity, r.ac, r.bc));
@@ -78,9 +81,6 @@ for (let seed = 1; seed <= 8; seed++) {
   assert(qa.output_roles.some(x => x.position === 2 && x.channel === channelIndex.a), `seed ${seed}: A role tied to wrong channel`);
   assert(qb.output_roles.some(x => x.position === 2 && x.channel === channelIndex.b), `seed ${seed}: B role tied to wrong channel`);
 
-  // A completely new relation and channel appears only after this life already
-  // learned the first two. No C change. Statements ground it for all entities;
-  // Q/A schooling excludes the held-out entity.
   for (let round = 0; round < 3; round++) for (const r of rows) {
     live(`${r.name} ${relLate} ${r.lv}.`, `it is ${r.lv}.`, channels(r.entity, r.ac, r.bc, r.lc));
   }
@@ -91,7 +91,6 @@ for (let seed = 1; seed <= 8; seed++) {
   assert.strictEqual(late.expression, `it is ${held.lv}.`, `seed ${seed}: late relation failed`);
   assert(late.output_roles.some(x => x.position === 2 && x.channel === 3), `seed ${seed}: late channel role not learned`);
 
-  // Current-state correction on a randomized physical channel.
   const replacement = word(random, 'z');
   const replacementCode = 9000 + seed;
   for (let round = 0; round < 3; round++) {
@@ -105,6 +104,7 @@ console.log(JSON.stringify({
   independent_lives: 8,
   runtime_generated_vocabulary: true,
   randomized_physical_channel_order: true,
+  independently_identifiable_relation_roles: true,
   heldout_entity_relation_composition: true,
   new_relation_and_channel_added_after_development: true,
   correction_without_reset: true,
