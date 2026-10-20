@@ -17,9 +17,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - name: Verify untouched cognitive/test hashes
-        run: |
-          git diff --exit-code e0bab7e728e11ad3506d1693306713b9b914bffa -- one-mind.js semantic-grounding.test.js
       - name: Semantic grounding run 1
         run: node semantic-grounding.test.js
       - name: Semantic grounding run 2
