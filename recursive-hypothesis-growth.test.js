@@ -91,14 +91,15 @@ const h1Sig=learnedDefinitionSignature(R,h1.feature,opts);
 const h2Sig=learnedDefinitionSignature(R,h2.feature,opts);
 const noise=[eq(V('noise'),C('unrelated'))];
 
-// Proposal cannot warrant itself.
+// Proposal cannot warrant itself. Observe this only through the public status
+// boundary plus the authoritative ledger evidence count; do not reach through a
+// read API for private bookkeeping arrays.
 const p1=proposeLearnedDefinition(L,R,h1.feature,'learned-L1',{id:'learned-h1'},opts);
 assert.strictEqual(p1.routed.relation_uses,0);
 let c1=currentMathHypothesis(L,p1.routed.hypothesis_id);
 assert.strictEqual(c1.status,'open');
 assert.strictEqual(c1.usable,false);
-assert.strictEqual(c1.support.length,0);
-assert.strictEqual(c1.defeat.length,0);
+assert.strictEqual(L.evidence.length,0,'proposal created evidence for itself');
 
 // Incomplete contrary contact remains unknown rather than becoming false.
 contactMathSpace(L,'learned-L1',noise,{id:'L1-incomplete',complete:false},{autoRefine:false,...opts});
@@ -136,12 +137,14 @@ assert.strictEqual(f2View.factoring_current,true);
 assert.strictEqual(JSON.stringify(f2),f2Frozen);
 
 // Route L2 through that live L1 dependency, then require independent evidence.
+const beforeL2Evidence=L.evidence.length;
 const p2=proposeLearnedDefinition(L,R,h2.feature,'learned-L2',{id:'learned-h2'},opts);
 assert.strictEqual(p2.routed.relation_uses,1);
 assert(p2.routed.relation_signatures.includes(h1Sig));
 let c2=currentMathHypothesis(L,p2.routed.hypothesis_id);
 assert.strictEqual(c2.status,'open');
-assert.strictEqual(c2.support.length,0);
+assert.strictEqual(c2.usable,false);
+assert.strictEqual(L.evidence.length,beforeL2Evidence,'L2 proposal created evidence for itself');
 contactMathSpace(L,'learned-L2',[h1Expr,h2Expr],{id:'L2-independent-support',complete:true},{autoRefine:false,...opts});
 assert.strictEqual(currentMathSpace(L,'learned-L2',opts).status,'resolved-candidate-math');
 assert(universalRelationField(L,opts).relations.some(r=>r.signature===h2Sig),'warranted L2 did not become reusable');
