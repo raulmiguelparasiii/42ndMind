@@ -1,29 +1,21 @@
 'use strict';
 
-// Experimental blueprint-conformance extension over canonical one-mind.js.
+// One-live-M blueprint extension.
 //
-// Fundamental law:
 //   M(t+1) = C(M(t) ⊕ R(t+1))
 //
-// This file owns NO parallel cognitive state. one() returns canonical M. C() is
-// one developmental entrypoint. New machinery below is content-neutral:
-//   (1) zero-entropy completion for explicitly unobserved numeric channels;
-//   (2) exact ordered-sequence contact stored as ordinary first-class M facts;
-//   (3) query-relative analogical completion derived from those retained facts.
-//
-// The sequence path knows only occurrence identity, order, equality/difference,
-// recurrence, arbitrary accompanying channels, and structural similarity. It has
-// no English dictionary, intent labels, planner, semantic status ledger, or
-// canned response table. Text tokenization is a mechanical S-boundary convenience
-// and can be replaced by any other ordered discrete receptor stream.
+// one() returns the canonical M from one-mind.js. This file owns no second
+// cognitive state. C() is one entrypoint through which numeric contact, ordered
+// surface contact, arbitrary relational contact, and newly available actuators
+// may arrive together. All durable cognitive content is written into canonical M.
+// Helpers below are content-neutral transforms/views over that one state.
 
 const Base = require('../one-mind.js');
+const Sequence = require('../sequence-recompression.js');
 
 function stable(value) {
   if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
-  if (value && typeof value === 'object') {
-    return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + stable(value[k])).join(',') + '}';
-  }
+  if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + stable(value[k])).join(',') + '}';
   return JSON.stringify(value);
 }
 function same(a, b) { return stable(a) === stable(b); }
@@ -34,8 +26,9 @@ function unique(values) {
 }
 
 // ---------------------------------------------------------------------------
-// Numeric-contact settling: a historically zero-entropy channel is still an
-// exact relation even though an information-gain learner assigns it zero gain.
+// Exact numeric-contact settling.
+// A historically zero-entropy channel is an exact relation even though a pure
+// information-gain search assigns it zero predictive gain.
 // ---------------------------------------------------------------------------
 
 function invariantValueAt(state, perceptIndex, minSupport = 4) {
@@ -73,8 +66,8 @@ function settleInvariantChannels(state, frame) {
 }
 
 // ---------------------------------------------------------------------------
-// Ordered discrete S boundary. Tokenization does not assign meaning; raw contact
-// is retained beside the mechanical token sequence so the transduction is auditable.
+// Mechanical ordered-sequence transduction. Raw contact is retained beside the
+// token sequence. Tokens have no semantics at this boundary.
 // ---------------------------------------------------------------------------
 
 function tokenize(raw) {
@@ -90,6 +83,8 @@ function surfaceFacts(state, contact) {
     [id, 'ρ:kind', 'ordered_sequence_contact'],
     [id, 'ρ:input_raw', inputRaw],
     [id, 'ρ:input_tokens', inputTokens],
+    ['self', 'ρ:experienced', id],
+    ['self', 'ρ:has_receptor', 'ordered_sequence'],
   ];
   if (contact.output !== undefined && contact.output !== null) {
     const outputRaw = String(contact.output);
@@ -114,62 +109,68 @@ function currentSequenceEpisodes(state) {
     else if (fact.relation === 'ρ:input_tokens' && Array.isArray(fact.object)) ep.input_tokens = fact.object.slice();
     else if (fact.relation === 'ρ:output_raw') ep.output_raw = fact.object;
     else if (fact.relation === 'ρ:output_tokens' && Array.isArray(fact.object)) ep.output_tokens = fact.object.slice();
-    else if (fact.relation === 'ρ:contact_channel' && fact.object && Number.isInteger(fact.object.index)) {
-      ep.channels.set(fact.object.index, fact.object.value);
-    }
+    else if (fact.relation === 'ρ:contact_channel' && fact.object && Number.isInteger(fact.object.index)) ep.channels.set(fact.object.index, fact.object.value);
   }
   return [...groups.values()].sort((a, b) => Number(a.id.split(':').at(-1)) - Number(b.id.split(':').at(-1)));
 }
 
-function tokenChannelEvidence(episodes, minSupport = 2) {
+// Proposal/evidence distinction: the first occurrence establishes a possible
+// token↔channel relation; only later independent occurrences count as support.
+function tokenChannelEvidence(episodes, minLaterSupport = 1) {
   const channelValues = new Map();
-  for (const ep of episodes) {
-    for (const [index, value] of ep.channels) {
-      if (!channelValues.has(index)) channelValues.set(index, []);
-      channelValues.get(index).push(value);
-    }
+  for (const ep of episodes) for (const [index, value] of ep.channels) {
+    if (!channelValues.has(index)) channelValues.set(index, []);
+    channelValues.get(index).push(value);
   }
-  const evidence = new Map();
+
+  const observations = new Map();
   for (const ep of episodes) {
     const tokens = unique([...(ep.input_tokens || []), ...(ep.output_tokens || [])]);
     for (const token of tokens) {
-      if (!evidence.has(token)) evidence.set(token, new Map());
-      const byChannel = evidence.get(token);
+      if (!observations.has(token)) observations.set(token, new Map());
+      const byChannel = observations.get(token);
       for (const [index, value] of ep.channels) {
         if (!byChannel.has(index)) byChannel.set(index, []);
-        byChannel.get(index).push(value);
+        byChannel.get(index).push({ episode: ep.id, value });
       }
     }
   }
+
   const resolved = new Map();
-  for (const [token, byChannel] of evidence) {
+  for (const [token, byChannel] of observations) {
     const relations = [];
-    for (const [index, values] of byChannel) {
-      if (values.length < minSupport) continue;
+    for (const [index, obs] of byChannel) {
       if (unique(channelValues.get(index) || []).length < 2) continue;
-      const variants = unique(values);
-      if (variants.length === 1) relations.push({ channel: index, value: variants[0], support: values.length });
+      if (obs.length < 1 + minLaterSupport) continue;
+      const proposed = obs[0];
+      const later = obs.slice(1);
+      const variants = unique(obs.map(x => x.value));
+      if (variants.length !== 1) continue;
+      relations.push({
+        channel: index,
+        value: variants[0],
+        proposed_from: proposed.episode,
+        support_episodes: later.map(x => x.episode),
+        support: later.length,
+      });
     }
     if (relations.length) resolved.set(token, relations);
   }
   return resolved;
 }
 
-function inferChannels(tokens, tokenEvidence) {
+function inferChannels(tokens, evidence) {
   const candidates = new Map();
-  for (const token of tokens) {
-    for (const relation of tokenEvidence.get(token) || []) {
-      if (!candidates.has(relation.channel)) candidates.set(relation.channel, []);
-      candidates.get(relation.channel).push(relation);
-    }
+  for (const token of tokens) for (const relation of evidence.get(token) || []) {
+    if (!candidates.has(relation.channel)) candidates.set(relation.channel, []);
+    candidates.get(relation.channel).push(relation);
   }
   const out = new Map();
   const unresolved = [];
   for (const [channel, relations] of candidates) {
     const values = unique(relations.map(r => r.value));
-    if (values.length === 1) {
-      out.set(channel, values[0]);
-    } else unresolved.push(channel);
+    if (values.length === 1) out.set(channel, values[0]);
+    else unresolved.push(channel);
   }
   return { channels: out, unresolved };
 }
@@ -181,16 +182,13 @@ function inferChannelRelations(episodes, known) {
     for (const [sourceIndex, sourceValue] of [...out]) {
       const matching = episodes.filter(ep => ep.channels.has(sourceIndex) && same(ep.channels.get(sourceIndex), sourceValue));
       if (matching.length < 2) continue;
-      const targetIndexes = unique(matching.flatMap(ep => [...ep.channels.keys()]));
-      for (const targetIndex of targetIndexes) {
-        if (out.has(targetIndex)) continue;
-        const values = matching.filter(ep => ep.channels.has(targetIndex)).map(ep => ep.channels.get(targetIndex));
+      const targets = unique(matching.flatMap(ep => [...ep.channels.keys()]));
+      for (const target of targets) {
+        if (out.has(target)) continue;
+        const values = matching.filter(ep => ep.channels.has(target)).map(ep => ep.channels.get(target));
         if (values.length < 2) continue;
         const variants = unique(values);
-        if (variants.length === 1) {
-          out.set(targetIndex, variants[0]);
-          changed = true;
-        }
+        if (variants.length === 1) { out.set(target, variants[0]); changed = true; }
       }
     }
     if (!changed) break;
@@ -202,9 +200,9 @@ function tokenSet(tokens) { return new Set(tokens || []); }
 function jaccard(aTokens, bTokens) {
   const a = tokenSet(aTokens), b = tokenSet(bTokens);
   if (!a.size && !b.size) return 1;
-  let intersection = 0;
-  for (const x of a) if (b.has(x)) intersection++;
-  return intersection / (a.size + b.size - intersection || 1);
+  let n = 0;
+  for (const x of a) if (b.has(x)) n++;
+  return n / (a.size + b.size - n || 1);
 }
 function bigrams(tokens) {
   const out = [];
@@ -212,8 +210,6 @@ function bigrams(tokens) {
   return out;
 }
 function structuralSimilarity(a, b) {
-  // Equality/order recurrence only. Exact token names affect similarity merely as
-  // observed values; there is no vocabulary-specific weighting or stopword list.
   return 0.72 * jaccard(a, b) + 0.28 * jaccard(bigrams(a), bigrams(b));
 }
 
@@ -238,36 +234,49 @@ function tokenForChannelValue(episodes, channelIndex, channelValue, outputPositi
     values.push(ep.output_tokens[outputPosition]);
   }
   const variants = unique(values);
-  return variants.length === 1 && values.length >= 1 ? variants[0] : undefined;
+  return variants.length === 1 && values.length ? variants[0] : undefined;
 }
 
 function fillOutputTemplate(template, episodes, channels) {
   if (!template) return { tokens: null, unresolved: ['template'] };
-  const tokens = [];
-  const unresolved = [];
+  const tokens = [], unresolved = [];
   for (let i = 0; i < template.length; i++) {
     const part = template[i];
-    if (Object.prototype.hasOwnProperty.call(part, 'constant')) {
-      tokens.push(part.constant);
-      continue;
-    }
+    if (Object.prototype.hasOwnProperty.call(part, 'constant')) { tokens.push(part.constant); continue; }
     const candidates = [];
     for (const [channelIndex, channelValue] of channels) {
       const token = tokenForChannelValue(episodes, channelIndex, channelValue, i);
       if (token !== undefined) candidates.push(token);
     }
     const variants = unique(candidates);
-    if (variants.length !== 1) {
-      tokens.push(null);
-      unresolved.push(i);
-    } else tokens.push(variants[0]);
+    if (variants.length !== 1) { tokens.push(null); unresolved.push(i); }
+    else tokens.push(variants[0]);
   }
   return { tokens: unresolved.length ? null : tokens, unresolved };
 }
 
 function renderTokens(tokens) {
-  if (!tokens) return null;
-  return tokens.join(' ').replace(/\s+([?.!,;:])/g, '$1');
+  return tokens ? tokens.join(' ').replace(/\s+([?.!,;:])/g, '$1') : null;
+}
+
+// Existing generic exact sequence recompression is reused strictly as a derived
+// view over M-owned occurrences. It owns no persistent truth/meaning state.
+function sequenceStructure(episodes) {
+  const stream = [];
+  for (const ep of episodes) {
+    for (const token of ep.input_tokens || []) stream.push({ stream: 'input', token });
+    stream.push({ boundary: ep.id, stream: 'input' });
+    for (const token of ep.output_tokens || []) stream.push({ stream: 'output', token });
+    if (ep.output_tokens) stream.push({ boundary: ep.id, stream: 'output' });
+  }
+  const structure = Sequence.recompress(null, stream, { maxRules: 96 });
+  return {
+    raw_events: stream.length,
+    learned_relations: Sequence.learnedExpansions(structure),
+    exact_reconstruction: Sequence.decode(structure),
+    description_length: structure.description_length,
+    authority: 'derived_view_of_M',
+  };
 }
 
 function deriveSequenceCompletion(state, currentId, inputTokens) {
@@ -277,11 +286,9 @@ function deriveSequenceCompletion(state, currentId, inputTokens) {
   const evidence = tokenChannelEvidence(historical);
   const initial = inferChannels(inputTokens, evidence);
   const channels = inferChannelRelations(historical, initial.channels);
-
   const ranked = training.map(ep => ({ ep, score: structuralSimilarity(inputTokens, ep.input_tokens) }))
     .sort((a, b) => b.score - a.score || a.ep.id.localeCompare(b.ep.id));
   const best = ranked[0]?.score || 0;
-  // Keep the strongest structural neighborhood rather than one memorized case.
   const neighbors = ranked.filter(x => x.score >= Math.max(0.35, best - 0.08)).slice(0, 32).map(x => x.ep);
   const template = consensusOutputTemplate(neighbors);
   const filled = fillOutputTemplate(template, historical, channels);
@@ -295,33 +302,100 @@ function deriveSequenceCompletion(state, currentId, inputTokens) {
     output_tokens: filled.tokens,
     unresolved_output_positions: filled.unresolved,
     expression: renderTokens(filled.tokens),
+    recurrence: sequenceStructure(episodes),
     authority: 'derived_from_retained_M_only',
   };
 }
 
+// ---------------------------------------------------------------------------
+// Self and extensible actuator boundary.
+// Actuator IDs are ordinary M facts. The numeric motor index used by canonical
+// embodiment is merely the stable physical ordinal assigned at first contact.
+// ---------------------------------------------------------------------------
+
+function actuatorDescriptors(state) {
+  const out = [];
+  for (const fact of state.knowledge?.facts || []) {
+    if (fact.subject === 'self' && fact.relation === 'ρ:has_actuator' && fact.object && Number.isInteger(fact.object.index)) out.push(fact.object);
+  }
+  return out.sort((a, b) => a.index - b.index);
+}
+
+function newActuatorFacts(state, requested) {
+  const known = actuatorDescriptors(state);
+  const byId = new Map(known.map(x => [stable(x.id), x]));
+  let next = known.length ? Math.max(...known.map(x => x.index)) + 1 : 0;
+  const facts = [];
+  for (const id of requested || []) {
+    const key = stable(id);
+    if (byId.has(key)) continue;
+    const descriptor = { id, index: next++ };
+    byId.set(key, descriptor);
+    facts.push(['self', 'ρ:has_actuator', descriptor]);
+  }
+  return { facts, count: Math.max(state.action_count, next) };
+}
+
+function selfFrameFacts(state, frame) {
+  if (!frame) return [];
+  const cut = frame.length - state.concern_count;
+  const index = state.contacts.length + 1;
+  const facts = [['self', 'ρ:experienced', { frame_contact_index: index }]];
+  for (let i = 0; i < cut; i++) facts.push(['self', 'ρ:has_receptor', { kind: 'numeric', index: i }]);
+  for (let i = 0; i < state.concern_count; i++) facts.push(['self', 'ρ:has_internal_channel', { index: i }]);
+  if (state.previous_contact && state.motor != null) facts.push(['self', 'ρ:caused', { motor_index: state.motor, transition_to_frame: index }]);
+  return facts;
+}
+
 function one(actionCount, concernCount = 1) {
-  return Base.one(actionCount, concernCount);
+  const state = Base.one(actionCount, concernCount);
+  const facts = [
+    ['self', 'ρ:kind', 'persistent_individual'],
+    ['self', 'ρ:continuity', 'same_M'],
+  ];
+  for (let i = 0; i < actionCount; i++) facts.push(['self', 'ρ:has_actuator', { id: `motor:${i}`, index: i }]);
+  Base.C(state, { relations: { facts } });
+  return state;
 }
 
 function C(state, realityContact) {
   if (!state || state.whole !== 1) throw new Error('C requires one whole mind');
 
-  // Ordered sequence contact is first transduced into ordinary relational R, then
-  // canonical C ingests it. No sequence-learning state exists outside M.
-  if (realityContact && typeof realityContact === 'object' && realityContact.surface) {
-    const transduced = surfaceFacts(state, realityContact.surface);
-    Base.C(state, { relations: { facts: transduced.facts } });
-    const derived = deriveSequenceCompletion(state, transduced.id, transduced.inputTokens);
-    state.current = state.current && typeof state.current === 'object' ? state.current : {};
-    state.current.sequence = derived;
+  if (Array.isArray(realityContact)) {
+    const frame = realityContact.slice();
+    Base.C(state, { frame, relations: { facts: selfFrameFacts(state, frame) } });
+    settleInvariantChannels(state, frame);
     return state;
   }
+  if (!realityContact || typeof realityContact !== 'object') throw new Error('invalid reality-contact');
 
-  Base.C(state, realityContact);
-  let frame = null;
-  if (Array.isArray(realityContact)) frame = realityContact;
-  else if (realityContact && Array.isArray(realityContact.frame)) frame = realityContact.frame;
+  const frame = Array.isArray(realityContact.frame) ? realityContact.frame.slice() : null;
+  const surface = realityContact.surface ? surfaceFacts(state, realityContact.surface) : null;
+  const actuator = newActuatorFacts(state, Array.isArray(realityContact.actuators) ? realityContact.actuators : []);
+  state.action_count = actuator.count;
+
+  const external = realityContact.relations || {};
+  const facts = [
+    ...(Array.isArray(external.facts) ? external.facts : []),
+    ...actuator.facts,
+    ...selfFrameFacts(state, frame),
+    ...(surface ? surface.facts : []),
+  ];
+  const rules = Array.isArray(external.rules) ? external.rules : [];
+  const hasRelations = facts.length || rules.length;
+
+  if (!frame && !hasRelations) throw new Error('invalid reality-contact');
+  const contact = {};
+  if (frame) contact.frame = frame;
+  if (hasRelations) contact.relations = { facts, rules };
+  Base.C(state, contact);
+
   if (frame) settleInvariantChannels(state, frame);
+  if (surface) {
+    const derived = deriveSequenceCompletion(state, surface.id, surface.inputTokens);
+    state.current = state.current && typeof state.current === 'object' ? state.current : {};
+    state.current.sequence = derived;
+  }
   return state;
 }
 
