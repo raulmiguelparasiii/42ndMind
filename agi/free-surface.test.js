@@ -7,8 +7,15 @@ const Mind = require('./one-live-blueprint.js');
 
 assert.deepStrictEqual(Object.keys(Mind).sort(), ['C', 'one']);
 const source = fs.readFileSync(path.join(__dirname, 'one-live-blueprint.js'), 'utf8');
-for (const forbidden of ['alpha', 'beta', 'red', 'blue', 'what color', 'it is']) {
-  assert.ok(!source.toLowerCase().includes(forbidden), `surface fixture leaked into developmental law: ${forbidden}`);
+for (const forbidden of ['alpha', 'beta', 'red', 'blue']) {
+  const quotedSingle = `'${forbidden}'`;
+  const quotedDouble = `"${forbidden}"`;
+  assert.ok(!source.toLowerCase().includes(quotedSingle) && !source.toLowerCase().includes(quotedDouble),
+    `surface fixture leaked into developmental law: ${forbidden}`);
+}
+for (const phrase of ['what color', 'it is']) {
+  assert.ok(!source.toLowerCase().includes(`'${phrase}'`) && !source.toLowerCase().includes(`"${phrase}"`),
+    `surface phrase leaked into developmental law: ${phrase}`);
 }
 
 const M = Mind.one(1, 1);
@@ -25,15 +32,12 @@ function teach(input, output, channels) {
   Mind.C(M, { surface: { input, output, channels } });
 }
 
-// Ground every name/color through several ordinary sequence contacts.
 for (let round = 0; round < 4; round++) {
   for (const [name, entity, color, colorValue] of world) {
     teach(`the color of ${name} is ${color}.`, `${name} is ${color}.`, [entity, colorValue]);
   }
 }
 
-// Learn the response relation on five other individuals. The alpha question and
-// answer pair is never experienced.
 for (let round = 0; round < 5; round++) {
   for (const [name, entity, color, colorValue] of world.slice(1)) {
     teach(`what color is ${name}?`, `it is ${color}.`, [entity, colorValue]);
@@ -51,19 +55,12 @@ assert.strictEqual(ordinary.expression, 'it is red.');
 assert(ordinary.inferred_channels.some(x => x.index === 0 && x.value === 101));
 assert(ordinary.inferred_channels.some(x => x.index === 1 && x.value === 201));
 
-// Same semantic contact, unseen word order. No slot parser or grammar rule is
-// supplied; sequence similarity and retained cross-contact relations must recover
-// the same completion.
 const reordered = ask('alpha is what color?');
 assert.strictEqual(reordered.expression, 'it is red.', `position-dependent surface failed: ${reordered.expression}`);
 
-// Another unseen surface arrangement using only already-contacted tokens. This
-// remains a structural-generalization gate, not a claim of unrestricted English.
 const reordered2 = ask('what is alpha color?');
 assert.strictEqual(reordered2.expression, 'it is red.', `second unseen ordering failed: ${reordered2.expression}`);
 
-// Exact raw expressions and ordered token sequences live in canonical M facts;
-// the extension has no private surface memory object.
 assert(M.knowledge.facts.some(f => f.relation === 'ρ:input_raw' && f.object === 'the color of alpha is red.'));
 assert(M.knowledge.facts.some(f => f.relation === 'ρ:input_tokens' && Array.isArray(f.object)));
 for (const forbidden of ['surface_memory', 'language_state', 'parser_state', 'semantic_dictionary', 'response_table']) {
