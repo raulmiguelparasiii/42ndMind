@@ -24,6 +24,8 @@ jobs:
           node-version: '24'
       - name: Preserve baseline architectural gap
         run: node recursive-hypothesis-growth-baseline.test.js
+      - name: Prove recursive hypothesis-language growth connection
+        run: node recursive-hypothesis-growth.test.js
       - name: Existing recursive recompression regression
         run: node recursive-recompression.test.js
       - name: Existing ULT recurrence proposal regression
