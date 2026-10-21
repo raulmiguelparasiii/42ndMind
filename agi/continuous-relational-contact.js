@@ -36,29 +36,32 @@ function relationAtLag(contacts, start, end, source, target, lag, concernCount) 
     sx += x; sy += y;
     sxx += x * x; syy += y * y; sxy += x * y;
   }
-  if (count < 2) return { correlation: null, support: count, transform: null };
+  if (count < 2) return { correlation: null, support: count, transform: null, fit_rmse: null, target_rms: null };
   const vx = count * sxx - sx * sx;
   const vy = count * syy - sy * sy;
-  if (!(vx > 1e-18) || !(vy > 1e-18)) return { correlation: null, support: count, transform: null };
+  if (!(vx > 1e-18) || !(vy > 1e-18)) return { correlation: null, support: count, transform: null, fit_rmse: null, target_rms: null };
   const covariance = count * sxy - sx * sy;
   const raw = covariance / Math.sqrt(vx * vy);
-  // Floating-point roundoff can put an exact affine relation infinitesimally
-  // outside [-1,1]. Clamp only the numerical representation, not the evidence.
   const correlation = Math.max(-1, Math.min(1, raw));
   const scale = covariance / vx;
   const offset = (sy - scale * sx) / count;
+  const sse = syy + scale * scale * sxx + count * offset * offset +
+    2 * scale * offset * sx - 2 * scale * sxy - 2 * offset * sy;
+  const fitRmse = Math.sqrt(Math.max(0, sse) / count);
+  const targetRms = Math.sqrt(Math.max(0, syy) / count);
   return {
     correlation,
     support: count,
     transform: finite(scale) && finite(offset) ? { kind: 'affine', scale, offset } : null,
+    fit_rmse: finite(fitRmse) ? fitRmse : null,
+    target_rms: finite(targetRms) ? targetRms : null,
   };
 }
 
-function relationKey(x) {
+function topologyKey(x) {
   return `${x.source}>${x.target}@${x.lag}:${x.orientation}`;
 }
-function relationTermId(x) {
-  // The ID is only an address. Meaning remains in ordinary M facts below.
+function baseRelationTermId(x) {
   return `continuous-relation:${x.source}:${x.target}:${x.lag}:${x.orientation}`;
 }
 
@@ -78,19 +81,12 @@ function detect(state, options = {}) {
   // The recent window bounds which target observations currently test a relation;
   // it does not erase older retained source contact. A long lag is therefore
   // eligible whenever retained history can still provide minSupport recent pairs.
-  // Callers may impose a smaller explicit computational budget without changing
-  // this evidential meaning.
   const evidenceMaxLag = Math.max(0, n - minSupport);
   const maxLag = options.maxLag === undefined ? evidenceMaxLag : Math.min(Math.max(0, options.maxLag), evidenceMaxLag);
 
   const found = [];
   for (let source = 0; source < channels; source++) {
     for (let target = 0; target < channels; target++) {
-      // Lag zero of a receptor with itself is trivial identity and is excluded.
-      // Lagged self-relations are legitimate temporal structure and are essential
-      // when reality reaches the individual through only one changing receptor.
-      // For distinct receptors, same-time dependence remains canonically stored
-      // in only one direction while delayed dependence may remain directional.
       const firstLag = source === target ? 1 : (source < target ? 0 : 1);
       let best = null;
       for (let lag = firstLag; lag <= maxLag; lag++) {
@@ -106,11 +102,11 @@ function detect(state, options = {}) {
           correlation: r,
           support: measured.support,
           transform: measured.transform,
+          fit_rmse: measured.fit_rmse,
+          target_rms: measured.target_rms,
         };
         if (!best || Math.abs(candidate.correlation) > Math.abs(best.correlation) + 1e-12 ||
             (Math.abs(Math.abs(candidate.correlation) - Math.abs(best.correlation)) < 1e-12 && candidate.lag < best.lag)) best = candidate;
-        // No later lag can beat an exact relation, and lags are visited shortest
-        // first, so stopping here is both exact and cheaper.
         if (Math.abs(r) >= 1 - 1e-12) break;
       }
       if (best) found.push(best);
@@ -125,13 +121,13 @@ function activeRoutes(state) {
 }
 function routeDescriptor(rule) {
   const p = rule.provenance || {};
-  return { source: p.source, target: p.target, lag: p.lag, orientation: p.orientation };
+  return { source: p.source, target: p.target, lag: p.lag, orientation: p.orientation, transform: p.transform };
 }
 function nextRouteId(state) {
   let max = 0;
   for (const rule of state.knowledge?.rules || []) {
     const m = /^continuous-dependence:(\d+)$/.exec(String(rule.id));
-    if (m) max = Math.max(max, Number(m[1]));
+    if (m) max = Math.max(max, Number(m[1]) + 0);
   }
   return `continuous-dependence:${max + 1}`;
 }
@@ -139,6 +135,53 @@ function knownRelationTerms(state) {
   return new Set((state.knowledge?.facts || [])
     .filter(f => f.relation === 'ρ:kind' && f.object === 'relation_term')
     .map(f => String(f.subject)));
+}
+function termForRoute(state, routeId, knownTerms) {
+  for (const fact of state.knowledge?.facts || []) {
+    if (fact.relation !== 'ρ:grounded_by' || !knownTerms.has(String(fact.subject))) continue;
+    if (fact.object && fact.object.ref === String(routeId)) return String(fact.subject);
+  }
+  return null;
+}
+function nextRelationTermId(knownTerms, relation) {
+  const base = baseRelationTermId(relation);
+  if (!knownTerms.has(base)) return base;
+  let version = 2;
+  while (knownTerms.has(`${base}:v${version}`)) version++;
+  return `${base}:v${version}`;
+}
+
+function transformRmse(state, relation, transform, window = 64) {
+  if (!transform || transform.kind !== 'affine' || !finite(transform.scale) || !finite(transform.offset)) return Infinity;
+  const contacts = state.contacts || [];
+  const end = contacts.length;
+  const start = Math.max(0, end - window);
+  const concernCount = state.concern_count || 0;
+  const first = Math.max(start, relation.lag);
+  let count = 0, sse = 0;
+  for (let t = first; t < end; t++) {
+    const x = valueAt(contacts[t - relation.lag], relation.source, concernCount);
+    const y = valueAt(contacts[t], relation.target, concernCount);
+    if (x === undefined || y === undefined) continue;
+    const error = y - (transform.scale * x + transform.offset);
+    sse += error * error;
+    count++;
+  }
+  return count ? Math.sqrt(sse / count) : Infinity;
+}
+
+// A route survives coefficient estimation jitter if its old quantitative meaning
+// still explains current evidence about as well as the newly fitted map. A route
+// is revised only when later reality makes the old map materially worse.
+function routeStillFits(state, rule, relation, options = {}) {
+  if (topologyKey(routeDescriptor(rule)) !== topologyKey(relation)) return false;
+  const oldTransform = rule.provenance?.transform;
+  const newTransform = relation.transform;
+  if (!oldTransform || !newTransform || oldTransform.kind !== newTransform.kind) return false;
+  const oldRmse = transformRmse(state, relation, oldTransform, options.window ?? 64);
+  const newRmse = finite(relation.fit_rmse) ? relation.fit_rmse : 0;
+  const numericFloor = 1e-9 * Math.max(1, finite(relation.target_rms) ? relation.target_rms : 1);
+  return oldRmse <= Math.max(numericFloor, 2 * newRmse + numericFloor);
 }
 
 function relationalUpdate(state, options = {}) {
@@ -149,35 +192,40 @@ function relationalUpdate(state, options = {}) {
   if (n < minSupport || n % cadence !== 0) return null;
 
   const detected = detect(state, options);
-  const detectedByKey = new Map(detected.map(x => [relationKey(x), x]));
+  const detectedByTopology = new Map(detected.map(x => [topologyKey(x), x]));
   const active = activeRoutes(state);
-  const activeByKey = new Map(active.map(rule => [relationKey(routeDescriptor(rule)), rule]));
+  const compatibleRoute = new Map();
+  for (const relation of detected) {
+    const route = active.find(rule => routeStillFits(state, rule, relation, options));
+    if (route) compatibleRoute.set(topologyKey(relation), route);
+  }
   const knownTerms = knownRelationTerms(state);
   const facts = [], rules = [];
 
-  // A relation absent from the current evidence window is defeated as a current
-  // categorical route. Its old rule, support, occurrences and raw contact remain.
-  for (const [key, rule] of activeByKey) {
-    if (detectedByKey.has(key)) continue;
+  // Later contact defeats a route not only when topology disappears, but also
+  // when the old quantitative meaning no longer fits the current evidence.
+  for (const rule of active) {
+    const key = topologyKey(routeDescriptor(rule));
+    const relation = detectedByTopology.get(key);
+    if (relation && compatibleRoute.get(key)?.id === rule.id) continue;
     facts.push([ref(rule.id), 'counterexample', {
       kind: 'later_continuous_contact',
       window_end: n,
       retained_history: true,
+      quantitative_revision: !!relation,
     }]);
   }
 
-  for (const [key, relation] of detectedByKey) {
+  for (const relation of detected) {
+    const key = topologyKey(relation);
     const descriptor = {
       target: `receptor:p${relation.target}`,
       lag: relation.lag,
       orientation: relation.orientation,
       transform: relation.transform,
     };
-    const termId = relationTermId(relation);
-    let route = activeByKey.get(key);
+    let route = compatibleRoute.get(key);
 
-    // Truth/warrant route is created only when needed. Repeated observation of an
-    // already-active relation does not create duplicate truth authorities.
     if (!route) {
       const id = nextRouteId({ knowledge: { rules: [...(state.knowledge?.rules || []), ...rules] } });
       route = {
@@ -197,6 +245,7 @@ function relationalUpdate(state, options = {}) {
         [ref(id), 'ρ:continuous_evidence', {
           support: relation.support,
           absolute_correlation: Math.abs(relation.correlation),
+          fit_rmse: relation.fit_rmse,
           window_end: n,
         }],
       );
@@ -209,9 +258,13 @@ function relationalUpdate(state, options = {}) {
       });
     }
 
-    // The discovered relation is itself first-class M content. Meaning is the
-    // explicit relational structure, not this stable identifier.
-    if (!knownTerms.has(termId)) {
+    // Relation terms are versioned by evidential route, not raw floating-point
+    // coefficient strings. The first meaning retains the historical base address;
+    // a materially revised meaning receives a new address while both descriptors
+    // remain ordinary first-class M facts.
+    let termId = termForRoute(state, route.id, knownTerms);
+    if (!termId) {
+      termId = nextRelationTermId(knownTerms, relation);
       facts.push(
         [termId, 'ρ:kind', 'relation_term'],
         [termId, 'ρ:relation_subject', `receptor:p${relation.source}`],
@@ -222,9 +275,6 @@ function relationalUpdate(state, options = {}) {
     }
     facts.push([termId, 'ρ:grounded_by', ref(route.id)]);
 
-    // Every fresh evidence window that still instantiates the relation is a lived
-    // occurrence. This is the temporal material from which higher relations can
-    // form; it does not duplicate the categorical truth route above.
     const occurrenceId = `relation-occurrence:continuous:${n}:${termId}`;
     facts.push(
       [occurrenceId, 'ρ:kind', 'relation_occurrence'],
@@ -234,6 +284,7 @@ function relationalUpdate(state, options = {}) {
       [occurrenceId, 'ρ:evidence', {
         support: relation.support,
         absolute_correlation: Math.abs(relation.correlation),
+        fit_rmse: relation.fit_rmse,
         window_end: n,
       }],
       ['self', 'ρ:experienced', occurrenceId],
