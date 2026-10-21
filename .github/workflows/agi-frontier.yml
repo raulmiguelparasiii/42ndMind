@@ -9,6 +9,7 @@ on:
       - 'agi/relation-sequence-recompression.js'
       - 'agi/continuous-temporal-reuse.test.js'
       - 'agi/single-channel-waveform.test.js'
+      - 'agi/multiscale-waveform.test.js'
       - 'agi/mind.js'
       - '.github/workflows/agi-frontier.yml'
   workflow_dispatch:
@@ -28,5 +29,6 @@ jobs:
       - name: Continuous relation temporal reuse
         run: node agi/continuous-temporal-reuse.test.js
       - name: Single-channel waveform recurrence
-        if: ${{ hashFiles('agi/single-channel-waveform.test.js') != '' }}
         run: node agi/single-channel-waveform.test.js
+      - name: Multiscale raw waveform recurrence
+        run: node agi/multiscale-waveform.test.js
