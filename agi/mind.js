@@ -242,6 +242,45 @@ function recordSurfaceRelationFrame(state, originalContact) {
   Core.C(state, { relations: { facts } });
 }
 
+function exactSurfaceSpan(tokens, value) {
+  if (!Array.isArray(tokens) || !['string', 'number', 'boolean'].includes(typeof value)) return undefined;
+  const compact = Surface.compactTokens(tokens);
+  const target = String(value);
+  const hits = [];
+  for (let start = 0; start < compact.length; start++) {
+    for (let end = start + 1; end <= compact.length; end++) {
+      const span = compact.slice(start, end);
+      if (Surface.renderTokens(span) === target) hits.push(span);
+    }
+  }
+  const variants = unique(hits);
+  return variants.length === 1 ? variants[0] : undefined;
+}
+function recordSurfaceExpressionAttachments(state) {
+  const episode = sequenceEpisodes(state).at(-1);
+  if (!episode || !Array.isArray(episode.input_tokens) || !episode.channels.size) return;
+  const facts = [];
+  for (const [channel, value] of episode.channels) {
+    const tokens = exactSurfaceSpan(episode.input_tokens, value);
+    if (!tokens) continue;
+    facts.push([value, 'ρ:surface_expression', {
+      tokens,
+      source_episode: episode.id,
+      source_channel: channel,
+      exact_contact: true,
+    }]);
+  }
+  if (facts.length) Core.C(state, { relations: { facts } });
+}
+function attachedSurfacePhrase(state, value) {
+  const rows = (state.knowledge?.facts || [])
+    .filter(f => same(f.subject, value) && f.relation === 'ρ:surface_expression' && f.object && Array.isArray(f.object.tokens))
+    .sort((a, b) => sequenceEpisodeNumber(a.object.source_episode) - sequenceEpisodeNumber(b.object.source_episode));
+  if (!rows.length) return undefined;
+  const variants = unique(rows.map(f => f.object.tokens));
+  return variants.length === 1 ? variants[0] : rows.at(-1).object.tokens;
+}
+
 function currentObjects(state, subject, relation) {
   if (subject === undefined || relation === undefined) return [];
   return unique((state.knowledge?.current?.facts || []).filter(f => same(f.subject, subject) && same(f.relation, relation)).map(f => f.object));
@@ -310,7 +349,14 @@ function groundDiscourseFromCanonicalM(state, episodes, seq, subject) {
   const template = Surface.buildTemplate(learned.episodes.map(e => e.output_tokens));
   if (!template) return false;
   const roles = Surface.inferOutputRoles(learned.episodes, template);
-  const filled = Surface.fillTemplate(template, learned.episodes, learned.episodes, channels, roles);
+  const filled = Surface.fillTemplate(
+    template,
+    learned.episodes,
+    learned.episodes,
+    channels,
+    roles,
+    (_channel, value) => attachedSurfacePhrase(state, value),
+  );
   if (!filled.tokens || filled.unresolved.length) return false;
   seq.output_template = template;
   seq.output_roles = roles;
@@ -357,7 +403,14 @@ function groundSurfaceFromCanonicalM(state) {
   const roles = Surface.inferOutputRoles(relationEpisodes, template);
   const channels = new Map((seq.inferred_channels || []).map(x => [x.index, x.value]));
   channels.set(0, subject); channels.set(1, relation); channels.set(2, object);
-  const filled = Surface.fillTemplate(template, relationEpisodes, episodes, channels, roles);
+  const filled = Surface.fillTemplate(
+    template,
+    relationEpisodes,
+    episodes,
+    channels,
+    roles,
+    (_channel, value) => attachedSurfacePhrase(state, value),
+  );
   if (!filled.tokens || filled.unresolved.length) {
     seq.output_template = template; seq.output_roles = roles; seq.output_tokens = null; seq.expression = null; seq.unresolved_output_positions = filled.unresolved;
     seq.canonical_grounding = { subject, relation, object, source: 'M.knowledge.current.facts', authority: 'canonical_M', status: 'object_warranted_expression_unlearned' }; return;
@@ -375,6 +428,7 @@ function C(state, realityContact) {
   const rawSurfaceOnly = !!(contact && typeof contact === 'object' && contact.surface && !Array.isArray(contact.surface.channels));
   Core.C(state, contact);
   recordSurfaceRelationFrame(state, realityContact);
+  recordSurfaceExpressionAttachments(state);
   if (rawSurfaceOnly) {
     const episodes = sequenceEpisodes(state); const currentEpisode = episodes.at(-1); const triple = inferRawSurfaceTriple(episodes, currentEpisode);
     if (triple) settleRawSurfaceProposal(state, currentEpisode.id, triple);
