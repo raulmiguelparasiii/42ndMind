@@ -6,6 +6,10 @@ on:
       - experiment/one-live-m-architecture-20261020
   workflow_dispatch:
 
+concurrency:
+  group: agi-blueprint-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   blueprint:
     runs-on: ubuntu-latest
