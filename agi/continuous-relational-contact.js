@@ -244,4 +244,81 @@ function relationalUpdate(state, options = {}) {
   return { relations: { facts, rules } };
 }
 
-module.exports = { detect, relationalUpdate };
+function receptorIndex(term) {
+  const match = /^receptor:p(\d+)$/.exec(String(term));
+  return match ? Number(match[1]) : null;
+}
+function numericallySame(a, b) {
+  const scale = Math.max(1, Math.abs(a), Math.abs(b));
+  return Math.abs(a - b) <= 1e-9 * scale;
+}
+
+// Current quantitative completion is a disposable view over M-owned relations.
+// It writes no sensor value into contact history and owns no prediction state.
+// Multiple independent relations must agree before an open target is completed.
+function completeCurrent(state) {
+  const current = state.current;
+  if (!current || !current.completed) return state;
+  const observed = current.observed || {};
+  const completed = current.completed;
+  const relations = (state.knowledge?.current?.facts || []).flatMap(f => {
+    if (f.relation !== 'ρ:continuous_dependence' || !f.object ||
+        !f.object.transform || f.object.transform.kind !== 'affine') return [];
+    const source = receptorIndex(f.subject);
+    const target = receptorIndex(f.object.target);
+    if (source === null || target === null || !Number.isInteger(f.object.lag) || f.object.lag < 0) return [];
+    const { scale, offset } = f.object.transform;
+    if (!finite(scale) || !finite(offset)) return [];
+    return [{ source, target, lag: f.object.lag, scale, offset }];
+  });
+  if (!relations.length) return state;
+
+  const inferred = new Set(current.inferred || []);
+  const unresolved = new Set(current.unresolved || []);
+  const concernCount = state.concern_count || 0;
+  const contacts = state.contacts || [];
+
+  for (let pass = 0; pass < Math.min(16, relations.length + 1); pass++) {
+    const proposals = new Map();
+    for (const relation of relations) {
+      const targetFeature = `p${relation.target}`;
+      if (Object.prototype.hasOwnProperty.call(observed, targetFeature) ||
+          Object.prototype.hasOwnProperty.call(completed, targetFeature)) continue;
+
+      let sourceValue;
+      if (relation.lag === 0) sourceValue = completed[`p${relation.source}`];
+      else {
+        const sourceContact = contacts.length - 1 - relation.lag;
+        if (sourceContact < 0) continue;
+        sourceValue = valueAt(contacts[sourceContact], relation.source, concernCount);
+      }
+      if (!finite(sourceValue)) continue;
+      const predicted = relation.scale * sourceValue + relation.offset;
+      if (!finite(predicted)) continue;
+      if (!proposals.has(targetFeature)) proposals.set(targetFeature, []);
+      proposals.get(targetFeature).push(predicted);
+    }
+
+    let changed = false;
+    for (const [target, values] of proposals) {
+      if (Object.prototype.hasOwnProperty.call(completed, target) || !values.length) continue;
+      const first = values[0];
+      if (!values.every(value => numericallySame(value, first))) {
+        unresolved.add(target);
+        continue;
+      }
+      completed[target] = values.reduce((sum, value) => sum + value, 0) / values.length;
+      inferred.add(target);
+      unresolved.delete(target);
+      changed = true;
+    }
+    if (!changed) break;
+  }
+
+  current.inferred = [...inferred].sort();
+  current.unresolved = [...unresolved]
+    .filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort();
+  return state;
+}
+
+module.exports = { detect, relationalUpdate, completeCurrent };
