@@ -22,19 +22,28 @@ function valueAt(frame, index, concernCount) {
   return finite(value) ? value : undefined;
 }
 
-function pearson(pairs) {
-  const n = pairs.length;
-  if (n < 2) return null;
-  let sx = 0, sy = 0;
-  for (const [x, y] of pairs) { sx += x; sy += y; }
-  const mx = sx / n, my = sy / n;
-  let xx = 0, yy = 0, xy = 0;
-  for (const [x, y] of pairs) {
-    const dx = x - mx, dy = y - my;
-    xx += dx * dx; yy += dy * dy; xy += dx * dy;
+// Streaming Pearson calculation for one temporal offset. Widening the generic
+// lag horizon must not allocate a fresh pair array for every source/target/lag.
+function pearsonAtLag(contacts, start, end, source, target, lag, concernCount) {
+  let count = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+  const first = Math.max(start, lag);
+  for (let t = first; t < end; t++) {
+    const x = valueAt(contacts[t - lag], source, concernCount);
+    const y = valueAt(contacts[t], target, concernCount);
+    if (x === undefined || y === undefined) continue;
+    count++;
+    sx += x; sy += y;
+    sxx += x * x; syy += y * y; sxy += x * y;
   }
-  if (!(xx > 1e-18) || !(yy > 1e-18)) return null;
-  return xy / Math.sqrt(xx * yy);
+  if (count < 2) return { correlation: null, support: count };
+  const vx = count * sxx - sx * sx;
+  const vy = count * syy - sy * sy;
+  if (!(vx > 1e-18) || !(vy > 1e-18)) return { correlation: null, support: count };
+  const raw = (count * sxy - sx * sy) / Math.sqrt(vx * vy);
+  // Floating-point roundoff can put an exact affine relation infinitesimally
+  // outside [-1,1]. Clamp only the numerical representation, not the evidence.
+  const correlation = Math.max(-1, Math.min(1, raw));
+  return { correlation, support: count };
 }
 
 function relationKey(x) {
@@ -45,12 +54,10 @@ function relationTermId(x) {
   return `continuous-relation:${x.source}:${x.target}:${x.lag}:${x.orientation}`;
 }
 
-function detect(state, {
-  window = 64,
-  maxLag = 4,
-  minSupport = 24,
-  threshold = 0.995,
-} = {}) {
+function detect(state, options = {}) {
+  const window = options.window ?? 64;
+  const minSupport = options.minSupport ?? 24;
+  const threshold = options.threshold ?? 0.995;
   const contacts = state.contacts || [];
   const n = contacts.length;
   if (n < minSupport) return [];
@@ -59,6 +66,12 @@ function detect(state, {
   let channels = 0;
   for (let i = start; i < n; i++) channels = Math.max(channels, receptorCount(contacts[i], concernCount));
   if (channels < 1) return [];
+
+  // Temporal search is bounded by evidence, not by a domain-specific constant.
+  // A lag is eligible only while at least minSupport observations can exist in the
+  // retained evidence horizon. Callers may still impose a smaller explicit budget.
+  const evidenceMaxLag = Math.max(0, Math.min(window - minSupport, n - minSupport));
+  const maxLag = options.maxLag === undefined ? evidenceMaxLag : Math.min(Math.max(0, options.maxLag), evidenceMaxLag);
 
   const found = [];
   for (let source = 0; source < channels; source++) {
@@ -71,26 +84,23 @@ function detect(state, {
       const firstLag = source === target ? 1 : (source < target ? 0 : 1);
       let best = null;
       for (let lag = firstLag; lag <= maxLag; lag++) {
-        const pairs = [];
-        const first = Math.max(start, lag);
-        for (let t = first; t < n; t++) {
-          const x = valueAt(contacts[t - lag], source, concernCount);
-          const y = valueAt(contacts[t], target, concernCount);
-          if (x !== undefined && y !== undefined) pairs.push([x, y]);
-        }
-        if (pairs.length < minSupport) continue;
-        const r = pearson(pairs);
-        if (r === null || Math.abs(r) < threshold) continue;
+        const measured = pearsonAtLag(contacts, start, n, source, target, lag, concernCount);
+        if (measured.support < minSupport || measured.correlation === null) continue;
+        const r = measured.correlation;
+        if (Math.abs(r) < threshold) continue;
         const candidate = {
           source,
           target,
           lag,
           orientation: r >= 0 ? 'same' : 'opposed',
           correlation: r,
-          support: pairs.length,
+          support: measured.support,
         };
         if (!best || Math.abs(candidate.correlation) > Math.abs(best.correlation) + 1e-12 ||
             (Math.abs(Math.abs(candidate.correlation) - Math.abs(best.correlation)) < 1e-12 && candidate.lag < best.lag)) best = candidate;
+        // No later lag can beat an exact relation, and lags are visited shortest
+        // first, so stopping here is both exact and cheaper.
+        if (Math.abs(r) >= 1 - 1e-12) break;
       }
       if (best) found.push(best);
     }
