@@ -64,6 +64,10 @@ function C(state, realityContact) {
       const temporal = RelationSequence.relationalUpdate(state);
       if (temporal) Relational.C(state, temporal);
     }
+
+    // Quantitative realization is a derived current view over active M-owned
+    // relations. It can fill an open receptor term but never rewrites raw contact.
+    Continuous.completeCurrent(state);
   }
 
   // Expression choice is derived only after canonical M has settled. A learned
