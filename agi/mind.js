@@ -26,17 +26,23 @@ function unansweredSurface(contact) {
 }
 
 // Whole-history categorical recompression is an expensive proposal search, not
-// epistemic authority. Its cadence therefore scales with receptor dimensionality.
-// Exact contact is still retained on every update and existing learned structure
-// is still incrementally refreshed. This prevents a dense raw stream from causing
-// repeated combinatorial rescans merely because its exact numeric values are new.
+// epistemic authority. Exact contact enters M every update; existing learned
+// patterns refresh incrementally; continuous numerical relation discovery has its
+// own evidence cadence. Therefore rescanning almost the same entire life every
+// sqrt(n) steps adds cost without adding authority.
 function budgetWholeRecompression(state, contact) {
   const frame = frameFrom(contact);
   if (!frame || !state?.structure) return;
-  const dimensions = frame.length - (state.concern_count || 0);
-  if (dimensions < 8) return; // preserve the existing small-world cadence exactly.
+
+  // Preserve one early developmental global search once four experiences exist.
+  // After that, use deterministic checkpoints whose spacing scales with raw
+  // receptor dimensionality. This changes search scheduling, never retained M.
+  const experiences = state.experiences?.length || 0;
+  if (experiences < 4) return;
+
+  const dimensions = Math.max(1, frame.length - (state.concern_count || 0));
   const interval = Math.max(16, dimensions * dimensions);
-  const nextExperience = (state.experiences?.length || 0) + 1;
+  const nextExperience = experiences + 1;
   const boundary = Math.ceil(nextExperience / interval) * interval;
   if (state.structure.next_recompression_at < boundary) state.structure.next_recompression_at = boundary;
 }
