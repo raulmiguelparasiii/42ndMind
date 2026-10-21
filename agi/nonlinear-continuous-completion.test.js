@@ -45,6 +45,15 @@ assert((M.knowledge?.facts || []).some(fact =>
 const NOVEL = 1.23456789;
 const EXPECTED = f(NOVEL);
 Mind.C(M, { frame: [NOVEL, null, CONCERN] });
+const diagnosticRelations = (M.knowledge?.current?.facts || []).filter(fact =>
+  fact.relation === 'ρ:continuous_dependence' && fact.object?.target === 'receptor:p1');
+console.log('NONLINEAR_DIAGNOSTIC', JSON.stringify({
+  observed: M.current?.observed,
+  completed: M.current?.completed,
+  inferred: M.current?.inferred,
+  unresolved: M.current?.unresolved,
+  p1_relations: diagnosticRelations,
+}));
 assert.strictEqual(M.contacts.at(-1)[1], null, 'uncontacted nonlinear target was rewritten as observation');
 assert.strictEqual(M.current?.observed?.p1, undefined, 'uncontacted nonlinear target was falsely observed');
 assert(M.current?.inferred?.includes('p1'), 'nonlinear learned relation did not infer the missing target');
