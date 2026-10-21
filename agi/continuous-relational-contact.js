@@ -111,6 +111,11 @@ function nextRouteId(state) {
   }
   return `continuous-dependence:${max + 1}`;
 }
+function knownRelationTerms(state) {
+  return new Set((state.knowledge?.facts || [])
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'relation_term')
+    .map(f => String(f.subject)));
+}
 
 function relationalUpdate(state, options = {}) {
   const contacts = state.contacts || [];
@@ -123,10 +128,11 @@ function relationalUpdate(state, options = {}) {
   const detectedByKey = new Map(detected.map(x => [relationKey(x), x]));
   const active = activeRoutes(state);
   const activeByKey = new Map(active.map(rule => [relationKey(routeDescriptor(rule)), rule]));
+  const knownTerms = knownRelationTerms(state);
   const facts = [], rules = [];
 
   // A relation absent from the current evidence window is defeated as a current
-  // categorical route. Its old rule, support and raw contact remain in M.
+  // categorical route. Its old rule, support, occurrences and raw contact remain.
   for (const [key, rule] of activeByKey) {
     if (detectedByKey.has(key)) continue;
     facts.push([ref(rule.id), 'counterexample', {
@@ -137,55 +143,75 @@ function relationalUpdate(state, options = {}) {
   }
 
   for (const [key, relation] of detectedByKey) {
-    if (activeByKey.has(key)) continue;
-    const id = nextRouteId({ knowledge: { rules: [...(state.knowledge?.rules || []), ...rules] } });
     const descriptor = {
       target: `receptor:p${relation.target}`,
       lag: relation.lag,
       orientation: relation.orientation,
     };
     const termId = relationTermId(relation);
-    const occurrenceId = `relation-occurrence:continuous:${n}:${termId}`;
+    let route = activeByKey.get(key);
 
+    // Truth/warrant route is created only when needed. Repeated observation of an
+    // already-active relation does not create duplicate truth authorities.
+    if (!route) {
+      const id = nextRouteId({ knowledge: { rules: [...(state.knowledge?.rules || []), ...rules] } });
+      route = {
+        id,
+        provenance: {
+          kind: 'continuous_dependence',
+          source: relation.source,
+          target: relation.target,
+          lag: relation.lag,
+          orientation: relation.orientation,
+          authority: 'M_retained_numeric_contact',
+        },
+      };
+      facts.push(
+        [ref(id), 'ρ:continuous_support', 'current_window'],
+        [ref(id), 'ρ:continuous_evidence', {
+          support: relation.support,
+          absolute_correlation: Math.abs(relation.correlation),
+          window_end: n,
+        }],
+      );
+      rules.push({
+        id,
+        premises: [[ref(id), 'ρ:continuous_support', 'current_window']],
+        conclusion: [`receptor:p${relation.source}`, 'ρ:continuous_dependence', descriptor],
+        categorical: true,
+        provenance: route.provenance,
+      });
+    }
+
+    // The discovered relation is itself first-class M content. Meaning is the
+    // explicit relational structure, not this stable identifier.
+    if (!knownTerms.has(termId)) {
+      facts.push(
+        [termId, 'ρ:kind', 'relation_term'],
+        [termId, 'ρ:relation_subject', `receptor:p${relation.source}`],
+        [termId, 'ρ:relation_predicate', 'ρ:continuous_dependence'],
+        [termId, 'ρ:relation_object', descriptor],
+      );
+      knownTerms.add(termId);
+    }
+    facts.push([termId, 'ρ:grounded_by', ref(route.id)]);
+
+    // Every fresh evidence window that still instantiates the relation is a lived
+    // occurrence. This is the temporal material from which higher relations can
+    // form; it does not duplicate the categorical truth route above.
+    const occurrenceId = `relation-occurrence:continuous:${n}:${termId}`;
     facts.push(
-      [ref(id), 'ρ:continuous_support', 'current_window'],
-      [ref(id), 'ρ:continuous_evidence', {
+      [occurrenceId, 'ρ:kind', 'relation_occurrence'],
+      [occurrenceId, 'ρ:instantiates', ref(termId)],
+      [occurrenceId, 'ρ:order', n],
+      [occurrenceId, 'ρ:grounded_by', ref(route.id)],
+      [occurrenceId, 'ρ:evidence', {
         support: relation.support,
         absolute_correlation: Math.abs(relation.correlation),
         window_end: n,
       }],
-
-      // The discovered relation is itself first-class M content. These facts do
-      // not add semantic interpretation: they only reify the same relation that
-      // the categorical route below concludes.
-      [termId, 'ρ:kind', 'relation_term'],
-      [termId, 'ρ:relation_subject', `receptor:p${relation.source}`],
-      [termId, 'ρ:relation_predicate', 'ρ:continuous_dependence'],
-      [termId, 'ρ:relation_object', descriptor],
-      [termId, 'ρ:grounded_by', ref(id)],
-
-      // Each later reactivation is a distinct lived occurrence of the same
-      // structural relation. Order comes from exact retained-contact count.
-      [occurrenceId, 'ρ:kind', 'relation_occurrence'],
-      [occurrenceId, 'ρ:instantiates', ref(termId)],
-      [occurrenceId, 'ρ:order', n],
-      [occurrenceId, 'ρ:grounded_by', ref(id)],
       ['self', 'ρ:experienced', occurrenceId],
     );
-    rules.push({
-      id,
-      premises: [[ref(id), 'ρ:continuous_support', 'current_window']],
-      conclusion: [`receptor:p${relation.source}`, 'ρ:continuous_dependence', descriptor],
-      categorical: true,
-      provenance: {
-        kind: 'continuous_dependence',
-        source: relation.source,
-        target: relation.target,
-        lag: relation.lag,
-        orientation: relation.orientation,
-        authority: 'M_retained_numeric_contact',
-      },
-    });
   }
 
   if (!facts.length && !rules.length) return null;
