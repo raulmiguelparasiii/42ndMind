@@ -5,10 +5,10 @@ const Mind = require('./mind.js');
 
 // Falsification target:
 // Raw numerical contact must first become ordinary first-class relations in M.
-// Repeated changes among those relations must then become input to the already
-// existing generic ordered-recompression law. A learned ordered relation must
-// itself be a first-class M term, and recursive recompression must be able to
-// build a learned relation whose component is another learned relation.
+// Repeated observations/changes among those relations must then become input to
+// the already existing generic ordered-recompression law. A learned ordered
+// relation must itself be a first-class M term, and recursive recompression must
+// be able to build a learned relation whose component is another learned relation.
 //
 // No surface language, semantic relation labels, episode labels, or modality
 // knowledge are supplied to the individual.
@@ -21,11 +21,11 @@ function rnd() {
 
 const CHANNELS = 8;
 const CONCERN = 29;
-// One complete detector window per regime is sufficient. Nine A/B cycles leave
-// 18 possible relation activations while the target still requires >=16 and
-// recursive compression depth >=2.
-const PHASE = 64;
-const CYCLES = 9;
+// Each regime lasts longer than the detector's 64-contact evidence window, so
+// the same relation is genuinely observed on several later cadences. Two A/B
+// cycles are enough to provide >16 relation occurrences and recursive reuse.
+const PHASE = 96;
+const CYCLES = 2;
 const TOTAL = PHASE * CYCLES * 2;
 
 function rawFrame(t) {
@@ -64,7 +64,7 @@ const orderedOccurrences = [...occurrences.entries()]
   .filter(([, o]) => o.kind && o.term && Number.isFinite(o.order))
   .sort((a, b) => a[1].order - b[1].order || String(a[0]).localeCompare(String(b[0])));
 assert(orderedOccurrences.length >= 16,
-  'repeated reality-derived relation activations were not retained as ordered relation occurrences');
+  'repeated reality-derived relation observations were not retained as ordered relation occurrences');
 assert(new Set(orderedOccurrences.map(([, o]) => o.term)).size >= 2,
   'ordered occurrences did not preserve distinct first-order relation identities');
 
