@@ -42,3 +42,5 @@ jobs:
         run: node agi/open-discourse.test.js
       - name: High-dimensional continuous sensing gate
         run: node agi/high-dimensional-continuous.test.js
+      - name: Continuous relation temporal-reuse gate
+        run: node agi/continuous-temporal-reuse.test.js
