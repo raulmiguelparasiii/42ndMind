@@ -1,6 +1,6 @@
 'use strict';
 
-// Experimental one-live-M public entrypoint.
+// One-live-M AGI public entrypoint.
 // Durable cognition remains in canonical M. Everything here is a zero-state
 // structural bridge over M-owned contact and canonical relational closure.
 
@@ -28,11 +28,15 @@ function cloneContact(contact) {
   };
   return out;
 }
+function relationalTriples(contact) {
+  const facts = contact && typeof contact === 'object' && contact.relations && Array.isArray(contact.relations.facts)
+    ? contact.relations.facts : [];
+  return facts.filter(x => Array.isArray(x) && x.length === 3);
+}
 function enrichSurfaceWithRelation(contact) {
   const out = cloneContact(contact);
   if (!out || typeof out !== 'object' || !out.surface || Array.isArray(out.surface.channels)) return out;
-  const facts = out.relations && Array.isArray(out.relations.facts) ? out.relations.facts : [];
-  const triples = facts.filter(x => Array.isArray(x) && x.length === 3);
+  const triples = relationalTriples(out);
   if (triples.length === 1) out.surface.channels = triples[0].slice();
   return out;
 }
@@ -45,12 +49,18 @@ function sequenceEpisodes(state) {
   const groups = new Map();
   for (const f of state.knowledge?.facts || []) {
     if (typeof f.subject !== 'string' || !f.subject.startsWith('sequence-contact:')) continue;
-    if (!groups.has(f.subject)) groups.set(f.subject, { id: f.subject, channels: new Map() });
+    if (!groups.has(f.subject)) groups.set(f.subject, { id: f.subject, channels: new Map(), relations: [] });
     const e = groups.get(f.subject);
     if (f.relation === 'ρ:input_tokens' && Array.isArray(f.object)) e.input_tokens = f.object.slice();
     else if (f.relation === 'ρ:output_tokens' && Array.isArray(f.object)) e.output_tokens = f.object.slice();
     else if (f.relation === 'ρ:contact_channel' && f.object && Number.isInteger(f.object.index)) e.channels.set(f.object.index, f.object.value);
+    else if (f.relation === 'ρ:contact_relation' && f.object && typeof f.object === 'object') {
+      if (Object.prototype.hasOwnProperty.call(f.object, 'subject') && Object.prototype.hasOwnProperty.call(f.object, 'relation') && Object.prototype.hasOwnProperty.call(f.object, 'object')) e.relations.push({ ...f.object });
+    } else if (f.relation === 'ρ:proposes_relation' && f.object && typeof f.object === 'object') {
+      if (Object.prototype.hasOwnProperty.call(f.object, 'subject') && Object.prototype.hasOwnProperty.call(f.object, 'relation') && Object.prototype.hasOwnProperty.call(f.object, 'object')) e.relations.push({ ...f.object, source: 'proposal', order: Number.MAX_SAFE_INTEGER });
+    }
   }
+  for (const e of groups.values()) e.relations.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
   return [...groups.values()].sort((a, b) => sequenceEpisodeNumber(a.id) - sequenceEpisodeNumber(b.id));
 }
 
@@ -69,6 +79,27 @@ function directRole(episodes, queryTokens, channel) {
   candidates.sort((a, b) => b.context_diversity - a.context_diversity || b.support - a.support || stable(a.value).localeCompare(stable(b.value)));
   const topScore = `${candidates[0].context_diversity}:${candidates[0].support}`;
   const top = candidates.filter(x => `${x.context_diversity}:${x.support}` === topScore);
+  const values = unique(top.map(x => x.value));
+  return values.length === 1 ? values[0] : undefined;
+}
+
+function episodeSubjects(e) {
+  return unique((e.relations || []).map(r => r.subject));
+}
+function directFrameSubject(episodes, queryTokens) {
+  const candidates = [];
+  for (const token of unique(queryTokens || [])) {
+    const matching = episodes.filter(e => (e.input_tokens || []).includes(token) && episodeSubjects(e).length === 1);
+    if (matching.length < 2) continue;
+    const values = unique(matching.map(e => episodeSubjects(e)[0]));
+    if (values.length !== 1) continue;
+    const diversity = unique(matching.flatMap(e => (e.relations || []).map(r => [r.relation, r.object]))).length;
+    candidates.push({ value: values[0], token, support: matching.length, context_diversity: diversity });
+  }
+  if (!candidates.length) return undefined;
+  candidates.sort((a, b) => b.context_diversity - a.context_diversity || b.support - a.support || stable(a.value).localeCompare(stable(b.value)));
+  const score = `${candidates[0].context_diversity}:${candidates[0].support}`;
+  const top = candidates.filter(x => `${x.context_diversity}:${x.support}` === score);
   const values = unique(top.map(x => x.value));
   return values.length === 1 ? values[0] : undefined;
 }
@@ -199,6 +230,18 @@ function settleRawSurfaceProposal(state, proposalEpisode, triple) {
   } });
 }
 
+function recordSurfaceRelationFrame(state, originalContact) {
+  if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface) return;
+  const triples = relationalTriples(originalContact);
+  if (!triples.length) return;
+  const episode = sequenceEpisodes(state).at(-1);
+  if (!episode) return;
+  const facts = triples.map((t, order) => [episode.id, 'ρ:contact_relation', {
+    order, subject: t[0], relation: t[1], object: t[2], source: 'simultaneous_relational_contact',
+  }]);
+  Core.C(state, { relations: { facts } });
+}
+
 function currentObjects(state, subject, relation) {
   if (subject === undefined || relation === undefined) return [];
   return unique((state.knowledge?.current?.facts || []).filter(f => same(f.subject, subject) && same(f.relation, relation)).map(f => f.object));
@@ -207,20 +250,104 @@ function suppressUngroundedSurface(seq, subject, relation, objects, status) {
   seq.output_tokens = null; seq.expression = null; seq.unresolved_output_positions = ['canonical_object'];
   seq.canonical_grounding = { subject, relation, candidates: objects, source: 'M.knowledge.current.facts', authority: 'canonical_M', status: status || (objects.length ? 'ambiguous' : 'unresolved') };
 }
+
+function contactRelations(e) {
+  return (e.relations || []).filter(r => r.source === 'simultaneous_relational_contact');
+}
+function discourseSignature(e) {
+  return unique(contactRelations(e).map(r => r.relation));
+}
+function discourseProjection(e, signature) {
+  const rels = contactRelations(e);
+  const subjects = unique(rels.map(r => r.subject));
+  if (subjects.length !== 1) return null;
+  const channels = new Map([[0, subjects[0]]]);
+  for (let i = 0; i < signature.length; i++) {
+    const objects = unique(rels.filter(r => same(r.relation, signature[i])).map(r => r.object));
+    if (objects.length !== 1) return null;
+    channels.set(i + 1, objects[0]);
+  }
+  return { ...e, channels };
+}
+function discourseNeighbors(episodes, inputTokens) {
+  const candidates = episodes
+    .filter(e => Array.isArray(e.input_tokens) && Array.isArray(e.output_tokens) && discourseSignature(e).length >= 2)
+    .map(e => ({ e, signature: discourseSignature(e), score: structuralSimilarity(inputTokens, e.input_tokens) }))
+    .sort((a, b) => b.score - a.score || sequenceEpisodeNumber(b.e.id) - sequenceEpisodeNumber(a.e.id));
+  if (!candidates.length) return null;
+  const best = candidates[0].score;
+  const near = candidates.filter(x => x.score >= Math.max(0.12, best - 0.15));
+  const groups = new Map();
+  for (const x of near) {
+    const key = stable(x.signature);
+    if (!groups.has(key)) groups.set(key, { signature: x.signature, rows: [] });
+    groups.get(key).rows.push(x);
+  }
+  const ranked = [...groups.values()].map(g => ({
+    ...g,
+    support: g.rows.length,
+    subjects: unique(g.rows.flatMap(x => episodeSubjects(x.e))).length,
+    score: g.rows.reduce((s, x) => s + x.score, 0) / g.rows.length,
+  })).filter(g => g.support >= 2 && g.subjects >= 2)
+    .sort((a, b) => b.score - a.score || b.support - a.support || stable(a.signature).localeCompare(stable(b.signature)));
+  if (!ranked.length) return null;
+  const chosen = ranked[0];
+  const projected = chosen.rows.map(x => discourseProjection(x.e, chosen.signature)).filter(Boolean);
+  return projected.length >= 2 ? { signature: chosen.signature, episodes: projected, score: chosen.score } : null;
+}
+function groundDiscourseFromCanonicalM(state, episodes, seq, subject) {
+  const learned = discourseNeighbors(episodes, seq.input_tokens || []);
+  if (!learned) return false;
+  const channels = new Map([[0, subject]]);
+  const grounding = [];
+  for (let i = 0; i < learned.signature.length; i++) {
+    const relation = learned.signature[i];
+    const objects = currentObjects(state, subject, relation);
+    if (objects.length !== 1) return false;
+    channels.set(i + 1, objects[0]);
+    grounding.push({ relation, object: objects[0] });
+  }
+  const template = Surface.buildTemplate(learned.episodes.map(e => e.output_tokens));
+  if (!template) return false;
+  const roles = Surface.inferOutputRoles(learned.episodes, template);
+  const filled = Surface.fillTemplate(template, learned.episodes, learned.episodes, channels, roles);
+  if (!filled.tokens || filled.unresolved.length) return false;
+  seq.output_template = template;
+  seq.output_roles = roles;
+  seq.output_tokens = filled.tokens;
+  seq.unresolved_output_positions = [];
+  seq.expression = Surface.renderTokens(filled.tokens);
+  seq.discourse_composition = true;
+  seq.discourse_signature = learned.signature.slice();
+  seq.canonical_grounding = {
+    subject,
+    relations: grounding,
+    source: 'M.knowledge.current.facts',
+    authority: 'canonical_M',
+    status: 'grounded_discourse',
+  };
+  return true;
+}
+
 function groundSurfaceFromCanonicalM(state) {
   const seq = state.current?.sequence;
   if (!seq) return;
   const episodes = sequenceEpisodes(state);
   const directSubject = directRole(episodes, seq.input_tokens, 0);
-  const contextualSubject = directSubject === undefined ? contextualRole(episodes, seq.input_tokens, 0) : undefined;
-  const subject = directSubject !== undefined ? directSubject : contextualSubject?.value;
+  const frameSubject = directSubject === undefined ? directFrameSubject(episodes, seq.input_tokens) : undefined;
+  const contextualSubject = directSubject === undefined && frameSubject === undefined ? contextualRole(episodes, seq.input_tokens, 0) : undefined;
+  const subject = directSubject !== undefined ? directSubject : frameSubject !== undefined ? frameSubject : contextualSubject?.value;
   const directRelation = directRole(episodes, seq.input_tokens, 1);
   const contextualRelation = directRelation === undefined ? contextualRole(episodes, seq.input_tokens, 1) : undefined;
   const relation = directRelation !== undefined ? directRelation : contextualRelation?.value;
   seq.contextual_subject_resolution = !!contextualSubject; seq.contextual_relation_resolution = !!contextualRelation;
   if (contextualSubject) seq.contextual_subject_evidence = { cue: contextualSubject.cue, support: contextualSubject.support };
   if (contextualRelation) seq.contextual_relation_evidence = { cue: contextualRelation.cue, support: contextualRelation.support };
-  if (subject === undefined || relation === undefined) return;
+  if (subject === undefined) return;
+  if (relation === undefined) {
+    if (groundDiscourseFromCanonicalM(state, episodes, seq, subject)) return;
+    return;
+  }
   const objects = currentObjects(state, subject, relation);
   if (objects.length !== 1) { suppressUngroundedSurface(seq, subject, relation, objects); return; }
   const object = objects[0];
@@ -247,6 +374,7 @@ function C(state, realityContact) {
   const contact = enrichSurfaceWithRelation(realityContact);
   const rawSurfaceOnly = !!(contact && typeof contact === 'object' && contact.surface && !Array.isArray(contact.surface.channels));
   Core.C(state, contact);
+  recordSurfaceRelationFrame(state, realityContact);
   if (rawSurfaceOnly) {
     const episodes = sequenceEpisodes(state); const currentEpisode = episodes.at(-1); const triple = inferRawSurfaceTriple(episodes, currentEpisode);
     if (triple) settleRawSurfaceProposal(state, currentEpisode.id, triple);
