@@ -2,13 +2,13 @@
 
 // Public one-M / one-C AGI entrypoint.
 //
-// The previous relational/surface implementation is retained byte-for-byte in
-// mind-relational.js. This wrapper adds no cognitive state. After exact numeric
-// contact has entered the same M, a pure content-neutral variation calculation
-// may return ordinary relational contact, which is settled through the same C.
+// Durable cognition remains in canonical M. Relational/surface completion,
+// continuous-contact discovery, and discourse arbitration are zero-state views
+// or transformations over that same M; none owns a second truth or memory state.
 
 const Relational = require('./mind-relational.js');
 const Continuous = require('./continuous-relational-contact.js');
+const Discourse = require('./discourse-arbiter.js');
 
 function one(actionCount, concernCount = 1) {
   return Relational.one(actionCount, concernCount);
@@ -17,6 +17,10 @@ function one(actionCount, concernCount = 1) {
 function frameFrom(contact) {
   if (Array.isArray(contact)) return contact;
   return contact && typeof contact === 'object' && Array.isArray(contact.frame) ? contact.frame : null;
+}
+function unansweredSurface(contact) {
+  return !!(contact && typeof contact === 'object' && contact.surface &&
+    (contact.surface.output === undefined || contact.surface.output === null));
 }
 
 // Whole-history categorical recompression is an expensive proposal search, not
@@ -44,6 +48,11 @@ function C(state, realityContact) {
     const update = Continuous.relationalUpdate(state);
     if (update) Relational.C(state, update);
   }
+
+  // Expression choice is derived only after canonical M has settled. A learned
+  // multi-relation discourse structure may replace a narrower surface completion
+  // only when it is the stronger structural match to the whole current input.
+  if (unansweredSurface(realityContact)) Discourse.arbitrate(state);
   return state;
 }
 
