@@ -1,4 +1,4 @@
-name: AGI blueprint bounded gate
+name: AGI blueprint developmental gate
 
 on:
   push:
@@ -34,5 +34,5 @@ jobs:
         run: node agi/contextual-dialogue.test.js
       - name: Raw-language acquisition gate
         run: node agi/raw-language-acquisition.test.js
-      - name: Post-freeze cross-domain certification
-        run: node agi/post-freeze-certification.test.js
+      - name: Open multi-relation discourse gate
+        run: node agi/open-discourse.test.js
