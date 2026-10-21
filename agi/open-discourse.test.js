@@ -25,6 +25,12 @@ const forms = [word('form'), word('form'), word('form')];
 const risks = [word('risk'), word('risk'), word('risk')];
 const bands = [word('band'), word('band'), word('band')];
 
+// Deliberately crossed assignment. No one relation predicts either of the other
+// two, so a wrong role binding cannot accidentally produce the right discourse.
+const toneIx = [0, 0, 1, 1, 2, 2];
+const formIx = [0, 1, 0, 2, 1, 2];
+const riskIx = [0, 1, 1, 2, 2, 0];
+
 const M = Mind.one(2, 1);
 const V = name => ({ var: String(name) });
 
@@ -32,13 +38,13 @@ function paired(input, output, facts) {
   Mind.C(M, { surface: { input, output }, relations: { facts } });
 }
 
-// Learn ordinary single-relation language grounding across crossed entities.
+// Learn ordinary single-relation language grounding across independently crossed entities.
 for (let round = 0; round < 3; round++) {
   for (let i = 0; i < entities.length; i++) {
     const e = entities[i];
-    const tone = tones[i % tones.length];
-    const form = forms[(i + 1) % forms.length];
-    const risk = risks[(i + 2) % risks.length];
+    const tone = tones[toneIx[i]];
+    const form = forms[formIx[i]];
+    const risk = risks[riskIx[i]];
     paired(`${e} has tone ${tone}.`, 'noted.', [[e, REL_TONE, tone]]);
     paired(`what tone is ${e}?`, `it sounds ${tone}.`, [[e, REL_TONE, tone]]);
     paired(`${e} has form ${form}.`, 'noted.', [[e, REL_FORM, form]]);
@@ -53,13 +59,22 @@ for (let round = 0; round < 3; round++) {
   }
 }
 
+// Prove the schooling itself does not contain hidden one-to-one relation shortcuts.
+for (const ix of [toneIx, formIx, riskIx]) assert.strictEqual(new Set(ix).size, 3);
+for (let a = 0; a < 3; a++) {
+  const toneRows = entities.map((_, i) => i).filter(i => toneIx[i] === a);
+  assert(new Set(toneRows.map(i => formIx[i])).size > 1, 'tone still predicts form in schooling');
+  assert(new Set(toneRows.map(i => riskIx[i])).size > 1, 'tone still predicts risk in schooling');
+}
+
 // Introduce the target as a surface identity only. No semantic relation is used
 // to teach its name, so a broad query cannot accidentally resolve a relation from it.
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `meet ${target}.`, output: 'noted.', channels: [target] } });
 
 // Target tone/form are learned from raw surface-only assertions: no triples.
+// This combination is not present as a schooling tuple.
 const targetTone = tones[1];
-const targetForm = forms[2];
+const targetForm = forms[1];
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${target} has tone ${targetTone}.`, output: 'noted.' } });
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${target} has form ${targetForm}.`, output: 'noted.' } });
 
@@ -107,6 +122,7 @@ for (const forbidden of ['language_state', 'memory_state', 'semantic_dictionary'
 console.log(JSON.stringify({
   one_persistent_M: M.whole === 1,
   one_C_entrypoint: true,
+  independently_crossed_relation_roles: true,
   broad_query_relation_supplied: false,
   raw_learned_relations_used: true,
   canonically_derived_relation_used: true,
