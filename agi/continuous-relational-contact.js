@@ -40,6 +40,10 @@ function pearson(pairs) {
 function relationKey(x) {
   return `${x.source}>${x.target}@${x.lag}:${x.orientation}`;
 }
+function relationTermId(x) {
+  // The ID is only an address. Meaning remains in ordinary M facts below.
+  return `continuous-relation:${x.source}:${x.target}:${x.lag}:${x.orientation}`;
+}
 
 function detect(state, {
   window = 64,
@@ -140,6 +144,9 @@ function relationalUpdate(state, options = {}) {
       lag: relation.lag,
       orientation: relation.orientation,
     };
+    const termId = relationTermId(relation);
+    const occurrenceId = `relation-occurrence:continuous:${n}:${termId}`;
+
     facts.push(
       [ref(id), 'ρ:continuous_support', 'current_window'],
       [ref(id), 'ρ:continuous_evidence', {
@@ -147,6 +154,23 @@ function relationalUpdate(state, options = {}) {
         absolute_correlation: Math.abs(relation.correlation),
         window_end: n,
       }],
+
+      // The discovered relation is itself first-class M content. These facts do
+      // not add semantic interpretation: they only reify the same relation that
+      // the categorical route below concludes.
+      [termId, 'ρ:kind', 'relation_term'],
+      [termId, 'ρ:relation_subject', `receptor:p${relation.source}`],
+      [termId, 'ρ:relation_predicate', 'ρ:continuous_dependence'],
+      [termId, 'ρ:relation_object', descriptor],
+      [termId, 'ρ:grounded_by', ref(id)],
+
+      // Each later reactivation is a distinct lived occurrence of the same
+      // structural relation. Order comes from exact retained-contact count.
+      [occurrenceId, 'ρ:kind', 'relation_occurrence'],
+      [occurrenceId, 'ρ:instantiates', ref(termId)],
+      [occurrenceId, 'ρ:order', n],
+      [occurrenceId, 'ρ:grounded_by', ref(id)],
+      ['self', 'ρ:experienced', occurrenceId],
     );
     rules.push({
       id,
