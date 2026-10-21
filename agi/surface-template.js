@@ -149,9 +149,9 @@ function phraseForChannelValue(episodes, template, channel, value, slot) {
   return variants.length === 1 && phrases.length ? variants[0] : undefined;
 }
 
-// resolvePhrase is an optional zero-state callback. It lets a caller reuse an
-// expression attachment that is already owned by M when the learned output form
-// has never emitted a particular value before. The helper itself owns no lexicon.
+// resolvePhrase is an optional zero-state callback. Template-specific historical
+// evidence always gets first priority. Only if no such expression exists may the
+// already-selected structural role reuse an expression attachment owned by M.
 function fillTemplate(template, neighbors, historical, channels, roles, resolvePhrase) {
   if (!Array.isArray(template)) return { tokens: null, unresolved: ['template'] };
   const roleBySlot = new Map((roles || []).map(r => [r.slot, r]));
@@ -161,23 +161,33 @@ function fillTemplate(template, neighbors, historical, channels, roles, resolveP
     const slot = part.variable_slot;
     let phrase;
     const role = roleBySlot.get(slot);
+
+    // First: the role selected by structural induction, using this exact output form.
     if (role && channels.has(role.channel)) {
       const value = channels.get(role.channel);
       phrase = phraseForChannelValue(neighbors, template, role.channel, value, slot);
       if (phrase === undefined) phrase = phraseForChannelValue(historical, template, role.channel, value, slot);
-      if (phrase === undefined && typeof resolvePhrase === 'function') phrase = resolvePhrase(role.channel, value, slot);
     }
+
+    // Second: if the role was underdetermined by correlated schooling, let actual
+    // template-specific expression evidence from any current channel disambiguate.
     if (phrase === undefined) {
       const candidates = [];
       for (const [channel, value] of channels) {
         let p = phraseForChannelValue(neighbors, template, channel, value, slot);
         if (p === undefined) p = phraseForChannelValue(historical, template, channel, value, slot);
-        if (p === undefined && typeof resolvePhrase === 'function') p = resolvePhrase(channel, value, slot);
         if (p !== undefined) candidates.push(p);
       }
       const variants = unique(candidates);
       if (variants.length === 1) phrase = variants[0];
     }
+
+    // Last resort: reuse a separately retained M-owned expression only for the
+    // role already selected for this slot. It cannot override stronger evidence.
+    if (phrase === undefined && role && channels.has(role.channel) && typeof resolvePhrase === 'function') {
+      phrase = resolvePhrase(role.channel, channels.get(role.channel), slot);
+    }
+
     if (phrase === undefined) unresolved.push(slot); else tokens.push(...phrase);
   }
   return { tokens: unresolved.length ? null : tokens, unresolved };
