@@ -5,14 +5,14 @@ const Mind = require('./mind.js');
 
 // Falsification target:
 // Raw numerical contact must first become ordinary first-class relations in M.
-// Repeated observations/changes among those relations must then become input to
-// the already existing generic ordered-recompression law. A learned ordered
-// relation must itself be a first-class M term, and recursive recompression must
-// be able to build a learned relation whose component is another learned relation.
+// Repeated observations of a multi-relation event must then become input to the
+// already-existing generic ordered-recompression law. The learned ordered relation
+// must itself be first-class M content, and recursive recompression must be able
+// to make a later learned relation whose component is an earlier learned relation.
 //
 // No surface language, semantic relation labels, episode labels, or modality
-// knowledge are supplied to the individual. High-dimensional scaling is tested
-// separately; this gate isolates recursive relation reuse with the minimum world.
+// knowledge are supplied. Correction and high-dimensional scaling have separate
+// gates; this world contains only what is necessary to falsify recursive reuse.
 
 let seed = 0x42c0ffee;
 function rnd() {
@@ -20,27 +20,23 @@ function rnd() {
   return (seed >>> 0) / 0x100000000;
 }
 
-const CHANNELS = 3;
+const CHANNELS = 4;
 const CONCERN = 29;
-// Each regime still exceeds the 64-contact detector window. Two A/B cycles give
-// at least sixteen fresh relation observations while eliminating irrelevant noise
-// dimensions from this specifically temporal falsification.
-const PHASE = 80;
-const CYCLES = 2;
-const TOTAL = PHASE * CYCLES * 2;
+// Detector cadence is 8. From contact 24 through 144 there are sixteen evidence
+// cadences. Sixteen repeated multi-relation events are enough for the existing
+// MDL compressor to learn a depth-1 pair and then a depth-2 pair of learned pairs.
+const TOTAL = 144;
 
-function rawFrame(t) {
-  const phase = Math.floor(t / PHASE) % 2;
+function rawFrame() {
   const x = Array.from({ length: CHANNELS }, () => rnd() * 2 - 1 + rnd() * 1e-10);
-  // p0 is the changing raw source. In alternating phases, exactly one different
-  // receptor becomes a strong same-time affine consequence of that source.
-  if (phase === 0) x[1] = 2.375 * x[0] - 0.417;
-  else x[2] = -3.125 * x[0] + 0.731;
+  // Two independent raw sources produce two unrelated same-time dependencies.
+  x[1] = 2.375 * x[0] - 0.417;
+  x[3] = -3.125 * x[2] + 0.731;
   return [...x, CONCERN];
 }
 
 const M = Mind.one(2, 1);
-for (let t = 0; t < TOTAL; t++) Mind.C(M, { frame: rawFrame(t) });
+for (let t = 0; t < TOTAL; t++) Mind.C(M, { frame: rawFrame() });
 
 assert.strictEqual(M.whole, 1);
 assert.strictEqual(Object.keys(Mind).sort().join(','), 'C,one');
@@ -64,8 +60,8 @@ for (const f of allFacts) {
 const orderedOccurrences = [...occurrences.entries()]
   .filter(([, o]) => o.kind && o.term && Number.isFinite(o.order))
   .sort((a, b) => a[1].order - b[1].order || String(a[0]).localeCompare(String(b[0])));
-assert(orderedOccurrences.length >= 16,
-  'repeated reality-derived relation observations were not retained as ordered relation occurrences');
+assert(orderedOccurrences.length >= 32,
+  'fresh reality-derived relation observations were not retained as ordered occurrences');
 assert(new Set(orderedOccurrences.map(([, o]) => o.term)).size >= 2,
   'ordered occurrences did not preserve distinct first-order relation identities');
 
@@ -91,8 +87,8 @@ function refs(value, out = []) {
   }
   return out;
 }
-assert(learned.some(([, h]) => refs(h.expansion).some(id => firstOrderSet.has(id))),
-  'higher ordered relation does not actually reference first-order learned relations');
+assert(learned.some(([, h]) => new Set(refs(h.expansion).filter(id => firstOrderSet.has(id))).size >= 2),
+  'higher ordered relation did not actually combine multiple first-order learned relations');
 
 const learnedIds = new Set(learned.map(([id]) => String(id)));
 assert(learned.some(([, h]) => h.depth >= 2 && refs(h.expansion).some(id => learnedIds.has(id))),
@@ -112,6 +108,7 @@ console.log(JSON.stringify({
   ordered_relation_occurrences: orderedOccurrences.length,
   learned_ordered_relations: learned.length,
   maximum_recursive_depth: Math.max(...learned.map(([, h]) => h.depth)),
+  multi_relation_event_became_higher_relation: true,
   learned_relation_used_inside_learned_relation: true,
   modality_specific_temporal_authority: false,
 }, null, 2));
