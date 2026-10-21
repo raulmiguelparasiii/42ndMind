@@ -148,7 +148,11 @@ function phraseForChannelValue(episodes, template, channel, value, slot) {
   const variants = unique(phrases);
   return variants.length === 1 && phrases.length ? variants[0] : undefined;
 }
-function fillTemplate(template, neighbors, historical, channels, roles) {
+
+// resolvePhrase is an optional zero-state callback. It lets a caller reuse an
+// expression attachment that is already owned by M when the learned output form
+// has never emitted a particular value before. The helper itself owns no lexicon.
+function fillTemplate(template, neighbors, historical, channels, roles, resolvePhrase) {
   if (!Array.isArray(template)) return { tokens: null, unresolved: ['template'] };
   const roleBySlot = new Map((roles || []).map(r => [r.slot, r]));
   const tokens = [], unresolved = [];
@@ -161,12 +165,14 @@ function fillTemplate(template, neighbors, historical, channels, roles) {
       const value = channels.get(role.channel);
       phrase = phraseForChannelValue(neighbors, template, role.channel, value, slot);
       if (phrase === undefined) phrase = phraseForChannelValue(historical, template, role.channel, value, slot);
+      if (phrase === undefined && typeof resolvePhrase === 'function') phrase = resolvePhrase(role.channel, value, slot);
     }
     if (phrase === undefined) {
       const candidates = [];
       for (const [channel, value] of channels) {
         let p = phraseForChannelValue(neighbors, template, channel, value, slot);
         if (p === undefined) p = phraseForChannelValue(historical, template, channel, value, slot);
+        if (p === undefined && typeof resolvePhrase === 'function') p = resolvePhrase(channel, value, slot);
         if (p !== undefined) candidates.push(p);
       }
       const variants = unique(candidates);
