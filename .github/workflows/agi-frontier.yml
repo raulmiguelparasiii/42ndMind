@@ -13,6 +13,7 @@ on:
       - 'agi/long-horizon-waveform.test.js'
       - 'agi/quantitative-continuous-completion.test.js'
       - 'agi/quantitative-continuous-correction.test.js'
+      - 'agi/continuous-unknown-not-false.test.js'
       - 'agi/mind.js'
       - '.github/workflows/agi-frontier.yml'
   workflow_dispatch:
@@ -29,6 +30,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Continuous unknown is not false
+        run: node agi/continuous-unknown-not-false.test.js
       - name: Quantitative continuous relation correction
         run: node agi/quantitative-continuous-correction.test.js
       - name: Quantitative continuous relation completion
