@@ -6,7 +6,7 @@ Specification law:
 
 The exact engineering specification is pinned at `agi/BLUEPRINT.tex`.
 
-`agi/mind.js` is the current experimental public entrypoint. It returns the same canonical `M` from `../one-mind.js` and exposes one `C`. `one-live-blueprint.js` supplies generic developmental mechanics; `mind.js` and `surface-template.js` are zero-state structural bridges. They own no independent truth, memory, planning, or semantic state. Durable cognitive content remains in canonical M.
+`agi/mind.js` is the current AGI public entrypoint under development. It returns the same canonical `M` from `../one-mind.js` and exposes one `C`. `one-live-blueprint.js` supplies generic developmental mechanics; `mind.js` and `surface-template.js` are zero-state structural bridges. They own no independent truth, memory, planning, or semantic state. Durable cognitive content remains in canonical M.
 
 ## Implemented blueprint commitments
 
@@ -68,24 +68,36 @@ The target semantic relation is never supplied as structured contact. Surface-on
 
 The raw-language gate was deliberately preserved through successive failures. It first failed because no proposal path existed, then because mechanical token rendering split identifiers, then because cross-role evidence bound the wrong object, then because repeated connector fragments were treated as structural anchors. Each failure was fixed at the earliest generic cause; the behavioral target was not weakened.
 
-## Certification discipline
+## Frozen certification result — 2026-10-21
 
-`agi/CHECKPOINT_FREEZE_0b746094.md` records the earlier pre-certification freeze. A stronger freeze is created after the current all-green developmental candidate.
+`agi/CERTIFICATION_FREEZE_20261020.md` froze the cognitive implementation before the evaluation was authored. The post-freeze commit added only evaluation/workflow files; the pinned cognitive/specification blobs did not change.
+
+`post-freeze-certification.test.js` then passed on the frozen candidate with runtime-generated vocabulary. It demonstrated, in one continuing individual and without modifying C after the freeze:
+
+- hash-verified frozen cognition;
+- late receptor relation discovery;
+- late actuator integration;
+- raw surface-only learning becoming canonical M structure;
+- proposal-before-warrant behavior;
+- variable-length realization;
+- contextual follow-up with omitted subject;
+- two-hop canonical relational reasoning whose premise had been learned through raw language;
+- later correction to a completely unseen surface value;
+- historical contact retention;
+- no parallel cognitive authority.
+
+The full developmental regression suite also passed on the same head.
+
+This passed freeze is now a checkpoint, not an endpoint. The implementation is treated as the AGI being built. Subsequent work must increase the same individual's generality rather than replace it with a second system.
+
+## Certification discipline
 
 For certification, cognition is frozen before the evaluation is authored. After that freeze, only a fresh M and new experience may change. `C`, the public language bridge, structural helpers, and domain-specific reasoning code may not be modified in response to the certification evaluation. If the evaluation fails, that candidate fails; a general repair requires a new freeze and a new post-freeze evaluation.
 
-## Current evidence boundary
+## Current frontier
 
-The branch demonstrates substantially more of the blueprint, including bounded raw-language acquisition and correction. It still does **not** establish unrestricted AGI.
+The next AGI capability target is open-ended discourse from the same M rather than one identified `(subject, relation, object)` at a time. The required mechanism is generic M-owned discourse composition: a surface request may resolve an entity/context while leaving the relation open, and the expression boundary must be able to compose several warranted current M relations into one learned variable-length discourse form without a planner, semantic dictionary, response table, or language truth store.
 
-The remaining objective certification boundary is:
+After that, the remaining major physical generality target is useful multiscale relation formation from realistic high-dimensional continuous contact such as raw audio/video under the same C.
 
-1. broader open-ended multi-turn language/discourse beyond finite learned dialogue structures;
-2. composition of variable-length discourse from arbitrary collections of M-owned relations, not only one identified subject/relation/object at a time;
-3. useful multiscale relation formation from realistic high-dimensional continuous modalities such as raw audio/video under the same C;
-4. a frozen post-implementation cross-domain evaluation showing continued acquisition, transfer, correction, conversation, and action without modifying cognition;
-5. external scrutiny/replication sufficient to justify an unrestricted AGI claim.
-
-An external language model may not hide these gaps. If one is ever used, it can only be a zero-authority proposer/renderer constrained by M; its pretrained fluency is not evidence that this system acquired language.
-
-The repository must distinguish architecture implemented, bounded behavior demonstrated, and unrestricted AGI demonstrated. The last claim remains false until the certification boundary is actually passed.
+External scrutiny/replication remains necessary before making an unrestricted empirical AGI claim to third parties. This does not change the engineering target: the repository is the AGI implementation, and every new faculty must emerge as use of the same M/C rather than as a parallel cognitive module.
