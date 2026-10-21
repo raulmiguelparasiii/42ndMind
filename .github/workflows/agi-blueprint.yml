@@ -34,3 +34,5 @@ jobs:
         run: node agi/contextual-dialogue.test.js
       - name: Raw-language acquisition gate
         run: node agi/raw-language-acquisition.test.js
+      - name: Post-freeze cross-domain certification
+        run: node agi/post-freeze-certification.test.js
