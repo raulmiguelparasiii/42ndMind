@@ -36,3 +36,5 @@ jobs:
         run: node agi/raw-language-acquisition.test.js
       - name: Open multi-relation discourse gate
         run: node agi/open-discourse.test.js
+      - name: High-dimensional continuous sensing gate
+        run: node agi/high-dimensional-continuous.test.js
