@@ -184,6 +184,24 @@ function routeStillFits(state, rule, relation, options = {}) {
   return oldRmse <= Math.max(numericFloor, 2 * newRmse + numericFloor);
 }
 
+// Missing values are epistemically unknown, not negative evidence. Count only
+// recent target times at which both ends of an existing route were actually
+// available to reality-check that route.
+function evaluableSupport(state, relation, window = 64) {
+  const contacts = state.contacts || [];
+  const end = contacts.length;
+  const start = Math.max(0, end - window);
+  const concernCount = state.concern_count || 0;
+  const first = Math.max(start, relation.lag);
+  let count = 0;
+  for (let t = first; t < end; t++) {
+    const x = valueAt(contacts[t - relation.lag], relation.source, concernCount);
+    const y = valueAt(contacts[t], relation.target, concernCount);
+    if (x !== undefined && y !== undefined) count++;
+  }
+  return count;
+}
+
 function relationalUpdate(state, options = {}) {
   const contacts = state.contacts || [];
   const n = contacts.length;
@@ -202,12 +220,16 @@ function relationalUpdate(state, options = {}) {
   const knownTerms = knownRelationTerms(state);
   const facts = [], rules = [];
 
-  // Later contact defeats a route not only when topology disappears, but also
-  // when the old quantitative meaning no longer fits the current evidence.
+  // Later contact defeats a route only when there is enough evaluable reality to
+  // judge it. If the relevant receptors are absent/null, the relation remains
+  // warranted but receives no new occurrence. A detected incompatible transform
+  // is already sufficient evaluable evidence for quantitative revision.
   for (const rule of active) {
-    const key = topologyKey(routeDescriptor(rule));
+    const descriptor = routeDescriptor(rule);
+    const key = topologyKey(descriptor);
     const relation = detectedByTopology.get(key);
     if (relation && compatibleRoute.get(key)?.id === rule.id) continue;
+    if (!relation && evaluableSupport(state, descriptor, options.window ?? 64) < minSupport) continue;
     facts.push([ref(rule.id), 'counterexample', {
       kind: 'later_continuous_contact',
       window_end: n,
