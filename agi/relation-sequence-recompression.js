@@ -65,10 +65,13 @@ function existingTemporalIds(state) {
 
 function relationalUpdate(state, options = {}) {
   const observations = orderedRelationOccurrences(state);
-  if (observations.length < 4) return null;
+  const checkpoint = Math.max(4, options.checkpoint || 8);
+  if (observations.length < checkpoint || observations.length % checkpoint !== 0) return null;
 
-  // The compressor sees only ordered relation identity sets. Wall-clock/frame
-  // numbers remain provenance and do not determine recurrence identity.
+  // Exact occurrences enter M continuously. Full recursive recompression is a
+  // zero-authority proposal search, so doing it for every one-event extension is
+  // redundant. Deterministic count checkpoints preserve eventual learning while
+  // avoiding repeated O(history) work on nearly identical streams.
   const stream = observations.map(o => o.relations);
   const compressed = Sequence.recompress(null, stream, { maxRules: options.maxRules || 128 });
   if (!compressed.rules.length) return null;
