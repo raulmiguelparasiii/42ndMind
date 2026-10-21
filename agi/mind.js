@@ -3,11 +3,13 @@
 // Public one-M / one-C AGI entrypoint.
 //
 // Durable cognition remains in canonical M. Relational/surface completion,
-// continuous-contact discovery, and discourse arbitration are zero-state views
-// or transformations over that same M; none owns a second truth or memory state.
+// continuous-contact discovery, generic relation-sequence recompression, and
+// discourse arbitration are zero-state views or transformations over that same
+// M; none owns a second truth or memory state.
 
 const Relational = require('./mind-relational.js');
 const Continuous = require('./continuous-relational-contact.js');
+const RelationSequence = require('./relation-sequence-recompression.js');
 const Discourse = require('./discourse-arbiter.js');
 
 function one(actionCount, concernCount = 1) {
@@ -46,7 +48,16 @@ function C(state, realityContact) {
   const hasFrame = !!frameFrom(realityContact);
   if (hasFrame) {
     const update = Continuous.relationalUpdate(state);
-    if (update) Relational.C(state, update);
+    if (update) {
+      Relational.C(state, update);
+
+      // Continuous discovery has now produced ordinary first-class relation
+      // occurrences in M. Reuse the repository's existing generic ordered
+      // recompression over those occurrences; any new higher relation returns
+      // through the same Relational.C entrypoint and becomes ordinary M content.
+      const temporal = RelationSequence.relationalUpdate(state);
+      if (temporal) Relational.C(state, temporal);
+    }
   }
 
   // Expression choice is derived only after canonical M has settled. A learned
