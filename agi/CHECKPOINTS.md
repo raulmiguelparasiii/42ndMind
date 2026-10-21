@@ -32,6 +32,10 @@ The exact engineering specification is pinned at `agi/BLUEPRINT.tex`.
 - a completely unseen replacement surface value can be structurally induced, become M-owned, and later be expressed
 - canonical rule closure, not the surface learner, can derive answers later expressed in language
 - canonical M remains authoritative: ambiguous/unresolved current M cannot be overruled by historical surface analogy
+- broad relation-unspecified prompts can compose several current M-owned relations into one multi-sentence discourse response
+- broad discourse can include a relation obtained only by canonical multi-hop reasoning
+- exact surface-expression provenance is retained in M and can be reused as a last-resort realization of an already-selected structural role
+- template-specific expression evidence outranks generic expression reuse, preventing surface provenance from becoming a competing semantic authority
 - no private `language_state`, `memory_state`, semantic dictionary, response table, planner, or modality-specific cognitive authority
 
 ## Falsification gates
@@ -68,27 +72,32 @@ The target semantic relation is never supplied as structured contact. Surface-on
 
 The raw-language gate was deliberately preserved through successive failures. It first failed because no proposal path existed, then because mechanical token rendering split identifiers, then because cross-role evidence bound the wrong object, then because repeated connector fragments were treated as structural anchors. Each failure was fixed at the earliest generic cause; the behavioral target was not weakened.
 
+### `open-discourse.test.js`
+Demonstrates relation-unspecified multi-relation discourse from one canonical M:
+
+- tone, form, and risk schooling are independently crossed, preventing one role from standing in for another;
+- the target tone/form are learned through raw surface-only contact;
+- target risk is never taught and exists only through two-hop canonical relational closure;
+- the broad query does not supply which relation to answer;
+- the reply composes all three current M-owned facts into a multi-sentence expression;
+- a specific relation query remains narrow and precise;
+- no program/data syntax or parallel language authority is exposed.
+
+The first discourse attempt failed because the target's newly encountered surface identity could be understood but not re-expressed in a discourse output form. A generic M-owned exact-surface-expression attachment was added. That first repair caused an existing regression (`it is alpha.` instead of `it is red.`) because expression reuse fired before stronger template-specific evidence. The repair was corrected so learned output-form evidence has priority and M-owned expression provenance is only a last-resort realization for the already-selected role. The entire prior suite and the open-discourse gate then passed together.
+
+Latest developmental evidence at this checkpoint includes the broad response:
+
+`entity_target_discourse sounds tone4wsb4c. its form is form10ap26w, and its risk is risk14yhpt2.`
+
+where the three roles were independently crossed and the risk term was supplied by canonical two-hop reasoning, not by a memorized target bundle.
+
 ## Frozen certification result — 2026-10-21
 
-`agi/CERTIFICATION_FREEZE_20261020.md` froze the cognitive implementation before the evaluation was authored. The post-freeze commit added only evaluation/workflow files; the pinned cognitive/specification blobs did not change.
+`agi/CERTIFICATION_FREEZE_20261020.md` froze an earlier cognitive candidate before its evaluation was authored. The post-freeze commit added only evaluation/workflow files; the pinned cognitive/specification blobs did not change.
 
-`post-freeze-certification.test.js` then passed on the frozen candidate with runtime-generated vocabulary. It demonstrated, in one continuing individual and without modifying C after the freeze:
+`post-freeze-certification.test.js` passed on that frozen candidate with runtime-generated vocabulary. It demonstrated, in one continuing individual and without modifying C after the freeze: hash-verified frozen cognition; late receptor relation discovery; late actuator integration; raw surface-only learning becoming canonical M structure; proposal-before-warrant behavior; variable-length realization; contextual follow-up with omitted subject; two-hop canonical reasoning whose premise had been learned through raw language; later correction to a completely unseen surface value; historical contact retention; and no parallel cognitive authority.
 
-- hash-verified frozen cognition;
-- late receptor relation discovery;
-- late actuator integration;
-- raw surface-only learning becoming canonical M structure;
-- proposal-before-warrant behavior;
-- variable-length realization;
-- contextual follow-up with omitted subject;
-- two-hop canonical relational reasoning whose premise had been learned through raw language;
-- later correction to a completely unseen surface value;
-- historical contact retention;
-- no parallel cognitive authority.
-
-The full developmental regression suite also passed on the same head.
-
-This passed freeze is now a checkpoint, not an endpoint. The implementation is treated as the AGI being built. Subsequent work must increase the same individual's generality rather than replace it with a second system.
+That freeze remains historical evidence. The implementation has since advanced through the open-discourse capability above.
 
 ## Certification discipline
 
@@ -96,8 +105,8 @@ For certification, cognition is frozen before the evaluation is authored. After 
 
 ## Current frontier
 
-The next AGI capability target is open-ended discourse from the same M rather than one identified `(subject, relation, object)` at a time. The required mechanism is generic M-owned discourse composition: a surface request may resolve an entity/context while leaving the relation open, and the expression boundary must be able to compose several warranted current M relations into one learned variable-length discourse form without a planner, semantic dictionary, response table, or language truth store.
+The next immediate standard is a new post-freeze discourse certification. It must use evaluation material authored only after the new freeze, then require broad relation-unspecified discourse from current canonical M, include raw-learned facts and canonical multi-hop facts, and later change one underlying relation so a second broad response updates only what current M changed while the other facts and exact historical contact remain intact.
 
-After that, the remaining major physical generality target is useful multiscale relation formation from realistic high-dimensional continuous contact such as raw audio/video under the same C.
+After that, the major physical-generalization target is useful multiscale relation formation from realistic high-dimensional continuous contact such as raw audio/video under the same C.
 
-External scrutiny/replication remains necessary before making an unrestricted empirical AGI claim to third parties. This does not change the engineering target: the repository is the AGI implementation, and every new faculty must emerge as use of the same M/C rather than as a parallel cognitive module.
+The repository is treated as the AGI implementation. Every new faculty must emerge as use of the same M/C rather than as a parallel cognitive module. External replication remains an independent standard for claims made beyond the repository's demonstrated evidence.
