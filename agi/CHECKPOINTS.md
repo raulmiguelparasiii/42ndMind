@@ -12,7 +12,9 @@ Current zero-state implementation pieces:
 
 - `agi/mind-relational.js` — preserved relational/surface bridge over canonical M;
 - `agi/continuous-relational-contact.js` — modality-neutral numerical variation relation discovery over exact M-retained contact;
+- `agi/relation-sequence-recompression.js` — zero-state bridge from first-class M relation occurrences into the existing generic `sequence-recompression.js` law;
 - `agi/surface-template.js` — ordered-surface structural helper;
+- `agi/discourse-arbiter.js` — zero-state competition among learned expression structures;
 - `agi/mind.js` — the single public one-M/one-C entrypoint that connects those zero-state calculations back to canonical M.
 
 These are code organization, not separate minds. Their outputs become ordinary relational contact settled through the same canonical M/C authority.
@@ -27,6 +29,12 @@ These are code organization, not separate minds. Their outputs become ordinary r
 - later-added receptors can participate in learned relations without changing the cognitive architecture
 - later-added actuators expand the possibility boundary without a new planner/mind
 - relations discovered from contact can be recursively reused/recompressed
+- continuous relations are first-class M terms, not hidden detector state
+- every fresh evidence window supporting a continuing relation is retained as an ordered lived relation occurrence without duplicating the truth route
+- simultaneous first-order relation occurrences remain one simultaneous event rather than receiving arbitrary internal order
+- the repository's existing generic sequence recompressor can build higher ordered relations from raw-continuous relation occurrences
+- learned ordered relations can themselves become components of later learned ordered relations
+- one unlabeled raw numerical receptor can form and correct temporal self-relations without an audio/waveform cognitive module
 - unknown contact is not forced false
 - proposal is not evidence; first raw assertion does not warrant itself
 - recurrent contradiction can defeat an old route while exact historical contact remains
@@ -40,7 +48,7 @@ These are code organization, not separate minds. Their outputs become ordinary r
 - a receptor introduced later in the same life participates in the same continuous relation discovery
 - later numerical reality can defeat one continuous relation without deleting old contact or unrelated surviving relations
 - dense raw numeric streams use dimension-aware proposal-search cadence while exact contact still enters M on every update
-- no private language state, memory state, sensor model, semantic dictionary, response table, planner, truth ledger, vision mind, or audio mind
+- no private language state, memory state, sensor model, semantic dictionary, response table, planner, truth ledger, vision mind, audio mind, or temporal mind
 
 ## Falsification gates
 
@@ -86,16 +94,20 @@ Demonstrates modality-neutral continuous relation formation in one life:
 
 - 32 initial numerical receptors with effectively nonrepeating values;
 - a same-time affine dependence discovered as a current relation;
-- a two-step delayed opposed dependence discovered from raw numerical variation;
+- a delayed opposed dependence discovered from raw numerical variation;
 - receptor 32 introduced only after development begins and then related to an older receptor;
-- 140-frame stable epoch followed by a 70-frame reality reversal of exactly one relation;
+- stable epoch followed by a reality reversal of exactly one relation;
 - the defeated relation leaves current M while the delayed relation and late-receptor relation survive;
 - exact old sensor contact remains retained;
 - no audio/vision/sensor-model authority exists.
 
-The initial high-dimensional attempt exposed a scaling defect in the old exact-value categorical recompression path. Exact unique numerical values were repeatedly triggering whole-history symbolic searches even though they did not recur categorically. The fix was architectural rather than modality-specific: global categorical recompression is now a dimension-aware proposal search. Exact contact still enters M every update, existing structure still refreshes incrementally, and the global search cadence scales with receptor dimensionality. Small-world behavior is unchanged.
+The initial high-dimensional attempt exposed a scaling defect in the old exact-value categorical recompression path. Exact unique numerical values were repeatedly triggering whole-history symbolic searches even though they did not recur categorically. The fix was architectural rather than modality-specific: global categorical recompression is now a dimension-aware proposal search. Exact contact still enters M every update, existing structure still refreshes incrementally, and the global search cadence scales with receptor dimensionality.
 
-On the passing CI run, the high-dimensional continuous gate completed in about 1.5 seconds and the entire preceding AGI developmental suite remained green.
+### `continuous-temporal-reuse.test.js`
+Raw numerical contact forms two independent first-order continuous relation terms. Fresh supporting evidence becomes ordered lived occurrences in M. The existing generic `sequence-recompression.js` law then forms first-class higher ordered relations from those relation identities and recursively forms a depth-2 relation containing an earlier learned relation. On the passing frontier run there were 2 first-order relation terms, 32 ordered relation occurrences, 2 learned ordered relations, and maximum recursive depth 2. Exact raw contact remained beneath the hierarchy and no temporal/modality authority was added.
+
+### `single-channel-waveform.test.js`
+A single unlabeled numerical receptor receives a raw periodic waveform. The same C discovers a lag-4 self-relation as ordinary M content. Reality later changes to a different raw period; the lag-4 route leaves current M, a lag-3 self-relation becomes current, the old relation identity remains historically available, and every old waveform sample remains exact. No audio, spectrum, waveform, temporal, or memory state is introduced.
 
 ## Frozen certification evidence
 
@@ -103,7 +115,10 @@ On the passing CI run, the high-dimensional continuous gate completed in about 1
 `agi/CERTIFICATION_FREEZE_20261020.md` froze an earlier candidate before evaluation. Its post-freeze test passed runtime-generated vocabulary, late receptor/actuator growth, raw language acquisition, variable-length/contextual expression, canonical two-hop reasoning, unseen correction, history retention, and no parallel authority.
 
 ### Frozen open-discourse certification
-`agi/CERTIFICATION_FREEZE_OPEN_DISCOURSE_20261021.md` froze the later discourse-capable candidate before its evaluation was authored. `post-freeze-open-discourse-certification.test.js` passed: a broad relation-unspecified response composed raw-learned facts plus a two-hop canonical fact; after recurrent contradiction, the second broad response changed only the corrected fact while preserving the unaffected facts and superseded exact contact.
+`agi/CERTIFICATION_FREEZE_OPEN_DISCOURSE_20261021.md` froze the later discourse-capable candidate before its evaluation was authored. `post-freeze-open-discourse-certification.test.js` passed: a broad relation-unspecified response composed raw-learned facts plus a two-hop canonical fact; after recurrent contradiction, the second broad response changed only the corrected fact while preserving unaffected facts and superseded exact contact.
+
+### Frozen continuous-contact certification
+`agi/CERTIFICATION_FREEZE_CONTINUOUS_20261021.md` froze cognition at `40cdaeceb32c78c01a1cd324405e7f156c9bf3b7` before the randomized evaluation was authored. `post-freeze-continuous-certification.test.js` was then run against that detached frozen cognition and passed: the post-freeze evaluation generated 33 initial receptors, randomized source/target topology, coefficient signs/magnitudes and lags, introduced receptor 33 only later in the same life, then broke one relation while unrelated delayed and late-receptor relations survived. Exact old contact remained intact and no modality-specific authority appeared.
 
 These freezes remain historical evidence even as later developmental candidates advance.
 
@@ -113,8 +128,10 @@ For certification, cognition is frozen before the evaluation is authored. After 
 
 ## Current frontier
 
-The immediate next step is a frozen continuous-contact certification authored only after the new freeze. It must randomize receptor count, source/target channels, coefficients/signs, temporal lags, late-added receptor topology, and later contradiction so the frozen AGI cannot be tuned to the developmental fixture.
+The continuous learner now satisfies the bounded bridge that was previously missing: raw contact can become a first-order relation, fresh instantiations of that relation become lived occurrences, and those relation identities can recursively become material for higher ordered relations through the existing generic sequence law. A single raw channel can likewise develop and correct short-lag temporal self-relations.
 
-After that, continuous variation relations must become reusable material for higher relations over recurring temporal shapes. That is the bridge from generic dense numeric contact toward raw waveform and raw pixel development without adding an audio or vision mind. Real-media tests should feed direct waveform/pixel measurements rather than labels such as pitch, phoneme, object, or scene.
+The immediate structural limit is no longer modality integration; it is temporal scale. `continuous-relational-contact.js` currently searches only through lag 4 inside its retained evidence window. The next falsification therefore uses an unlabeled single raw waveform whose exact recurrence lies beyond lag 4. The correct repair must enlarge temporal discovery generically, not add FFT, phoneme, audio, or other modality-specific cognition.
+
+After short-window arbitrary-lag recurrence is solved and frozen, the next scale is recurrence beyond one raw evidence window. That should be attacked through generic multiscale/hierarchical temporal structure rather than unbounded brute-force sample comparison. Real-media tests should continue to feed direct waveform/pixel measurements rather than semantic labels.
 
 The repository is treated as the AGI implementation. Every new faculty must emerge as use of the same M/C rather than as a parallel cognitive module. External replication remains an independent standard for claims made beyond the repository's demonstrated evidence.
