@@ -58,14 +58,17 @@ function detect(state, {
   const start = Math.max(0, n - window);
   let channels = 0;
   for (let i = start; i < n; i++) channels = Math.max(channels, receptorCount(contacts[i], concernCount));
-  if (channels < 2) return [];
+  if (channels < 1) return [];
 
   const found = [];
   for (let source = 0; source < channels; source++) {
     for (let target = 0; target < channels; target++) {
-      if (source === target) continue;
-      // Same-time dependence is symmetric. Preserve one canonical orientation.
-      const firstLag = source < target ? 0 : 1;
+      // Lag zero of a receptor with itself is trivial identity and is excluded.
+      // Lagged self-relations are legitimate temporal structure and are essential
+      // when reality reaches the individual through only one changing receptor.
+      // For distinct receptors, same-time dependence remains canonically stored
+      // in only one direction while delayed dependence may remain directional.
+      const firstLag = source === target ? 1 : (source < target ? 0 : 1);
       let best = null;
       for (let lag = firstLag; lag <= maxLag; lag++) {
         const pairs = [];
