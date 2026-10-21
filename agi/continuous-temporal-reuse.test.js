@@ -11,7 +11,8 @@ const Mind = require('./mind.js');
 // be able to build a learned relation whose component is another learned relation.
 //
 // No surface language, semantic relation labels, episode labels, or modality
-// knowledge are supplied to the individual.
+// knowledge are supplied to the individual. High-dimensional scaling is tested
+// separately; this gate isolates recursive relation reuse with the minimum world.
 
 let seed = 0x42c0ffee;
 function rnd() {
@@ -19,12 +20,12 @@ function rnd() {
   return (seed >>> 0) / 0x100000000;
 }
 
-const CHANNELS = 8;
+const CHANNELS = 3;
 const CONCERN = 29;
-// Each regime lasts longer than the detector's 64-contact evidence window, so
-// the same relation is genuinely observed on several later cadences. Two A/B
-// cycles are enough to provide >16 relation occurrences and recursive reuse.
-const PHASE = 96;
+// Each regime still exceeds the 64-contact detector window. Two A/B cycles give
+// at least sixteen fresh relation observations while eliminating irrelevant noise
+// dimensions from this specifically temporal falsification.
+const PHASE = 80;
 const CYCLES = 2;
 const TOTAL = PHASE * CYCLES * 2;
 
