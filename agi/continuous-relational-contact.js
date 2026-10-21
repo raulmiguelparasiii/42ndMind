@@ -67,10 +67,12 @@ function detect(state, options = {}) {
   for (let i = start; i < n; i++) channels = Math.max(channels, receptorCount(contacts[i], concernCount));
   if (channels < 1) return [];
 
-  // Temporal search is bounded by evidence, not by a domain-specific constant.
-  // A lag is eligible only while at least minSupport observations can exist in the
-  // retained evidence horizon. Callers may still impose a smaller explicit budget.
-  const evidenceMaxLag = Math.max(0, Math.min(window - minSupport, n - minSupport));
+  // The recent window bounds which target observations currently test a relation;
+  // it does not erase older retained source contact. A long lag is therefore
+  // eligible whenever retained history can still provide minSupport recent pairs.
+  // Callers may impose a smaller explicit computational budget without changing
+  // this evidential meaning.
+  const evidenceMaxLag = Math.max(0, n - minSupport);
   const maxLag = options.maxLag === undefined ? evidenceMaxLag : Math.min(Math.max(0, options.maxLag), evidenceMaxLag);
 
   const found = [];
