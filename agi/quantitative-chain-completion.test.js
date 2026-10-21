@@ -13,7 +13,7 @@ const A = { scale: -1.875, offset: 0.42 };
 const B = { scale: 2.625, offset: -0.73 };
 const CONCERN = 27;
 const TRAIN = 96;
-let seed = 0xc14a1ned;
+let seed = 0xc14a1eed;
 function rnd() {
   seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
   return (seed >>> 0) / 0x100000000;
