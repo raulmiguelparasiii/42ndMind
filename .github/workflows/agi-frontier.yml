@@ -11,6 +11,7 @@ on:
       - 'agi/single-channel-waveform.test.js'
       - 'agi/multiscale-waveform.test.js'
       - 'agi/long-horizon-waveform.test.js'
+      - 'agi/quantitative-continuous-completion.test.js'
       - 'agi/mind.js'
       - '.github/workflows/agi-frontier.yml'
   workflow_dispatch:
@@ -27,6 +28,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Quantitative continuous relation completion
+        run: node agi/quantitative-continuous-completion.test.js
       - name: Long-horizon raw waveform recurrence
         run: node agi/long-horizon-waveform.test.js
       - name: Multiscale raw waveform recurrence
