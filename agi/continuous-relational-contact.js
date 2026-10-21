@@ -22,6 +22,34 @@ function valueAt(frame, index, concernCount) {
   return finite(value) ? value : undefined;
 }
 
+function applyTransform(transform, x) {
+  if (!transform || !finite(x)) return undefined;
+  if (transform.kind === 'affine') {
+    if (!finite(transform.scale) || !finite(transform.offset)) return undefined;
+    return transform.scale * x + transform.offset;
+  }
+  if (transform.kind === 'polynomial' && Array.isArray(transform.coefficients) && transform.coefficients.length) {
+    const origin = finite(transform.origin) ? transform.origin : 0;
+    const scale = finite(transform.input_scale) && Math.abs(transform.input_scale) > 1e-18 ? transform.input_scale : 1;
+    const z = (x - origin) / scale;
+    let y = 0;
+    for (let i = transform.coefficients.length - 1; i >= 0; i--) {
+      const c = transform.coefficients[i];
+      if (!finite(c)) return undefined;
+      y = y * z + c;
+    }
+    return finite(y) ? y : undefined;
+  }
+  return undefined;
+}
+
+function transformComplexity(transform) {
+  if (!transform) return Infinity;
+  if (transform.kind === 'affine') return 1;
+  if (transform.kind === 'polynomial') return Math.max(2, Number(transform.degree) || (transform.coefficients?.length || 1) - 1);
+  return Infinity;
+}
+
 // Streaming Pearson + affine least-squares description for one temporal offset.
 // The quantitative map is not a second model: it is another property of the same
 // relation already warranted by retained raw contact.
@@ -36,10 +64,10 @@ function relationAtLag(contacts, start, end, source, target, lag, concernCount) 
     sx += x; sy += y;
     sxx += x * x; syy += y * y; sxy += x * y;
   }
-  if (count < 2) return { correlation: null, support: count, transform: null, fit_rmse: null, target_rms: null };
+  if (count < 2) return { correlation: null, support: count, transform: null, fit_rmse: null, target_rms: null, fit_score: null };
   const vx = count * sxx - sx * sx;
   const vy = count * syy - sy * sy;
-  if (!(vx > 1e-18) || !(vy > 1e-18)) return { correlation: null, support: count, transform: null, fit_rmse: null, target_rms: null };
+  if (!(vx > 1e-18) || !(vy > 1e-18)) return { correlation: null, support: count, transform: null, fit_rmse: null, target_rms: null, fit_score: null };
   const covariance = count * sxy - sx * sy;
   const raw = covariance / Math.sqrt(vx * vy);
   const correlation = Math.max(-1, Math.min(1, raw));
@@ -55,6 +83,122 @@ function relationAtLag(contacts, start, end, source, target, lag, concernCount) 
     transform: finite(scale) && finite(offset) ? { kind: 'affine', scale, offset } : null,
     fit_rmse: finite(fitRmse) ? fitRmse : null,
     target_rms: finite(targetRms) ? targetRms : null,
+    fit_score: correlation * correlation,
+  };
+}
+
+function pairsAtLag(contacts, start, end, source, target, lag, concernCount) {
+  const pairs = [];
+  const first = Math.max(start, lag);
+  for (let t = first; t < end; t++) {
+    const x = valueAt(contacts[t - lag], source, concernCount);
+    const y = valueAt(contacts[t], target, concernCount);
+    if (x !== undefined && y !== undefined) pairs.push([x, y]);
+  }
+  return pairs;
+}
+
+function solveLinearSystem(matrix, vector) {
+  const n = vector.length;
+  const a = matrix.map((row, i) => [...row, vector[i]]);
+  for (let col = 0; col < n; col++) {
+    let pivot = col;
+    for (let row = col + 1; row < n; row++) if (Math.abs(a[row][col]) > Math.abs(a[pivot][col])) pivot = row;
+    if (!(Math.abs(a[pivot][col]) > 1e-12)) return null;
+    if (pivot !== col) [a[pivot], a[col]] = [a[col], a[pivot]];
+    const divisor = a[col][col];
+    for (let j = col; j <= n; j++) a[col][j] /= divisor;
+    for (let row = 0; row < n; row++) {
+      if (row === col) continue;
+      const factor = a[row][col];
+      if (Math.abs(factor) <= 1e-18) continue;
+      for (let j = col; j <= n; j++) a[row][j] -= factor * a[col][j];
+    }
+  }
+  const out = a.map(row => row[n]);
+  return out.every(finite) ? out : null;
+}
+
+function fitPolynomial(pairs, degree) {
+  if (!pairs.length || degree < 2 || pairs.length < degree + 2) return null;
+  const origin = pairs.reduce((sum, [x]) => sum + x, 0) / pairs.length;
+  let variance = 0;
+  for (const [x] of pairs) variance += (x - origin) * (x - origin);
+  const inputScale = Math.sqrt(variance / pairs.length);
+  if (!(inputScale > 1e-12)) return null;
+
+  const size = degree + 1;
+  const matrix = Array.from({ length: size }, () => Array(size).fill(0));
+  const vector = Array(size).fill(0);
+  for (const [x, y] of pairs) {
+    const z = (x - origin) / inputScale;
+    const powers = Array(2 * degree + 1).fill(1);
+    for (let p = 1; p < powers.length; p++) powers[p] = powers[p - 1] * z;
+    for (let i = 0; i < size; i++) {
+      vector[i] += y * powers[i];
+      for (let j = 0; j < size; j++) matrix[i][j] += powers[i + j];
+    }
+  }
+  const coefficients = solveLinearSystem(matrix, vector);
+  if (!coefficients) return null;
+  const transform = { kind: 'polynomial', degree, origin, input_scale: inputScale, coefficients };
+  let sy = 0, syy = 0, sse = 0;
+  for (const [x, y] of pairs) {
+    sy += y; syy += y * y;
+    const predicted = applyTransform(transform, x);
+    if (!finite(predicted)) return null;
+    const error = y - predicted;
+    sse += error * error;
+  }
+  const sst = syy - sy * sy / pairs.length;
+  if (!(sst > 1e-18)) return null;
+  const fitScore = Math.max(0, Math.min(1, 1 - sse / sst));
+  return {
+    transform,
+    support: pairs.length,
+    fit_score: fitScore,
+    fit_rmse: Math.sqrt(Math.max(0, sse) / pairs.length),
+    target_rms: Math.sqrt(Math.max(0, syy) / pairs.length),
+  };
+}
+
+// Sparse zero-state mathematical proposal search. Degree grows with available
+// evidence rather than naming a terminal nonlinear anatomy. The simplest degree
+// that reaches the same stringent fit standard wins.
+function nonlinearAtLag(contacts, start, end, source, target, lag, concernCount, minSupport, threshold) {
+  const pairs = pairsAtLag(contacts, start, end, source, target, lag, concernCount);
+  if (pairs.length < minSupport) return null;
+  const maxDegree = Math.max(2, Math.floor(Math.log2(Math.max(4, pairs.length))));
+  const required = threshold * threshold;
+  for (let degree = 2; degree <= maxDegree; degree++) {
+    const fit = fitPolynomial(pairs, degree);
+    if (fit && fit.fit_score >= required) return fit;
+  }
+  return null;
+}
+
+function fitOfKnownTransform(contacts, start, end, source, target, lag, concernCount, transform) {
+  const first = Math.max(start, lag);
+  let count = 0, sy = 0, syy = 0, sse = 0;
+  for (let t = first; t < end; t++) {
+    const x = valueAt(contacts[t - lag], source, concernCount);
+    const y = valueAt(contacts[t], target, concernCount);
+    if (x === undefined || y === undefined) continue;
+    const predicted = applyTransform(transform, x);
+    if (!finite(predicted)) return { support: count, fit_score: null, fit_rmse: null, target_rms: null };
+    count++;
+    sy += y; syy += y * y;
+    const error = y - predicted;
+    sse += error * error;
+  }
+  if (count < 2) return { support: count, fit_score: null, fit_rmse: null, target_rms: null };
+  const sst = syy - sy * sy / count;
+  if (!(sst > 1e-18)) return { support: count, fit_score: null, fit_rmse: null, target_rms: null };
+  return {
+    support: count,
+    fit_score: Math.max(0, Math.min(1, 1 - sse / sst)),
+    fit_rmse: Math.sqrt(Math.max(0, sse) / count),
+    target_rms: Math.sqrt(Math.max(0, syy) / count),
   };
 }
 
@@ -63,6 +207,28 @@ function topologyKey(x) {
 }
 function baseRelationTermId(x) {
   return `continuous-relation:${x.source}:${x.target}:${x.lag}:${x.orientation}`;
+}
+function candidateScore(candidate) {
+  return finite(candidate?.fit_score) ? candidate.fit_score :
+    (finite(candidate?.correlation) ? candidate.correlation * candidate.correlation : -Infinity);
+}
+function betterCandidate(candidate, best) {
+  if (!best) return true;
+  const a = candidateScore(candidate), b = candidateScore(best);
+  if (a > b + 1e-12) return true;
+  if (b > a + 1e-12) return false;
+  const ac = transformComplexity(candidate.transform), bc = transformComplexity(best.transform);
+  if (ac !== bc) return ac < bc;
+  return candidate.lag < best.lag;
+}
+
+function activeRoutes(state) {
+  return (state.knowledge?.rules || []).filter(rule =>
+    rule.active !== false && rule.provenance && rule.provenance.kind === 'continuous_dependence');
+}
+function routeDescriptor(rule) {
+  const p = rule.provenance || {};
+  return { source: p.source, target: p.target, lag: p.lag, orientation: p.orientation, transform: p.transform };
 }
 
 function detect(state, options = {}) {
@@ -78,36 +244,61 @@ function detect(state, options = {}) {
   for (let i = start; i < n; i++) channels = Math.max(channels, receptorCount(contacts[i], concernCount));
   if (channels < 1) return [];
 
-  // The recent window bounds which target observations currently test a relation;
-  // it does not erase older retained source contact. A long lag is therefore
-  // eligible whenever retained history can still provide minSupport recent pairs.
   const evidenceMaxLag = Math.max(0, n - minSupport);
   const maxLag = options.maxLag === undefined ? evidenceMaxLag : Math.min(Math.max(0, options.maxLag), evidenceMaxLag);
+  const nonlinearCadence = options.nonlinearCadence ?? Math.max(32, channels * 8);
+  const searchNonlinear = options.searchNonlinear === true || (options.searchNonlinear !== false && n % nonlinearCadence === 0);
+  const activeNonlinear = activeRoutes(state).filter(rule => rule.provenance?.transform?.kind === 'polynomial');
 
   const found = [];
   for (let source = 0; source < channels; source++) {
     for (let target = 0; target < channels; target++) {
       const firstLag = source === target ? 1 : (source < target ? 0 : 1);
       let best = null;
+
+      // Existing nonlinear meanings are cheap to reality-check every evidence
+      // cadence even when expensive new nonlinear proposal search is not due.
+      for (const rule of activeNonlinear) {
+        const p = rule.provenance;
+        if (p.source !== source || p.target !== target || p.lag < firstLag || p.lag > maxLag) continue;
+        const fit = fitOfKnownTransform(contacts, start, n, source, target, p.lag, concernCount, p.transform);
+        if (fit.support < minSupport || fit.fit_score === null || fit.fit_score < threshold * threshold) continue;
+        const candidate = {
+          source, target, lag: p.lag, orientation: p.orientation,
+          correlation: null, support: fit.support, transform: p.transform,
+          fit_rmse: fit.fit_rmse, target_rms: fit.target_rms, fit_score: fit.fit_score,
+        };
+        if (betterCandidate(candidate, best)) best = candidate;
+      }
+
       for (let lag = firstLag; lag <= maxLag; lag++) {
         const measured = relationAtLag(contacts, start, n, source, target, lag, concernCount);
-        if (measured.support < minSupport || measured.correlation === null) continue;
-        const r = measured.correlation;
-        if (Math.abs(r) < threshold) continue;
+        if (measured.support < minSupport) continue;
+        if (measured.correlation !== null && Math.abs(measured.correlation) >= threshold) {
+          const candidate = {
+            source, target, lag,
+            orientation: measured.correlation >= 0 ? 'same' : 'opposed',
+            correlation: measured.correlation,
+            support: measured.support,
+            transform: measured.transform,
+            fit_rmse: measured.fit_rmse,
+            target_rms: measured.target_rms,
+            fit_score: measured.fit_score,
+          };
+          if (betterCandidate(candidate, best)) best = candidate;
+          if (Math.abs(measured.correlation) >= 1 - 1e-12 && transformComplexity(best.transform) === 1) break;
+          continue;
+        }
+        if (!searchNonlinear) continue;
+        const nonlinear = nonlinearAtLag(contacts, start, n, source, target, lag, concernCount, minSupport, threshold);
+        if (!nonlinear) continue;
         const candidate = {
-          source,
-          target,
-          lag,
-          orientation: r >= 0 ? 'same' : 'opposed',
-          correlation: r,
-          support: measured.support,
-          transform: measured.transform,
-          fit_rmse: measured.fit_rmse,
-          target_rms: measured.target_rms,
+          source, target, lag, orientation: 'nonlinear', correlation: measured.correlation,
+          support: nonlinear.support, transform: nonlinear.transform,
+          fit_rmse: nonlinear.fit_rmse, target_rms: nonlinear.target_rms, fit_score: nonlinear.fit_score,
         };
-        if (!best || Math.abs(candidate.correlation) > Math.abs(best.correlation) + 1e-12 ||
-            (Math.abs(Math.abs(candidate.correlation) - Math.abs(best.correlation)) < 1e-12 && candidate.lag < best.lag)) best = candidate;
-        if (Math.abs(r) >= 1 - 1e-12) break;
+        if (betterCandidate(candidate, best)) best = candidate;
+        if (nonlinear.fit_score >= 1 - 1e-12) break;
       }
       if (best) found.push(best);
     }
@@ -115,14 +306,6 @@ function detect(state, options = {}) {
   return found;
 }
 
-function activeRoutes(state) {
-  return (state.knowledge?.rules || []).filter(rule =>
-    rule.active !== false && rule.provenance && rule.provenance.kind === 'continuous_dependence');
-}
-function routeDescriptor(rule) {
-  const p = rule.provenance || {};
-  return { source: p.source, target: p.target, lag: p.lag, orientation: p.orientation, transform: p.transform };
-}
 function nextRouteId(state) {
   let max = 0;
   for (const rule of state.knowledge?.rules || []) {
@@ -152,27 +335,14 @@ function nextRelationTermId(knownTerms, relation) {
 }
 
 function transformRmse(state, relation, transform, window = 64) {
-  if (!transform || transform.kind !== 'affine' || !finite(transform.scale) || !finite(transform.offset)) return Infinity;
   const contacts = state.contacts || [];
   const end = contacts.length;
   const start = Math.max(0, end - window);
   const concernCount = state.concern_count || 0;
-  const first = Math.max(start, relation.lag);
-  let count = 0, sse = 0;
-  for (let t = first; t < end; t++) {
-    const x = valueAt(contacts[t - relation.lag], relation.source, concernCount);
-    const y = valueAt(contacts[t], relation.target, concernCount);
-    if (x === undefined || y === undefined) continue;
-    const error = y - (transform.scale * x + transform.offset);
-    sse += error * error;
-    count++;
-  }
-  return count ? Math.sqrt(sse / count) : Infinity;
+  const fit = fitOfKnownTransform(contacts, start, end, relation.source, relation.target, relation.lag, concernCount, transform);
+  return finite(fit.fit_rmse) ? fit.fit_rmse : Infinity;
 }
 
-// A route survives coefficient estimation jitter if its old quantitative meaning
-// still explains current evidence about as well as the newly fitted map. A route
-// is revised only when later reality makes the old map materially worse.
 function routeStillFits(state, rule, relation, options = {}) {
   if (topologyKey(routeDescriptor(rule)) !== topologyKey(relation)) return false;
   const oldTransform = rule.provenance?.transform;
@@ -220,10 +390,6 @@ function relationalUpdate(state, options = {}) {
   const knownTerms = knownRelationTerms(state);
   const facts = [], rules = [];
 
-  // Later contact defeats a route only when there is enough evaluable reality to
-  // judge it. If the relevant receptors are absent/null, the relation remains
-  // warranted but receives no new occurrence. A detected incompatible transform
-  // is already sufficient evaluable evidence for quantitative revision.
   for (const rule of active) {
     const descriptor = routeDescriptor(rule);
     const key = topologyKey(descriptor);
@@ -266,7 +432,8 @@ function relationalUpdate(state, options = {}) {
         [ref(id), 'ρ:continuous_support', 'current_window'],
         [ref(id), 'ρ:continuous_evidence', {
           support: relation.support,
-          absolute_correlation: Math.abs(relation.correlation),
+          absolute_correlation: finite(relation.correlation) ? Math.abs(relation.correlation) : null,
+          fit_quality: candidateScore(relation),
           fit_rmse: relation.fit_rmse,
           window_end: n,
         }],
@@ -280,10 +447,6 @@ function relationalUpdate(state, options = {}) {
       });
     }
 
-    // Relation terms are versioned by evidential route, not raw floating-point
-    // coefficient strings. The first meaning retains the historical base address;
-    // a materially revised meaning receives a new address while both descriptors
-    // remain ordinary first-class M facts.
     let termId = termForRoute(state, route.id, knownTerms);
     if (!termId) {
       termId = nextRelationTermId(knownTerms, relation);
@@ -305,7 +468,8 @@ function relationalUpdate(state, options = {}) {
       [occurrenceId, 'ρ:grounded_by', ref(route.id)],
       [occurrenceId, 'ρ:evidence', {
         support: relation.support,
-        absolute_correlation: Math.abs(relation.correlation),
+        absolute_correlation: finite(relation.correlation) ? Math.abs(relation.correlation) : null,
+        fit_quality: candidateScore(relation),
         fit_rmse: relation.fit_rmse,
         window_end: n,
       }],
@@ -335,14 +499,12 @@ function completeCurrent(state) {
   const observed = current.observed || {};
   const completed = current.completed;
   const relations = (state.knowledge?.current?.facts || []).flatMap(f => {
-    if (f.relation !== 'ρ:continuous_dependence' || !f.object ||
-        !f.object.transform || f.object.transform.kind !== 'affine') return [];
+    if (f.relation !== 'ρ:continuous_dependence' || !f.object || !f.object.transform) return [];
     const source = receptorIndex(f.subject);
     const target = receptorIndex(f.object.target);
     if (source === null || target === null || !Number.isInteger(f.object.lag) || f.object.lag < 0) return [];
-    const { scale, offset } = f.object.transform;
-    if (!finite(scale) || !finite(offset)) return [];
-    return [{ source, target, lag: f.object.lag, scale, offset }];
+    if (applyTransform(f.object.transform, 0) === undefined) return [];
+    return [{ source, target, lag: f.object.lag, transform: f.object.transform }];
   });
   if (!relations.length) return state;
 
@@ -366,7 +528,7 @@ function completeCurrent(state) {
         sourceValue = valueAt(contacts[sourceContact], relation.source, concernCount);
       }
       if (!finite(sourceValue)) continue;
-      const predicted = relation.scale * sourceValue + relation.offset;
+      const predicted = applyTransform(relation.transform, sourceValue);
       if (!finite(predicted)) continue;
       if (!proposals.has(targetFeature)) proposals.set(targetFeature, []);
       proposals.get(targetFeature).push(predicted);
