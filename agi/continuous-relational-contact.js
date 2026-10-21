@@ -22,9 +22,10 @@ function valueAt(frame, index, concernCount) {
   return finite(value) ? value : undefined;
 }
 
-// Streaming Pearson calculation for one temporal offset. Widening the generic
-// lag horizon must not allocate a fresh pair array for every source/target/lag.
-function pearsonAtLag(contacts, start, end, source, target, lag, concernCount) {
+// Streaming Pearson + affine least-squares description for one temporal offset.
+// The quantitative map is not a second model: it is another property of the same
+// relation already warranted by retained raw contact.
+function relationAtLag(contacts, start, end, source, target, lag, concernCount) {
   let count = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
   const first = Math.max(start, lag);
   for (let t = first; t < end; t++) {
@@ -35,15 +36,22 @@ function pearsonAtLag(contacts, start, end, source, target, lag, concernCount) {
     sx += x; sy += y;
     sxx += x * x; syy += y * y; sxy += x * y;
   }
-  if (count < 2) return { correlation: null, support: count };
+  if (count < 2) return { correlation: null, support: count, transform: null };
   const vx = count * sxx - sx * sx;
   const vy = count * syy - sy * sy;
-  if (!(vx > 1e-18) || !(vy > 1e-18)) return { correlation: null, support: count };
-  const raw = (count * sxy - sx * sy) / Math.sqrt(vx * vy);
+  if (!(vx > 1e-18) || !(vy > 1e-18)) return { correlation: null, support: count, transform: null };
+  const covariance = count * sxy - sx * sy;
+  const raw = covariance / Math.sqrt(vx * vy);
   // Floating-point roundoff can put an exact affine relation infinitesimally
   // outside [-1,1]. Clamp only the numerical representation, not the evidence.
   const correlation = Math.max(-1, Math.min(1, raw));
-  return { correlation, support: count };
+  const scale = covariance / vx;
+  const offset = (sy - scale * sx) / count;
+  return {
+    correlation,
+    support: count,
+    transform: finite(scale) && finite(offset) ? { kind: 'affine', scale, offset } : null,
+  };
 }
 
 function relationKey(x) {
@@ -86,7 +94,7 @@ function detect(state, options = {}) {
       const firstLag = source === target ? 1 : (source < target ? 0 : 1);
       let best = null;
       for (let lag = firstLag; lag <= maxLag; lag++) {
-        const measured = pearsonAtLag(contacts, start, n, source, target, lag, concernCount);
+        const measured = relationAtLag(contacts, start, n, source, target, lag, concernCount);
         if (measured.support < minSupport || measured.correlation === null) continue;
         const r = measured.correlation;
         if (Math.abs(r) < threshold) continue;
@@ -97,6 +105,7 @@ function detect(state, options = {}) {
           orientation: r >= 0 ? 'same' : 'opposed',
           correlation: r,
           support: measured.support,
+          transform: measured.transform,
         };
         if (!best || Math.abs(candidate.correlation) > Math.abs(best.correlation) + 1e-12 ||
             (Math.abs(Math.abs(candidate.correlation) - Math.abs(best.correlation)) < 1e-12 && candidate.lag < best.lag)) best = candidate;
@@ -162,6 +171,7 @@ function relationalUpdate(state, options = {}) {
       target: `receptor:p${relation.target}`,
       lag: relation.lag,
       orientation: relation.orientation,
+      transform: relation.transform,
     };
     const termId = relationTermId(relation);
     let route = activeByKey.get(key);
@@ -178,6 +188,7 @@ function relationalUpdate(state, options = {}) {
           target: relation.target,
           lag: relation.lag,
           orientation: relation.orientation,
+          transform: relation.transform,
           authority: 'M_retained_numeric_contact',
         },
       };
