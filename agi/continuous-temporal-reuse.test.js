@@ -21,8 +21,11 @@ function rnd() {
 
 const CHANNELS = 8;
 const CONCERN = 29;
-const PHASE = 80;
-const CYCLES = 10;
+// One complete detector window per regime is sufficient. Nine A/B cycles leave
+// 18 possible relation activations while the target still requires >=16 and
+// recursive compression depth >=2.
+const PHASE = 64;
+const CYCLES = 9;
 const TOTAL = PHASE * CYCLES * 2;
 
 function rawFrame(t) {
