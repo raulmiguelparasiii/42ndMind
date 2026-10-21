@@ -1,9 +1,6 @@
 name: Frozen AGI candidate certification
 
 on:
-  push:
-    branches:
-      - experiment/one-live-m-architecture-20261020
   workflow_dispatch:
 
 jobs:
