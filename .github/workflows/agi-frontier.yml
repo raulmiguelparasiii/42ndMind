@@ -15,6 +15,7 @@ on:
       - 'agi/quantitative-continuous-correction.test.js'
       - 'agi/continuous-unknown-not-false.test.js'
       - 'agi/quantitative-chain-completion.test.js'
+      - 'agi/nonlinear-continuous-completion.test.js'
       - 'agi/mind.js'
       - '.github/workflows/agi-frontier.yml'
   workflow_dispatch:
@@ -31,6 +32,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Nonlinear continuous relation completion
+        run: node agi/nonlinear-continuous-completion.test.js
       - name: Quantitative relation chain completion
         run: node agi/quantitative-chain-completion.test.js
       - name: Continuous unknown is not false
