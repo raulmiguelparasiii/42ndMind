@@ -23,13 +23,24 @@ const learnerSource = fs.readFileSync(path.join(__dirname, 'continuous-relationa
 for (const forbidden of ['0.618731', '-0.347219', '0.173941', 'nonlinear-continuous-completion'])
   assert(!learnerSource.includes(forbidden), `learner contains test-specific nonlinear fixture: ${forbidden}`);
 
-const M = Mind.one(1, 1);
-// Signed pairs keep the recent raw distribution broad and prevent a cubic curve
-// from masquerading as a near-perfect affine relation.
-for (let k = 1; k <= TRAIN / 2; k++) {
-  const magnitude = k / 16;
-  for (const x of [magnitude, -magnitude]) Mind.C(M, { frame: [x, f(x), CONCERN] });
+// Preserve the same broad signed distribution but randomize presentation order.
+// A monotone +/- schedule accidentally creates a second legitimate temporal
+// relation in the target stream, which would confound this specifically same-time
+// nonlinear falsification rather than strengthen it.
+let shuffleSeed = 0x51a7c0de;
+function shuffleRandom() {
+  shuffleSeed ^= shuffleSeed << 13; shuffleSeed ^= shuffleSeed >>> 17; shuffleSeed ^= shuffleSeed << 5;
+  return (shuffleSeed >>> 0) / 0x100000000;
 }
+const xs = [];
+for (let k = 1; k <= TRAIN / 2; k++) xs.push(k / 16, -k / 16);
+for (let i = xs.length - 1; i > 0; i--) {
+  const j = Math.floor(shuffleRandom() * (i + 1));
+  [xs[i], xs[j]] = [xs[j], xs[i]];
+}
+
+const M = Mind.one(1, 1);
+for (const x of xs) Mind.C(M, { frame: [x, f(x), CONCERN] });
 
 const relation = (M.knowledge?.current?.facts || []).find(fact =>
   fact.subject === 'receptor:p0' && fact.relation === 'ρ:continuous_dependence' &&
@@ -45,15 +56,6 @@ assert((M.knowledge?.facts || []).some(fact =>
 const NOVEL = 1.23456789;
 const EXPECTED = f(NOVEL);
 Mind.C(M, { frame: [NOVEL, null, CONCERN] });
-const diagnosticRelations = (M.knowledge?.current?.facts || []).filter(fact =>
-  fact.relation === 'ρ:continuous_dependence' && fact.object?.target === 'receptor:p1');
-console.log('NONLINEAR_DIAGNOSTIC', JSON.stringify({
-  observed: M.current?.observed,
-  completed: M.current?.completed,
-  inferred: M.current?.inferred,
-  unresolved: M.current?.unresolved,
-  p1_relations: diagnosticRelations,
-}));
 assert.strictEqual(M.contacts.at(-1)[1], null, 'uncontacted nonlinear target was rewritten as observation');
 assert.strictEqual(M.current?.observed?.p1, undefined, 'uncontacted nonlinear target was falsely observed');
 assert(M.current?.inferred?.includes('p1'), 'nonlinear learned relation did not infer the missing target');
