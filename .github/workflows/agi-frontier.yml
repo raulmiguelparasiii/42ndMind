@@ -1,0 +1,32 @@
+name: AGI frontier falsification
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-architecture-20261020
+    paths:
+      - 'agi/continuous-relational-contact.js'
+      - 'agi/relation-sequence-recompression.js'
+      - 'agi/continuous-temporal-reuse.test.js'
+      - 'agi/single-channel-waveform.test.js'
+      - 'agi/mind.js'
+      - '.github/workflows/agi-frontier.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: agi-frontier-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Continuous relation temporal reuse
+        run: node agi/continuous-temporal-reuse.test.js
+      - name: Single-channel waveform recurrence
+        if: ${{ hashFiles('agi/single-channel-waveform.test.js') != '' }}
+        run: node agi/single-channel-waveform.test.js
