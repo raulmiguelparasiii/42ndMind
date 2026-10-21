@@ -298,7 +298,6 @@ function detect(state, options = {}) {
           fit_rmse: nonlinear.fit_rmse, target_rms: nonlinear.target_rms, fit_score: nonlinear.fit_score,
         };
         if (betterCandidate(candidate, best)) best = candidate;
-        if (nonlinear.fit_score >= 1 - 1e-12) break;
       }
       if (best) found.push(best);
     }
