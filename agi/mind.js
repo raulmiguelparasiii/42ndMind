@@ -10,6 +10,7 @@
 const Relational = require('./mind-relational.js');
 const Continuous = require('./continuous-relational-contact.js');
 const MultiSourceContinuous = require('./multisource-continuous-relations.js');
+const SurfaceRelationGrounding = require('./surface-relation-grounding.js');
 const RelationSequence = require('./relation-sequence-recompression.js');
 const Discourse = require('./discourse-arbiter.js');
 
@@ -133,6 +134,13 @@ function C(state, realityContact) {
       discovered = true;
     }
 
+    // Surface meaning is learned from the same lived contact only after the
+    // numeric proposer has exposed a first-class relation occurrence in M. The
+    // grounding helper contributes ordinary evidence/rules back through C; it
+    // never owns a persistent lexicon.
+    const grounding = SurfaceRelationGrounding.relationalUpdate(state, realityContact);
+    if (grounding) Relational.C(state, grounding);
+
     if (discovered) {
       // Continuous discovery has now produced ordinary first-class relation
       // occurrences in M. Reuse the repository's existing generic ordered
@@ -149,6 +157,11 @@ function C(state, realityContact) {
   // multi-relation discourse structure may replace a narrower surface completion
   // only when it is the stronger structural match to the whole current input.
   if (unansweredSurface(realityContact)) Discourse.arbitrate(state);
+
+  // Lexical meaning recall is likewise only a current view of canonical
+  // ρ:expresses facts. It runs last so no surface renderer becomes semantic
+  // authority over the M-owned relation.
+  SurfaceRelationGrounding.groundCurrent(state, realityContact);
   return state;
 }
 
