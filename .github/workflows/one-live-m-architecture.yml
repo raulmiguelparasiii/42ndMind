@@ -1,11 +1,17 @@
 name: One live M architecture
 
 # Architecture gate for the stacked one-live-M experiment.
+# Root/canonical changes still run this suite. AGI-wrapper-only development has
+# its own frontier/blueprint gates and must not serialize behind unrelated roots.
 on:
   push:
     branches:
       - 'experiment/one-live-m-architecture-20261020'
-  pull_request:
+    paths-ignore:
+      - 'agi/**'
+      - 'AGENTS.md'
+      - '.github/workflows/agi-*.yml'
+      - '.github/workflows/one-live-m-architecture.yml'
   workflow_dispatch:
 
 concurrency:
