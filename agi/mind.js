@@ -153,6 +153,14 @@ function C(state, realityContact) {
     settleQuantitativeCompletion(state);
   }
 
+  // A grounded expression in the current lived utterance becomes ordinary M
+  // occurrence content before any renderer acts. This is reference, not world
+  // assertion: the occurrence points to an already-grounded relation term and
+  // is provenance-linked to the exact surface episode. Generic closure can then
+  // reason from what was said through the same relational substrate.
+  const mention = SurfaceRelationGrounding.mentionUpdate(state, realityContact);
+  if (mention) Relational.C(state, mention);
+
   // Expression choice is derived only after canonical M has settled. A learned
   // multi-relation discourse structure may replace a narrower surface completion
   // only when it is the stronger structural match to the whole current input.
