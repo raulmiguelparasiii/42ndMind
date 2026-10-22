@@ -83,12 +83,26 @@ function existingTemporalIds(state) {
     .map(f => String(f.subject)));
 }
 
-// Full lived order is retained. Search may also project around any recurrent term:
-// keep the simultaneous terms invariant across that term's occurrences, while all
-// non-invariant reality remains untouched in M. This is generic relevance by
-// recurrence, not modality-specific attention.
-function orderedViews(observations, minimumOccurrences) {
+// Full lived order is retained. Search also gets two zero-authority views:
+// 1) a bounded *contiguous suffix* that preserves literal adjacency and prevents
+//    new regularity from being starved by a large older life history; and
+// 2) recurrence-relative invariant simultaneous cores, used only to discover
+//    structure that remains stable while unrelated events are interleaved.
+// Neither view deletes or rewrites M. Only the second removes intervening events.
+function orderedViews(observations, minimumOccurrences, options = {}) {
   const views = [{ kind: 'full', basis: null, stream: observations.map(o => o.relations) }];
+
+  const recentWindow = Math.max(32, options.recentWindow || minimumOccurrences * 8);
+  if (observations.length > recentWindow) {
+    const recent = observations.slice(-recentWindow);
+    views.push({
+      kind: 'contiguous_suffix_projection',
+      basis: null,
+      orders: { from: recent[0].order, to: recent.at(-1).order },
+      stream: recent.map(o => o.relations),
+    });
+  }
+
   const anchors = new Map();
   for (const event of observations) {
     const eventSet = new Set(event.relations);
@@ -102,7 +116,10 @@ function orderedViews(observations, minimumOccurrences) {
 
   const seen = new Set();
   for (const [anchor, record] of [...anchors.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    if (record.count < minimumOccurrences || !record.core.size) continue;
+    // Singleton invariant projections add large search cost but cannot establish
+    // the multi-relation simultaneous structure this gappy view exists to retain.
+    // Exact singleton recurrence is already available to full/suffix order search.
+    if (record.count < minimumOccurrences || record.core.size < 2) continue;
     const core = [...record.core].sort();
     const key = stable(core);
     if (seen.has(key)) continue;
@@ -147,10 +164,13 @@ function appendCompressedFacts(compressed, view, existing, facts) {
       [id, 'ρ:authority', 'M_retained_lived_occurrences'],
       ['self', 'ρ:learned_relation', ref(id)],
     );
-    if (view.kind !== 'full') facts.push(
-      [id, 'ρ:ordered_projection_kind', view.kind],
-      [id, 'ρ:ordered_projection_basis', view.basis.map(term => ref(term))],
-    );
+    if (view.kind !== 'full') {
+      facts.push([id, 'ρ:ordered_projection_kind', view.kind]);
+      if (Array.isArray(view.basis))
+        facts.push([id, 'ρ:ordered_projection_basis', view.basis.map(term => ref(term))]);
+      if (view.orders)
+        facts.push([id, 'ρ:ordered_projection_orders', { ...view.orders }]);
+    }
   }
 }
 
@@ -163,7 +183,7 @@ function relationalUpdate(state, options = {}) {
   // already in M; this is only a disposable proposal search over that authority.
   const existing = existingTemporalIds(state);
   const facts = [];
-  for (const view of orderedViews(observations, checkpoint)) {
+  for (const view of orderedViews(observations, checkpoint, options)) {
     const compressed = Sequence.recompress(null, view.stream, { maxRules: options.maxRules || 128 });
     appendCompressedFacts(compressed, view, existing, facts);
   }
@@ -178,6 +198,9 @@ function learnedOrderedIndex(state) {
     return out.get(key);
   }
   for (const fact of state.knowledge?.facts || []) {
+    if (fact.relation !== 'ρ:kind' && fact.relation !== 'ρ:ordered_expansion' &&
+        fact.relation !== 'ρ:ordered_projection_kind' && fact.relation !== 'ρ:depth' &&
+        fact.relation !== 'ρ:occurrences_at_birth') continue;
     const x = node(fact.subject);
     if (fact.relation === 'ρ:kind' && fact.object === 'learned_ordered_relation') x.kind = true;
     else if (fact.relation === 'ρ:ordered_expansion' && Array.isArray(fact.object)) x.expansion = fact.object;
@@ -226,11 +249,16 @@ function matchedPrefixLength(observations, expansion) {
   return 0;
 }
 
+function licensesImmediateSuccessor(projectionKind) {
+  // Full history and a contiguous suffix preserve literal adjacency. The gappy
+  // invariant recurrence projection explicitly does not and therefore cannot
+  // license an immediate-next expectation.
+  return projectionKind === undefined || projectionKind === 'contiguous_suffix_projection';
+}
+
 // Present completion is a derived constraint from M-owned order, not prediction
-// state. Projection relations describe recurrence after irrelevant events are
-// removed, so they cannot license an *immediate next lived event*. Only relations
-// learned from the full lived stream participate in this completion operation.
-// If equally specific full-stream relations disagree, the next term remains open.
+// state. If equally specific adjacency-preserving relations disagree, the next
+// term remains open rather than being resolved by helper order or arbitrary score.
 function completionUpdate(state) {
   const observations = orderedLivedOccurrences(state);
   if (!observations.length) return null;
@@ -238,7 +266,7 @@ function completionUpdate(state) {
   const candidates = [];
 
   for (const [id, x] of index) {
-    if (!x.kind || x.projection) continue;
+    if (!x.kind || !licensesImmediateSuccessor(x.projection)) continue;
     const expansion = flattenLearned(id, index);
     if (expansion.length < 2) continue;
     const prefixLength = matchedPrefixLength(observations, expansion);
@@ -253,9 +281,6 @@ function completionUpdate(state) {
   }
   if (!candidates.length) return null;
 
-  // Longer matched context is strictly more specific. Among equally specific
-  // routes, disagreement is represented as open rather than resolved by helper
-  // execution order, relation id, modality, or an arbitrary score.
   const maxPrefix = Math.max(...candidates.map(x => x.prefixLength));
   const strongest = candidates.filter(x => x.prefixLength === maxPrefix && x.nextTerms.length);
   if (!strongest.length) return null;
