@@ -6,6 +6,7 @@ on:
       - experiment/one-live-m-architecture-20261020
     paths:
       - 'agi/continuous-relational-contact.js'
+      - 'agi/multisource-continuous-relations.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/continuous-temporal-reuse.test.js'
       - 'agi/single-channel-waveform.test.js'
@@ -17,6 +18,7 @@ on:
       - 'agi/quantitative-chain-completion.test.js'
       - 'agi/nonlinear-continuous-completion.test.js'
       - 'agi/multisource-continuous-completion.test.js'
+      - 'agi/multisource-temporal-completion.test.js'
       - 'agi/mind.js'
       - '.github/workflows/agi-frontier.yml'
   workflow_dispatch:
@@ -33,6 +35,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Mixed-lag multi-source continuous completion
+        run: node agi/multisource-temporal-completion.test.js
       - name: Multi-source continuous relation completion
         run: node agi/multisource-continuous-completion.test.js
       - name: Nonlinear continuous relation completion
