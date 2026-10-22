@@ -69,20 +69,27 @@ function latestSurfaceEpisode(state) {
   return best;
 }
 
-function freshContinuousRelationTerms(state) {
+// Grounding is modality-neutral. Any generic relation occurrence produced at the
+// current lived-contact order can support a surface expression, regardless of
+// whether the relation came from continuous sensing, embodied action/consequence,
+// or another future learner that adopts the same canonical occurrence anatomy.
+function freshRelationTerms(state) {
   const order = state.contacts?.length || 0;
-  const occurrenceIds = new Set((state.knowledge?.facts || [])
-    .filter(f => f.relation === 'ρ:order' && f.object === order &&
-      typeof f.subject === 'string' && f.subject.startsWith('relation-occurrence:continuous:'))
-    .map(f => f.subject));
+  const facts = state.knowledge?.facts || [];
+  const occurrenceIds = new Set(facts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'relation_occurrence')
+    .map(f => String(f.subject)));
+  const fresh = new Set(facts
+    .filter(f => f.relation === 'ρ:order' && f.object === order && occurrenceIds.has(String(f.subject)))
+    .map(f => String(f.subject)));
   const out = [];
-  for (const occurrence of occurrenceIds) {
-    const instantiated = (state.knowledge?.facts || []).find(f =>
-      f.subject === occurrence && f.relation === 'ρ:instantiates' && f.object?.ref !== undefined);
+  for (const occurrence of fresh) {
+    const instantiated = facts.find(f =>
+      String(f.subject) === occurrence && f.relation === 'ρ:instantiates' && f.object?.ref !== undefined);
     if (!instantiated) continue;
     const term = String(instantiated.object.ref);
     if (!(state.knowledge?.current?.facts || []).some(f => f.subject === term && f.relation === 'ρ:kind' && f.object === 'relation_term') &&
-        !(state.knowledge?.facts || []).some(f => f.subject === term && f.relation === 'ρ:kind' && f.object === 'relation_term')) continue;
+        !facts.some(f => f.subject === term && f.relation === 'ρ:kind' && f.object === 'relation_term')) continue;
     out.push({ occurrence, relation_term: term, order });
   }
   return unique(out);
@@ -115,7 +122,7 @@ function relationalUpdate(state, originalContact, options = {}) {
   if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface ||
       !Array.isArray(originalContact.frame)) return null;
   const episode = latestSurfaceEpisode(state);
-  const relationTerms = freshContinuousRelationTerms(state);
+  const relationTerms = freshRelationTerms(state);
   if (!episode || !relationTerms.length) return null;
 
   const expressions = expressionCandidates(episode.tokens, options);
