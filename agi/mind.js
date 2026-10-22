@@ -3,7 +3,7 @@
 // Public one-M / one-C AGI entrypoint.
 //
 // Durable cognition remains in canonical M. Relational/surface completion,
-// continuous-contact discovery, generic relation-sequence recompression, and
+// continuous-contact discovery, generic lived-occurrence recompression, and
 // discourse arbitration are zero-state views or transformations over that same
 // M; none owns a second truth or memory state.
 
@@ -12,6 +12,7 @@ const Continuous = require('./continuous-relational-contact.js');
 const MultiSourceContinuous = require('./multisource-continuous-relations.js');
 const EmpiricalRelations = require('./empirical-relation-occurrences.js');
 const SurfaceRelationGrounding = require('./surface-relation-grounding.js');
+const GenericOccurrences = require('./generic-lived-occurrences.js');
 const RelationSequence = require('./relation-sequence-recompression.js');
 const Discourse = require('./discourse-arbiter.js');
 
@@ -121,31 +122,33 @@ function settleQuantitativeCompletion(state) {
     .filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort();
 }
 
-function relationOccurrenceIn(update) {
-  return !!(update?.relations?.facts || []).find(fact =>
-    Array.isArray(fact) && fact[1] === 'ρ:kind' && fact[2] === 'relation_occurrence');
-}
-
-// This is explicitly acceleration metadata, not cognitive state. The authoritative
-// occurrence history remains the ordinary M facts. If this cache is absent (for
-// example when continuing an older serialized M), rebuild it exactly from M once.
-function relationEventCountFromM(state) {
+// Temporal-search scheduling metadata is rebuildable from M and therefore has
+// zero semantic authority. New cognition uses generic lived_occurrence/lived_order.
+// A legacy fallback keeps older serialized relation-only states readable.
+function livedEventCountFromM(state) {
   const facts = state.knowledge?.facts || [];
-  const occurrences = new Set(facts
-    .filter(f => f.relation === 'ρ:kind' && f.object === 'relation_occurrence')
+  const lived = new Set(facts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'lived_occurrence')
     .map(f => String(f.subject)));
   const orders = new Set();
-  for (const fact of facts) if (fact.relation === 'ρ:order' && occurrences.has(String(fact.subject)) && Number.isFinite(fact.object))
+  for (const fact of facts) if (fact.relation === 'ρ:lived_order' && lived.has(String(fact.subject)) && Number.isFinite(fact.object))
+    orders.add(fact.object);
+  if (orders.size) return orders.size;
+
+  const legacy = new Set(facts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'relation_occurrence')
+    .map(f => String(f.subject)));
+  for (const fact of facts) if (fact.relation === 'ρ:order' && legacy.has(String(fact.subject)) && Number.isFinite(fact.object))
     orders.add(fact.object);
   return orders.size;
 }
 function ensureTemporalSearchCache(state, checkpoint) {
   if (!state.structure) return null;
-  if (!Number.isInteger(state.structure.relation_sequence_event_count) ||
-      !Number.isInteger(state.structure.next_relation_sequence_search_at)) {
-    const count = relationEventCountFromM(state);
-    state.structure.relation_sequence_event_count = count;
-    state.structure.next_relation_sequence_search_at = (Math.floor(count / checkpoint) + 1) * checkpoint;
+  if (!Number.isInteger(state.structure.lived_sequence_event_count) ||
+      !Number.isInteger(state.structure.next_lived_sequence_search_at)) {
+    const count = livedEventCountFromM(state);
+    state.structure.lived_sequence_event_count = count;
+    state.structure.next_lived_sequence_search_at = (Math.floor(count / checkpoint) + 1) * checkpoint;
   }
   return state.structure;
 }
@@ -159,23 +162,14 @@ function C(state, realityContact) {
 
   const hasFrame = !!frameFrom(realityContact);
   if (hasFrame) {
-    let newRelationEvent = false;
-
     // The canonical embodied learner already updated inside Relational.C above.
-    // This adapter does not learn a second model; it only exposes any new/support-
-    // advanced empirical relation through the same generic M term/occurrence form
-    // used by the other relation learners.
+    // These adapters only expose learned structure through ordinary M relations.
     const empirical = EmpiricalRelations.relationalUpdate(state);
-    if (empirical) {
-      newRelationEvent = relationOccurrenceIn(empirical) || newRelationEvent;
-      Relational.C(state, empirical);
-    }
+    if (empirical) Relational.C(state, empirical);
 
     for (const proposer of [Continuous, MultiSourceContinuous]) {
       const update = proposer.relationalUpdate(state);
-      if (!update) continue;
-      newRelationEvent = relationOccurrenceIn(update) || newRelationEvent;
-      Relational.C(state, update);
+      if (update) Relational.C(state, update);
     }
 
     // Surface meaning is learned from the same lived contact only after learned
@@ -184,30 +178,34 @@ function C(state, realityContact) {
     const grounding = SurfaceRelationGrounding.relationalUpdate(state, realityContact);
     if (grounding) Relational.C(state, grounding);
 
-    // Ordered recompression is proposal search, not epistemic authority. Count
-    // only distinct lived orders that actually gained a relation occurrence.
-    // The count is a disposable cache; exact occurrences remain in M. Search only
-    // after another full checkpoint of new event orders has accumulated.
-    if (newRelationEvent && temporalCache) {
-      temporalCache.relation_sequence_event_count++;
-      if (temporalCache.relation_sequence_event_count >= temporalCache.next_relation_sequence_search_at) {
-        const temporal = RelationSequence.relationalUpdate(state, { checkpoint: temporalCheckpoint });
-        if (temporal) Relational.C(state, temporal);
-        while (temporalCache.next_relation_sequence_search_at <= temporalCache.relation_sequence_event_count)
-          temporalCache.next_relation_sequence_search_at += temporalCheckpoint;
-      }
-    }
-
     settleQuantitativeCompletion(state);
   }
 
   // A grounded expression in the current lived utterance becomes ordinary M
   // occurrence content before any renderer acts. This is reference, not world
-  // assertion: the occurrence points to an already-grounded relation term and
-  // is provenance-linked to the exact surface episode. Generic closure can then
-  // reason from what was said through the same relational substrate.
+  // assertion: the occurrence points to an already-grounded relation term.
   const mention = SurfaceRelationGrounding.mentionUpdate(state, realityContact);
   if (mention) Relational.C(state, mention);
+
+  // Normalize every occurrence produced by this top-level reality contact onto
+  // one whole-life coordinate. Relation, expression, and action provenance stays
+  // intact; this only gives all of them the same generic temporal anatomy.
+  const lived = GenericOccurrences.relationalUpdate(state, realityContact);
+  if (lived?.update) Relational.C(state, lived.update);
+
+  // Ordered recompression is proposal search, not epistemic authority. Count one
+  // event for one lived order regardless of how many modalities occurred there.
+  // Exact occurrences are already M content; the cache only decides when another
+  // zero-authority whole-history search is worth running.
+  if (lived?.occurrence_count > 0 && temporalCache) {
+    temporalCache.lived_sequence_event_count++;
+    if (temporalCache.lived_sequence_event_count >= temporalCache.next_lived_sequence_search_at) {
+      const temporal = RelationSequence.relationalUpdate(state, { checkpoint: temporalCheckpoint });
+      if (temporal) Relational.C(state, temporal);
+      while (temporalCache.next_lived_sequence_search_at <= temporalCache.lived_sequence_event_count)
+        temporalCache.next_lived_sequence_search_at += temporalCheckpoint;
+    }
+  }
 
   // Expression choice is derived only after canonical M has settled. A learned
   // multi-relation discourse structure may replace a narrower surface completion
