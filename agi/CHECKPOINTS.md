@@ -39,11 +39,13 @@ Absence from conversation is `unknown`, never repository absence.
 - one ordered-relation identity accumulating stronger later evidence routes;
 - grounded expression -> temporal relation -> expected action -> existing actuator;
 - stale cue->A yielding to independently grounded bodily B, with later cue->B life reopening temporal action as explicit A/B conflict;
-- generic temporal expectation lifecycle: exact next lived event -> fulfilled / partial / violated / unevaluable M evidence, preserving unknown and exact provenance.
+- temporal expectation lifecycle: exact next lived event -> fulfilled / partial / violated / unevaluable M evidence;
+- lifecycle violation -> source ordered-relation successor reopening: contradicted term loses unique warrant, historical candidate remains, independent uncontested support survives.
 
-Primary temporal/action regressions: `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`, `grounded-expression-action.test.js`, `action-warrant-reopening.test.js`, `temporal-expectation-lifecycle.test.js`.
+Primary temporal/action regressions: `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`, `grounded-expression-action.test.js`, `action-warrant-reopening.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`.
 
-Current fully green blueprint: run `39846259585` on `b14d9376994976b87125ccc6b8d1a9e102f06e12`. Dedicated recursive-temporal run `39846259791` also passed on that head.
+Current fully green blueprint: run `39849103248` on cognitive head `af6d24dbdcec6e6282425c79e0fe79b190a714d9`.
+Dedicated recursive-temporal regression on this head is still running; previous run `39846259791` passed on `b14d9376994976b87125ccc6b8d1a9e102f06e12`.
 
 ## Failure / repair constraints
 
@@ -52,49 +54,40 @@ Current fully green blueprint: run `39846259585` on `b14d9376994976b87125ccc6b8d
 3. **Temporal modality interference:** preserve complete events; search projections may not erase modalities.
 4. **Search starvation:** bounded contiguous suffix view; no global history/rule-budget inflation.
 5. **Gappy projection overreach:** projected recurrence cannot license immediate-next expectation.
-6. **Phase artifacts:** pure alternation does not privilege one phase. A two-motor reopening test hit this; test was repaired, cognition was not.
-7. **Evidence-route birth order:** one ordered relation accumulates `ρ:ordered_evidence_route`; later adjacency evidence can upgrade an older gappy identity.
+6. **Phase artifacts:** pure alternation does not privilege one phase. Repair the test, not cognition.
+7. **Evidence-route birth order:** one ordered relation accumulates stronger later evidence routes.
 8. **Partial successor disagreement:** common successor terms remain warranted; residual alternatives remain conflict. Disjoint successors remain conflict-only.
-9. **Frontier bloat:** do not replay solved schooling/body development through every wrapper. Reuse demonstrated preconditions; newly claimed learning must still come from reality contact.
-10. **CI cost:** recursive continuous-temporal regression is >6 min, so it is dedicated/path-scoped and removed from duplicate suites. Frontier workflow also has a pre-existing very long `embodied-crossmodal-grounding` step; an earlier frontier run on `f42653f…` was cancelled after ~50 min. Do not attribute that cost to lifecycle without comparative evidence.
-11. **Lifecycle scan cost:** `lifecycleUpdate` currently rebuilds generic lived-order/expectation views from M facts on each lived event. Semantically correct, but a scaling debt. Optimize only with rebuildable zero-authority indexing; never copy semantic status out of M.
+9. **Counterevidence is reopening, not deletion:** a direct unmet successor contests only that term’s categorical warrant. Historical relation/candidate stays in M; independent uncontested support can still warrant the term; unknown does not defeat it.
+10. **Frontier bloat:** do not replay solved schooling/body development through every wrapper. Reuse demonstrated preconditions; newly claimed learning still comes from reality contact.
+11. **CI cost:** recursive continuous-temporal regression is >6 min and path-scoped. Frontier workflow has a pre-existing very long `embodied-crossmodal-grounding` step; do not attribute it to later changes without comparative evidence.
+12. **Temporal scan cost:** lifecycle and counterevidence completion rebuild views from M facts. Correct but scaling debt. Optimize only with rebuildable zero-authority indexes; never copy semantic status out of M.
 
-## Closed: present temporal completion
+## Closed: temporal completion / action / correction
 
-`past lived order -> learned ordered relation -> current partial occurrence -> open next-term expectation`
+`past lived order -> learned ordered relation -> current expectation -> optional actuator -> later reality evaluation -> source-relation reopening`
 
-M-owned; exact-prefix provenance; unseen term not observed; partial disagreement preserves common terms; disjoint disagreement stays open; gappy recurrence cannot claim immediate succession.
+M-owned throughout. Exact provenance/history remains. Unseen successor is never fabricated as observed. Unknown is not violation. Counterevidence removes contradicted unique warrant rather than deleting history. Independent support and unresolved alternatives remain available.
 
-## Closed: expression/action correction
+## Current frontier: internally formed evidence -> generic discovery material
 
-`current expectation -> existing action term -> actuator` and `old cue->A + grounded B + later cue->B -> A/B conflict` are both demonstrated. Historical expectations cannot drive current action; independent bodily support survives temporal conflict; no planner/cue table/policy/reward state.
-
-## Closed: expectation lifecycle
-
-`open expectation at n -> first later lived event -> M-owned evaluation`
-
-Generic across expression/relation/action terms through M-owned `ρ:instantiation_kind`; exact successor occurrences provide provenance. Fulfillment, partial fulfillment, evaluable violation, and unevaluable/unknown are distinct. Original expectation/contact history remains append-only; resolution is represented by new facts, not mutable status or a second ledger.
-
-## Current frontier: lifecycle evidence -> relation correction
-
-Repository search finds lifecycle evidence and generic canonical support-route machinery, but no connection from a temporal expectation evaluation back to the learned ordered relation(s) that generated the expectation.
+Repository search shows lifecycle evaluations are first-class M subjects and can be referenced by structured rules, but they are created after current-contact occurrence normalization and are not themselves in the generic `ρ:lived_order` occurrence stream used by autonomous ordered discovery.
 
 Target:
 
-`ordered relation -> expectation -> later reality evaluation -> evidence about source relation -> current relation warrant/reopening -> dependents settle`
+`internally formed evaluation/evidence -> first-class generic occurrence at its formation order -> later recurrence/higher-relation discovery`
 
 Requirements:
 
-- preserve a focused failure before changing cognition;
-- evaluation must trace through `ρ:grounded_by_ordered_relation`; no cue/action special case;
-- fulfillment/violation become evidence distinct from the relation itself;
-- a violated categorical immediate-successor claim must no longer remain silently usable solely because it was compressed earlier;
-- independently supported alternatives survive;
-- historical relation/evidence remains retained; correction is current warrant, not deletion;
-- do not treat compression metadata or a proposal as self-warrant;
-- reuse canonical support/counterevidence machinery where semantically valid; do not add a temporal status ledger.
+- preserve a focused failure first;
+- do not create a special “evaluation sequence” learner;
+- reuse generic occurrence anatomy and the existing ordered recompressor;
+- internally formed evidence must remain distinguishable from external observation and preserve provenance;
+- no fabricated external contact: an internal evaluation occurrence is an occurrence of M’s newly formed relation/evidence, not an observation of its expected world term;
+- reusable identity must come from relational structure, not unique event IDs or hard-coded modality names;
+- once normalized, the result must be available to the same higher-order discovery machinery as learned relation/expression/action occurrences;
+- avoid recursive self-trigger loops where normalization itself endlessly creates new events.
 
-Classification: likely **connection**. Search/falsify reuse before implementation.
+Classification: likely **connection/extension of generic occurrence normalization**. Search/falsify reuse before implementation.
 
 ## Later, not current
 
