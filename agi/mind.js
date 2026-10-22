@@ -242,6 +242,12 @@ function C(state, realityContact) {
   if (lived?.update) Relational.C(state, lived.update);
 
   if (lived?.occurrence_count > 0) {
+    // Resolve older open expectations from the exact first later lived event.
+    // The evaluation itself is ordinary M evidence; no predictor/status state is
+    // retained outside the one relational history.
+    const lifecycle = RelationSequence.lifecycleUpdate(state);
+    if (lifecycle) Relational.C(state, lifecycle);
+
     // Ordered recompression is proposal search, not epistemic authority. Count one
     // event for one lived order regardless of how many modalities occurred there.
     // Exact occurrences are already M content; the cache only decides when another

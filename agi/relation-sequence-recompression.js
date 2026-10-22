@@ -359,7 +359,8 @@ function completionUpdate(state) {
       [id, 'ρ:expected_terms', agreed.map(ref)],
       [id, 'ρ:matched_prefix_length', maxPrefix],
       [id, 'ρ:based_on_occurrences', evidence.map(ref)],
-      [id, 'ρ:status', 'open'],
+      [id, 'ρ:formation_status', 'open'],
+      [`lived-contact:${latestOrder}`, 'ρ:has_temporal_expectation', ref(id)],
       ['self', 'ρ:expects', ref(id)],
     );
     if (byExpectation.size > 1) facts.push([id, 'ρ:consensus_scope', 'common_terms_across_open_alternatives']);
@@ -375,7 +376,8 @@ function completionUpdate(state) {
       [id, 'ρ:after_lived_order', latestOrder],
       [id, 'ρ:alternatives', candidateIds.sort().map(ref)],
       [id, 'ρ:consensus_terms', agreed.map(ref)],
-      [id, 'ρ:status', 'open'],
+      [id, 'ρ:formation_status', 'open'],
+      [`lived-contact:${latestOrder}`, 'ρ:has_temporal_expectation_conflict', ref(id)],
       ['self', 'ρ:has_open_temporal_expectation', ref(id)],
     );
   }
@@ -383,4 +385,92 @@ function completionUpdate(state) {
   return { relations: { facts } };
 }
 
-module.exports = { relationalUpdate, completionUpdate };
+function lifecycleUpdate(state) {
+  const observations = orderedLivedOccurrences(state);
+  if (!observations.length) return null;
+  const facts = state.knowledge?.facts || [];
+  const expectations = new Map();
+  const resolved = new Set();
+  const termKinds = new Map();
+  const occurrenceKinds = new Map();
+
+  function expectation(id) {
+    const key = String(id);
+    if (!expectations.has(key)) expectations.set(key, { id: key, terms: [] });
+    return expectations.get(key);
+  }
+  function addKind(map, key, value) {
+    const id = String(key);
+    if (!map.has(id)) map.set(id, new Set());
+    map.get(id).add(String(value));
+  }
+
+  for (const fact of facts) {
+    const subject = String(fact.subject);
+    if (fact.relation === 'ρ:kind' && fact.object === 'temporal_expectation') expectation(subject).kind = true;
+    else if (fact.relation === 'ρ:after_lived_order' && Number.isFinite(fact.object)) expectation(subject).after = fact.object;
+    else if (fact.relation === 'ρ:expected_terms' && Array.isArray(fact.object)) {
+      for (const term of fact.object) if (term?.ref !== undefined) expectation(subject).terms.push(String(term.ref));
+    } else if (fact.relation === 'ρ:expects_term' && fact.object?.ref !== undefined) {
+      expectation(subject).terms.push(String(fact.object.ref));
+    } else if (fact.relation === 'ρ:resolved_by' && fact.object?.ref !== undefined) {
+      resolved.add(subject);
+    }
+
+    if (fact.relation === 'ρ:instantiation_kind' && fact.object !== undefined) addKind(termKinds, subject, fact.object);
+    if (fact.relation === 'ρ:kind' && fact.object !== 'lived_occurrence' && fact.object !== undefined)
+      addKind(occurrenceKinds, subject, fact.object);
+  }
+
+  const updates = [];
+  for (const x of expectations.values()) {
+    if (!x.kind || !Number.isFinite(x.after) || resolved.has(x.id)) continue;
+    const expected = normalizedTerms(x.terms);
+    if (!expected.length) continue;
+    const successor = observations.find(event => event.order > x.after);
+    if (!successor) continue;
+
+    const observedTerms = new Set(successor.relations);
+    const observedKinds = new Set();
+    for (const occurrence of successor.occurrences || [])
+      for (const kind of occurrenceKinds.get(String(occurrence)) || []) observedKinds.add(kind);
+
+    const fulfilled = [], unmet = [], unknown = [];
+    for (const term of expected) {
+      if (observedTerms.has(term)) { fulfilled.push(term); continue; }
+      const kinds = termKinds.get(term);
+      if (kinds && [...kinds].some(kind => observedKinds.has(kind))) unmet.push(term);
+      else unknown.push(term);
+    }
+
+    let result;
+    if (fulfilled.length === expected.length) result = 'fulfilled';
+    else if (!fulfilled.length && !unmet.length) result = 'unevaluable';
+    else if (!fulfilled.length && unmet.length && !unknown.length) result = 'violated';
+    else result = 'partial';
+
+    const evaluation = `temporal-expectation-evaluation:${x.after}:${successor.order}:${digest([
+      x.id, expected, successor.relations, result,
+    ])}`;
+    updates.push(
+      [evaluation, 'ρ:kind', 'temporal_expectation_evaluation'],
+      [evaluation, 'ρ:evaluates_expectation', ref(x.id)],
+      [evaluation, 'ρ:predecessor_lived_order', x.after],
+      [evaluation, 'ρ:successor_lived_order', successor.order],
+      [evaluation, 'ρ:evaluation_result', result],
+      [evaluation, 'ρ:expected_terms', expected.map(ref)],
+      [evaluation, 'ρ:observed_terms', successor.relations.map(ref)],
+      [evaluation, 'ρ:fulfilled_terms', fulfilled.map(ref)],
+      [evaluation, 'ρ:unmet_terms', unmet.map(ref)],
+      [evaluation, 'ρ:unknown_terms', unknown.map(ref)],
+      [evaluation, 'ρ:based_on_occurrences', (successor.occurrences || []).map(ref)],
+      [x.id, 'ρ:resolved_by', ref(evaluation)],
+      [x.id, 'ρ:resolved_at_lived_order', successor.order],
+      [`lived-contact:${successor.order}`, 'ρ:evaluates_temporal_expectation', ref(evaluation)],
+    );
+  }
+
+  return updates.length ? { relations: { facts: updates } } : null;
+}
+
+module.exports = { relationalUpdate, completionUpdate, lifecycleUpdate };

@@ -63,6 +63,11 @@ function hasFact(state, subject, relation, objectPredicate = () => true) {
   return (state.knowledge?.facts || []).some(f => String(f.subject) === String(subject) &&
     f.relation === relation && objectPredicate(f.object));
 }
+function occurrenceKinds(subjectFacts) {
+  return [...new Set((subjectFacts || [])
+    .filter(f => f.relation === 'ρ:kind' && typeof f.object === 'string' && f.object !== 'lived_occurrence')
+    .map(f => f.object))].sort();
+}
 
 function relationalUpdate(state, originalContact) {
   if (!state || state.whole !== 1) return null;
@@ -73,12 +78,24 @@ function relationalUpdate(state, originalContact) {
     [contactId, 'ρ:lived_order', order],
     ['self', 'ρ:experienced', ref(contactId)],
   ];
-  let occurrenceCount = 0;
+  const occurrenceIds = new Set();
 
   const bySubject = factsBySubject(state);
   const hasFrame = Array.isArray(originalContact) || !!(originalContact && typeof originalContact === 'object' && Array.isArray(originalContact.frame));
   const frameIndex = hasFrame ? (state.contacts?.length || 0) : null;
   if (frameIndex !== null) facts.push([contactId, 'ρ:frame_contact_index', frameIndex]);
+
+  // Already-normalized generic occurrences supplied by another zero-state bridge
+  // remain valid current-life events. Count/link them without reinterpreting them.
+  for (const [subject, subjectFacts] of bySubject) {
+    const isLived = subjectFacts.some(f => f.relation === 'ρ:kind' && f.object === 'lived_occurrence');
+    const livedOrder = factValue(subjectFacts, 'ρ:lived_order', Number.isFinite);
+    const term = factValue(subjectFacts, 'ρ:instantiates', x => x && x.ref !== undefined);
+    if (!isLived || livedOrder !== order || !term) continue;
+    facts.push([contactId, 'ρ:contains_occurrence', ref(subject)]);
+    for (const kind of occurrenceKinds(subjectFacts)) facts.push([String(term.ref), 'ρ:instantiation_kind', kind]);
+    occurrenceIds.add(subject);
+  }
 
   // Existing learned relation occurrences keep their learner-local `ρ:order`.
   // Normalize only occurrences made at the current frame boundary.
@@ -91,7 +108,8 @@ function relationalUpdate(state, originalContact) {
     if (!hasFact(state, subject, 'ρ:lived_order')) facts.push([subject, 'ρ:lived_order', order]);
     if (!hasFact(state, subject, 'ρ:kind', x => x === 'lived_occurrence')) facts.push([subject, 'ρ:kind', 'lived_occurrence']);
     facts.push([contactId, 'ρ:contains_occurrence', ref(subject)]);
-    occurrenceCount++;
+    for (const kind of occurrenceKinds(subjectFacts)) facts.push([String(term.ref), 'ρ:instantiation_kind', kind]);
+    occurrenceIds.add(subject);
   }
 
   // Canonical embodiment already retains `self ρ:caused {motor_index,
@@ -107,6 +125,7 @@ function relationalUpdate(state, originalContact) {
       facts.push(
         [term, 'ρ:kind', 'action_term'],
         [term, 'ρ:actuator_index', motor],
+        [term, 'ρ:instantiation_kind', 'action_occurrence'],
         [occurrence, 'ρ:kind', 'action_occurrence'],
         [occurrence, 'ρ:kind', 'lived_occurrence'],
         [occurrence, 'ρ:instantiates', ref(term)],
@@ -116,7 +135,7 @@ function relationalUpdate(state, originalContact) {
         ['self', 'ρ:caused', ref(occurrence)],
         [contactId, 'ρ:contains_occurrence', ref(occurrence)],
       );
-      occurrenceCount++;
+      occurrenceIds.add(occurrence);
     }
   }
 
@@ -142,7 +161,8 @@ function relationalUpdate(state, originalContact) {
           [subject, 'ρ:lived_order', order],
           [contactId, 'ρ:contains_occurrence', ref(subject)],
         );
-        occurrenceCount++;
+        for (const kind of occurrenceKinds(subjectFacts)) facts.push([surface, 'ρ:instantiation_kind', kind]);
+        occurrenceIds.add(subject);
       }
     }
   }
@@ -151,7 +171,7 @@ function relationalUpdate(state, originalContact) {
   return {
     update: { relations: { facts } },
     order,
-    occurrence_count: occurrenceCount,
+    occurrence_count: occurrenceIds.size,
   };
 }
 
