@@ -14,6 +14,14 @@
 //
 // Local `ρ:order` facts remain untouched. `ρ:lived_order` is the cross-modal axis.
 
+const crypto = require('crypto');
+
+function stable(v) {
+  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
+  return JSON.stringify(v);
+}
+function digest(v) { return crypto.createHash('sha256').update(stable(v)).digest('hex').slice(0, 24); }
 function ref(id) { return { ref: String(id) }; }
 function finiteInteger(v) { return Number.isInteger(v) && v >= 0; }
 
@@ -68,6 +76,10 @@ function occurrenceKinds(subjectFacts) {
     .filter(f => f.relation === 'ρ:kind' && typeof f.object === 'string' && f.object !== 'lived_occurrence')
     .map(f => f.object))].sort();
 }
+function contactedTriples(contact) {
+  if (!contact || Array.isArray(contact) || typeof contact !== 'object' || !Array.isArray(contact.relations?.facts)) return [];
+  return contact.relations.facts.filter(x => Array.isArray(x) && x.length === 3 && x.every(v => v !== undefined));
+}
 
 function relationalUpdate(state, originalContact) {
   if (!state || state.whole !== 1) return null;
@@ -84,6 +96,33 @@ function relationalUpdate(state, originalContact) {
   const hasFrame = Array.isArray(originalContact) || !!(originalContact && typeof originalContact === 'object' && Array.isArray(originalContact.frame));
   const frameIndex = hasFrame ? (state.contacts?.length || 0) : null;
   if (frameIndex !== null) facts.push([contactId, 'ρ:frame_contact_index', frameIndex]);
+
+  // An externally contacted structured triple is itself an occurrence in the
+  // individual's life. Reify the exact triple as one content-addressed relation
+  // term and give each contact with it the same generic lived-occurrence anatomy.
+  // This is representation only: the original fact already retained in M remains
+  // the truth/contact authority; this bridge creates no warrant or interpretation.
+  for (const triple of contactedTriples(originalContact)) {
+    const descriptor = { subject: triple[0], predicate: triple[1], object: triple[2] };
+    const key = digest(descriptor);
+    const term = `contact-relation-term:${key}`;
+    const occurrence = `contact-relation-occurrence:${order}:${key}`;
+    facts.push(
+      [term, 'ρ:kind', 'relation_term'],
+      [term, 'ρ:relation_subject', descriptor.subject],
+      [term, 'ρ:relation_predicate', descriptor.predicate],
+      [term, 'ρ:relation_object', descriptor.object],
+      [term, 'ρ:instantiation_kind', 'structured_relation_occurrence'],
+      [occurrence, 'ρ:kind', 'structured_relation_occurrence'],
+      [occurrence, 'ρ:kind', 'lived_occurrence'],
+      [occurrence, 'ρ:instantiates', ref(term)],
+      [occurrence, 'ρ:order', order],
+      [occurrence, 'ρ:lived_order', order],
+      [occurrence, 'ρ:grounded_by', ref(contactId)],
+      [contactId, 'ρ:contains_occurrence', ref(occurrence)],
+    );
+    occurrenceIds.add(occurrence);
+  }
 
   // Already-normalized generic occurrences supplied by another zero-state bridge
   // remain valid current-life events. Count/link them without reinterpreting them.

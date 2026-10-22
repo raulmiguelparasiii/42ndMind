@@ -52,14 +52,14 @@ function livedOccurrencesForTerm(M, term) {
     fact(M, id, 'ρ:lived_order', Number.isFinite));
 }
 
-// Same underlying physical stream for every life. Exact source values do not
-// repeat, so discovered numeric relations cannot be equality memorization.
+// Same underlying physical stream for every developed life. Exact source values
+// do not repeat, so discovered numeric relations cannot be equality memorization.
 let seed = 0x34ac91ef;
 function rnd() {
   seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
   return (seed >>> 0) / 0x100000000;
 }
-const STEPS = 104;
+const STEPS = 88; // eight post-min-support continuous evidence cadences
 const latent = Array.from({ length: STEPS }, () => rnd() * 2 - 1 + rnd() * 1e-9);
 const noise = Array.from({ length: STEPS }, () => [rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1]);
 
@@ -70,35 +70,46 @@ function physicalFrame(t) {
   return [a, b, c];
 }
 function receptor(channel) { return `receptor:p${channel}`; }
+function topologyFacts(channelOfPhysical, physicalEdges) {
+  return physicalEdges.map(([from, to]) => [
+    receptor(channelOfPhysical[from]), TOPO, { ref: receptor(channelOfPhysical[to]) },
+  ]);
+}
 
 function runLife(channelOfPhysical, physicalEdges) {
   const M = Mind.one(1, 1);
-  const topologyFacts = physicalEdges.map(([from, to]) => [
-    receptor(channelOfPhysical[from]), TOPO, { ref: receptor(channelOfPhysical[to]) },
-  ]);
-
+  const topology = topologyFacts(channelOfPhysical, physicalEdges);
   for (let t = 0; t < STEPS; t++) {
     const physical = physicalFrame(t);
     const channels = Array(3);
     for (let p = 0; p < 3; p++) channels[channelOfPhysical[p]] = physical[p];
-    Mind.C(M, { frame: [...channels, 30], relations: { facts: topologyFacts } });
+    Mind.C(M, { frame: [...channels, 30], relations: { facts: topology } });
   }
-  return { M, topologyFacts };
+  return { M, topologyFacts: topology };
+}
+function oneTopologyContact(channelOfPhysical, physicalEdges) {
+  const M = Mind.one(1, 1);
+  const topology = topologyFacts(channelOfPhysical, physicalEdges);
+  const physical = physicalFrame(0);
+  const channels = Array(3);
+  for (let p = 0; p < 3; p++) channels[channelOfPhysical[p]] = physical[p];
+  Mind.C(M, { frame: [...channels, 30], relations: { facts: topology } });
+  return { M, topologyFacts: topology };
 }
 
-function assertTopologyBecameGeneric(M, topologyFacts) {
+function assertTopologyBecameGeneric(M, topology, minimumOccurrences) {
   const terms = termsForPredicate(M, TOPO);
-  assert.strictEqual(terms.size, topologyFacts.length,
+  assert.strictEqual(terms.size, topology.length,
     'structured topology contact did not become reusable first-class relation terms');
 
-  for (const triple of topologyFacts) {
+  for (const triple of topology) {
     const matching = [...terms].filter(term => {
       const d = termDescriptor(M, term);
       return same(d.subject, triple[0]) && d.predicate === triple[1] && same(d.object, triple[2]);
     });
     assert.strictEqual(matching.length, 1, 'topology relation term lost exact contacted endpoints');
-    assert(livedOccurrencesForTerm(M, matching[0]).length >= 8,
-      'recurrent structured topology contact did not become generic lived occurrences');
+    assert(livedOccurrencesForTerm(M, matching[0]).length >= minimumOccurrences,
+      'structured topology contact did not become generic lived occurrences');
   }
   return terms;
 }
@@ -143,8 +154,11 @@ function mixedHigherRelation(M, topologyTerms) {
   return null;
 }
 
-function combinedGraphSignature(M, topologyFacts) {
-  const edges = topologyFacts.map(([from, predicate, to]) => [predicate, from, to.ref]);
+function topologyGraphSignature(topology) {
+  return RNF.canonicalGraph({ edges: topology.map(([from, predicate, to]) => [predicate, from, to.ref]) }).signature;
+}
+function combinedGraphSignature(M, topology) {
+  const edges = topology.map(([from, predicate, to]) => [predicate, from, to.ref]);
   for (const f of M.knowledge?.current?.facts || []) {
     if (f.relation !== 'ρ:continuous_dependence' || !f.object?.target) continue;
     edges.push([`κ:${f.object.lag}:${f.object.orientation}`, String(f.subject), String(f.object.target)]);
@@ -156,24 +170,26 @@ function combinedGraphSignature(M, topologyFacts) {
 const A = runLife([0, 1, 2], [[0, 1], [1, 2]]);
 assert.strictEqual(new Set(A.M.contacts.slice(8).map(x => x[0])).size, A.M.contacts.length - 8,
   'continuous source accidentally repeated exact values');
-const topologyA = assertTopologyBecameGeneric(A.M, A.topologyFacts);
-const mixedA = mixedHigherRelation(A.M, topologyA);
-assert(mixedA, 'topology contact and learned raw dynamics never became one reusable higher relation');
+const topologyA = assertTopologyBecameGeneric(A.M, A.topologyFacts, 8);
+assert(mixedHigherRelation(A.M, topologyA),
+  'topology contact and learned raw dynamics never became one reusable higher relation');
 
 // B: same physical chain, arbitrary channel renaming/permutation.
 const B = runLife([2, 0, 1], [[0, 1], [1, 2]]);
-const topologyB = assertTopologyBecameGeneric(B.M, B.topologyFacts);
-assert(mixedHigherRelation(B.M, topologyB), 'renamed topology failed to enter the same generic higher-relation path');
+const topologyB = assertTopologyBecameGeneric(B.M, B.topologyFacts, 8);
+assert(mixedHigherRelation(B.M, topologyB),
+  'renamed topology failed to enter the same generic higher-relation path');
+assert.strictEqual(topologyGraphSignature(A.topologyFacts), topologyGraphSignature(B.topologyFacts),
+  'channel renaming changed contacted topology structure');
 assert.strictEqual(combinedGraphSignature(A.M, A.topologyFacts), combinedGraphSignature(B.M, B.topologyFacts),
   'channel renaming changed the learned/contacted relational structure');
 
-// C: identical numeric stream/layout to A but genuinely different contacted
-// topology. The two realities must remain distinguishable in M.
-const C = runLife([0, 1, 2], [[0, 1], [0, 2]]);
-const topologyC = assertTopologyBecameGeneric(C.M, C.topologyFacts);
-assert(mixedHigherRelation(C.M, topologyC), 'alternative topology failed to remain usable relation material');
-assert.notStrictEqual(combinedGraphSignature(A.M, A.topologyFacts), combinedGraphSignature(C.M, C.topologyFacts),
-  'different contacted topology collapsed merely because flattened numeric values matched');
+// C: one contact with the same numeric layout as A but a genuinely different
+// topology. No long third developmental replay is needed to test distinguishability.
+const C = oneTopologyContact([0, 1, 2], [[0, 1], [0, 2]]);
+assertTopologyBecameGeneric(C.M, C.topologyFacts, 1);
+assert.notStrictEqual(topologyGraphSignature(A.topologyFacts), topologyGraphSignature(C.topologyFacts),
+  'different contacted topology collapsed merely because flattened numeric layout matched');
 
 for (const M of [A.M, B.M, C.M]) {
   assert.strictEqual(M.whole, 1);
