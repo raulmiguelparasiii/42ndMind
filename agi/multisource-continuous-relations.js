@@ -153,6 +153,13 @@ function fitSimplest(state, sources, target, options = {}) {
   return null;
 }
 
+// Higher arity is warranted only when it adds explanatory necessity. A perfect
+// joint fit with a dispensable source is merely a redundant alias for a simpler
+// relation and must not become a new first-class relation identity.
+function reducibleToUnary(state, relation, options = {}) {
+  return relation.sources.some(source => !!fitSimplest(state, [source], relation.target, options));
+}
+
 function fitKnown(state, relation, transform, window = 64) {
   const samples = samplesFor(state, relation.sources, relation.target, window);
   if (samples.length < 2) return { support: samples.length, fit_score: null, fit_rmse: null, target_rms: null };
@@ -190,10 +197,10 @@ function routeDescriptor(rule) {
   const p = rule.provenance || {};
   return { sources: Array.isArray(p.sources) ? p.sources.map(s => ({ ...s })) : [], target: p.target, orientation: 'joint', transform: p.transform };
 }
-function unarySameTimeTargets(state) {
+function unaryExplainedTargets(state) {
   const out = new Set();
   for (const fact of state.knowledge?.current?.facts || []) {
-    if (fact.relation !== 'ρ:continuous_dependence' || !fact.object || fact.object.lag !== 0 || fact.object.sources) continue;
+    if (fact.relation !== 'ρ:continuous_dependence' || !fact.object || fact.object.sources) continue;
     const match = /^receptor:p(\d+)$/.exec(String(fact.object.target));
     if (match) out.add(Number(match[1]));
   }
@@ -279,11 +286,11 @@ function detect(state, options = {}) {
   const evidenceLagHorizon = Math.max(0, Math.floor(Math.log2(Math.max(1, n / minSupport))) + 1);
   const requestedMaxLag = options.maxLag === undefined ? evidenceLagHorizon : Math.max(0, options.maxLag);
   const maxLag = Math.min(evidenceMaxLag, requestedMaxLag);
-  const space = pairSourceSpace(channels, unarySameTimeTargets(state), maxLag);
+  const space = pairSourceSpace(channels, unaryExplainedTargets(state), maxLag);
   const budget = Math.max(1, options.pairBudget ?? 256);
   for (const relation of budgetSlice(space, n, cadence, budget)) {
     const fit = fitSimplest(state, relation.sources, relation.target, options);
-    if (!fit) continue;
+    if (!fit || reducibleToUnary(state, relation, options)) continue;
     const candidate = { ...relation, ...fit };
     const key = topologyKey(candidate);
     const old = found.get(key);
