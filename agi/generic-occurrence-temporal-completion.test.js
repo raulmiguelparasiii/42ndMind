@@ -132,6 +132,42 @@ const learnedAB = [...ordered.entries()].find(([id, x]) => {
   const events = flattenOrdered(id);
   return events.length >= 2 && singleton(events[0], SURFACE_A) && singleton(events[1], SURFACE_B);
 });
+
+// Retain compact failure anatomy in CI. This is diagnostic only and has no effect
+// on the falsification: it exposes the exact recent lived terms and any learned
+// expansion touching A/B so a failure can be traced without weakening the gate.
+if (!learnedAB) {
+  const byOccurrence = new Map();
+  for (const fact of factsBeforeProbe) {
+    const id = String(fact.subject);
+    if (!byOccurrence.has(id)) byOccurrence.set(id, {});
+    const x = byOccurrence.get(id);
+    if (fact.relation === 'ρ:kind' && fact.object === 'lived_occurrence') x.lived = true;
+    else if (fact.relation === 'ρ:instantiates' && fact.object?.ref !== undefined) x.term = String(fact.object.ref);
+    else if (fact.relation === 'ρ:lived_order' && Number.isFinite(fact.object)) x.order = fact.object;
+  }
+  const byOrder = new Map();
+  for (const [, x] of byOccurrence) if (x.lived && x.term && Number.isFinite(x.order)) {
+    if (!byOrder.has(x.order)) byOrder.set(x.order, []);
+    byOrder.get(x.order).push(x.term);
+  }
+  const recent = [...byOrder.entries()].sort((a, b) => a[0] - b[0]).slice(-40)
+    .map(([order, terms]) => ({ order, terms: [...new Set(terms)].sort() }));
+  const touching = [...ordered.entries()].flatMap(([id, x]) => {
+    if (!x.kind || !x.expansion) return [];
+    const events = flattenOrdered(id);
+    return events.some(event => event.includes(SURFACE_A) || event.includes(SURFACE_B)) ? [{ id, events }] : [];
+  }).slice(-12);
+  console.error('TEMPORAL_COMPLETION_DIAGNOSTIC ' + JSON.stringify({
+    lived_event_count: byOrder.size,
+    temporal_cache: {
+      count: M.structure?.lived_sequence_event_count,
+      next: M.structure?.next_lived_sequence_search_at,
+    },
+    recent,
+    learned_touching_A_or_B: touching,
+  }));
+}
 assert(learnedAB, 'alternating lived expression occurrences did not become a learned A -> B order');
 
 // Present only the prefix. This is the actual completion probe.
