@@ -1,15 +1,16 @@
 'use strict';
 
 // Zero-state bridge from M-owned lived occurrences to the repository's existing
-// generic ordered recompression law. This file owns no temporal memory or truth
-// state. Anything carrying the same minimal occurrence anatomy can participate:
+// generic ordered recompression law. This file owns no temporal memory, policy,
+// or truth state. Anything carrying the same minimal occurrence anatomy can
+// participate:
 //
 //   occurrence --instantiates--> term
 //   occurrence --lived_order-->  whole-life order
 //
-// Relation, expression, action, and future occurrence kinds are therefore not
-// separate temporal faculties. Legacy relation occurrences without lived_order
-// remain readable through their old local order for serialized-state continuity.
+// Learned order can also constrain the present. A suffix of exact lived
+// occurrences may match the prefix of an M-owned learned ordered relation. The
+// bridge then returns an explicit expectation, never an invented occurrence.
 
 const crypto = require('crypto');
 const Sequence = require('../sequence-recompression.js');
@@ -21,6 +22,8 @@ function stable(v) {
 }
 function unique(xs) { const m = new Map(); for (const x of xs || []) m.set(stable(x), x); return [...m.values()]; }
 function ref(id) { return { ref: String(id) }; }
+function normalizedTerms(xs) { return unique((xs || []).map(String)).sort(); }
+function sameEvent(a, b) { return stable(normalizedTerms(a)) === stable(normalizedTerms(b)); }
 
 function orderedLivedOccurrences(state) {
   const groups = new Map();
@@ -48,17 +51,22 @@ function orderedLivedOccurrences(state) {
   // that happened at the same whole-life coordinate.
   const byOrder = new Map();
   for (const o of occurrences) {
-    if (!byOrder.has(o.order)) byOrder.set(o.order, []);
-    byOrder.get(o.order).push(o.term);
+    if (!byOrder.has(o.order)) byOrder.set(o.order, { terms: [], occurrences: [] });
+    byOrder.get(o.order).terms.push(o.term);
+    byOrder.get(o.order).occurrences.push(o.id);
   }
   return [...byOrder.entries()]
     .sort((a, b) => a[0] - b[0])
-    .map(([order, terms]) => ({ order, relations: unique(terms).sort() }));
+    .map(([order, event]) => ({
+      order,
+      relations: normalizedTerms(event.terms),
+      occurrences: unique(event.occurrences.map(String)).sort(),
+    }));
 }
 
 function digest(value) {
-  // Hash is only a stable address. The complete ordered expansion is stored as
-  // ordinary M content, so semantic identity never depends on hash authority.
+  // Hash is only a stable address. Complete expansion/evidence remains ordinary
+  // M content, so semantic identity never depends on hash authority.
   return crypto.createHash('sha256').update(stable(value)).digest('hex').slice(0, 24);
 }
 function parseBaseToken(token) {
@@ -121,9 +129,8 @@ function appendCompressedFacts(compressed, view, existing, facts) {
       }
       const event = parseBaseToken(token);
       if (!Array.isArray(event)) throw new Error(`unknown ordered-recompression token: ${token}`);
-      // Historical field name retained for compatibility. The references are now
-      // generic first-class terms and may denote relations, expressions, actions,
-      // or later occurrence content.
+      // Historical field name retained for compatibility. References are generic
+      // first-class terms and may denote relations, expressions, actions, etc.
       expansion.push({ simultaneous_relations: event.map(id => ref(id)) });
     }
 
@@ -163,4 +170,147 @@ function relationalUpdate(state, options = {}) {
   return facts.length ? { relations: { facts } } : null;
 }
 
-module.exports = { relationalUpdate };
+function learnedOrderedIndex(state) {
+  const out = new Map();
+  function node(id) {
+    const key = String(id);
+    if (!out.has(key)) out.set(key, { id: key });
+    return out.get(key);
+  }
+  for (const fact of state.knowledge?.facts || []) {
+    const x = node(fact.subject);
+    if (fact.relation === 'ρ:kind' && fact.object === 'learned_ordered_relation') x.kind = true;
+    else if (fact.relation === 'ρ:ordered_expansion' && Array.isArray(fact.object)) x.expansion = fact.object;
+    else if (fact.relation === 'ρ:ordered_projection_kind') x.projection = fact.object;
+    else if (fact.relation === 'ρ:depth' && Number.isFinite(fact.object)) x.depth = fact.object;
+    else if (fact.relation === 'ρ:occurrences_at_birth' && Number.isFinite(fact.object)) x.support = fact.object;
+  }
+  return out;
+}
+
+function expansionEvent(component) {
+  if (!Array.isArray(component?.simultaneous_relations)) return null;
+  return normalizedTerms(component.simultaneous_relations
+    .filter(x => x && x.ref !== undefined)
+    .map(x => String(x.ref)));
+}
+
+function flattenLearned(id, index, trail = new Set()) {
+  const key = String(id);
+  if (trail.has(key)) throw new Error(`cyclic learned ordered relation: ${key}`);
+  const x = index.get(key);
+  if (!x?.kind || !Array.isArray(x.expansion)) return [];
+  const next = new Set(trail); next.add(key);
+  const events = [];
+  for (const component of x.expansion) {
+    if (component && component.ref !== undefined) {
+      events.push(...flattenLearned(String(component.ref), index, next));
+      continue;
+    }
+    const event = expansionEvent(component);
+    if (event?.length) events.push(event);
+  }
+  return events;
+}
+
+function matchedPrefixLength(observations, expansion) {
+  const max = Math.min(observations.length, expansion.length - 1);
+  for (let length = max; length >= 1; length--) {
+    const start = observations.length - length;
+    let same = true;
+    for (let i = 0; i < length; i++) {
+      if (!sameEvent(observations[start + i].relations, expansion[i])) { same = false; break; }
+    }
+    if (same) return length;
+  }
+  return 0;
+}
+
+// Present completion is a derived constraint from M-owned order, not prediction
+// state. Projection relations describe recurrence after irrelevant events are
+// removed, so they cannot license an *immediate next lived event*. Only relations
+// learned from the full lived stream participate in this completion operation.
+// If equally specific full-stream relations disagree, the next term remains open.
+function completionUpdate(state) {
+  const observations = orderedLivedOccurrences(state);
+  if (!observations.length) return null;
+  const index = learnedOrderedIndex(state);
+  const candidates = [];
+
+  for (const [id, x] of index) {
+    if (!x.kind || x.projection) continue;
+    const expansion = flattenLearned(id, index);
+    if (expansion.length < 2) continue;
+    const prefixLength = matchedPrefixLength(observations, expansion);
+    if (!prefixLength) continue;
+    const prefixEvents = observations.slice(-prefixLength);
+    candidates.push({
+      relation: id,
+      prefixLength,
+      nextTerms: normalizedTerms(expansion[prefixLength]),
+      occurrences: unique(prefixEvents.flatMap(event => event.occurrences || []).map(String)).sort(),
+    });
+  }
+  if (!candidates.length) return null;
+
+  // Longer matched context is strictly more specific. Among equally specific
+  // routes, disagreement is represented as open rather than resolved by helper
+  // execution order, relation id, modality, or an arbitrary score.
+  const maxPrefix = Math.max(...candidates.map(x => x.prefixLength));
+  const strongest = candidates.filter(x => x.prefixLength === maxPrefix && x.nextTerms.length);
+  if (!strongest.length) return null;
+
+  const latestOrder = observations.at(-1).order;
+  const facts = [];
+  const candidateIds = [];
+  for (const candidate of strongest) {
+    const id = `temporal-expectation-candidate:${latestOrder}:${digest(candidate)}`;
+    candidateIds.push(id);
+    facts.push(
+      [id, 'ρ:kind', 'temporal_expectation_candidate'],
+      [id, 'ρ:after_lived_order', latestOrder],
+      [id, 'ρ:expected_terms', candidate.nextTerms.map(ref)],
+      [id, 'ρ:grounded_by_ordered_relation', ref(candidate.relation)],
+      [id, 'ρ:matched_prefix_length', candidate.prefixLength],
+      [id, 'ρ:based_on_occurrences', candidate.occurrences.map(ref)],
+    );
+  }
+
+  const byExpectation = new Map();
+  for (const candidate of strongest) {
+    const key = stable(candidate.nextTerms);
+    if (!byExpectation.has(key)) byExpectation.set(key, []);
+    byExpectation.get(key).push(candidate);
+  }
+
+  if (byExpectation.size === 1) {
+    const agreed = strongest[0].nextTerms;
+    const id = `temporal-expectation:${latestOrder}:${digest(agreed)}`;
+    const evidence = unique(strongest.flatMap(x => x.occurrences).map(String)).sort();
+    facts.push(
+      [id, 'ρ:kind', 'temporal_expectation'],
+      [id, 'ρ:after_lived_order', latestOrder],
+      [id, 'ρ:expected_terms', agreed.map(ref)],
+      [id, 'ρ:matched_prefix_length', maxPrefix],
+      [id, 'ρ:based_on_occurrences', evidence.map(ref)],
+      [id, 'ρ:status', 'open'],
+      ['self', 'ρ:expects', ref(id)],
+    );
+    for (const term of agreed) facts.push([id, 'ρ:expects_term', ref(term)]);
+    for (const candidate of strongest)
+      facts.push([id, 'ρ:grounded_by_ordered_relation', ref(candidate.relation)]);
+  } else {
+    const id = `temporal-expectation-conflict:${latestOrder}:${digest(candidateIds.sort())}`;
+    facts.push(
+      [id, 'ρ:kind', 'temporal_expectation_conflict'],
+      [id, 'ρ:after_lived_order', latestOrder],
+      [id, 'ρ:alternatives', candidateIds.sort().map(ref)],
+      [id, 'ρ:status', 'open'],
+      ['self', 'ρ:has_open_temporal_expectation', ref(id)],
+    );
+  }
+
+  return { relations: { facts } };
+}
+
+module.exports = { relationalUpdate, completionUpdate };
