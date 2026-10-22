@@ -121,22 +121,61 @@ function settleQuantitativeCompletion(state) {
     .filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort();
 }
 
+function relationOccurrenceIn(update) {
+  return !!(update?.relations?.facts || []).find(fact =>
+    Array.isArray(fact) && fact[1] === 'ρ:kind' && fact[2] === 'relation_occurrence');
+}
+
+// This is explicitly acceleration metadata, not cognitive state. The authoritative
+// occurrence history remains the ordinary M facts. If this cache is absent (for
+// example when continuing an older serialized M), rebuild it exactly from M once.
+function relationEventCountFromM(state) {
+  const facts = state.knowledge?.facts || [];
+  const occurrences = new Set(facts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'relation_occurrence')
+    .map(f => String(f.subject)));
+  const orders = new Set();
+  for (const fact of facts) if (fact.relation === 'ρ:order' && occurrences.has(String(fact.subject)) && Number.isFinite(fact.object))
+    orders.add(fact.object);
+  return orders.size;
+}
+function ensureTemporalSearchCache(state, checkpoint) {
+  if (!state.structure) return null;
+  if (!Number.isInteger(state.structure.relation_sequence_event_count) ||
+      !Number.isInteger(state.structure.next_relation_sequence_search_at)) {
+    const count = relationEventCountFromM(state);
+    state.structure.relation_sequence_event_count = count;
+    state.structure.next_relation_sequence_search_at = (Math.floor(count / checkpoint) + 1) * checkpoint;
+  }
+  return state.structure;
+}
+
 function C(state, realityContact) {
+  const temporalCheckpoint = 8;
+  const temporalCache = ensureTemporalSearchCache(state, temporalCheckpoint);
+
   budgetWholeRecompression(state, realityContact);
   Relational.C(state, realityContact);
 
   const hasFrame = !!frameFrom(realityContact);
   if (hasFrame) {
+    let newRelationEvent = false;
+
     // The canonical embodied learner already updated inside Relational.C above.
     // This adapter does not learn a second model; it only exposes any new/support-
     // advanced empirical relation through the same generic M term/occurrence form
     // used by the other relation learners.
     const empirical = EmpiricalRelations.relationalUpdate(state);
-    if (empirical) Relational.C(state, empirical);
+    if (empirical) {
+      newRelationEvent = relationOccurrenceIn(empirical) || newRelationEvent;
+      Relational.C(state, empirical);
+    }
 
     for (const proposer of [Continuous, MultiSourceContinuous]) {
       const update = proposer.relationalUpdate(state);
-      if (update) Relational.C(state, update);
+      if (!update) continue;
+      newRelationEvent = relationOccurrenceIn(update) || newRelationEvent;
+      Relational.C(state, update);
     }
 
     // Surface meaning is learned from the same lived contact only after learned
@@ -145,17 +184,18 @@ function C(state, realityContact) {
     const grounding = SurfaceRelationGrounding.relationalUpdate(state, realityContact);
     if (grounding) Relational.C(state, grounding);
 
-    // Ordered recompression is proposal search, not epistemic authority. Every
-    // relation occurrence above is retained immediately in M; rescanning the
-    // almost-identical whole occurrence history after every support increment is
-    // therefore redundant. Search on deterministic lived-contact checkpoints and
-    // include everything accumulated since the previous checkpoint. No cognitive
-    // content is dropped or delayed from M itself.
-    const temporalCheckpoint = 8;
-    const livedOrder = state.contacts?.length || 0;
-    if (livedOrder >= temporalCheckpoint && livedOrder % temporalCheckpoint === 0) {
-      const temporal = RelationSequence.relationalUpdate(state, { checkpoint: temporalCheckpoint });
-      if (temporal) Relational.C(state, temporal);
+    // Ordered recompression is proposal search, not epistemic authority. Count
+    // only distinct lived orders that actually gained a relation occurrence.
+    // The count is a disposable cache; exact occurrences remain in M. Search only
+    // after another full checkpoint of new event orders has accumulated.
+    if (newRelationEvent && temporalCache) {
+      temporalCache.relation_sequence_event_count++;
+      if (temporalCache.relation_sequence_event_count >= temporalCache.next_relation_sequence_search_at) {
+        const temporal = RelationSequence.relationalUpdate(state, { checkpoint: temporalCheckpoint });
+        if (temporal) Relational.C(state, temporal);
+        while (temporalCache.next_relation_sequence_search_at <= temporalCache.relation_sequence_event_count)
+          temporalCache.next_relation_sequence_search_at += temporalCheckpoint;
+      }
     }
 
     settleQuantitativeCompletion(state);
