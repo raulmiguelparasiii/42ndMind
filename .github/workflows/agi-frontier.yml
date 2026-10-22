@@ -8,6 +8,7 @@ on:
       - 'agi/continuous-relational-contact.js'
       - 'agi/multisource-continuous-relations.js'
       - 'agi/relation-sequence-recompression.js'
+      - 'agi/crossmodal-lexical-grounding.test.js'
       - 'agi/cross-route-conflict.test.js'
       - 'agi/cross-route-conflict-reopening.test.js'
       - 'agi/continuous-temporal-reuse.test.js'
@@ -22,6 +23,7 @@ on:
       - 'agi/multisource-continuous-completion.test.js'
       - 'agi/multisource-temporal-completion.test.js'
       - 'agi/mind.js'
+      - 'agi/mind-relational.js'
       - '.github/workflows/agi-frontier.yml'
   workflow_dispatch:
 
@@ -37,6 +39,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Raw cross-modal lexical grounding
+        run: node agi/crossmodal-lexical-grounding.test.js
       - name: Cross-route conflict reopening
         run: node agi/cross-route-conflict-reopening.test.js
       - name: Cross-route continuous conflict
