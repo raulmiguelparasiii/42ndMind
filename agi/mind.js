@@ -48,6 +48,77 @@ function budgetWholeRecompression(state, contact) {
   if (state.structure.next_recompression_at < boundary) state.structure.next_recompression_at = boundary;
 }
 
+function cloneCurrent(current) {
+  const source = current || {};
+  return {
+    ...source,
+    observed: { ...(source.observed || {}) },
+    completed: { ...(source.completed || {}) },
+    inferred: [...(source.inferred || [])],
+    unresolved: [...(source.unresolved || [])],
+  };
+}
+function completionSignature(current) {
+  const completed = Object.entries(current.completed || {}).sort(([a], [b]) => a.localeCompare(b));
+  const inferred = [...(current.inferred || [])].sort();
+  const unresolved = [...(current.unresolved || [])].sort();
+  return JSON.stringify([completed, inferred, unresolved]);
+}
+function completionProjection(state, order) {
+  const projected = { ...state, current: cloneCurrent(state.current) };
+  for (let pass = 0; pass < 16; pass++) {
+    const before = completionSignature(projected.current);
+    for (const helper of order) helper.completeCurrent(projected);
+    if (completionSignature(projected.current) === before) break;
+  }
+  return projected.current;
+}
+function numericallySame(a, b) {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+  const scale = Math.max(1, Math.abs(a), Math.abs(b));
+  return Math.abs(a - b) <= 1e-9 * scale;
+}
+
+// Quantitative realization is a disposable confluence check over the same
+// active M-owned relations. Helper execution order is not semantic authority:
+// a completion is accepted only when both orderings reach the same value. If
+// independent warranted routes disagree, the target remains explicitly open.
+function settleQuantitativeCompletion(state) {
+  if (!state.current?.completed) return;
+  const base = cloneCurrent(state.current);
+  const unaryFirst = completionProjection(state, [Continuous, MultiSourceContinuous]);
+  const jointFirst = completionProjection(state, [MultiSourceContinuous, Continuous]);
+
+  const completed = { ...base.completed };
+  const inferred = new Set(base.inferred || []);
+  const unresolved = new Set([...(base.unresolved || []), ...(unaryFirst.unresolved || []), ...(jointFirst.unresolved || [])]);
+  const keys = new Set([
+    ...Object.keys(unaryFirst.completed || {}),
+    ...Object.keys(jointFirst.completed || {}),
+  ]);
+
+  for (const feature of keys) {
+    if (Object.prototype.hasOwnProperty.call(base.completed, feature)) continue;
+    const hasA = Object.prototype.hasOwnProperty.call(unaryFirst.completed || {}, feature);
+    const hasB = Object.prototype.hasOwnProperty.call(jointFirst.completed || {}, feature);
+    const a = unaryFirst.completed?.[feature];
+    const b = jointFirst.completed?.[feature];
+    if (hasA && hasB && numericallySame(a, b)) {
+      completed[feature] = (a + b) / 2;
+      inferred.add(feature);
+      unresolved.delete(feature);
+    } else {
+      inferred.delete(feature);
+      unresolved.add(feature);
+    }
+  }
+
+  state.current.completed = completed;
+  state.current.inferred = [...inferred].sort();
+  state.current.unresolved = [...unresolved]
+    .filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort();
+}
+
 function C(state, realityContact) {
   budgetWholeRecompression(state, realityContact);
   Relational.C(state, realityContact);
@@ -71,16 +142,7 @@ function C(state, realityContact) {
       if (temporal) Relational.C(state, temporal);
     }
 
-    // Quantitative realization is a disposable fixed-point view over active
-    // M-owned relations. Unary and joint relations may feed one another, but no
-    // inferred value is ever rewritten into raw contact history.
-    for (let pass = 0; pass < 8; pass++) {
-      const before = Object.keys(state.current?.completed || {}).length;
-      Continuous.completeCurrent(state);
-      MultiSourceContinuous.completeCurrent(state);
-      const after = Object.keys(state.current?.completed || {}).length;
-      if (after === before) break;
-    }
+    settleQuantitativeCompletion(state);
   }
 
   // Expression choice is derived only after canonical M has settled. A learned
