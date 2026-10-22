@@ -15,7 +15,6 @@ function stable(v) {
   if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
   return JSON.stringify(v);
 }
-function same(a, b) { return stable(a) === stable(b); }
 function ref(id) { return { ref: String(id) }; }
 function unique(xs) { const m = new Map(); for (const x of xs || []) m.set(stable(x), x); return [...m.values()]; }
 function episodeNumber(id) {
@@ -26,7 +25,38 @@ function lexicalAtom(token) {
   const text = String(token);
   return /[\p{L}\p{N}]/u.test(text) ? text : null;
 }
-function surfaceTerm(token) { return `surface:${String(token)}`; }
+function surfaceTerm(expression) { return `surface:${String(expression)}`; }
+
+// Surface anatomy is not fixed to one token. Search contiguous lexical spans,
+// with the maximum span growing slowly from the amount of structure present in
+// the current utterance. Length-1 spans preserve ordinary word grounding.
+function expressionCandidates(tokens, options = {}) {
+  const compact = Surface.compactTokens(tokens || []);
+  const evidenceMax = Math.max(1, Math.floor(Math.log2(Math.max(2, compact.length + 1))) + 1);
+  const maxSpan = Math.min(options.maxSpan ?? evidenceMax, evidenceMax);
+  const out = [];
+  for (let start = 0; start < compact.length; start++) {
+    if (!lexicalAtom(compact[start])) continue;
+    for (let length = 1; length <= maxSpan && start + length <= compact.length; length++) {
+      const span = compact.slice(start, start + length);
+      if (span.some(token => !lexicalAtom(token))) break;
+      const expression = Surface.renderTokens(span);
+      if (!expression) continue;
+      out.push({
+        expression,
+        surface: surfaceTerm(expression),
+        tokens: span,
+        start,
+        length,
+        context_signature: stable({
+          before: compact.slice(0, start),
+          after: compact.slice(start + length),
+        }),
+      });
+    }
+  }
+  return unique(out);
+}
 
 function latestSurfaceEpisode(state) {
   let best = null;
@@ -88,27 +118,27 @@ function relationalUpdate(state, originalContact, options = {}) {
   const relationTerms = freshContinuousRelationTerms(state);
   if (!episode || !relationTerms.length) return null;
 
-  const compact = unique(Surface.compactTokens(episode.tokens).map(lexicalAtom).filter(Boolean));
-  if (!compact.length) return null;
+  const expressions = expressionCandidates(episode.tokens, options);
+  if (!expressions.length) return null;
   const minSupport = options.minSupport ?? 3;
   const facts = [], rules = [];
 
-  for (const token of compact) for (const relation of relationTerms) {
-    const surface = surfaceTerm(token);
-    const context = Surface.compactTokens(episode.tokens).filter(x => String(x) !== token);
+  for (const candidate of expressions) for (const relation of relationTerms) {
     const evidence = {
-      token,
-      surface,
+      expression: candidate.expression,
+      token: candidate.length === 1 ? candidate.expression : undefined,
+      span_tokens: candidate.tokens,
+      surface: candidate.surface,
       relation_term: relation.relation_term,
       relation_occurrence: relation.occurrence,
       contact_order: relation.order,
-      context_signature: stable(context),
+      context_signature: candidate.context_signature,
       exact_contact: true,
     };
     facts.push([episode.id, 'ρ:surface_relation_cooccurrence', evidence]);
 
-    if (activeGroundingRoute(state, surface, relation.relation_term)) continue;
-    const prior = evidenceFor(state, surface, relation.relation_term);
+    if (activeGroundingRoute(state, candidate.surface, relation.relation_term)) continue;
+    const prior = evidenceFor(state, candidate.surface, relation.relation_term);
     const episodes = new Set(prior.map(f => String(f.subject)));
     episodes.add(episode.id);
     if (episodes.size < minSupport) continue;
@@ -117,28 +147,27 @@ function relationalUpdate(state, originalContact, options = {}) {
     contexts.add(evidence.context_signature);
     if (contexts.size < Math.min(minSupport, 2)) continue;
 
+    const support = {
+      support: episodes.size,
+      context_diversity: contexts.size,
+      retained_contact: true,
+      span_length: candidate.length,
+    };
     const routeId = nextRouteId(state, rules);
     facts.push(
-      [ref(routeId), 'ρ:surface_relation_support', {
-        support: episodes.size,
-        context_diversity: contexts.size,
-        retained_contact: true,
-      }],
+      [ref(routeId), 'ρ:surface_relation_support', support],
       [episode.id, 'ρ:supports', ref(routeId)],
     );
     rules.push({
       id: routeId,
-      premises: [[ref(routeId), 'ρ:surface_relation_support', {
-        support: episodes.size,
-        context_diversity: contexts.size,
-        retained_contact: true,
-      }]],
-      conclusion: [surface, 'ρ:expresses', ref(relation.relation_term)],
+      premises: [[ref(routeId), 'ρ:surface_relation_support', support]],
+      conclusion: [candidate.surface, 'ρ:expresses', ref(relation.relation_term)],
       categorical: true,
       provenance: {
         kind: 'surface_relation_grounding',
-        surface,
+        surface: candidate.surface,
         relation_term: relation.relation_term,
+        span_length: candidate.length,
         authority: 'M_retained_crossmodal_contact',
       },
     });
@@ -146,20 +175,21 @@ function relationalUpdate(state, originalContact, options = {}) {
   return facts.length || rules.length ? { relations: { facts, rules } } : null;
 }
 
-function groundCurrent(state, originalContact) {
+function groundCurrent(state, originalContact, options = {}) {
   if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface || !state.current?.sequence) return state;
   const episode = latestSurfaceEpisode(state);
   if (!episode) return state;
-  const tokens = unique(Surface.compactTokens(episode.tokens).map(lexicalAtom).filter(Boolean));
+  const expressions = expressionCandidates(episode.tokens, options);
   const grounded = [];
-  for (const token of tokens) {
-    const surface = surfaceTerm(token);
+  for (const candidate of expressions) {
     const meanings = unique((state.knowledge?.current?.facts || [])
-      .filter(f => f.subject === surface && f.relation === 'ρ:expresses' && f.object?.ref !== undefined)
+      .filter(f => f.subject === candidate.surface && f.relation === 'ρ:expresses' && f.object?.ref !== undefined)
       .map(f => String(f.object.ref)));
     for (const relationTerm of meanings) grounded.push({
-      token,
-      surface,
+      token: candidate.length === 1 ? candidate.expression : undefined,
+      expression: candidate.expression,
+      span_tokens: candidate.tokens,
+      surface: candidate.surface,
       relation_term: relationTerm,
       authority: 'canonical_M',
     });
