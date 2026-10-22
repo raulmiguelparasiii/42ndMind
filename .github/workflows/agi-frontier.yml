@@ -10,6 +10,7 @@ on:
       - 'agi/empirical-relation-occurrences.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/surface-relation-grounding.js'
+      - 'agi/generic-occurrence-temporal-unification.test.js'
       - 'agi/embodied-crossmodal-grounding.test.js'
       - 'agi/surface-reference-integration.test.js'
       - 'agi/crossmodal-phrase-grounding.test.js'
@@ -29,6 +30,7 @@ on:
       - 'agi/multisource-temporal-completion.test.js'
       - 'agi/mind.js'
       - 'agi/mind-relational.js'
+      - 'agi/one-live-blueprint.js'
       - '.github/workflows/agi-frontier.yml'
   workflow_dispatch:
 
@@ -44,6 +46,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Generic occurrence temporal unification
+        run: node agi/generic-occurrence-temporal-unification.test.js
       - name: Continuous relation temporal reuse
         run: node agi/continuous-temporal-reuse.test.js
       - name: Embodied cross-modal grounding
