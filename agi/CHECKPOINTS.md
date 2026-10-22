@@ -39,11 +39,11 @@ Treat as regressions, not open problems:
 - relation/expression/action occurrences sharing generic `ρ:lived_order`;
 - learned order producing an open current M expectation without fabricating the successor;
 - one ordered-relation identity accumulating stronger later evidence routes;
-- **grounded expression -> learned generic temporal relation -> M-owned expected action term -> existing actuator realization**. The focused gate passes on `f42653f6a402caffe55baa62411db63c186edfb4`; broad blueprint regression is still running at this ledger update.
+- **grounded expression -> learned generic temporal relation -> M-owned expected action term -> existing actuator realization**.
 
 Primary temporal/action regressions: `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`, `continuous-temporal-reuse.test.js`, `grounded-expression-action.test.js`.
 
-Latest fully green blueprint before action realization: run `39823109436` on `015d444ace17ad057d29db586ca99d105814f61d`.
+Latest fully green blueprint: run `39827318819` on cognitive head `f42653f6a402caffe55baa62411db63c186edfb4`.
 
 ## Failure / repair constraints
 
@@ -54,9 +54,9 @@ Latest fully green blueprint before action realization: run `39823109436` on `01
 5. **Gappy projection overreach:** projected recurrence cannot license immediate-next expectation.
 6. **Arbitrary phase test:** pure alternation does not privilege one phase; test follows the direction actually learned.
 7. **Evidence-route birth order:** same ordered relation now accumulates `ρ:ordered_evidence_route`; adjacency evidence can upgrade an older gappy-discovered identity.
-8. **Whole-event conflict was too strict:** strongest successors `{A}` and `{A,B}` formerly cancelled A. Completion now preserves the intersection of terms as warranted expectation while retaining residual alternatives as explicit conflict. Disjoint successors still yield conflict only. This is content-neutral; no action-specific filtering.
-9. **Frontier test bloat:** action gate initially replayed continuous discovery + lexical schooling. Removed. It now reuses the already-demonstrated precondition that a surface term is M-grounded and tests only the new expression/action connection.
-10. **CI iteration cost:** active falsification runs first; continuity-only edits do not restart blueprint. Root `One live M architecture` push CI now ignores `agi/**`-only changes, so AGI-wrapper iterations do not serialize behind unrelated root regressions.
+8. **Whole-event conflict was too strict:** strongest successors `{A}` and `{A,B}` formerly cancelled A. Completion now preserves the intersection as warranted expectation while retaining residual alternatives as explicit conflict. Disjoint successors still yield conflict only. No action-specific filtering.
+9. **Frontier test bloat:** action gate initially replayed continuous discovery + lexical schooling. Removed. It now reuses the demonstrated precondition that a surface term is M-grounded and tests only expression/action connection.
+10. **CI iteration cost:** active falsification runs first; continuity-only edits do not restart blueprint. Root `One live M architecture` push CI ignores `agi/**`-only changes, so wrapper iterations do not serialize behind unrelated root regressions.
 
 ## Closed checkpoint: present temporal completion
 
@@ -66,45 +66,37 @@ M-owned; exact-prefix provenance; unseen term not observed; common terms survive
 
 **Do not re-solve.**
 
-## Current checkpoint: expression -> action realization
-
-Implementation connection in `agi/mind.js`:
+## Closed checkpoint: expression -> action realization
 
 `current-order temporal expectation -> existing action_term -> existing ρ:actuator_index -> state.motor`
 
-Rules:
+Demonstrated with two existing actuators and opaque M-grounded expressions. Only current lived-order expectations are eligible; stale historical expectations are ignored; action term/index must already be M facts; multiple actuator expectations do not realize; an independently grounded contradictory canonical continuation is not overwritten; no planner/cue map/policy/reward state exists.
 
-- only current lived-order expectations are eligible; stale historical expectations are ignored;
-- action term and actuator index must already be M/physical-boundary facts;
-- multiple distinct expected actuators => no realization;
-- a conflicting independently grounded canonical `current.continuation` is not overwritten;
-- no planner, cue map, action policy, reward authority, or persistent decision state.
+Focused gate and full blueprint are green. **Do not re-solve.**
 
-Focused gate is green. **Do not advance this to fully closed until run `39827318819` finishes the preserved blueprint suite.**
+## Current frontier: action warrant correction/reopening
 
-## Next frontier after full green: action warrant correction/reopening
-
-Reuse, do not replay, solved cue->action realization. Preserve a new falsification first.
+Preserve a new focused falsification first; reuse solved cue->action realization.
 
 Target:
 
-`old cue->A lived order + independent embodied grounding of B + later cue->B lived order -> reopened/conflicted temporal action warrant`
+`old cue->A temporal warrant + independently grounded B + later cue->B lived evidence -> reopened/conflicted temporal action warrant`
 
 Requirements:
 
 - at least two actuators;
-- canonical embodied learner supplies independent B support using its already-demonstrated action/consequence correction mechanism;
-- stale temporal cue->A may not override independently grounded B merely to prevent contrary evidence from entering life;
-- later opposite cue->B evidence must reopen the temporal action conclusion rather than leave a copied cue->motor policy;
-- disjoint A/B temporal conflict must not arbitrarily choose either actuator;
-- independently grounded motor remains usable under temporal conflict;
+- canonical embodied learner supplies independent B support using its existing action/consequence correction mechanism;
+- stale cue->A may not override independently grounded B merely to block contrary life evidence;
+- later opposite cue->B evidence reopens the temporal action conclusion rather than leaving copied cue->motor policy;
+- disjoint A/B temporal conflict chooses neither actuator;
+- independently grounded B remains usable under temporal conflict;
 - no planner/policy/cue table.
 
 Classification: **reuse + connection test**. Do not add a new action learner.
 
 ## Later, not current
 
-- Generic fulfillment/violation/reopening bookkeeping for historical temporal expectations is still absent. Current action realization therefore uses only expectations tied to the current lived order.
+- Generic fulfillment/violation/reopening bookkeeping for historical temporal expectations is absent. Current realization therefore uses only expectations tied to current lived order.
 - Unrestricted autonomous relation discovery across arbitrary domains remains unproved.
 - Unrestricted AGI is not demonstrated.
 
