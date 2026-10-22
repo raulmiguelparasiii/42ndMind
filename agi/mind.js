@@ -10,6 +10,7 @@
 const Relational = require('./mind-relational.js');
 const Continuous = require('./continuous-relational-contact.js');
 const MultiSourceContinuous = require('./multisource-continuous-relations.js');
+const EmpiricalRelations = require('./empirical-relation-occurrences.js');
 const SurfaceRelationGrounding = require('./surface-relation-grounding.js');
 const RelationSequence = require('./relation-sequence-recompression.js');
 const Discourse = require('./discourse-arbiter.js');
@@ -127,6 +128,17 @@ function C(state, realityContact) {
   const hasFrame = !!frameFrom(realityContact);
   if (hasFrame) {
     let discovered = false;
+
+    // The canonical embodied learner already updated inside Relational.C above.
+    // This adapter does not learn a second model; it only exposes any new/support-
+    // advanced empirical relation through the same generic M term/occurrence form
+    // used by the other relation learners.
+    const empirical = EmpiricalRelations.relationalUpdate(state);
+    if (empirical) {
+      Relational.C(state, empirical);
+      discovered = true;
+    }
+
     for (const proposer of [Continuous, MultiSourceContinuous]) {
       const update = proposer.relationalUpdate(state);
       if (!update) continue;
@@ -134,18 +146,15 @@ function C(state, realityContact) {
       discovered = true;
     }
 
-    // Surface meaning is learned from the same lived contact only after the
-    // numeric proposer has exposed a first-class relation occurrence in M. The
-    // grounding helper contributes ordinary evidence/rules back through C; it
-    // never owns a persistent lexicon.
+    // Surface meaning is learned from the same lived contact only after learned
+    // relations have exposed first-class occurrences in M. Grounding is agnostic
+    // to which learner produced the generic occurrence.
     const grounding = SurfaceRelationGrounding.relationalUpdate(state, realityContact);
     if (grounding) Relational.C(state, grounding);
 
     if (discovered) {
-      // Continuous discovery has now produced ordinary first-class relation
-      // occurrences in M. Reuse the repository's existing generic ordered
-      // recompression over those occurrences; any new higher relation returns
-      // through the same Relational.C entrypoint and becomes ordinary M content.
+      // Any generic learned relation occurrence can now participate in the same
+      // zero-state ordered recompression over canonical M history.
       const temporal = RelationSequence.relationalUpdate(state);
       if (temporal) Relational.C(state, temporal);
     }
