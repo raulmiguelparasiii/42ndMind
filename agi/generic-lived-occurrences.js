@@ -76,9 +76,20 @@ function occurrenceKinds(subjectFacts) {
     .filter(f => f.relation === 'ρ:kind' && typeof f.object === 'string' && f.object !== 'lived_occurrence')
     .map(f => f.object))].sort();
 }
+
+// If S (or another zero-state bridge) already supplied a generic lived occurrence,
+// its minimal representation anatomy must not recursively become new relation
+// occurrences about itself. That would duplicate one event into metadata-events
+// and change exact temporal matching. Ordinary attached relational content remains
+// eligible; only the generic occurrence anatomy is excluded from reification.
+const OCCURRENCE_ANATOMY = new Set(['ρ:kind', 'ρ:instantiates', 'ρ:order', 'ρ:lived_order']);
 function contactedTriples(contact) {
   if (!contact || Array.isArray(contact) || typeof contact !== 'object' || !Array.isArray(contact.relations?.facts)) return [];
-  return contact.relations.facts.filter(x => Array.isArray(x) && x.length === 3 && x.every(v => v !== undefined));
+  const triples = contact.relations.facts.filter(x => Array.isArray(x) && x.length === 3 && x.every(v => v !== undefined));
+  const preNormalized = new Set(triples
+    .filter(x => x[1] === 'ρ:kind' && x[2] === 'lived_occurrence')
+    .map(x => stable(x[0])));
+  return triples.filter(x => !(preNormalized.has(stable(x[0])) && OCCURRENCE_ANATOMY.has(x[1])));
 }
 
 function relationalUpdate(state, originalContact) {
