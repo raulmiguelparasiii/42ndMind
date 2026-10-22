@@ -13,7 +13,7 @@ This is the compact live continuity ledger. Replace stale frontier text; do not 
 3. Locate existing authority + preserved failure.
 4. Classify: `reuse`, `connection`, `extension`, or `replacement`.
 5. Preserve regressions; no duplicate semantic/status/planning authority.
-6. Record any changed frontier, failure/repair, or material inefficiency here.
+6. Record changed frontier, failure/repair, or material inefficiency here.
 
 Absence from conversation is `unknown`, never repository absence.
 
@@ -39,79 +39,81 @@ Treat as regressions, not open problems:
 - relation/expression/action occurrences sharing generic `ρ:lived_order`;
 - learned order producing an open current M expectation without fabricating the successor;
 - one ordered-relation identity accumulating stronger later evidence routes;
-- **grounded expression -> learned generic temporal relation -> M-owned expected action term -> existing actuator realization**.
+- grounded expression -> learned temporal relation -> M-owned expected action -> existing actuator;
+- stale temporal action warrant yielding to independently grounded bodily action, with later contrary cue/action life reopening the temporal conclusion as conflict.
 
-Primary temporal/action regressions: `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`, `continuous-temporal-reuse.test.js`, `grounded-expression-action.test.js`.
+Primary temporal/action regressions: `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`, `continuous-temporal-reuse.test.js`, `grounded-expression-action.test.js`, `action-warrant-reopening.test.js`.
 
-Latest fully green blueprint: run `39827318819` on cognitive head `f42653f6a402caffe55baa62411db63c186edfb4`.
+Last full cognitive blueprint: run `39827318819` on `f42653f6a402caffe55baa62411db63c186edfb4`. Action reopening focused gate passed on unchanged cognition in run `39833234835` at `e7e563fab422aa26ba2a34f9760581f014bbc980` before CI-only commits.
 
 ## Failure / repair constraints
 
 1. **Duplicate authority:** recursive composition once copied status/definitions. Fixed by live dereference. Never restore copies.
-2. **Eager lifetime retrieval:** repeated whole-history materialization removed; persistence is fundamental, retrieval is query-relative.
-3. **Temporal modality interference:** preserve complete events; recurrence-relative projections may aid search but may not erase modalities.
-4. **Search starvation:** bounded contiguous suffix view added; no global history/rule-budget inflation.
+2. **Eager lifetime retrieval:** repeated whole-history materialization removed; persistence is fundamental, retrieval query-relative.
+3. **Temporal modality interference:** preserve complete events; search projections may not erase modalities.
+4. **Search starvation:** bounded contiguous suffix view; no global history/rule-budget inflation.
 5. **Gappy projection overreach:** projected recurrence cannot license immediate-next expectation.
-6. **Arbitrary phase test:** pure alternation does not privilege one phase; test follows the direction actually learned.
-7. **Evidence-route birth order:** same ordered relation now accumulates `ρ:ordered_evidence_route`; adjacency evidence can upgrade an older gappy-discovered identity.
-8. **Whole-event conflict was too strict:** strongest successors `{A}` and `{A,B}` formerly cancelled A. Completion now preserves the intersection as warranted expectation while retaining residual alternatives as explicit conflict. Disjoint successors still yield conflict only. No action-specific filtering.
-9. **Frontier test bloat:** action gate initially replayed continuous discovery + lexical schooling. Removed. It now reuses the demonstrated precondition that a surface term is M-grounded and tests only expression/action connection.
-10. **CI iteration cost:** active falsification runs first; continuity-only edits do not restart blueprint. Root `One live M architecture` push CI ignores `agi/**`-only changes, so wrapper iterations do not serialize behind unrelated root regressions.
+6. **Phase artifacts:** pure alternation does not privilege one phase. A two-motor reopening setup hit the same artifact and was replaced by the established four-motor/varying-percept body setup; cognition was not patched.
+7. **Evidence-route birth order:** one ordered relation accumulates `ρ:ordered_evidence_route`; later adjacency evidence can upgrade an older gappy-discovered identity.
+8. **Whole-event conflict too strict:** strongest `{A}` and `{A,B}` successors now preserve common A while residual disagreement stays explicit; disjoint successors remain conflict-only.
+9. **Frontier test bloat:** do not replay solved schooling/body development through every wrapper. Reuse demonstrated preconditions, while any newly claimed learning must still come from actual reality contact.
+10. **CI cost:** the recursive continuous-temporal regression took >6 min even on unrelated test-only heads. It now has dedicated path-scoped workflow `agi-recursive-temporal-regression.yml` and is removed from active blueprint/frontier duplication. Stacked-PR root workflows still rerun because PR path filters see the whole base→head diff; that runner-cost issue remains infrastructure-only.
 
-## Closed checkpoint: present temporal completion
+## Closed: present temporal completion
 
 `past lived order -> learned ordered relation -> current partial occurrence -> open next-term expectation`
 
 M-owned; exact-prefix provenance; unseen term not observed; common terms survive partial disagreement; disjoint disagreement stays open; gappy recurrence cannot claim immediate succession; stronger evidence routes upgrade one identity.
 
-**Do not re-solve.**
-
-## Closed checkpoint: expression -> action realization
+## Closed: expression -> action realization
 
 `current-order temporal expectation -> existing action_term -> existing ρ:actuator_index -> state.motor`
 
-Demonstrated with two existing actuators and opaque M-grounded expressions. Only current lived-order expectations are eligible; stale historical expectations are ignored; action term/index must already be M facts; multiple actuator expectations do not realize; an independently grounded contradictory canonical continuation is not overwritten; no planner/cue map/policy/reward state exists.
+Current-order only; stale historical expectations ignored; action/index must already be M facts; multiple expected actuators do not realize; independently grounded contradictory continuation is not overwritten; no planner/cue map/policy/reward state.
 
-Focused gate and full blueprint are green. **Do not re-solve.**
+## Closed: action warrant correction/reopening
 
-## Current frontier: action warrant correction/reopening
+`old cue->A + independently grounded bodily B + later cue->B life -> explicit A/B temporal conflict`
 
-Preserve a new focused falsification first; reuse solved cue->action realization.
+The old A expectation stays representable but cannot overwrite independently grounded B. Contrary cue->B life enters the same M through public `Mind.C`; later conflict selects no temporal actuator, while grounded B remains usable. Test setup reuses solved canonical body grounding on the same M rather than replaying wrapper-wide development.
+
+## Current frontier: temporal expectation lifecycle
+
+Repository search found old current-contact/temporal-definition guards, but no existing generic lifecycle for the newer M-owned `temporal_expectation` objects.
 
 Target:
 
-`old cue->A temporal warrant + independently grounded B + later cue->B lived evidence -> reopened/conflicted temporal action warrant`
+`open expectation at order n -> next lived event -> M-owned fulfillment / partial fulfillment / violation evidence`
 
 Requirements:
 
-- at least two actuators;
-- canonical embodied learner supplies independent B support using its existing action/consequence correction mechanism;
-- stale cue->A may not override independently grounded B merely to block contrary life evidence;
-- later opposite cue->B evidence reopens the temporal action conclusion rather than leaving copied cue->motor policy;
-- disjoint A/B temporal conflict chooses neither actuator;
-- independently grounded B remains usable under temporal conflict;
-- no planner/policy/cue table.
+- lifecycle result is derived from exact next lived occurrence(s), never a copied predictor state;
+- no stale expectation can remain semantically “open now” after evaluable successor contact;
+- partial fulfillment preserves matched terms and explicit unmet/contradicted terms;
+- unknown/unevaluable successor does not become false or violation;
+- history remains append-only/provenanced; do not mutate away the original expectation or exact contact;
+- lifecycle evidence must be generic across expression/relation/action terms;
+- no new temporal mind/status ledger.
 
-Classification: **reuse + connection test**. Do not add a new action learner.
+Classify before coding after re-reading authorities. Preserve a focused failure first.
 
 ## Later, not current
 
-- Generic fulfillment/violation/reopening bookkeeping for historical temporal expectations is absent. Current realization therefore uses only expectations tied to current lived order.
 - Unrestricted autonomous relation discovery across arbitrary domains remains unproved.
 - Unrestricted AGI is not demonstrated.
 
 ## Efficiency rules
 
-- active falsification first; expensive regressions second;
-- do not raise global budgets to hide starvation;
-- do not rescan whole life every contact when bounded/rebuildable access suffices;
-- do not create a subsystem until search falsifies reuse of existing authority;
+- active falsification first; expensive regressions only when relevant runtime changed;
+- no global budget increases to hide starvation;
+- no whole-life rescans every contact when bounded/rebuildable access suffices;
+- no subsystem until search falsifies reuse of existing authority;
 - one decisive falsification > overlapping capability tests;
 - conceptual test error => repair test, not cognition;
 - continuity note stays compact.
 
 ## Certification boundary
 
-Historical freezes prove only their stated bounded claims. Final AGI requires cognition frozen before evaluation, precommitted denominator, no leakage/post-failure held-out patching, no privileged representation shortcut, cross-domain transfer, and ordinary-interface access to the same machinery.
+Historical freezes prove only stated bounded claims. Final AGI requires cognition frozen before evaluation, precommitted denominator, no leakage/post-failure held-out patching, no privileged representation shortcut, cross-domain transfer, and ordinary-interface access to the same machinery.
 
 `green regressions != AGI`.
