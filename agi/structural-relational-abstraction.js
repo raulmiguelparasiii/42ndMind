@@ -135,11 +135,17 @@ function recordCurrentPatterns(state, contact, order, cache, facts) {
   const components = connectedComponents(contactEdges(contact));
   for (const component of components) {
     const canonical = canonicalComponent(component);
-    const occurrence = patternOccurrenceId(order, component);
     let record = cache.by_signature[canonical.signature];
     if (!record) record = cache.by_signature[canonical.signature] = { ids: [], bindings: [], edges: canonical.edges };
 
-    if (!record.ids.includes(occurrence)) {
+    // Exact raw contact is already retained by canonical M. Repeating the same
+    // structural signature on the same concrete endpoint binding adds no new
+    // endpoint-independent evidence, so do not grow a redundant derived pattern
+    // occurrence for every repeated sensor/contact frame.
+    const newBinding = !record.bindings.includes(canonical.binding_signature);
+    let occurrence = null;
+    if (newBinding) {
+      occurrence = patternOccurrenceId(order, component);
       record.ids.push(occurrence);
       record.bindings.push(canonical.binding_signature);
       record.ids = unique(record.ids.map(String)).sort();
@@ -167,7 +173,7 @@ function recordCurrentPatterns(state, contact, order, cache, facts) {
         ['self', 'ρ:structural_schema_candidate', ref(id)],
       );
     }
-    facts.push([id, 'ρ:supported_by', ref(occurrence)]);
+    if (occurrence) facts.push([id, 'ρ:supported_by', ref(occurrence)]);
   }
   return components;
 }
