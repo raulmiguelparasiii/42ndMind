@@ -286,24 +286,67 @@ function licensesImmediateSuccessor(node) {
 
 function commonExpectedTerms(candidates) {
   if (!candidates.length) return [];
-  let common = new Set(candidates[0].nextTerms);
+  let common = new Set(candidates[0].licensedTerms);
   for (const candidate of candidates.slice(1)) {
-    const terms = new Set(candidate.nextTerms);
+    const terms = new Set(candidate.licensedTerms);
     common = new Set([...common].filter(term => terms.has(term)));
     if (!common.size) break;
   }
   return [...common].sort();
 }
 
+// Lifecycle evaluations are ordinary M evidence. A categorical immediate-
+// successor term becomes contested when an expectation grounded by that ordered
+// relation later records that term as explicitly unmet. Unknown terms do nothing.
+// The old candidate remains representable; counterevidence only removes its power
+// to warrant that term by itself. Another independently uncontested relation may
+// still support the same term.
+function categoricalCounterevidence(state) {
+  const facts = state.knowledge?.facts || [];
+  const expectationSources = new Map();
+  const evaluations = new Map();
+
+  function addSource(expectation, relation) {
+    const id = String(expectation);
+    if (!expectationSources.has(id)) expectationSources.set(id, new Set());
+    expectationSources.get(id).add(String(relation));
+  }
+  function evaluation(id) {
+    const key = String(id);
+    if (!evaluations.has(key)) evaluations.set(key, { id: key, unmet: [] });
+    return evaluations.get(key);
+  }
+
+  for (const fact of facts) {
+    const subject = String(fact.subject);
+    if (fact.relation === 'ρ:grounded_by_ordered_relation' && fact.object?.ref !== undefined)
+      addSource(subject, fact.object.ref);
+    else if (fact.relation === 'ρ:evaluates_expectation' && fact.object?.ref !== undefined)
+      evaluation(subject).expectation = String(fact.object.ref);
+    else if (fact.relation === 'ρ:unmet_terms' && Array.isArray(fact.object))
+      evaluation(subject).unmet.push(...fact.object.filter(x => x?.ref !== undefined).map(x => String(x.ref)));
+  }
+
+  const out = new Map();
+  for (const e of evaluations.values()) {
+    if (!e.expectation || !e.unmet.length) continue;
+    for (const relation of expectationSources.get(e.expectation) || []) {
+      if (!out.has(relation)) out.set(relation, new Set());
+      for (const term of e.unmet) out.get(relation).add(term);
+    }
+  }
+  return out;
+}
+
 // Present completion is a derived constraint from M-owned order, not prediction
-// state. Equal-specificity successors may disagree only partially: terms present
-// in every strongest successor remain warranted as common expectations, while
-// residual differences stay explicitly open. A true disjoint disagreement still
-// yields only conflict. No helper order or arbitrary score resolves alternatives.
+// state. Equal-specificity successors may disagree only partially. Explicit
+// counterevidence reopens the affected successor term without deleting the old
+// relation/candidate; independent uncontested support can still warrant it.
 function completionUpdate(state) {
   const observations = orderedLivedOccurrences(state);
   if (!observations.length) return null;
   const index = learnedOrderedIndex(state);
+  const contestedByRelation = categoricalCounterevidence(state);
   const candidates = [];
 
   for (const [id, x] of index) {
@@ -313,10 +356,14 @@ function completionUpdate(state) {
     const prefixLength = matchedPrefixLength(observations, expansion);
     if (!prefixLength) continue;
     const prefixEvents = observations.slice(-prefixLength);
+    const nextTerms = normalizedTerms(expansion[prefixLength]);
+    const contested = contestedByRelation.get(id) || new Set();
     candidates.push({
       relation: id,
       prefixLength,
-      nextTerms: normalizedTerms(expansion[prefixLength]),
+      nextTerms,
+      licensedTerms: nextTerms.filter(term => !contested.has(term)),
+      contestedTerms: nextTerms.filter(term => contested.has(term)),
       occurrences: unique(prefixEvents.flatMap(event => event.occurrences || []).map(String)).sort(),
     });
   }
@@ -340,19 +387,29 @@ function completionUpdate(state) {
       [id, 'ρ:matched_prefix_length', candidate.prefixLength],
       [id, 'ρ:based_on_occurrences', candidate.occurrences.map(ref)],
     );
+    if (candidate.contestedTerms.length)
+      facts.push([id, 'ρ:counterevidence_terms', candidate.contestedTerms.map(ref)]);
   }
 
   const byExpectation = new Map();
   for (const candidate of strongest) {
     const key = stable(candidate.nextTerms);
-    if (!byExpectation.has(key)) byExpectation.set(key, []);
-    byExpectation.get(key).push(candidate);
+    if (!byExpectation.has(key)) byExpectation.set(key, { nextTerms: candidate.nextTerms, candidates: [] });
+    byExpectation.get(key).candidates.push(candidate);
   }
 
-  const agreed = byExpectation.size === 1 ? strongest[0].nextTerms : commonExpectedTerms(strongest);
+  const groups = [...byExpectation.values()].map(group => ({
+    ...group,
+    licensedTerms: group.nextTerms.filter(term => group.candidates.some(candidate => candidate.licensedTerms.includes(term))),
+  }));
+  const agreed = commonExpectedTerms(groups);
+  const residualCounterevidence = groups.some(group => group.licensedTerms.length < group.nextTerms.length);
+  const openAlternatives = groups.length > 1 || residualCounterevidence;
+
   if (agreed.length) {
     const id = `temporal-expectation:${latestOrder}:${digest(agreed)}`;
-    const evidence = unique(strongest.flatMap(x => x.occurrences).map(String)).sort();
+    const supporting = strongest.filter(candidate => agreed.some(term => candidate.licensedTerms.includes(term)));
+    const evidence = unique(supporting.flatMap(x => x.occurrences).map(String)).sort();
     facts.push(
       [id, 'ρ:kind', 'temporal_expectation'],
       [id, 'ρ:after_lived_order', latestOrder],
@@ -363,13 +420,13 @@ function completionUpdate(state) {
       [`lived-contact:${latestOrder}`, 'ρ:has_temporal_expectation', ref(id)],
       ['self', 'ρ:expects', ref(id)],
     );
-    if (byExpectation.size > 1) facts.push([id, 'ρ:consensus_scope', 'common_terms_across_open_alternatives']);
+    if (openAlternatives) facts.push([id, 'ρ:consensus_scope', 'common_terms_across_open_alternatives']);
     for (const term of agreed) facts.push([id, 'ρ:expects_term', ref(term)]);
-    for (const candidate of strongest)
+    for (const candidate of supporting)
       facts.push([id, 'ρ:grounded_by_ordered_relation', ref(candidate.relation)]);
   }
 
-  if (byExpectation.size > 1) {
+  if (openAlternatives) {
     const id = `temporal-expectation-conflict:${latestOrder}:${digest(candidateIds.sort())}`;
     facts.push(
       [id, 'ρ:kind', 'temporal_expectation_conflict'],
@@ -396,7 +453,7 @@ function lifecycleUpdate(state) {
 
   function expectation(id) {
     const key = String(id);
-    if (!expectations.has(key)) expectations.set(key, { id: key, terms: [] });
+    if (!expectations.has(key)) expectations.set(key, { id: key, terms: [], relations: [] });
     return expectations.get(key);
   }
   function addKind(map, key, value) {
@@ -413,6 +470,8 @@ function lifecycleUpdate(state) {
       for (const term of fact.object) if (term?.ref !== undefined) expectation(subject).terms.push(String(term.ref));
     } else if (fact.relation === 'ρ:expects_term' && fact.object?.ref !== undefined) {
       expectation(subject).terms.push(String(fact.object.ref));
+    } else if (fact.relation === 'ρ:grounded_by_ordered_relation' && fact.object?.ref !== undefined) {
+      expectation(subject).relations.push(String(fact.object.ref));
     } else if (fact.relation === 'ρ:resolved_by' && fact.object?.ref !== undefined) {
       resolved.add(subject);
     }
@@ -468,6 +527,8 @@ function lifecycleUpdate(state) {
       [x.id, 'ρ:resolved_at_lived_order', successor.order],
       [`lived-contact:${successor.order}`, 'ρ:evaluates_temporal_expectation', ref(evaluation)],
     );
+    for (const relation of normalizedTerms(x.relations))
+      updates.push([evaluation, 'ρ:evaluates_ordered_relation', ref(relation)]);
   }
 
   return updates.length ? { relations: { facts: updates } } : null;
