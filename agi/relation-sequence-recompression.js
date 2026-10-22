@@ -154,12 +154,12 @@ function appendCompressedFacts(compressed, view, existing, facts) {
 function relationalUpdate(state, options = {}) {
   const observations = orderedRelationOccurrences(state);
   const checkpoint = Math.max(4, options.checkpoint || 8);
-  if (observations.length < checkpoint || observations.length % checkpoint !== 0) return null;
+  if (observations.length < checkpoint) return null;
 
-  // Exact occurrences enter M continuously. Full recursive recompression is a
-  // zero-authority proposal search, so doing it for every one-event extension is
-  // redundant. Deterministic count checkpoints preserve eventual learning while
-  // avoiding repeated O(history) work on nearly identical streams.
+  // Scheduling is controlled by the public one-C boundary using lived-contact
+  // checkpoints. Occurrence counts need not themselves land on a multiple of the
+  // checkpoint once several modalities produce events at different rates. Every
+  // retained occurrence available at this search point participates.
   const existing = existingTemporalIds(state);
   const facts = [];
   for (const view of orderedViews(observations, checkpoint)) {
