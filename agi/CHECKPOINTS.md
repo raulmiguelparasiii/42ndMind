@@ -39,60 +39,68 @@ Absence from conversation is `unknown`, never repository absence.
 - one ordered-relation identity accumulating stronger later evidence routes;
 - grounded expression -> temporal relation -> expected action -> existing actuator;
 - stale cue->A yielding to independently grounded bodily B, with later cue->B life reopening temporal action as explicit A/B conflict;
-- expectation lifecycle: exact next lived event -> fulfilled / partial / violated / unevaluable M evidence;
-- lifecycle violation -> source ordered-relation reopening: contradicted term loses unique warrant, history remains, independent support survives;
-- internally formed lifecycle evaluations -> reusable structural relation terms -> generic lived occurrences -> existing ordered recompressor/higher relation discovery.
+- expectation lifecycle -> later reality evidence -> source-relation reopening;
+- internally formed evaluations -> reusable structural relation terms -> generic recurrence/higher discovery;
+- arbitrary externally contacted relation facts -> content-addressed relation terms + per-contact generic lived occurrences;
+- opaque receptor-topology facts and independently learned raw numeric dynamics co-participating in the existing higher-recurrence substrate;
+- topology contact is invariant to channel renaming and non-isomorphic topology remains distinguishable, without vision/spatial cognitive authority.
 
-Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
+Primary regressions: `topology-dynamics-integration.test.js`, `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
-Validated cognitive head: `958e5f0a1c42948eb2c33de7188f526aab16478a`.
-Blueprint run `39858799005`: success, all gates green.
-Dedicated recursive-temporal run `39858799006`: success.
+Validated cognitive head: `8c5fb2d9fbf4a77c29c7fc1bc1610ff6df77ece3`.
+Blueprint run `39860947316`: success, all gates green including topology/dynamics.
+Frontier run `39860947291`: generic occurrence temporal-unification gate green; known very slow embodied-crossmodal step still running at checkpoint.
+Dedicated recursive-temporal run `39860947152`: still running at checkpoint; previous validated dedicated run passed on `958e5f0a...`.
 
 ## Failure / repair constraints
 
 1. **Duplicate authority:** never copy status/definitions where live dereference from M exists.
 2. **Eager lifetime retrieval:** persistence is fundamental; retrieval is query-relative.
 3. **Temporal modality interference:** preserve complete events; search projections may not erase modalities.
-4. **Search starvation:** use bounded affected/suffix search; do not inflate global budgets.
+4. **Search starvation:** bounded affected/suffix search; never hide failure by inflating global budgets.
 5. **Gappy projection overreach:** projected recurrence cannot license immediate-next expectation.
 6. **Phase artifacts:** pure alternation does not privilege one phase. Repair the test, not cognition.
 7. **Evidence-route birth order:** one ordered relation accumulates stronger later evidence routes.
 8. **Partial successor disagreement:** common terms may remain warranted; residual/disjoint alternatives remain open.
 9. **Counterevidence is reopening, not deletion:** direct unmet successor contests only that term's categorical warrant; history and independent support remain.
-10. **Internal evidence normalization:** lifecycle evaluation is an internal M occurrence, not fabricated external contact. Reusable identity comes from relational structure, not event ID.
-11. **No internal-event recursion:** the evaluation shares its triggering successor's `ρ:lived_order`; it does not increment the top-level lived-contact counter or recursively rerun lifecycle in the same call.
-12. **Anti-cheat boundary:** keep lifecycle content-neutral. Generic term/occurrence normalization belongs outside `lifecycleUpdate`; do not weaken the modality-vocabulary guard to make a test pass.
-13. **Frontier bloat:** reuse solved preconditions; do not replay schooling/body development in each frontier test.
-14. **CI cost:** recursive continuous-temporal is >6 min and path-scoped. Frontier `embodied-crossmodal-grounding` has a pre-existing very long runtime; do not attribute that cost to later changes without comparison.
-15. **Temporal scan cost:** lifecycle/counterevidence currently rebuild views from M facts. Correct but scaling debt; optimize only via rebuildable zero-authority indexes.
+10. **Internal evidence normalization:** internal M events are not fabricated external contact; reusable identity comes from relational structure, not event ID.
+11. **No internal-event recursion:** internally formed evaluation shares its triggering lived order and does not recursively rerun lifecycle.
+12. **Occurrence anatomy must not self-reify:** pre-normalized `kind/instantiates/order/lived_order` anatomy is representation, not new metadata-events. Other attached structured relations remain eligible.
+13. **Anti-cheat boundary:** generic normalization belongs outside content-specific lifecycle/domain logic; do not weaken guards to pass tests.
+14. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
+15. **CI cost:** recursive continuous-temporal is >6 min and path-scoped. Frontier `embodied-crossmodal-grounding` has a pre-existing very long runtime. Topology falsification was reduced to minimum evidence cadence and no unnecessary third development life.
+16. **Temporal scan cost:** lifecycle/counterevidence rebuild M views. Correct but scaling debt; optimize only via rebuildable zero-authority indexes.
 
-## Closed: temporal completion / evidence recursion
+## Closed: topology-bearing contact integration
 
-`lived order -> learned relation -> expectation -> optional action -> later reality evaluation -> source-relation reopening -> evaluation occurrence -> later higher relation discovery`
+`structured topology contact -> generic relation occurrence` and `raw numeric dynamics -> learned relation occurrence` now share one lived-order/recompression substrate. The topology test proves channel-renaming invariance of contacted/learned graph structure and distinguishes a genuinely different topology with the same flattened numeric layout.
 
-All cognitive content remains M-owned. Exact provenance/history remains. Unknown is not violation. Internally formed evidence can now enter the same occurrence/recompression substrate as learned relations, expressions, and actions without a special evidence learner.
+This is not yet structural transfer. The live learned higher relation may still be tied to concrete receptor/relation term identities.
 
-## Current frontier: topology-bearing raw contact
+## Current frontier: structural law induction and transfer
 
-The blueprint's primitive occurrence includes source/position/channel/time/value/precision and its raw-video expectation requires spatial/temporal recurrence. Repository search finds no live spatial/topology authority. The numeric path currently retains flat indexed channels `p0...pN` and learns value dependence across channel/time; two different receptor geometries with the same flattened values are therefore indistinguishable unless topology itself is supplied as reality contact.
+Repository search finds two relevant historical/generic mechanisms but no live canonical solution to the next claim:
 
-Target:
+- `relational-normal-form.js` gives exact graph identity invariant to arbitrary vertex names; it is a derived structural utility, not warrant/truth authority.
+- `one-rule.js` contains a separate historical feature-sample MDL learner; canonical `agi/mind.js` does not use it, and it does not by itself establish graph-structural variable induction in M.
 
-`new topology-bearing receptors -> M-owned positional/adjacency contact -> generic recurrence/relations -> reusable spatiotemporal structure`
+Missing demonstration:
+
+`repeated concrete topology+dynamics instances -> one endpoint-independent relational schema -> held-out structurally equivalent instance`
 
 Requirements:
 
-- preserve a decisive failure before changing cognition;
-- no vision/pixel/object/motion semantics in `C`;
-- topology is receptor/contact structure from `S`, not inferred from channel numbering or array layout;
-- exact values and exact receptor topology/provenance both remain in M;
-- renaming/permuting receptor IDs while preserving topology must preserve learned structural result; changing topology with identical values must be distinguishable;
-- reuse existing generic relational/occurrence/recompression machinery before adding any new discovery authority;
-- a new sensor topology must require no new cognitive module;
-- do not call flattened high-dimensional correlation a raw-video/spatial demonstration.
+- preserve a focused failure before changing cognition;
+- do not redo topology storage/integration or concrete continuous-relation learning;
+- no hand-authored variable rule for the target law;
+- learn from at least two differently named concrete instances and apply to an unseen equivalent endpoint/edge in the same continuing M;
+- arbitrary receptor renaming must not change the learned schema; a non-equivalent topology must not receive the same transfer;
+- discovered schema is M content/candidate, not a hidden rule table or copied status;
+- use existing normal-form/recompression machinery where semantically valid; do not create a spatial/vision learner or second relation authority;
+- proposal/compression alone must not become truth; later reality contact must remain able to support, defeat, or reopen the schema;
+- test the missing structural generalization, not merely coexistence of concrete topology and dynamics terms.
 
-Classification: **connection/extension of the reality-contact representation**, pending final reuse/falsification search.
+Classification: **connection/extension of generic relational abstraction**, after reuse has been searched and live canonical reuse falsified.
 
 ## Later, not current
 
