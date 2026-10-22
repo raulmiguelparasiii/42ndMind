@@ -8,7 +8,10 @@ const Mind = require('./mind.js');
 // Opaque predicates. The developmental runtime must not know their intended role.
 const T = 'ρ:σ_4p7x2';
 const D = 'ρ:δ_9m3q5';
-for (const file of ['mind.js', 'mind-relational.js', 'generic-lived-occurrences.js', 'relation-sequence-recompression.js']) {
+for (const file of [
+  'mind.js', 'mind-relational.js', 'generic-lived-occurrences.js',
+  'structural-relational-abstraction.js', 'relation-sequence-recompression.js',
+]) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
   assert(!source.includes('σ_4p7x2') && !source.includes('δ_9m3q5'), `${file} contains structural-transfer fixture knowledge`);
 }
@@ -52,6 +55,12 @@ for (const [a, b, c] of [
   ['j9f', 's3y', 'b5u'],
 ]) Mind.C(M, { relations: { facts: fullChain(a, b, c) } });
 
+// Recurrence must become an explicit M-owned candidate, never a hidden rule table.
+const schemaCandidates = new Set((M.knowledge?.facts || [])
+  .filter(f => f.relation === 'ρ:kind' && f.object === 'structural_relation_schema_candidate')
+  .map(f => String(f.subject)));
+assert(schemaCandidates.size >= 1, 'recurrent concrete motifs produced no first-class structural schema candidate');
+
 // Held-out isomorphic chain: only the topology/cue is contacted. Generalization
 // may propose the missing D edge, but must not fabricate it as observed truth.
 const held = ['x2d', 'r8a', 'q1n'];
@@ -85,6 +94,7 @@ console.log(JSON.stringify({
   one_C_entrypoint: true,
   opaque_predicates: true,
   independent_concrete_training_instances: 3,
+  first_class_schema_candidate: true,
   held_out_endpoint_names_unseen: true,
   held_out_missing_relation_observed: false,
   held_out_missing_relation_proposed: true,

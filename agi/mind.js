@@ -13,6 +13,7 @@ const MultiSourceContinuous = require('./multisource-continuous-relations.js');
 const EmpiricalRelations = require('./empirical-relation-occurrences.js');
 const SurfaceRelationGrounding = require('./surface-relation-grounding.js');
 const GenericOccurrences = require('./generic-lived-occurrences.js');
+const StructuralAbstraction = require('./structural-relational-abstraction.js');
 const RelationSequence = require('./relation-sequence-recompression.js');
 const Discourse = require('./discourse-arbiter.js');
 
@@ -240,6 +241,12 @@ function C(state, realityContact) {
   // intact; this only gives all of them the same generic temporal anatomy.
   const lived = GenericOccurrences.relationalUpdate(state, realityContact);
   if (lived?.update) Relational.C(state, lived.update);
+
+  // Recurrent symbolic relation graphs can propose endpoint-independent schema
+  // candidates. The zero-state helper reads only M/contact structure; its result
+  // is ordinary proposal content and never inserts an unobserved world relation.
+  const structural = StructuralAbstraction.relationalUpdate(state, realityContact);
+  if (structural) Relational.C(state, structural);
 
   if (lived?.occurrence_count > 0) {
     // Resolve older open expectations from the exact first later lived event.
