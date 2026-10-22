@@ -200,22 +200,54 @@ function unarySameTimeTargets(state) {
   return out;
 }
 
-function pairCandidates(channels, blockedTargets) {
-  const out = [];
+// Candidate topology may grow combinatorially with receptor count and temporal
+// depth, but proposal scheduling is not epistemic authority. Represent the whole
+// search space compactly, then evaluate only a deterministic rotating budget.
+function pairSourceSpace(channels, blockedTargets, maxLag) {
+  const groups = [];
+  const lagCount = maxLag + 1;
+  const perPair = lagCount * lagCount;
+  let total = 0;
   for (let target = 0; target < channels; target++) {
     if (blockedTargets.has(target)) continue;
     const sources = [];
     for (let i = 0; i < channels; i++) if (i !== target) sources.push(i);
-    for (let a = 0; a < sources.length; a++) for (let b = a + 1; b < sources.length; b++)
-      out.push({ sources: [{ source: sources[a], lag: 0 }, { source: sources[b], lag: 0 }], target, orientation: 'joint' });
+    const pairs = [];
+    for (let a = 0; a < sources.length; a++) for (let b = a + 1; b < sources.length; b++) pairs.push([sources[a], sources[b]]);
+    const size = pairs.length * perPair;
+    if (!size) continue;
+    groups.push({ target, pairs, offset: total, size });
+    total += size;
   }
-  return out;
+  return { groups, total, lagCount, perPair };
 }
-function budgetSlice(candidates, n, cadence, budget) {
-  if (candidates.length <= budget) return candidates;
-  const start = (Math.floor(n / cadence) * budget) % candidates.length;
+function candidateAt(space, index) {
+  if (!space.total) return null;
+  const normalized = ((index % space.total) + space.total) % space.total;
+  for (const group of space.groups) {
+    if (normalized < group.offset || normalized >= group.offset + group.size) continue;
+    const local = normalized - group.offset;
+    const pair = group.pairs[Math.floor(local / space.perPair)];
+    const remainder = local % space.perPair;
+    const lagA = Math.floor(remainder / space.lagCount);
+    const lagB = remainder % space.lagCount;
+    return {
+      sources: [{ source: pair[0], lag: lagA }, { source: pair[1], lag: lagB }],
+      target: group.target,
+      orientation: 'joint',
+    };
+  }
+  return null;
+}
+function budgetSlice(space, n, cadence, budget) {
+  if (!space.total) return [];
+  const count = Math.min(space.total, budget);
+  const start = space.total <= budget ? 0 : (Math.floor(n / cadence) * budget) % space.total;
   const out = [];
-  for (let i = 0; i < budget; i++) out.push(candidates[(start + i) % candidates.length]);
+  for (let i = 0; i < count; i++) {
+    const candidate = candidateAt(space, start + i);
+    if (candidate) out.push(candidate);
+  }
   return out;
 }
 
@@ -240,9 +272,16 @@ function detect(state, options = {}) {
       found.set(topologyKey(relation), { ...relation, ...fit });
   }
 
-  const candidates = pairCandidates(channels, unarySameTimeTargets(state));
+  // Temporal reach expands only when retained evidence can support it. This is a
+  // proposal horizon, not a truth boundary: older source contact stays in M and
+  // the horizon grows as the life supplies more independent support.
+  const evidenceMaxLag = Math.max(0, n - minSupport);
+  const evidenceLagHorizon = Math.max(0, Math.floor(Math.log2(Math.max(1, n / minSupport))) + 1);
+  const requestedMaxLag = options.maxLag === undefined ? evidenceLagHorizon : Math.max(0, options.maxLag);
+  const maxLag = Math.min(evidenceMaxLag, requestedMaxLag);
+  const space = pairSourceSpace(channels, unarySameTimeTargets(state), maxLag);
   const budget = Math.max(1, options.pairBudget ?? 256);
-  for (const relation of budgetSlice(candidates, n, cadence, budget)) {
+  for (const relation of budgetSlice(space, n, cadence, budget)) {
     const fit = fitSimplest(state, relation.sources, relation.target, options);
     if (!fit) continue;
     const candidate = { ...relation, ...fit };
