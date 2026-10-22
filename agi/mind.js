@@ -193,18 +193,26 @@ function C(state, realityContact) {
   const lived = GenericOccurrences.relationalUpdate(state, realityContact);
   if (lived?.update) Relational.C(state, lived.update);
 
-  // Ordered recompression is proposal search, not epistemic authority. Count one
-  // event for one lived order regardless of how many modalities occurred there.
-  // Exact occurrences are already M content; the cache only decides when another
-  // zero-authority whole-history search is worth running.
-  if (lived?.occurrence_count > 0 && temporalCache) {
-    temporalCache.lived_sequence_event_count++;
-    if (temporalCache.lived_sequence_event_count >= temporalCache.next_lived_sequence_search_at) {
-      const temporal = RelationSequence.relationalUpdate(state, { checkpoint: temporalCheckpoint });
-      if (temporal) Relational.C(state, temporal);
-      while (temporalCache.next_lived_sequence_search_at <= temporalCache.lived_sequence_event_count)
-        temporalCache.next_lived_sequence_search_at += temporalCheckpoint;
+  if (lived?.occurrence_count > 0) {
+    // Ordered recompression is proposal search, not epistemic authority. Count one
+    // event for one lived order regardless of how many modalities occurred there.
+    // Exact occurrences are already M content; the cache only decides when another
+    // zero-authority whole-history search is worth running.
+    if (temporalCache) {
+      temporalCache.lived_sequence_event_count++;
+      if (temporalCache.lived_sequence_event_count >= temporalCache.next_lived_sequence_search_at) {
+        const temporal = RelationSequence.relationalUpdate(state, { checkpoint: temporalCheckpoint });
+        if (temporal) Relational.C(state, temporal);
+        while (temporalCache.next_lived_sequence_search_at <= temporalCache.lived_sequence_event_count)
+          temporalCache.next_lived_sequence_search_at += temporalCheckpoint;
+      }
     }
+
+    // Learned order constrains the present through the same zero-state view. The
+    // result is ordinary M expectation content linked to exact prefix occurrences;
+    // it never creates a lived occurrence for an unseen next event.
+    const temporalCompletion = RelationSequence.completionUpdate(state);
+    if (temporalCompletion) Relational.C(state, temporalCompletion);
   }
 
   // Expression choice is derived only after canonical M has settled. A learned
