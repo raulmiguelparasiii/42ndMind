@@ -9,6 +9,7 @@
 
 const Relational = require('./mind-relational.js');
 const Continuous = require('./continuous-relational-contact.js');
+const MultiSourceContinuous = require('./multisource-continuous-relations.js');
 const RelationSequence = require('./relation-sequence-recompression.js');
 const Discourse = require('./discourse-arbiter.js');
 
@@ -53,10 +54,15 @@ function C(state, realityContact) {
 
   const hasFrame = !!frameFrom(realityContact);
   if (hasFrame) {
-    const update = Continuous.relationalUpdate(state);
-    if (update) {
+    let discovered = false;
+    for (const proposer of [Continuous, MultiSourceContinuous]) {
+      const update = proposer.relationalUpdate(state);
+      if (!update) continue;
       Relational.C(state, update);
+      discovered = true;
+    }
 
+    if (discovered) {
       // Continuous discovery has now produced ordinary first-class relation
       // occurrences in M. Reuse the repository's existing generic ordered
       // recompression over those occurrences; any new higher relation returns
@@ -65,9 +71,16 @@ function C(state, realityContact) {
       if (temporal) Relational.C(state, temporal);
     }
 
-    // Quantitative realization is a derived current view over active M-owned
-    // relations. It can fill an open receptor term but never rewrites raw contact.
-    Continuous.completeCurrent(state);
+    // Quantitative realization is a disposable fixed-point view over active
+    // M-owned relations. Unary and joint relations may feed one another, but no
+    // inferred value is ever rewritten into raw contact history.
+    for (let pass = 0; pass < 8; pass++) {
+      const before = Object.keys(state.current?.completed || {}).length;
+      Continuous.completeCurrent(state);
+      MultiSourceContinuous.completeCurrent(state);
+      const after = Object.keys(state.current?.completed || {}).length;
+      if (after === before) break;
+    }
   }
 
   // Expression choice is derived only after canonical M has settled. A learned
