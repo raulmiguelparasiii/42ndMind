@@ -77,6 +77,25 @@ function temporalId(depth, expansion) {
   return `ordered-relation:${depth}:${digest(expansion)}`;
 }
 
+// Internally formed relational evidence is normalized through the same minimal
+// occurrence anatomy as any other first-class M term. This helper owns no state
+// and does not infer modality; the caller supplies only relational structure,
+// occurrence identity, and the exact formation order already present in M.
+function internalRelationalOccurrenceFacts(term, structure, occurrence, order) {
+  const kind = String(structure.kind);
+  return [
+    [term, 'ρ:kind', 'relation_term'],
+    [term, 'ρ:relation_object', structure],
+    [term, 'ρ:instantiation_kind', kind],
+    [occurrence, 'ρ:kind', kind],
+    [occurrence, 'ρ:kind', 'lived_occurrence'],
+    [occurrence, 'ρ:instantiates', ref(term)],
+    [occurrence, 'ρ:order', order],
+    [occurrence, 'ρ:lived_order', order],
+    [`lived-contact:${order}`, 'ρ:contains_occurrence', ref(occurrence)],
+  ];
+}
+
 function existingTemporalIds(state) {
   return new Set((state.knowledge?.facts || [])
     .filter(f => f.relation === 'ρ:kind' && f.object === 'learned_ordered_relation')
@@ -514,14 +533,7 @@ function lifecycleUpdate(state) {
     const evaluationStructure = { kind: 'temporal_expectation_evaluation', result };
     const evaluationTerm = `relation:temporal-evaluation:${digest(evaluationStructure)}`;
     updates.push(
-      [evaluationTerm, 'ρ:kind', 'relation_term'],
-      [evaluationTerm, 'ρ:relation_object', evaluationStructure],
-      [evaluationTerm, 'ρ:instantiation_kind', 'temporal_expectation_evaluation'],
-      [evaluation, 'ρ:kind', 'temporal_expectation_evaluation'],
-      [evaluation, 'ρ:kind', 'lived_occurrence'],
-      [evaluation, 'ρ:instantiates', ref(evaluationTerm)],
-      [evaluation, 'ρ:order', successor.order],
-      [evaluation, 'ρ:lived_order', successor.order],
+      ...internalRelationalOccurrenceFacts(evaluationTerm, evaluationStructure, evaluation, successor.order),
       [evaluation, 'ρ:evaluates_expectation', ref(x.id)],
       [evaluation, 'ρ:predecessor_lived_order', x.after],
       [evaluation, 'ρ:successor_lived_order', successor.order],
@@ -535,7 +547,6 @@ function lifecycleUpdate(state) {
       [x.id, 'ρ:resolved_by', ref(evaluation)],
       [x.id, 'ρ:resolved_at_lived_order', successor.order],
       [`lived-contact:${successor.order}`, 'ρ:evaluates_temporal_expectation', ref(evaluation)],
-      [`lived-contact:${successor.order}`, 'ρ:contains_occurrence', ref(evaluation)],
     );
     for (const relation of normalizedTerms(x.relations))
       updates.push([evaluation, 'ρ:evaluates_ordered_relation', ref(relation)]);
