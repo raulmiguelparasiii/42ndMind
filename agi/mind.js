@@ -153,6 +153,54 @@ function ensureTemporalSearchCache(state, checkpoint) {
   return state.structure;
 }
 
+// Action realization is physical transduction, not a planner. The expectation,
+// action-term identity, and actuator grounding are all already ordinary M facts.
+// This function only resolves the *current lived order* to one actuator when M
+// itself leaves exactly one action index available. Historical expectations are
+// ignored, and independently grounded embodied continuation is not overwritten.
+function currentExpectedActuator(state) {
+  const order = state.structure?.lived_contact_order;
+  if (!Number.isFinite(order)) return null;
+  const facts = state.knowledge?.facts || [];
+
+  const expectationIds = new Set(facts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'temporal_expectation')
+    .map(f => String(f.subject)));
+  const currentExpectations = new Set([...expectationIds].filter(id => facts.some(f =>
+    String(f.subject) === id && f.relation === 'ρ:after_lived_order' && f.object === order)));
+  if (!currentExpectations.size) return null;
+
+  const actionTerms = new Set(facts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'action_term')
+    .map(f => String(f.subject)));
+  const expectedTerms = new Set(facts
+    .filter(f => currentExpectations.has(String(f.subject)) && f.relation === 'ρ:expects_term' && f.object?.ref !== undefined)
+    .map(f => String(f.object.ref))
+    .filter(term => actionTerms.has(term)));
+  if (!expectedTerms.size) return null;
+
+  const indexes = new Set();
+  for (const term of expectedTerms) {
+    const grounded = new Set(facts
+      .filter(f => String(f.subject) === term && f.relation === 'ρ:actuator_index' && Number.isInteger(f.object))
+      .map(f => f.object)
+      .filter(index => index >= 0 && index < state.action_count));
+    if (grounded.size !== 1) return null;
+    indexes.add([...grounded][0]);
+  }
+  return indexes.size === 1 ? [...indexes][0] : null;
+}
+function realizeCurrentExpectedAction(state) {
+  const actuator = currentExpectedActuator(state);
+  if (!Number.isInteger(actuator)) return;
+
+  // A grounded canonical continuation is independent live support. Temporal
+  // completion may replace only ungrounded physical variation, not erase a
+  // contradictory action already grounded by the same canonical M/C.
+  if (state.current?.continuation?.grounded === true && Number.isInteger(state.motor) && state.motor !== actuator) return;
+  state.motor = actuator;
+}
+
 function C(state, realityContact) {
   const temporalCheckpoint = 8;
   const temporalCache = ensureTemporalSearchCache(state, temporalCheckpoint);
@@ -212,7 +260,10 @@ function C(state, realityContact) {
     // result is ordinary M expectation content linked to exact prefix occurrences;
     // it never creates a lived occurrence for an unseen next event.
     const temporalCompletion = RelationSequence.completionUpdate(state);
-    if (temporalCompletion) Relational.C(state, temporalCompletion);
+    if (temporalCompletion) {
+      Relational.C(state, temporalCompletion);
+      realizeCurrentExpectedAction(state);
+    }
   }
 
   // Expression choice is derived only after canonical M has settled. A learned
