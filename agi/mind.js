@@ -127,23 +127,16 @@ function C(state, realityContact) {
 
   const hasFrame = !!frameFrom(realityContact);
   if (hasFrame) {
-    let discovered = false;
-
     // The canonical embodied learner already updated inside Relational.C above.
     // This adapter does not learn a second model; it only exposes any new/support-
     // advanced empirical relation through the same generic M term/occurrence form
     // used by the other relation learners.
     const empirical = EmpiricalRelations.relationalUpdate(state);
-    if (empirical) {
-      Relational.C(state, empirical);
-      discovered = true;
-    }
+    if (empirical) Relational.C(state, empirical);
 
     for (const proposer of [Continuous, MultiSourceContinuous]) {
       const update = proposer.relationalUpdate(state);
-      if (!update) continue;
-      Relational.C(state, update);
-      discovered = true;
+      if (update) Relational.C(state, update);
     }
 
     // Surface meaning is learned from the same lived contact only after learned
@@ -152,10 +145,16 @@ function C(state, realityContact) {
     const grounding = SurfaceRelationGrounding.relationalUpdate(state, realityContact);
     if (grounding) Relational.C(state, grounding);
 
-    if (discovered) {
-      // Any generic learned relation occurrence can now participate in the same
-      // zero-state ordered recompression over canonical M history.
-      const temporal = RelationSequence.relationalUpdate(state);
+    // Ordered recompression is proposal search, not epistemic authority. Every
+    // relation occurrence above is retained immediately in M; rescanning the
+    // almost-identical whole occurrence history after every support increment is
+    // therefore redundant. Search on deterministic lived-contact checkpoints and
+    // include everything accumulated since the previous checkpoint. No cognitive
+    // content is dropped or delayed from M itself.
+    const temporalCheckpoint = 8;
+    const livedOrder = state.contacts?.length || 0;
+    if (livedOrder >= temporalCheckpoint && livedOrder % temporalCheckpoint === 0) {
+      const temporal = RelationSequence.relationalUpdate(state, { checkpoint: temporalCheckpoint });
       if (temporal) Relational.C(state, temporal);
     }
 
