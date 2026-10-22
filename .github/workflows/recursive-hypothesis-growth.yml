@@ -15,7 +15,33 @@ permissions:
   contents: read
 
 jobs:
+  latest_commit:
+    runs-on: ubuntu-latest
+    outputs:
+      run_root: ${{ steps.relevance.outputs.run_root }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - id: relevance
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_root=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only HEAD^ HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -Ev '^(agi/|AGENTS\.md$|\.github/workflows/)' | grep -q .; then
+            echo "run_root=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_root=false" >> "$GITHUB_OUTPUT"
+          fi
+
   gate:
+    needs: latest_commit
+    if: needs.latest_commit.outputs.run_root == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
