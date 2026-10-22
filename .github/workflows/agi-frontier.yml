@@ -8,6 +8,7 @@ on:
       - 'agi/continuous-relational-contact.js'
       - 'agi/multisource-continuous-relations.js'
       - 'agi/empirical-relation-occurrences.js'
+      - 'agi/generic-lived-occurrences.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/surface-relation-grounding.js'
       - 'agi/generic-occurrence-temporal-unification.test.js'
