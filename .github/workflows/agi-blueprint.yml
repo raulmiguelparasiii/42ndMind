@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Temporal relation counterevidence gate
+        run: node agi/temporal-relation-counterevidence.test.js
       - name: Temporal expectation lifecycle gate
         run: node agi/temporal-expectation-lifecycle.test.js
       - name: Action warrant correction / reopening gate
