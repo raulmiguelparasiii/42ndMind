@@ -5,17 +5,10 @@ const fs = require('fs');
 const path = require('path');
 const Mind = require('./mind.js');
 
-// Generic-occurrence temporal falsification.
-//
-// One continuing individual learns a raw numerical relation, grounds an opaque
-// surface expression to that relation from lived co-occurrence, and has exactly
-// one physical motor. The later life repeatedly contains three genuinely
-// different occurrence types at the same lived moments:
-//   learned relation occurrence + grounded expression occurrence + self action.
-// Passing requires those events to share the same generic temporal substrate and
-// participate in recursive ordered recompression. No language/action-specific
-// sequence learner or semantic rule is supplied by the test.
-
+// One life must be able to place a learned raw relation, a grounded expression,
+// and a self action on one modality-neutral temporal axis, then recursively learn
+// ordered structure over those terms. No language/action-specific sequence rule
+// is supplied here.
 const WORD = 'kestrel_nova_73';
 const CONCERN = 29;
 const TRAIN = 40;
@@ -25,7 +18,7 @@ const REPEATS = 16;
 function f(x) { return 2.137 * x - 0.481; }
 
 for (const file of ['mind.js', 'mind-relational.js', 'one-live-blueprint.js',
-  'surface-relation-grounding.js', 'relation-sequence-recompression.js']) {
+  'surface-relation-grounding.js', 'relation-sequence-recompression.js', 'generic-lived-occurrences.js']) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
   assert(!source.includes(WORD), `${file} contains test-specific occurrence fixture`);
 }
@@ -40,7 +33,7 @@ function frame() {
   return [x, f(x), CONCERN];
 }
 
-const M = Mind.one(1, 1); // one actuator => one stable physical action identity
+const M = Mind.one(1, 1); // one physical action identity, no action-selection shortcut
 for (let i = 0; i < TRAIN; i++) Mind.C(M, { frame: frame() });
 
 function continuousRelation() {
@@ -49,17 +42,15 @@ function continuousRelation() {
     fact.object?.target === 'receptor:p1' && fact.object?.lag === 0 && fact.object?.transform);
 }
 function relationTermFor(relation) {
-  const stable = value => JSON.stringify(value, Object.keys(value || {}).sort());
   return (M.knowledge?.facts || []).find(fact =>
-    fact.relation === 'ρ:relation_object' &&
-    JSON.stringify(fact.object) === JSON.stringify(relation.object))?.subject;
+    fact.relation === 'ρ:relation_object' && fact.object?.target === relation.object.target &&
+    fact.object?.lag === relation.object.lag && fact.object?.orientation === relation.object.orientation &&
+    fact.object?.transform?.kind === relation.object.transform?.kind)?.subject;
 }
-
 assert(continuousRelation(), 'raw continuous relation was not learned before occurrence unification');
 
-// Ground the word only on evidence cadences where the learned relation has a
-// fresh first-class occurrence. Context changes prevent a fixed surrounding
-// sentence from being the grounding authority.
+// Ground one opaque expression only on fresh evidence cadences for that learned
+// relation. Surrounding surface context varies.
 let labels = 0;
 while (labels < LABELS) {
   const next = (M.contacts?.length || 0) + 1;
@@ -79,18 +70,14 @@ assert((M.knowledge?.current?.facts || []).some(f =>
   f.subject === `surface:${WORD}` && f.relation === 'ρ:expresses' && f.object?.ref === String(relationTerm)),
   'surface expression did not ground to the learned raw relation');
 
-// Continue one uninterrupted life. Put the grounded expression only on relation
-// evidence cadences. The single motor acts throughout. Thus each selected cadence
-// physically contains relation + expression + action, while intervening actions
-// provide non-selected temporal context rather than a manufactured event table.
+// Continue the same life. On each relation evidence cadence the grounded phrase
+// is present too; with one motor, relation + expression + action are real
+// simultaneous lived events, separated by ordinary action-only contacts.
 let repeats = 0;
 while (repeats < REPEATS) {
   const next = (M.contacts?.length || 0) + 1;
   const onCadence = next % CADENCE === 0;
-  Mind.C(M, {
-    frame: frame(),
-    ...(onCadence ? { surface: { input: WORD } } : {}),
-  });
+  Mind.C(M, { frame: frame(), ...(onCadence ? { surface: { input: WORD } } : {}) });
   if (onCadence) repeats++;
 }
 
@@ -99,10 +86,12 @@ function subjectsOfKind(kind) {
   return new Set(facts.filter(f => f.relation === 'ρ:kind' && f.object === kind).map(f => String(f.subject)));
 }
 function instantiation(occurrence) {
-  return facts.find(f => String(f.subject) === String(occurrence) && f.relation === 'ρ:instantiates' && f.object?.ref !== undefined)?.object?.ref;
+  return facts.find(f => String(f.subject) === String(occurrence) &&
+    f.relation === 'ρ:instantiates' && f.object?.ref !== undefined)?.object?.ref;
 }
-function orderOf(occurrence) {
-  return facts.find(f => String(f.subject) === String(occurrence) && f.relation === 'ρ:order' && Number.isFinite(f.object))?.object;
+function livedOrderOf(occurrence) {
+  return facts.find(f => String(f.subject) === String(occurrence) &&
+    f.relation === 'ρ:lived_order' && Number.isFinite(f.object))?.object;
 }
 
 const relationOccurrences = subjectsOfKind('relation_occurrence');
@@ -113,48 +102,45 @@ assert(expressionOccurrences.size, 'grounded expression produced no first-class 
 assert(actionOccurrences.size, 'self action produced no first-class action occurrences');
 
 const actionTerms = subjectsOfKind('action_term');
-assert(actionTerms.size === 1, 'single physical motor did not have one first-class action term');
+assert.strictEqual(actionTerms.size, 1, 'single physical motor did not have one first-class action term');
 const actionTerm = [...actionTerms][0];
 const surfaceTerm = `surface:${WORD}`;
 assert(facts.some(f => f.subject === surfaceTerm && f.relation === 'ρ:kind' && f.object === 'expression_term'),
   'grounded surface expression lacks a first-class expression term');
 
-// Every occurrence type must expose the same minimal generic anatomy needed by
-// temporal cognition: identity of what occurred + one lived order coordinate.
 for (const [kind, set] of [
-  ['relation', relationOccurrences],
-  ['expression', expressionOccurrences],
-  ['action', actionOccurrences],
-]) {
-  for (const occurrence of set) {
-    assert(instantiation(occurrence) !== undefined, `${kind} occurrence lacks generic instantiation`);
-    assert(Number.isFinite(orderOf(occurrence)), `${kind} occurrence lacks generic lived order`);
-  }
+  ['relation', relationOccurrences], ['expression', expressionOccurrences], ['action', actionOccurrences],
+]) for (const occurrence of set) {
+  assert(instantiation(occurrence) !== undefined, `${kind} occurrence lacks generic instantiation`);
+  assert(Number.isFinite(livedOrderOf(occurrence)), `${kind} occurrence lacks whole-life order`);
 }
 
 const mixedOrders = new Set();
 for (const r of relationOccurrences) {
   if (String(instantiation(r)) !== String(relationTerm)) continue;
-  const order = orderOf(r);
-  const hasSurface = [...expressionOccurrences].some(o => orderOf(o) === order && String(instantiation(o)) === surfaceTerm);
-  const hasAction = [...actionOccurrences].some(o => orderOf(o) === order && String(instantiation(o)) === actionTerm);
+  const order = livedOrderOf(r);
+  const hasSurface = [...expressionOccurrences].some(o =>
+    livedOrderOf(o) === order && String(instantiation(o)) === surfaceTerm);
+  const hasAction = [...actionOccurrences].some(o =>
+    livedOrderOf(o) === order && String(instantiation(o)) === actionTerm);
   if (hasSurface && hasAction) mixedOrders.add(order);
 }
 assert(mixedOrders.size >= REPEATS,
-  'relation, grounded expression, and self action did not inhabit the same lived order axis');
+  'relation, grounded expression, and self action did not inhabit one lived-order axis');
 
-const ordered = new Map();
+const higher = new Map();
 for (const fact of facts) {
-  if (!ordered.has(String(fact.subject))) ordered.set(String(fact.subject), {});
-  const x = ordered.get(String(fact.subject));
+  const id = String(fact.subject);
+  if (!higher.has(id)) higher.set(id, {});
+  const x = higher.get(id);
   if (fact.relation === 'ρ:kind' && fact.object === 'learned_ordered_relation') x.kind = true;
   else if (fact.relation === 'ρ:ordered_expansion' && Array.isArray(fact.object)) x.expansion = fact.object;
   else if (fact.relation === 'ρ:depth' && Number.isFinite(fact.object)) x.depth = fact.object;
 }
-const learned = [...ordered.entries()].filter(([, x]) => x.kind && x.expansion).map(([id, x]) => ({ id, ...x }));
-assert(learned.length, 'generic occurrence stream produced no learned ordered relation');
+const learned = [...higher.entries()].filter(([, x]) => x.kind && x.expansion).map(([id, x]) => ({ id, ...x }));
+assert(learned.length, 'generic lived-occurrence stream produced no learned ordered relation');
 assert(Math.max(...learned.map(x => x.depth || 0)) >= 2,
-  'cross-modal occurrence stream did not recursively reuse a learned ordered relation');
+  'cross-modal lived-occurrence stream did not recursively reuse a learned ordered relation');
 
 function expansionContainsAll(expansion) {
   for (const component of expansion || []) {
@@ -168,13 +154,11 @@ function expansionContainsAll(expansion) {
 assert(learned.some(x => expansionContainsAll(x.expansion)),
   'no ordered relation contains learned relation + grounded expression + self action as one lived event');
 
-// Exact histories remain separately available beneath the cross-modal relation.
 assert((M.contacts || []).length >= TRAIN + LABELS * CADENCE + REPEATS * CADENCE,
   'exact numeric contact history was not retained');
 assert(facts.some(f => f.relation === 'ρ:input_raw' && String(f.object).includes(WORD)),
   'exact surface history was not retained');
 assert((M.experiences || []).length > 0, 'exact embodied action/consequence history was not retained');
-
 for (const forbidden of ['temporal_language_state', 'action_sequence_model', 'crossmodal_controller', 'planner'])
   assert.strictEqual(M[forbidden], undefined, `parallel cognitive authority appeared: ${forbidden}`);
 
@@ -182,7 +166,7 @@ console.log(JSON.stringify({
   one_persistent_M: true,
   one_C_entrypoint: true,
   relation_expression_action_share_generic_occurrence_anatomy: true,
-  same_lived_order_axis: true,
+  explicit_whole_life_order_axis: true,
   recursive_crossmodal_temporal_relation: true,
   exact_numeric_surface_action_history_retained: true,
   parallel_crossmodal_temporal_authority: false,
