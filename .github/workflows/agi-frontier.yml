@@ -9,6 +9,7 @@ on:
       - 'agi/multisource-continuous-relations.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/cross-route-conflict.test.js'
+      - 'agi/cross-route-conflict-reopening.test.js'
       - 'agi/continuous-temporal-reuse.test.js'
       - 'agi/single-channel-waveform.test.js'
       - 'agi/multiscale-waveform.test.js'
@@ -36,6 +37,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Cross-route conflict reopening
+        run: node agi/cross-route-conflict-reopening.test.js
       - name: Cross-route continuous conflict
         run: node agi/cross-route-conflict.test.js
       - name: Mixed-lag multi-source continuous completion
