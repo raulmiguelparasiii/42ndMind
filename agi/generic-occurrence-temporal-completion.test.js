@@ -7,10 +7,11 @@ const Mind = require('./mind.js');
 
 // Frontier falsification:
 // Repeated lived occurrence order must become usable for present completion.
-// After learning A -> B from exact generic lived occurrences, a new current A
-// must support an explicit expectation of B without fabricating B as observed.
-// No semantic sequence rule, planner, temporal memory, or test-specific term is
-// supplied to C.
+// After learning a directed pair from an alternating A/B stream, a new current
+// prefix must support an explicit expectation of its learned successor without
+// fabricating that successor as observed. Pure alternation has no privileged
+// phase, so the test discovers whether compression retained A->B or B->A rather
+// than imposing a boundary-dependent direction from outside C.
 
 const WORD_A = 'vexa_arc_41';
 const WORD_B = 'nori_flux_86';
@@ -87,9 +88,8 @@ for (const surface of [SURFACE_A, SURFACE_B]) assert(currentFactsAfterGrounding.
   f.subject === surface && f.relation === 'ρ:expresses' && f.object?.ref === String(relationTerm)),
   `${surface} did not ground from lived co-occurrence`);
 
-// Surface-only recurrence now supplies the temporal evidence. With no frame there
-// is no action occurrence and no new world-relation occurrence, so the sequence
-// evidence is exactly the two generic expression terms in alternating order.
+// Surface-only recurrence now supplies temporal evidence. With no frame there is
+// no action occurrence and no new world-relation occurrence.
 for (let i = 0; i < PAIRS; i++) {
   Mind.C(M, { surface: { input: WORD_A } });
   Mind.C(M, { surface: { input: WORD_B } });
@@ -127,16 +127,23 @@ function flattenOrdered(id, trail = new Set()) {
 function singleton(event, term) {
   return Array.isArray(event) && event.length === 1 && event[0] === term;
 }
-const learnedAB = [...ordered.entries()].find(([id, x]) => {
-  if (!x.kind || !x.expansion) return false;
+function directedAB(events) {
+  if (events.length < 2) return null;
+  if (singleton(events[0], SURFACE_A) && singleton(events[1], SURFACE_B))
+    return { prefixSurface: SURFACE_A, prefixWord: WORD_A, expectedSurface: SURFACE_B };
+  if (singleton(events[0], SURFACE_B) && singleton(events[1], SURFACE_A))
+    return { prefixSurface: SURFACE_B, prefixWord: WORD_B, expectedSurface: SURFACE_A };
+  return null;
+}
+let learnedPair = null;
+for (const [id, x] of ordered.entries()) {
+  if (!x.kind || !x.expansion) continue;
   const events = flattenOrdered(id);
-  return events.length >= 2 && singleton(events[0], SURFACE_A) && singleton(events[1], SURFACE_B);
-});
+  const direction = directedAB(events);
+  if (direction) { learnedPair = { id, events, ...direction }; break; }
+}
 
-// Retain compact failure anatomy in CI. This is diagnostic only and has no effect
-// on the falsification: it exposes the exact recent lived terms and any learned
-// expansion touching A/B so a failure can be traced without weakening the gate.
-if (!learnedAB) {
+if (!learnedPair) {
   const byOccurrence = new Map();
   for (const fact of factsBeforeProbe) {
     const id = String(fact.subject);
@@ -153,11 +160,6 @@ if (!learnedAB) {
   }
   const recent = [...byOrder.entries()].sort((a, b) => a[0] - b[0]).slice(-40)
     .map(([order, terms]) => ({ order, terms: [...new Set(terms)].sort() }));
-  const touching = [...ordered.entries()].flatMap(([id, x]) => {
-    if (!x.kind || !x.expansion) return [];
-    const events = flattenOrdered(id);
-    return events.some(event => event.includes(SURFACE_A) || event.includes(SURFACE_B)) ? [{ id, events }] : [];
-  }).slice(-12);
   console.error('TEMPORAL_COMPLETION_DIAGNOSTIC ' + JSON.stringify({
     lived_event_count: byOrder.size,
     temporal_cache: {
@@ -165,13 +167,12 @@ if (!learnedAB) {
       next: M.structure?.next_lived_sequence_search_at,
     },
     recent,
-    learned_touching_A_or_B: touching,
   }));
 }
-assert(learnedAB, 'alternating lived expression occurrences did not become a learned A -> B order');
+assert(learnedPair, 'alternating lived expression occurrences did not become a learned directed A/B order');
 
-// Present only the prefix. This is the actual completion probe.
-Mind.C(M, { surface: { input: WORD_A } });
+// Present only the actually learned prefix. This is the completion probe.
+Mind.C(M, { surface: { input: learnedPair.prefixWord } });
 const currentOrder = M.structure?.lived_contact_order;
 assert(Number.isFinite(currentOrder), 'current lived order is unavailable');
 const facts = M.knowledge?.facts || [];
@@ -180,26 +181,29 @@ const expectationIds = new Set(facts.filter(f =>
   f.relation === 'ρ:kind' && f.object === 'temporal_expectation').map(f => String(f.subject)));
 const expectation = [...expectationIds].find(id => {
   const after = facts.some(f => String(f.subject) === id && f.relation === 'ρ:after_lived_order' && f.object === currentOrder);
-  const expectsB = facts.some(f => String(f.subject) === id && f.relation === 'ρ:expects_term' && f.object?.ref === SURFACE_B);
-  const grounded = facts.some(f => String(f.subject) === id && f.relation === 'ρ:grounded_by_ordered_relation' && f.object?.ref === String(learnedAB[0]));
-  return after && expectsB && grounded;
+  const expectsSuccessor = facts.some(f => String(f.subject) === id && f.relation === 'ρ:expects_term' &&
+    f.object?.ref === learnedPair.expectedSurface);
+  const grounded = facts.some(f => String(f.subject) === id && f.relation === 'ρ:grounded_by_ordered_relation' &&
+    f.object?.ref === String(learnedPair.id));
+  return after && expectsSuccessor && grounded;
 });
 assert(expectation,
-  'learned past order did not produce an M-owned present expectation for the unseen next term');
+  'learned past order did not produce an M-owned present expectation for its unseen successor');
 
-// Expectation is not observation. B existed historically, but the probe contact
-// contained only A, so no current lived occurrence may instantiate B.
+// Expectation is not observation. The successor existed historically, but the
+// probe contact contained only the prefix, so no current lived occurrence may
+// instantiate the expected successor.
 const livedHere = new Set(facts.filter(f =>
   f.relation === 'ρ:lived_order' && f.object === currentOrder).map(f => String(f.subject)));
-const fabricatedB = facts.some(f => livedHere.has(String(f.subject)) &&
-  f.relation === 'ρ:instantiates' && f.object?.ref === SURFACE_B);
-assert.strictEqual(fabricatedB, false, 'temporal completion fabricated the expected term as observed');
+const fabricatedSuccessor = facts.some(f => livedHere.has(String(f.subject)) &&
+  f.relation === 'ρ:instantiates' && f.object?.ref === learnedPair.expectedSurface);
+assert.strictEqual(fabricatedSuccessor, false, 'temporal completion fabricated the expected term as observed');
 assert(facts.some(f => String(f.subject) === String(expectation) &&
   f.relation === 'ρ:based_on_occurrences' && Array.isArray(f.object) && f.object.length > 0),
   'temporal expectation is not provenance-linked to exact lived prefix occurrences');
 
-assert((M.knowledge?.facts || []).some(f => f.relation === 'ρ:input_raw' && String(f.object).includes(WORD_A)),
-  'exact surface history was not retained');
+assert((M.knowledge?.facts || []).some(f => f.relation === 'ρ:input_raw' &&
+  String(f.object).includes(learnedPair.prefixWord)), 'exact surface history was not retained');
 for (const forbidden of ['temporal_completion_state', 'sequence_predictor', 'temporal_mind', 'memory_state', 'planner'])
   assert.strictEqual(M[forbidden], undefined, `parallel temporal authority appeared: ${forbidden}`);
 
@@ -208,6 +212,7 @@ console.log(JSON.stringify({
   one_C_entrypoint: true,
   opaque_terms_grounded_from_lived_contact: true,
   temporal_order_learned_from_generic_occurrences: true,
+  learned_direction: `${learnedPair.prefixSurface} -> ${learnedPair.expectedSurface}`,
   partial_present_sequence_completed: true,
   expectation_first_class_in_M: true,
   expectation_linked_to_exact_prefix_evidence: true,
