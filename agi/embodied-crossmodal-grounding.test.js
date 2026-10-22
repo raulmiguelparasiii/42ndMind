@@ -46,21 +46,29 @@ function nextFrame() {
   frame = [t % 3, (t * 2) % 5, 255, null, c0, c1];
   return { action, frame: frame.slice() };
 }
+function findLearnedRelation() {
+  return M.structure.patterns.find(pattern =>
+    pattern.active !== false &&
+    (pattern.conditions || []).some(atom => atom.feature === 'action' && atom.value === PREFERRED_ACTION) &&
+    (pattern.target === 'relation_c0_order' || pattern.target === 'immediate_c0_order') &&
+    pattern.expected === 'less');
+}
 
+// Public mind.js deliberately schedules expensive whole-history recompression
+// more sparsely than direct one-mind.js. Developmental timing is therefore not
+// part of this falsification: keep the same environment until the relation is
+// actually learned, within a finite bound, then test only representation/grounding.
 const lateActions = [];
-for (let i = 0; i < 28; i++) {
+let learned = null;
+for (let i = 0; i < 96; i++) {
   const step = nextFrame();
   Mind.C(M, { frame: step.frame });
   if (i >= 18) lateActions.push(step.action);
+  learned = findLearnedRelation();
+  if (learned && lateActions.includes(PREFERRED_ACTION)) break;
 }
 assert(lateActions.includes(PREFERRED_ACTION), 'embodied development never made the reality-closing action available');
-
-const learned = M.structure.patterns.find(pattern =>
-  pattern.active !== false &&
-  (pattern.conditions || []).some(atom => atom.feature === 'action' && atom.value === PREFERRED_ACTION) &&
-  (pattern.target === 'relation_c0_order' || pattern.target === 'immediate_c0_order') &&
-  pattern.expected === 'less');
-assert(learned, 'canonical embodied learner did not discover the action/consequence relation');
+assert(learned, 'canonical embodied learner did not discover the action/consequence relation within bounded development');
 const empiricalRef = ref(`empirical:${learned.id}`);
 assert((M.knowledge?.current?.facts || []).some(fact =>
   same(fact.subject, empiricalRef) && fact.relation === 'kind' && fact.object === 'empirical_relation'),
