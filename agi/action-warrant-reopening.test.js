@@ -33,7 +33,6 @@ Mind.C(M, { relations: { facts: [
   ...FILLERS.map(word => [`surface:${word}`, 'ρ:expresses', ref(MEANING)]),
 ] } });
 
-// Expose both existing actuator terms through the physical boundary.
 for (let i = 0; i < 3; i++) Mind.C(M, { frame: [null, 40] });
 for (let index = 0; index < 2; index++) {
   assert((M.knowledge?.facts || []).some(f => f.subject === actionTerm(index) &&
@@ -43,9 +42,6 @@ for (let index = 0; index < 2; index++) {
 const A = M.motor;
 const B = A === 0 ? 1 : 0;
 const OLD = 'fixture:preexisting-cue-action-relation';
-
-// Established precondition from the closed realization checkpoint: one already-
-// learned literal-adjacency temporal relation. No cue->B relation is supplied.
 Mind.C(M, { relations: { facts: [
   [OLD, 'ρ:kind', 'learned_ordered_relation'],
   [OLD, 'ρ:ordered_expansion', [
@@ -79,11 +75,12 @@ function candidateHas(order, term) {
       f.object.some(x => x?.ref === term)));
 }
 
-// Reuse canonical bodily action/consequence learning; no test-side motor mutation.
 let concern = 220;
 Mind.C(M, { frame: [null, concern] });
+const bodyActions = [];
 function bodyStep() {
   const acted = M.motor;
+  bodyActions.push(acted);
   concern += acted === B ? -5 : 2;
   concern = Math.max(20, Math.min(240, concern));
   Mind.C(M, { frame: [null, concern] });
@@ -98,10 +95,42 @@ for (let i = 0; i < 48; i++) {
     break;
   }
 }
+if (!bodyGrounded) {
+  const actionPatterns = (M.structure?.patterns || []).filter(p => p.target === 'action').map(p => ({
+    active: p.active !== false,
+    expected: p.expected,
+    conditions: p.conditions,
+    reliability: p.reliability,
+    base_rate: p.base_rate,
+    covered: p.covered,
+    eligible: p.eligible,
+    bits_saved: p.bits_saved,
+    predictive_code_bits: p.predictive_code_bits,
+  }));
+  const consequencePatterns = (M.structure?.patterns || []).filter(p =>
+    /^relation_c\d+_order$/.test(p.target) && p.conditions.some(c => c.feature === 'action')).map(p => ({
+      active: p.active !== false,
+      target: p.target,
+      expected: p.expected,
+      conditions: p.conditions,
+      reliability: p.reliability,
+      base_rate: p.base_rate,
+      covered: p.covered,
+      eligible: p.eligible,
+      bits_saved: p.bits_saved,
+    }));
+  console.error('ACTION_REOPENING_BODY_DIAGNOSTIC', JSON.stringify({
+    A, B,
+    experiences: M.experiences?.length,
+    current_motor: M.motor,
+    continuation: M.current?.continuation,
+    body_action_counts: [0, 1].map(x => bodyActions.filter(a => a === x).length),
+    action_patterns: actionPatterns.slice(0, 16),
+    consequence_patterns: consequencePatterns.slice(0, 16),
+  }));
+}
 assert(bodyGrounded, 'canonical embodied learner did not independently ground actuator B');
 
-// First contradictory cue: old temporal A must still be present, but independent
-// grounded B must not be overwritten merely to prevent contrary life evidence.
 Mind.C(M, surface(CUE));
 let order = M.structure?.lived_contact_order;
 assert(expectationAt(order, actionTerm(A)), 'old cue->A temporal warrant was not active before correction');
@@ -111,8 +140,6 @@ bodyStep();
 Mind.C(M, surface(FILLERS[0]));
 Mind.C(M, surface(FILLERS[1]));
 
-// Continue actual cue->B life. Rotating fillers break phase/boundary regularities;
-// the contrary action itself is always produced by canonical grounded continuation.
 for (let i = 1; i < ASSOCIATIONS; i++) {
   for (let guard = 0; guard < 8 && !(M.motor === B && M.current?.continuation?.grounded === true); guard++) bodyStep();
   assert.strictEqual(M.motor, B, 'independent bodily route lost actuator B');
