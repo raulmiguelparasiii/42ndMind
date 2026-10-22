@@ -28,28 +28,30 @@ function termId(pattern) {
   const digest = crypto.createHash('sha256').update(stable(semanticDescriptor(pattern))).digest('hex').slice(0, 24);
   return `empirical-relation-term:${digest}`;
 }
-function knownTerm(state, term) {
-  return (state.knowledge?.facts || []).some(f => f.subject === term && f.relation === 'ρ:kind' && f.object === 'relation_term');
-}
-function knownGrounding(state, term, empirical) {
-  return (state.knowledge?.facts || []).some(f =>
-    f.subject === term && f.relation === 'ρ:grounded_by' && stable(f.object) === stable(empirical));
-}
+function groundingKey(term, empirical) { return `${term}\u0000${stable(empirical)}`; }
 
-function occurrenceSupportByTerm(state) {
+// All lookup acceleration is rebuilt from M on every call. These indexes have
+// zero semantic authority and replace repeated O(patterns × facts) scans only.
+function indexes(state) {
+  const facts = state.knowledge?.facts || [];
+  const knownTerms = new Set();
+  const knownGroundings = new Set();
   const occurrenceToTerm = new Map();
-  for (const fact of state.knowledge?.facts || []) {
-    if (fact.relation === 'ρ:instantiates' && fact.object?.ref !== undefined)
+  const priorSupport = new Map();
+
+  for (const fact of facts) {
+    if (fact.relation === 'ρ:kind' && fact.object === 'relation_term') knownTerms.add(String(fact.subject));
+    else if (fact.relation === 'ρ:grounded_by') knownGroundings.add(groundingKey(String(fact.subject), fact.object));
+    else if (fact.relation === 'ρ:instantiates' && fact.object?.ref !== undefined)
       occurrenceToTerm.set(String(fact.subject), String(fact.object.ref));
   }
-  const max = new Map();
-  for (const fact of state.knowledge?.facts || []) {
+  for (const fact of facts) {
     if (fact.relation !== 'ρ:evidence' || !fact.object || !Number.isFinite(fact.object.support)) continue;
     const term = occurrenceToTerm.get(String(fact.subject));
     if (!term) continue;
-    max.set(term, Math.max(max.get(term) || 0, fact.object.support));
+    priorSupport.set(term, Math.max(priorSupport.get(term) || 0, fact.object.support));
   }
-  return max;
+  return { knownTerms, knownGroundings, priorSupport };
 }
 
 function relationalUpdate(state) {
@@ -58,7 +60,7 @@ function relationalUpdate(state) {
     typeof pattern.id === 'string' && typeof pattern.target === 'string' && Number.isFinite(pattern.support));
   if (!patterns.length) return null;
 
-  const priorSupport = occurrenceSupportByTerm(state);
+  const { knownTerms, knownGroundings, priorSupport } = indexes(state);
   const order = state.contacts?.length || 0;
   const facts = [];
 
@@ -67,18 +69,25 @@ function relationalUpdate(state) {
     const descriptor = semanticDescriptor(pattern);
     const empirical = ref(`empirical:${pattern.id}`);
 
-    if (!knownTerm(state, term)) facts.push(
-      [term, 'ρ:kind', 'relation_term'],
-      [term, 'ρ:relation_subject', { conditions: descriptor.conditions }],
-      [term, 'ρ:relation_predicate', 'ρ:empirical_dependence'],
-      [term, 'ρ:relation_object', { target: descriptor.target, expected: descriptor.expected }],
-      [term, 'ρ:semantic_descriptor', descriptor],
-    );
+    if (!knownTerms.has(term)) {
+      facts.push(
+        [term, 'ρ:kind', 'relation_term'],
+        [term, 'ρ:relation_subject', { conditions: descriptor.conditions }],
+        [term, 'ρ:relation_predicate', 'ρ:empirical_dependence'],
+        [term, 'ρ:relation_object', { target: descriptor.target, expected: descriptor.expected }],
+        [term, 'ρ:semantic_descriptor', descriptor],
+      );
+      knownTerms.add(term);
+    }
 
     // Pattern ids can be re-numbered by later global recompression. Semantic
     // identity is content-addressed above; grounded_by retains each canonical
     // empirical descriptor that has instantiated that same meaning.
-    if (!knownGrounding(state, term, empirical)) facts.push([term, 'ρ:grounded_by', empirical]);
+    const gKey = groundingKey(term, empirical);
+    if (!knownGroundings.has(gKey)) {
+      facts.push([term, 'ρ:grounded_by', empirical]);
+      knownGroundings.add(gKey);
+    }
 
     const support = Math.max(0, Number(pattern.support) || 0);
     if (support <= (priorSupport.get(term) || 0)) continue;
