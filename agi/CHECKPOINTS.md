@@ -1,149 +1,125 @@
-# One-live-M AGI checkpoints
+# One-live-M AGI live checkpoint
 
-Specification law:
+Specification law: `M(t+1) = C(M(t) ⊕ R(t+1))`.
 
-`M(t+1) = C(M(t) ⊕ R(t+1))`
+`agi/BLUEPRINT.tex` is the engineering specification. `agi/mind.js` is the public developmental entrypoint. Durable cognition is canonical `M`; helpers may derive/propose/index/render/recompress but must own no independent memory, truth, language meaning, planning authority, modality semantics, or copied world model.
 
-The exact engineering specification is pinned at `agi/BLUEPRINT.tex`. `agi/mind.js` is the public developmental entrypoint and exposes one `C` over one persistent canonical `M`. Source files are implementation organization only; no helper may own independent memory, truth, language meaning, planning authority, modality semantics, or a copied world model.
+This file is the **compact live continuity ledger** for AGI-directed work. Keep it current and short. Do not append narrative history here when a solved item can be summarized in one line. Historical evidence remains in tests, commits, certification files, and `AGENTS.md`.
 
-## Architectural authority
+## Read-before-change rule
 
-Durable cognition is canonical M. Exact contact, learned relations, evidence/counterevidence, expression attachments, action/consequence history, provenance, alternatives, and higher relations remain M content. Zero-state helpers may propose, project, recompress, render, index, or accelerate that content and must route any learned structure back through the same canonical relational authority.
+Before any architectural/semantic change:
 
-Current zero-state / zero-authority implementation pieces include:
+1. Read `AGENTS.md` and this file.
+2. Search implementation/tests before declaring anything missing.
+3. Locate the existing authority and preserved failure.
+4. Classify the change: `reuse`, `connection`, `extension`, or `replacement`.
+5. Preserve regressions; do not create duplicate semantic/status/planning authority.
+6. Update this ledger immediately when a frontier, failure, repair, or important inefficiency changes.
 
-- `mind-relational.js` / `one-live-blueprint.js` — one-M relational and surface boundary over canonical runtime;
-- `continuous-relational-contact.js` — unary raw numerical relation discovery and quantitative completion;
-- `multisource-continuous-relations.js` — sparse joint-source numerical relation proposals/completion;
-- `empirical-relation-occurrences.js` — exposes canonical embodied empirical patterns as first-class M relation terms/occurrences;
-- `surface-relation-grounding.js` — grounds raw surface spans to recurrent learned M relations and exposes grounded mentions as M occurrences;
-- `relation-sequence-recompression.js` — zero-state projection from first-class lived relation occurrences into the existing generic `sequence-recompression.js` law;
-- `discourse-arbiter.js` / `surface-template.js` — disposable expression views over current M;
-- `mind.js` — the one public C boundary connecting these calculations back to canonical M.
+Absence from conversational context is `unknown`, never repository absence.
 
-## Demonstrated developmental commitments
+## Locked architectural authority
 
-The branch has bounded demonstrations for all of the following. These are engineering evidence, not a claim that unrestricted AGI is certified.
+- One persistent canonical `M`; one public `C`.
+- Exact lived contact remains retained beneath any compression/index/search view.
+- `null`/uncontacted is unknown, not false.
+- Proposals do not warrant themselves; reality-contact can defeat/reopen them.
+- Expressions, learned relations, actions, provenance, evidence, alternatives, and higher relations are first-class M material.
+- No planner, reward policy, hidden semantic dictionary, copied truth ledger, or modality-specific mind.
+- Search windows, caches, indexes, queues, and recompression schedules are zero-authority engineering only.
 
-### One M / one C
+## Solved / do not redo
 
-- one persistent `M`; memory is retained M rather than a second memory authority;
-- one public `C` entrypoint;
-- persistent first-class `self` structure;
-- exact numeric, relational, surface, action/consequence, and provenance history retained;
-- new receptors and actuators can appear later in the same life without a new cognitive architecture;
-- undefined/uncontacted information is not coerced to false;
-- proposals do not warrant themselves; later reality can defeat or reopen learned structure.
+Bounded gates already demonstrate and must be treated as regressions, not open problems:
 
-### Language and discourse through canonical M
+- variable-length and position-free language, contextual dialogue, recurrent raw-language acquisition/correction, open multi-relation discourse, canonical multi-hop expression;
+- raw continuous same-time/delayed relation discovery, null preservation, quantitative completion/correction/chaining, nonlinear relations, joint-source and mixed-lag relations, conflict/reopening;
+- learned relations becoming first-class relation occurrences and recursively becoming material for higher ordered relations;
+- opaque word/phrase grounding to learned continuous relations; expression occurrences can point to those relation terms;
+- canonical embodied empirical patterns can enter the same relation/surface substrate;
+- generic lived occurrence anatomy unifies learned relation occurrences, surface-expression occurrences, and action occurrences on one `ρ:lived_order` axis;
+- learned ordered relations can now constrain a present partial occurrence sequence by producing an **open M-owned temporal expectation** without fabricating the unseen successor as an observation.
 
-Passing gates demonstrate:
+Primary current regressions: `generic-occurrence-temporal-unification.test.js`, `generic-occurrence-temporal-completion.test.js`, `continuous-temporal-reuse.test.js`, plus the full `agi-blueprint.yml` suite.
 
-- position-free surface generalization and unseen word order;
-- variable-length expression;
-- cross-turn contextual carry;
-- raw surface-only assertion -> M-owned proposal -> recurrent warrant -> later correction;
-- canonical M-derived facts expressed through ordinary surface contact;
-- broad relation-unspecified multi-sentence discourse over several current M relations;
-- discourse containing facts available only through canonical multi-hop reasoning;
-- randomized late relation/vocabulary/channel transfer;
-- no private language state, semantic dictionary, response table, or separate truth store.
+Latest completed blueprint run after temporal completion: run `39817493400` — all steps green.
 
-Relevant gates include `blueprint-e2e.test.js`, `free-surface.test.js`, `whole-life.test.js`, `conversation-growth.test.js`, `randomized-generality.test.js`, `canonical-language-bridge.test.js`, `public-entrypoint.test.js`, `variable-length-language.test.js`, `contextual-dialogue.test.js`, `raw-language-acquisition.test.js`, and `open-discourse.test.js`.
+## Recent failure / repair ledger
 
-### Raw continuous contact
+Keep only failures that constrain current design:
 
-Passing gates demonstrate:
+1. **Duplicate authority:** recursive composition once copied math-hypothesis status/definitions. Resolved by live dereference from the single upstream authority. Never restore local status/meaning copies.
+2. **Eager lifetime retrieval:** canonical structured history was once rescanned/materialized as a memory frontier every contact. Removed. Persistence is fundamental; retrieval/indexing is query-relative and zero-authority.
+3. **Temporal modality interference:** new simultaneous relation types broke recursive temporal reuse. Repair preserved full events and added recurrence-relative invariant projections rather than filtering modalities.
+4. **Temporal search starvation:** a growing whole-life stream could starve a new late regularity. Repair added a bounded **contiguous suffix search view** preserving literal adjacency; global history remains untouched and global rule budget was not inflated.
+5. **False immediate prediction from gappy projection:** recurrence-relative projections may remove intervening events, so they are forbidden from licensing immediate-next expectations. Only full or adjacency-preserving suffix evidence may do that.
+6. **Arbitrary phase in alternating test:** pure `A,B,A,B...` evidence does not privilege `A→B` over `B→A`. The falsification was corrected to probe whichever directed pair the generic compressor actually learned; cognition was not changed.
+7. **CI iteration inefficiency:** the ~minutes-long recursive temporal regression was blocking the active falsification. Workflow order now runs the current frontier test first, then preserved expensive regressions.
 
-- high-dimensional nonrepeating numerical streams can form same-time and delayed relations;
-- a later-added receptor enters the same discovery process;
-- one raw numerical receptor can discover and correct temporal self-relations;
-- exact periodic recurrence at lag 13 and lag 71 is discoverable without an audio/waveform faculty;
-- unevaluable/null contact preserves warrant until enough evaluable evidence returns;
-- later contradictory reality defeats one route while unrelated routes survive;
-- learned quantitative transforms remain first-class M content rather than hidden detector state;
-- affine quantitative completion of an uncontacted target;
-- quantitative meaning revision gets a new first-class relation identity while historical meaning remains retained;
-- chained quantitative completion reaches a fixed point without a direct shortcut;
-- raw cubic/non-affine deterministic structure is discoverable and usable for a novel missing target;
-- simplicity ordering preserves a simpler exact affine temporal relation over a shorter polynomial lookup-like alternative;
-- joint same-time relations genuinely requiring two simultaneous sources are discoverable;
-- mixed-lag joint-source relations are discoverable and usable;
-- independent unary/joint routes can conflict, remain unresolved, and later reopen/converge without one helper becoming semantic authority.
+## Current implementation frontier
 
-Relevant gates include `high-dimensional-continuous.test.js`, `single-channel-waveform.test.js`, `multiscale-waveform.test.js`, `long-horizon-waveform.test.js`, `continuous-unknown-not-false.test.js`, `quantitative-continuous-completion.test.js`, `quantitative-continuous-correction.test.js`, `quantitative-chain-completion.test.js`, `nonlinear-continuous-completion.test.js`, `multisource-continuous-completion.test.js`, `multisource-temporal-completion.test.js`, `cross-route-conflict.test.js`, and `cross-route-conflict-reopening.test.js`.
+### Closed checkpoint: present temporal completion
 
-### Relations becoming material for more relations
+Demonstrated on one continuing M/C:
 
-Passing evidence demonstrates:
+`past lived order -> learned ordered relation -> current partial occurrence -> open next-term expectation`
 
-- raw continuous relations become first-class relation terms;
-- fresh support becomes first-class ordered relation occurrences rather than only changing a hidden detector;
-- the repository's existing generic ordered recompression forms higher relations from those relation identities;
-- higher ordered relations can recursively contain earlier learned ordered relations (depth >= 2);
-- simultaneous learned relations remain simultaneous rather than receiving an invented internal order;
-- when unrelated embodied/cross-modal relations are interleaved, temporal search can project the invariant simultaneous core around a recurring relation while leaving the complete event history untouched in M;
-- temporal recompression is zero-authority proposal search and is checkpointed independently of retained cognition.
+Required properties passed:
 
-`continuous-temporal-reuse.test.js` is the primary recursive temporal falsification. The interleaving regression was repaired by occurrence-relative invariant projection, not by filtering newer modalities.
+- expectation is ordinary M content;
+- exact prefix occurrences are provenance-linked;
+- unseen successor is **not** written as a lived occurrence;
+- equal-specificity disagreement remains open rather than arbitrarily resolved;
+- gappy projected recurrence cannot license immediate succession;
+- old recursive temporal-reuse and full blueprint regressions remain green.
 
-### Raw cross-modal grounding
+Do **not** re-solve this checkpoint.
 
-Passing gates demonstrate:
+### Must-fix bookkeeping edge before action frontier
 
-- an opaque surface token can ground to a raw learned continuous relation from recurrent co-occurrence;
-- a multi-token raw phrase can ground to the same kind of learned relation without a dictionary;
-- grounded surface references become ordinary M expression occurrences pointing to learned relation terms;
-- generic canonical closure can consume those references;
-- canonical embodied empirical patterns can also become first-class relation terms/occurrences and participate in the same raw surface-grounding mechanism;
-- no visual/audio/language semantic authority is required for those bounded bridges.
+`relation-sequence-recompression.js` identifies learned ordered relations by structural expansion. A relation may first be discovered through one search view and later receive a stronger adjacency-preserving evidence route. If the relation ID already exists, the current append path can skip adding the later route provenance.
 
-Relevant gates include `crossmodal-lexical-grounding.test.js`, `crossmodal-phrase-grounding.test.js`, `surface-reference-integration.test.js`, and `embodied-crossmodal-grounding.test.js`.
+Required repair: existing learned relation identity remains single, while additional legitimate evidence-route/projection provenance is accumulated as ordinary M facts. No duplicated relation truth/status authority.
 
-## Preserved failure / repair discipline
+Classification: **extension of provenance on the existing learned relation identity**, not a new temporal learner.
 
-Failures are evidence and are not weakened away. Recent examples:
+### Next architectural falsification after that repair
 
-- nonlinear search initially preferred a shorter polynomial lag over the simpler exact affine recurrence; repair removed the premature nonlinear stop and restored simplicity ordering;
-- temporal recursive reuse regressed after additional simultaneous relation types appeared; repair preserved the entire lived event and added relation-relative invariant projections rather than filtering modalities;
-- continuous unknown contact initially counted as counterevidence; repair made defeat depend on enough finite evaluable pairs;
-- quantitative correction initially changed the live transform without giving materially changed meaning a new historical identity; repair versioned meaning based on evidence-fit while preserving old M content.
+Expression -> action realization among multiple actuators:
 
-## Historical frozen certification evidence
+`grounded expression occurrence -> learned ordered relation -> expected action_term -> existing actuator boundary`
 
-### `CERTIFICATION_FREEZE_20261020.md`
-A cognition freeze was made before its post-freeze cross-domain evaluation. The frozen candidate passed runtime-generated vocabulary, late sensor/actuator growth, raw-language acquisition, variable-length/contextual expression, canonical two-hop reasoning, unseen correction, history retention, and no parallel authority.
+The test must require:
 
-### `CERTIFICATION_FREEZE_OPEN_DISCOURSE_20261021.md`
-The frozen discourse candidate passed a post-freeze relation-unspecified broad response containing raw-learned facts plus a two-hop canonical fact; recurrent contradiction later changed only the corrected fact while preserving unaffected facts and exact superseded contact.
+- at least two available actuator terms;
+- no cue/action lookup table, planner, reward policy, or command-specific branch;
+- the expression/action order must be learned from lived occurrences through the same generic temporal machinery;
+- on a later expression-only cue, temporal completion yields the action term;
+- outward realization uses the already-existing actuator mapping (`action_term -> actuator_index`) mechanically;
+- expectation remains distinct from observation;
+- contradictory/revised lived order can reopen/change action warrant rather than leaving a copied policy.
 
-### `CERTIFICATION_FREEZE_CONTINUOUS_20261021.md`
-Cognition was frozen at `40cdaeceb32c78c01a1cd324405e7f156c9bf3b7` before evaluation. The post-freeze world generated randomized receptor topology, coefficients, lags, late sensor growth, and later broke one relation; the frozen learner transferred without C changes and retained unrelated relations/history.
+Do not implement a planner. Reuse the existing motor realization boundary.
 
-These remain historical evidence as the developmental branch advances.
+## Known later frontier, not current work
 
-## Certification discipline
+- Historical temporal expectations are currently retained as facts open at formation; generic fulfillment/violation/reopening semantics are not yet modeled. Do not silently treat old expectations as eternally current.
+- Unrestricted autonomous relation discovery across arbitrary domains is still not established.
+- Unrestricted AGI is **not** demonstrated. Component breadth and internal green tests are not certification.
 
-For certification, cognition is frozen before evaluation material is authored. After that freeze, only a fresh M and new experience may change. `C`, public bridges, structural helpers, and domain-specific reasoning code may not be patched to the certification evaluation. Failure rejects that frozen candidate for that target; repair requires a new candidate, a new freeze, and a new post-freeze evaluation.
+## Efficiency rules
 
-## Active falsification: one generic lived occurrence substrate
+- Active falsification first; expensive broad regressions second.
+- Do not increase global search budgets to hide starvation; add justified zero-authority views/indexes that preserve evidence semantics.
+- Never rescan the whole lifetime every contact when a bounded incremental/rebuildable view suffices.
+- Never create a new subsystem until repository search proves the existing authority cannot express the needed relation.
+- Prefer one preserved decisive falsification over many overlapping capability tests.
+- When a failure is conceptual/test-side, repair the falsification instead of modifying cognition.
+- Update this file whenever one of these rules is violated or a new efficiency failure is discovered.
 
-The current developmental candidate extends the temporal ontology so that learned relation occurrences, grounded surface-expression occurrences, and self-action occurrences can expose the same minimal first-class anatomy:
+## Certification boundary
 
-`occurrence --instantiates--> term`
+Historical freeze files remain evidence only for their stated bounded claims. Any final AGI claim requires frozen cognition before evaluation, a precommitted denominator, no training/evaluation leakage, no post-failure patching of held-out tasks, no privileged representation shortcut, cross-domain transfer, and ordinary-interface access to the same general machinery.
 
-`occurrence --lived_order--> one whole-life coordinate`
-
-Existing modality-local order/provenance is retained separately. `generic-lived-occurrences.js` is intended to be a zero-state normalization boundary only; semantic occurrence history remains canonical M facts. `relation-sequence-recompression.js` is being generalized to consume this anatomy rather than whitelisting relation occurrences.
-
-The preserved gate is `generic-occurrence-temporal-unification.test.js`. It requires one uninterrupted life to learn a raw numerical relation, ground an opaque expression to it, retain a self action, place relation + expression + action on the same explicit `ρ:lived_order` axis, and recursively learn ordered structure over the three terms. The test forbids language/action-specific temporal state or a planner. **This gate is currently under falsification and is not recorded here as passed until its executable run succeeds.**
-
-## Next frontier after that gate
-
-Once generic occurrence unification is demonstrated without regression, the next architectural question is not another modality. It is whether a learned ordered relation can participate in present completion:
-
-`learned past order -> current partial occurrence -> open next-term relation`
-
-The correct implementation must predict/complete through ordinary M relations without fabricating an occurrence, hard-coding language commands, or introducing a planner. A subsequent stronger embodied test should then ask whether a grounded expression can participate in a learned expression->action relation such that the same relation-completion machinery constrains future action among multiple available actuators.
-
-The repository is treated as the AGI implementation. Every new faculty must emerge as use of the same M/C rather than as a parallel cognitive module. Claims remain bounded by demonstrated evidence until a frozen external evaluation establishes more.
+`green regressions != AGI`.
