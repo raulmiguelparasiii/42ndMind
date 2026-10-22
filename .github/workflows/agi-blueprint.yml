@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Action warrant correction / reopening gate
+        run: node agi/action-warrant-reopening.test.js
       - name: Grounded expression action-realization gate
         run: node agi/grounded-expression-action.test.js
       - name: Ordered relation route-upgrade gate
