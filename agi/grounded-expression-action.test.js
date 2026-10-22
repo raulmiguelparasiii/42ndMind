@@ -30,6 +30,11 @@ for (const file of [
 }
 
 function ref(id) { return { ref: String(id) }; }
+function stable(v) {
+  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
+  return JSON.stringify(v);
+}
 function neutralFrame() { return [null, CONCERN]; }
 function surface(input) { return { surface: { input, output: 'ack.' } }; }
 function actionTerm(index) { return `action:motor:${index}`; }
@@ -99,6 +104,72 @@ const expectationIds = new Set(facts.filter(f =>
 const expectation = [...expectationIds].find(id =>
   facts.some(f => String(f.subject) === id && f.relation === 'ρ:after_lived_order' && f.object === currentOrder) &&
   facts.some(f => String(f.subject) === id && f.relation === 'ρ:expects_term' && f.object?.ref === expectedTerm));
+
+if (!expectation) {
+  const occurrences = new Map();
+  for (const f of facts) {
+    const id = String(f.subject);
+    if (!occurrences.has(id)) occurrences.set(id, {});
+    const o = occurrences.get(id);
+    if (f.relation === 'ρ:kind' && f.object === 'lived_occurrence') o.lived = true;
+    else if (f.relation === 'ρ:instantiates' && f.object?.ref !== undefined) o.term = String(f.object.ref);
+    else if (f.relation === 'ρ:lived_order' && Number.isFinite(f.object)) o.order = f.object;
+  }
+  const byOrder = new Map();
+  for (const [id, o] of occurrences) {
+    if (!o.lived || !o.term || !Number.isFinite(o.order)) continue;
+    if (!byOrder.has(o.order)) byOrder.set(o.order, { order: o.order, terms: [], occurrences: [] });
+    byOrder.get(o.order).terms.push(o.term);
+    byOrder.get(o.order).occurrences.push(id);
+  }
+  const events = [...byOrder.values()].sort((a, b) => a.order - b.order)
+    .map(e => ({ order: e.order, terms: [...new Set(e.terms)].sort() }));
+
+  const learned = new Map();
+  for (const f of facts) {
+    const id = String(f.subject);
+    if (!learned.has(id)) learned.set(id, { id, routes: [] });
+    const x = learned.get(id);
+    if (f.relation === 'ρ:kind' && f.object === 'learned_ordered_relation') x.kind = true;
+    else if (f.relation === 'ρ:ordered_expansion' && Array.isArray(f.object)) x.expansion = f.object;
+    else if (f.relation === 'ρ:ordered_evidence_route' && f.object?.kind) x.routes.push(f.object.kind);
+  }
+  function componentEvent(component) {
+    return Array.isArray(component?.simultaneous_relations)
+      ? component.simultaneous_relations.map(x => String(x?.ref)).sort()
+      : null;
+  }
+  function flatten(id, trail = new Set()) {
+    if (trail.has(String(id))) return [];
+    const x = learned.get(String(id));
+    if (!x?.kind || !x.expansion) return [];
+    const next = new Set(trail); next.add(String(id));
+    const out = [];
+    for (const component of x.expansion) {
+      if (component?.ref !== undefined) out.push(...flatten(String(component.ref), next));
+      else {
+        const event = componentEvent(component);
+        if (event) out.push(event);
+      }
+    }
+    return out;
+  }
+  const touching = [...learned.values()].filter(x => x.kind && x.expansion).map(x => ({
+    id: x.id,
+    events: flatten(x.id),
+    routes: [...new Set(x.routes)].sort(),
+  })).filter(x => x.events.some(event => event.includes(SURFACE_CUE) || event.includes(expectedTerm)));
+
+  console.error('EXPRESSION_ACTION_TEMPORAL_DIAGNOSTIC', JSON.stringify({
+    currentOrder,
+    motor: M.motor,
+    target: TARGET,
+    expectedTerm,
+    recentEvents: events.slice(-32),
+    learnedTouchingCueOrTarget: touching.slice(-24),
+  }));
+}
+
 assert(expectation,
   'generic lived expression/action order did not produce an M-owned expected action term');
 
