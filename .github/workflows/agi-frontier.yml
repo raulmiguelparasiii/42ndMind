@@ -16,6 +16,7 @@ on:
       - 'agi/continuous-unknown-not-false.test.js'
       - 'agi/quantitative-chain-completion.test.js'
       - 'agi/nonlinear-continuous-completion.test.js'
+      - 'agi/multisource-continuous-completion.test.js'
       - 'agi/mind.js'
       - '.github/workflows/agi-frontier.yml'
   workflow_dispatch:
@@ -32,6 +33,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Multi-source continuous relation completion
+        run: node agi/multisource-continuous-completion.test.js
       - name: Nonlinear continuous relation completion
         run: node agi/nonlinear-continuous-completion.test.js
       - name: Quantitative relation chain completion
