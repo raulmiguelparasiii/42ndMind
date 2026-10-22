@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Continuous relation temporal-reuse gate
+        run: node agi/continuous-temporal-reuse.test.js
       - name: Blueprint end-to-end bounded gate
         run: node agi/blueprint-e2e.test.js
       - name: Position-free conversational surface gate
@@ -42,5 +44,3 @@ jobs:
         run: node agi/open-discourse.test.js
       - name: High-dimensional continuous sensing gate
         run: node agi/high-dimensional-continuous.test.js
-      - name: Continuous relation temporal-reuse gate
-        run: node agi/continuous-temporal-reuse.test.js
