@@ -82,6 +82,17 @@ function existingTemporalIds(state) {
     .filter(f => f.relation === 'ρ:kind' && f.object === 'learned_ordered_relation')
     .map(f => String(f.subject)));
 }
+function evidenceRoute(view) {
+  const route = { kind: view.kind };
+  if (Array.isArray(view.basis)) route.basis = view.basis.map(String).sort();
+  if (view.orders) route.orders = { ...view.orders };
+  return route;
+}
+function existingEvidenceRouteKeys(state) {
+  return new Set((state.knowledge?.facts || [])
+    .filter(f => f.relation === 'ρ:ordered_evidence_route' && f.object && typeof f.object === 'object')
+    .map(f => stable([String(f.subject), f.object])));
+}
 
 // Full lived order is retained. Search also gets two zero-authority views:
 // 1) a bounded *contiguous suffix* that preserves literal adjacency and prevents
@@ -134,7 +145,7 @@ function orderedViews(observations, minimumOccurrences, options = {}) {
   return views;
 }
 
-function appendCompressedFacts(compressed, view, existing, facts) {
+function appendCompressedFacts(compressed, view, existing, routeKeys, facts) {
   if (!compressed.rules.length) return;
   const symbolIds = new Map();
   for (const rule of compressed.rules) {
@@ -153,6 +164,17 @@ function appendCompressedFacts(compressed, view, existing, facts) {
 
     const id = temporalId(rule.depth, expansion);
     symbolIds.set(rule.symbol, id);
+
+    // Structural relation identity is independent of the search/evidence route.
+    // A later stronger route therefore enriches the same relation instead of
+    // creating a copied relation or leaving birth provenance permanently decisive.
+    const route = evidenceRoute(view);
+    const routeKey = stable([id, route]);
+    if (!routeKeys.has(routeKey)) {
+      routeKeys.add(routeKey);
+      facts.push([id, 'ρ:ordered_evidence_route', route]);
+    }
+
     if (existing.has(id)) continue;
     existing.add(id);
     facts.push(
@@ -164,6 +186,8 @@ function appendCompressedFacts(compressed, view, existing, facts) {
       [id, 'ρ:authority', 'M_retained_lived_occurrences'],
       ['self', 'ρ:learned_relation', ref(id)],
     );
+    // Retain old birth metadata for compatibility; live licensing below uses the
+    // accumulated evidence routes when they exist.
     if (view.kind !== 'full') {
       facts.push([id, 'ρ:ordered_projection_kind', view.kind]);
       if (Array.isArray(view.basis))
@@ -182,10 +206,11 @@ function relationalUpdate(state, options = {}) {
   // Scheduling belongs to the public one-C boundary. Every exact occurrence is
   // already in M; this is only a disposable proposal search over that authority.
   const existing = existingTemporalIds(state);
+  const routeKeys = existingEvidenceRouteKeys(state);
   const facts = [];
   for (const view of orderedViews(observations, checkpoint, options)) {
     const compressed = Sequence.recompress(null, view.stream, { maxRules: options.maxRules || 128 });
-    appendCompressedFacts(compressed, view, existing, facts);
+    appendCompressedFacts(compressed, view, existing, routeKeys, facts);
   }
   return facts.length ? { relations: { facts } } : null;
 }
@@ -194,17 +219,18 @@ function learnedOrderedIndex(state) {
   const out = new Map();
   function node(id) {
     const key = String(id);
-    if (!out.has(key)) out.set(key, { id: key });
+    if (!out.has(key)) out.set(key, { id: key, routes: [] });
     return out.get(key);
   }
   for (const fact of state.knowledge?.facts || []) {
     if (fact.relation !== 'ρ:kind' && fact.relation !== 'ρ:ordered_expansion' &&
-        fact.relation !== 'ρ:ordered_projection_kind' && fact.relation !== 'ρ:depth' &&
-        fact.relation !== 'ρ:occurrences_at_birth') continue;
+        fact.relation !== 'ρ:ordered_projection_kind' && fact.relation !== 'ρ:ordered_evidence_route' &&
+        fact.relation !== 'ρ:depth' && fact.relation !== 'ρ:occurrences_at_birth') continue;
     const x = node(fact.subject);
     if (fact.relation === 'ρ:kind' && fact.object === 'learned_ordered_relation') x.kind = true;
     else if (fact.relation === 'ρ:ordered_expansion' && Array.isArray(fact.object)) x.expansion = fact.object;
     else if (fact.relation === 'ρ:ordered_projection_kind') x.projection = fact.object;
+    else if (fact.relation === 'ρ:ordered_evidence_route' && fact.object && typeof fact.object === 'object') x.routes.push(fact.object);
     else if (fact.relation === 'ρ:depth' && Number.isFinite(fact.object)) x.depth = fact.object;
     else if (fact.relation === 'ρ:occurrences_at_birth' && Number.isFinite(fact.object)) x.support = fact.object;
   }
@@ -249,11 +275,13 @@ function matchedPrefixLength(observations, expansion) {
   return 0;
 }
 
-function licensesImmediateSuccessor(projectionKind) {
-  // Full history and a contiguous suffix preserve literal adjacency. The gappy
-  // invariant recurrence projection explicitly does not and therefore cannot
-  // license an immediate-next expectation.
-  return projectionKind === undefined || projectionKind === 'contiguous_suffix_projection';
+function licensesImmediateSuccessor(node) {
+  // New relations accumulate all search/evidence routes. Any literal-adjacency
+  // route can license immediate succession even if the relation was born through
+  // a gappy projection. Legacy relations without route facts retain old behavior.
+  if (Array.isArray(node.routes) && node.routes.length) return node.routes.some(route =>
+    route?.kind === 'full' || route?.kind === 'contiguous_suffix_projection');
+  return node.projection === undefined || node.projection === 'contiguous_suffix_projection';
 }
 
 // Present completion is a derived constraint from M-owned order, not prediction
@@ -266,7 +294,7 @@ function completionUpdate(state) {
   const candidates = [];
 
   for (const [id, x] of index) {
-    if (!x.kind || !licensesImmediateSuccessor(x.projection)) continue;
+    if (!x.kind || !licensesImmediateSuccessor(x)) continue;
     const expansion = flattenLearned(id, index);
     if (expansion.length < 2) continue;
     const prefixLength = matchedPrefixLength(observations, expansion);
