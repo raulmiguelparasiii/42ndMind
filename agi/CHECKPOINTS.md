@@ -1,110 +1,125 @@
 # One-live-M AGI live checkpoint
 
-Specification law: `M(t+1) = C(M(t) ⊕ R(t+1))`.
+Law: `M(t+1) = C(M(t) ⊕ R(t+1))`.
 
-`agi/BLUEPRINT.tex` is the engineering specification. `agi/mind.js` is the public developmental entrypoint. Durable cognition is canonical `M`; helpers may derive/propose/index/render/recompress but own no independent memory, truth, language meaning, planning authority, modality semantics, or copied world model.
+`agi/BLUEPRINT.tex` is the engineering spec. `agi/mind.js` is the public developmental entrypoint. Durable cognition is canonical `M`; helpers may derive/propose/index/render/recompress but own no independent memory, truth, semantics, planning authority, modality mind, or copied world model.
 
-This is the **compact live continuity ledger** for AGI-directed work. Keep it current and short. Historical detail belongs in tests, commits, certification files, and `AGENTS.md`.
+This is the compact live continuity ledger. Replace stale frontier text; do not append narrative history.
 
-## Before any architectural/semantic change
+## Before architectural/semantic change
 
 1. Read `AGENTS.md` and this file fully.
 2. Search implementation/tests before declaring anything missing.
-3. Locate the existing authority and preserved failure.
-4. Classify the change: `reuse`, `connection`, `extension`, or `replacement`.
-5. Preserve regressions; never create duplicate semantic/status/planning authority.
-6. Update this ledger when the frontier, a failure/repair, or a material inefficiency changes.
+3. Locate existing authority + preserved failure.
+4. Classify: `reuse`, `connection`, `extension`, or `replacement`.
+5. Preserve regressions; no duplicate semantic/status/planning authority.
+6. Record any changed frontier, failure/repair, or material inefficiency here.
 
-Absence from conversational context is `unknown`, never repository absence.
+Absence from conversation is `unknown`, never repository absence.
 
 ## Locked authority
 
-- One persistent canonical `M`; one public `C`.
-- Exact lived contact remains beneath compression/search views.
-- `null`/uncontacted is unknown, not false.
-- Proposals do not warrant themselves; reality can defeat/reopen learned structure.
-- Expressions, learned relations, actions, provenance, evidence, alternatives, and higher relations are first-class M material.
-- No planner, reward policy, hidden semantic dictionary, copied truth ledger, or modality-specific mind.
-- Search windows, caches, indexes, queues, and recompression schedules are zero-authority engineering only.
+- one persistent canonical `M`; one public `C`;
+- exact lived contact remains beneath compression/search views;
+- `null`/uncontacted = unknown, not false;
+- proposals do not warrant themselves; reality can defeat/reopen structure;
+- expressions, relations, actions, evidence, provenance, alternatives, higher relations are M material;
+- no planner/reward policy/hidden dictionary/copied truth ledger;
+- caches/indexes/windows/queues/recompression schedules are zero-authority only.
 
 ## Solved / do not redo
 
-Treat these as regressions, not open problems:
+Treat as regressions, not open problems:
 
-- variable-length/position-free language, contextual dialogue, recurrent raw-language acquisition/correction, open discourse, canonical multi-hop expression;
-- raw continuous same-time/delayed discovery, unknown preservation, quantitative/nonlinear/joint/mixed-lag completion and correction/conflict;
-- learned relations becoming first-class occurrences and recursively becoming material for higher ordered relations;
-- opaque word/phrase grounding to learned relations; expression occurrences point to those relation terms;
-- canonical empirical action/consequence relations enter the same first-class substrate;
-- relation, expression, and action occurrences share one generic `ρ:lived_order` axis;
-- learned order can constrain the present through an **open M-owned temporal expectation** without fabricating the unseen successor;
-- one learned ordered relation identity can accumulate later stronger evidence routes; adjacency-preserving evidence can make an older gappy-discovered relation eligible for immediate completion without creating a copied relation.
+- variable-length/position-free language, context, raw-language acquisition/correction, open discourse, canonical multi-hop expression;
+- raw continuous same-time/delayed, unknown preservation, quantitative/nonlinear/joint/mixed-lag completion/correction/conflict;
+- learned relations becoming first-class occurrences and recursively becoming higher-order material;
+- opaque word/phrase grounding to learned relations;
+- empirical action/consequence relations entering the same substrate;
+- relation/expression/action occurrences sharing generic `ρ:lived_order`;
+- learned order producing an open current M expectation without fabricating the successor;
+- one ordered-relation identity accumulating stronger later evidence routes;
+- **grounded expression -> learned generic temporal relation -> M-owned expected action term -> existing actuator realization**. The focused gate passes on `f42653f6a402caffe55baa62411db63c186edfb4`; broad blueprint regression is still running at this ledger update.
 
-Primary temporal regressions: `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-unification.test.js`, `generic-occurrence-temporal-completion.test.js`, `continuous-temporal-reuse.test.js`.
+Primary temporal/action regressions: `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`, `continuous-temporal-reuse.test.js`, `grounded-expression-action.test.js`.
 
-Latest fully green blueprint after route-provenance repair: run `39823109436` on `015d444ace17ad057d29db586ca99d105814f61d`.
+Latest fully green blueprint before action realization: run `39823109436` on `015d444ace17ad057d29db586ca99d105814f61d`.
 
-## Failure / repair ledger that still constrains design
+## Failure / repair constraints
 
-1. **Duplicate authority:** recursive composition once copied math-hypothesis status/definitions. Resolved by live dereference. Never restore local status/meaning copies.
-2. **Eager lifetime retrieval:** structured history was rescanned/materialized as a memory frontier every contact. Removed. Persistence is fundamental; retrieval/indexing is query-relative and zero-authority.
-3. **Temporal modality interference:** new simultaneous relation types broke recursive reuse. Repair preserved complete events and added recurrence-relative invariant projections rather than filtering modalities.
-4. **Temporal search starvation:** growing history could starve late regularity. Repair added a bounded contiguous suffix search view; global history and global rule budget were not altered.
-5. **Gappy projection overreach:** recurrence projection can remove intervening events, so it cannot license immediate-next expectations. Only literal-adjacency routes can.
-6. **Arbitrary phase test:** pure `A,B,A,B...` does not privilege `A→B`; falsification now probes the direction actually learned. Cognition was not patched.
-7. **Evidence-route birth order:** an ordered relation first discovered through gappy projection could later gain adjacency evidence but previously lost that later provenance because its structural ID already existed. Repair keeps one relation identity and accumulates `ρ:ordered_evidence_route`; completion asks whether any retained route preserves adjacency.
-8. **CI iteration cost:** the recursive temporal regression is minutes-long. Active falsification runs first. Continuity-only changes to `AGENTS.md`/this file are now ignored by the blueprint push trigger so note maintenance cannot cancel expensive regressions.
+1. **Duplicate authority:** recursive composition once copied status/definitions. Fixed by live dereference. Never restore copies.
+2. **Eager lifetime retrieval:** repeated whole-history materialization removed; persistence is fundamental, retrieval is query-relative.
+3. **Temporal modality interference:** preserve complete events; recurrence-relative projections may aid search but may not erase modalities.
+4. **Search starvation:** bounded contiguous suffix view added; no global history/rule-budget inflation.
+5. **Gappy projection overreach:** projected recurrence cannot license immediate-next expectation.
+6. **Arbitrary phase test:** pure alternation does not privilege one phase; test follows the direction actually learned.
+7. **Evidence-route birth order:** same ordered relation now accumulates `ρ:ordered_evidence_route`; adjacency evidence can upgrade an older gappy-discovered identity.
+8. **Whole-event conflict was too strict:** strongest successors `{A}` and `{A,B}` formerly cancelled A. Completion now preserves the intersection of terms as warranted expectation while retaining residual alternatives as explicit conflict. Disjoint successors still yield conflict only. This is content-neutral; no action-specific filtering.
+9. **Frontier test bloat:** action gate initially replayed continuous discovery + lexical schooling. Removed. It now reuses the already-demonstrated precondition that a surface term is M-grounded and tests only the new expression/action connection.
+10. **CI iteration cost:** active falsification runs first; continuity-only edits do not restart blueprint. Root `One live M architecture` push CI now ignores `agi/**`-only changes, so AGI-wrapper iterations do not serialize behind unrelated root regressions.
 
 ## Closed checkpoint: present temporal completion
 
-Demonstrated:
-
 `past lived order -> learned ordered relation -> current partial occurrence -> open next-term expectation`
 
-Properties: M-owned expectation; exact-prefix provenance; unseen successor not observed; equal-specificity disagreement remains open; gappy recurrence cannot claim immediate succession; stronger evidence routes upgrade one relation identity; preserved temporal and full-blueprint regressions remain green.
+M-owned; exact-prefix provenance; unseen term not observed; common terms survive partial disagreement; disjoint disagreement stays open; gappy recurrence cannot claim immediate succession; stronger evidence routes upgrade one identity.
 
-**Do not re-solve this checkpoint.**
+**Do not re-solve.**
 
-## Current frontier: grounded expression -> action realization
+## Current checkpoint: expression -> action realization
 
-Preserved falsification: `agi/grounded-expression-action.test.js`.
+Implementation connection in `agi/mind.js`:
+
+`current-order temporal expectation -> existing action_term -> existing ρ:actuator_index -> state.motor`
+
+Rules:
+
+- only current lived-order expectations are eligible; stale historical expectations are ignored;
+- action term and actuator index must already be M/physical-boundary facts;
+- multiple distinct expected actuators => no realization;
+- a conflicting independently grounded canonical `current.continuation` is not overwritten;
+- no planner, cue map, action policy, reward authority, or persistent decision state.
+
+Focused gate is green. **Do not advance this to fully closed until run `39827318819` finishes the preserved blueprint suite.**
+
+## Next frontier after full green: action warrant correction/reopening
+
+Reuse, do not replay, solved cue->action realization. Preserve a new falsification first.
 
 Target:
 
-`grounded expression occurrence -> learned generic order -> expected action_term -> existing actuator boundary`
+`old cue->A lived order + independent embodied grounding of B + later cue->B lived order -> reopened/conflicted temporal action warrant`
 
-Classification: **connection**. Temporal expectation already lives in M. `generic-lived-occurrences.js` already establishes `action_term -> ρ:actuator_index`. `state.motor` is the existing physical realization boundary. Do not add an action learner, cue table, planner, policy, or reward authority.
+Requirements:
 
-The gate deliberately uses two existing actuators and opaque grounded expressions. Twelve cue/action repetitions plus four rotating grounded fillers make `cue -> target_action` the only adjacency with enough MDL savings; this avoids another phase artifact. Passing must require:
+- at least two actuators;
+- canonical embodied learner supplies independent B support using its already-demonstrated action/consequence correction mechanism;
+- stale temporal cue->A may not override independently grounded B merely to prevent contrary evidence from entering life;
+- later opposite cue->B evidence must reopen the temporal action conclusion rather than leave a copied cue->motor policy;
+- disjoint A/B temporal conflict must not arbitrarily choose either actuator;
+- independently grounded motor remains usable under temporal conflict;
+- no planner/policy/cue table.
 
-- cue/action order learned from generic lived occurrences, not authored semantics;
-- expression-only cue yields an M-owned expected action term;
-- expected action remains distinct from an observed action occurrence;
-- a unique expected action mechanically realizes through its existing `ρ:actuator_index`;
-- temporal action expectation may replace only nonsemantic physical variation, not erase an independently grounded contradictory action route;
-- later opposite lived cue/action evidence under an independently grounded bodily route reopens the cue as explicit temporal conflict rather than leaving a copied cue->motor policy;
-- conflict does not arbitrarily select an actuator.
+Classification: **reuse + connection test**. Do not add a new action learner.
 
-Implementation must connect existing authorities only. The expected narrow connection point is after temporal completion in `agi/mind.js`; action meaning and actuator identity remain M/physical-boundary facts.
+## Later, not current
 
-## Later frontier, not current work
-
-- Historical expectations remain retained as open-at-formation facts; generic fulfillment/violation/reopening bookkeeping is not yet modeled. Current realization must therefore use only expectation facts tied to the **current** lived order, never stale historical expectations.
+- Generic fulfillment/violation/reopening bookkeeping for historical temporal expectations is still absent. Current action realization therefore uses only expectations tied to the current lived order.
 - Unrestricted autonomous relation discovery across arbitrary domains remains unproved.
-- Unrestricted AGI is **not** demonstrated.
+- Unrestricted AGI is not demonstrated.
 
 ## Efficiency rules
 
-- Active falsification first; expensive regressions second.
-- Do not raise global search budgets to hide starvation; add only justified zero-authority views/indexes preserving evidence semantics.
-- Never rescan the whole lifetime every contact when bounded incremental/rebuildable access suffices.
-- Never create a subsystem until search proves the existing authority cannot express the needed relation.
-- Prefer one decisive preserved falsification over overlapping capability tests.
-- If a failure is conceptual/test-side, repair the falsification rather than cognition.
-- Continuity notes must stay compact; replace stale frontier text instead of appending narrative history.
+- active falsification first; expensive regressions second;
+- do not raise global budgets to hide starvation;
+- do not rescan whole life every contact when bounded/rebuildable access suffices;
+- do not create a subsystem until search falsifies reuse of existing authority;
+- one decisive falsification > overlapping capability tests;
+- conceptual test error => repair test, not cognition;
+- continuity note stays compact.
 
 ## Certification boundary
 
-Historical freezes remain evidence only for their stated bounded claims. Any final AGI claim requires frozen cognition before evaluation, precommitted denominator, no leakage/post-failure held-out patching, no privileged representation shortcut, cross-domain transfer, and ordinary-interface access to the same machinery.
+Historical freezes prove only their stated bounded claims. Final AGI requires cognition frozen before evaluation, precommitted denominator, no leakage/post-failure held-out patching, no privileged representation shortcut, cross-domain transfer, and ordinary-interface access to the same machinery.
 
 `green regressions != AGI`.
