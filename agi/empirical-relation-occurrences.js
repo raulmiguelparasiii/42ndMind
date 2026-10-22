@@ -31,6 +31,10 @@ function termId(pattern) {
 function knownTerm(state, term) {
   return (state.knowledge?.facts || []).some(f => f.subject === term && f.relation === 'ρ:kind' && f.object === 'relation_term');
 }
+function knownGrounding(state, term, empirical) {
+  return (state.knowledge?.facts || []).some(f =>
+    f.subject === term && f.relation === 'ρ:grounded_by' && stable(f.object) === stable(empirical));
+}
 
 function occurrenceSupportByTerm(state) {
   const occurrenceToTerm = new Map();
@@ -74,7 +78,7 @@ function relationalUpdate(state) {
     // Pattern ids can be re-numbered by later global recompression. Semantic
     // identity is content-addressed above; grounded_by retains each canonical
     // empirical descriptor that has instantiated that same meaning.
-    facts.push([term, 'ρ:grounded_by', empirical]);
+    if (!knownGrounding(state, term, empirical)) facts.push([term, 'ρ:grounded_by', empirical]);
 
     const support = Math.max(0, Number(pattern.support) || 0);
     if (support <= (priorSupport.get(term) || 0)) continue;
