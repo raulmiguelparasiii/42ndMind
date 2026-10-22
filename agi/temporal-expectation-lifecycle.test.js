@@ -1,10 +1,9 @@
 'use strict';
 
 const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
 const Mind = require('./mind.js');
 const Canonical = require('../one-mind.js');
+const RelationSequence = require('./relation-sequence-recompression.js');
 
 // Frontier falsification. Expectation formation/completion is already solved.
 // Seed only that established M anatomy, then require the public C to connect it
@@ -17,11 +16,14 @@ const REL_OTHER = 'fixture:lifecycle:relation:other';
 const ACT_A = 'fixture:lifecycle:action:A';
 const ACT_B = 'fixture:lifecycle:action:B';
 
-const source = fs.readFileSync(path.join(__dirname, 'relation-sequence-recompression.js'), 'utf8');
+assert.strictEqual(typeof RelationSequence.lifecycleUpdate, 'function',
+  'generic temporal expectation lifecycle bridge is missing');
+const lifecycleSource = RelationSequence.lifecycleUpdate.toString();
 for (const forbidden of [
   'surface_expression_occurrence', 'relation_occurrence', 'action_occurrence',
   'expression_term', 'relation_term', 'action_term',
-]) assert(!source.includes(forbidden), `temporal lifecycle contains modality-specific branch material: ${forbidden}`);
+]) assert(!lifecycleSource.includes(forbidden),
+  `temporal lifecycle contains modality-specific branch material: ${forbidden}`);
 
 function ref(id) { return { ref: String(id) }; }
 function hasFact(M, subject, relation, predicate = () => true) {
