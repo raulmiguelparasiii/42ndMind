@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Ordered relation route-upgrade gate
+        run: node agi/ordered-relation-route-upgrade.test.js
       - name: Generic occurrence temporal-completion gate
         run: node agi/generic-occurrence-temporal-completion.test.js
       - name: Continuous relation temporal-reuse gate
