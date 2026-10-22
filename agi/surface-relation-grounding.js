@@ -175,6 +175,42 @@ function relationalUpdate(state, originalContact, options = {}) {
   return facts.length || rules.length ? { relations: { facts, rules } } : null;
 }
 
+// Turn the meaning of what was just said into ordinary relational occurrence
+// content. This does not assert the referred relation as a new world event; the
+// exact surface episode is the lived contact, and the occurrence merely points
+// from that expression span to an already-grounded relation term.
+function mentionUpdate(state, originalContact, options = {}) {
+  if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface) return null;
+  const episode = latestSurfaceEpisode(state);
+  if (!episode) return null;
+  const currentFacts = state.knowledge?.current?.facts || [];
+  const facts = [];
+
+  for (const candidate of expressionCandidates(episode.tokens, options)) {
+    const meanings = unique(currentFacts
+      .filter(f => f.subject === candidate.surface && f.relation === 'ρ:expresses' && f.object?.ref !== undefined)
+      .map(f => String(f.object.ref)));
+    if (!meanings.length) continue;
+
+    const occurrence = `surface-expression-occurrence:${episode.id}:${candidate.start}:${candidate.length}`;
+    facts.push(
+      [occurrence, 'ρ:kind', 'surface_expression_occurrence'],
+      [occurrence, 'ρ:surface', candidate.surface],
+      [occurrence, 'ρ:span', {
+        start: candidate.start,
+        length: candidate.length,
+        tokens: candidate.tokens,
+      }],
+      [occurrence, 'ρ:within_surface_episode', episode.id],
+      [episode.id, 'ρ:contains_expression', ref(occurrence)],
+      ['self', 'ρ:experienced', occurrence],
+    );
+    for (const relationTerm of meanings) facts.push([occurrence, 'ρ:refers_to', ref(relationTerm)]);
+  }
+
+  return facts.length ? { relations: { facts } } : null;
+}
+
 function groundCurrent(state, originalContact, options = {}) {
   if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface || !state.current?.sequence) return state;
   const episode = latestSurfaceEpisode(state);
@@ -198,4 +234,4 @@ function groundCurrent(state, originalContact, options = {}) {
   return state;
 }
 
-module.exports = { relationalUpdate, groundCurrent };
+module.exports = { relationalUpdate, mentionUpdate, groundCurrent };
