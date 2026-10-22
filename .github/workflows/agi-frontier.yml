@@ -9,6 +9,7 @@ on:
       - 'agi/multisource-continuous-relations.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/surface-relation-grounding.js'
+      - 'agi/surface-reference-integration.test.js'
       - 'agi/crossmodal-phrase-grounding.test.js'
       - 'agi/crossmodal-lexical-grounding.test.js'
       - 'agi/cross-route-conflict.test.js'
@@ -41,6 +42,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Grounded surface reference integration
+        run: node agi/surface-reference-integration.test.js
       - name: Raw cross-modal phrase grounding
         run: node agi/crossmodal-phrase-grounding.test.js
       - name: Raw cross-modal lexical grounding
