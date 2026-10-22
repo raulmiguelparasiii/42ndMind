@@ -284,9 +284,22 @@ function licensesImmediateSuccessor(node) {
   return node.projection === undefined || node.projection === 'contiguous_suffix_projection';
 }
 
+function commonExpectedTerms(candidates) {
+  if (!candidates.length) return [];
+  let common = new Set(candidates[0].nextTerms);
+  for (const candidate of candidates.slice(1)) {
+    const terms = new Set(candidate.nextTerms);
+    common = new Set([...common].filter(term => terms.has(term)));
+    if (!common.size) break;
+  }
+  return [...common].sort();
+}
+
 // Present completion is a derived constraint from M-owned order, not prediction
-// state. If equally specific adjacency-preserving relations disagree, the next
-// term remains open rather than being resolved by helper order or arbitrary score.
+// state. Equal-specificity successors may disagree only partially: terms present
+// in every strongest successor remain warranted as common expectations, while
+// residual differences stay explicitly open. A true disjoint disagreement still
+// yields only conflict. No helper order or arbitrary score resolves alternatives.
 function completionUpdate(state) {
   const observations = orderedLivedOccurrences(state);
   if (!observations.length) return null;
@@ -336,8 +349,8 @@ function completionUpdate(state) {
     byExpectation.get(key).push(candidate);
   }
 
-  if (byExpectation.size === 1) {
-    const agreed = strongest[0].nextTerms;
+  const agreed = byExpectation.size === 1 ? strongest[0].nextTerms : commonExpectedTerms(strongest);
+  if (agreed.length) {
     const id = `temporal-expectation:${latestOrder}:${digest(agreed)}`;
     const evidence = unique(strongest.flatMap(x => x.occurrences).map(String)).sort();
     facts.push(
@@ -349,15 +362,19 @@ function completionUpdate(state) {
       [id, 'ρ:status', 'open'],
       ['self', 'ρ:expects', ref(id)],
     );
+    if (byExpectation.size > 1) facts.push([id, 'ρ:consensus_scope', 'common_terms_across_open_alternatives']);
     for (const term of agreed) facts.push([id, 'ρ:expects_term', ref(term)]);
     for (const candidate of strongest)
       facts.push([id, 'ρ:grounded_by_ordered_relation', ref(candidate.relation)]);
-  } else {
+  }
+
+  if (byExpectation.size > 1) {
     const id = `temporal-expectation-conflict:${latestOrder}:${digest(candidateIds.sort())}`;
     facts.push(
       [id, 'ρ:kind', 'temporal_expectation_conflict'],
       [id, 'ρ:after_lived_order', latestOrder],
       [id, 'ρ:alternatives', candidateIds.sort().map(ref)],
+      [id, 'ρ:consensus_terms', agreed.map(ref)],
       [id, 'ρ:status', 'open'],
       ['self', 'ρ:has_open_temporal_expectation', ref(id)],
     );
