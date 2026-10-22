@@ -26,6 +26,7 @@ function lexicalAtom(token) {
   return /[\p{L}\p{N}]/u.test(text) ? text : null;
 }
 function surfaceTerm(expression) { return `surface:${String(expression)}`; }
+function groundingKey(surface, relationTerm) { return `${surface}\u0000${relationTerm}`; }
 
 // Surface anatomy is not fixed to one token. Search contiguous lexical spans,
 // with the maximum span growing slowly from the amount of structure present in
@@ -71,51 +72,59 @@ function latestSurfaceEpisode(state) {
 
 // Grounding is modality-neutral. Any generic relation occurrence produced at the
 // current lived-contact order can support a surface expression, regardless of
-// whether the relation came from continuous sensing, embodied action/consequence,
-// or another future learner that adopts the same canonical occurrence anatomy.
+// which learner produced it. At most one evidence item per relation term is used
+// for one utterance episode; multiple internal occurrence aliases cannot inflate
+// lexical support.
 function freshRelationTerms(state) {
   const order = state.contacts?.length || 0;
   const facts = state.knowledge?.facts || [];
-  const occurrenceIds = new Set(facts
-    .filter(f => f.relation === 'ρ:kind' && f.object === 'relation_occurrence')
-    .map(f => String(f.subject)));
-  const fresh = new Set(facts
-    .filter(f => f.relation === 'ρ:order' && f.object === order && occurrenceIds.has(String(f.subject)))
-    .map(f => String(f.subject)));
-  const out = [];
-  for (const occurrence of fresh) {
-    const instantiated = facts.find(f =>
-      String(f.subject) === occurrence && f.relation === 'ρ:instantiates' && f.object?.ref !== undefined);
-    if (!instantiated) continue;
-    const term = String(instantiated.object.ref);
-    if (!(state.knowledge?.current?.facts || []).some(f => f.subject === term && f.relation === 'ρ:kind' && f.object === 'relation_term') &&
-        !facts.some(f => f.subject === term && f.relation === 'ρ:kind' && f.object === 'relation_term')) continue;
-    out.push({ occurrence, relation_term: term, order });
+  const relationOccurrences = new Set();
+  const orderedHere = new Set();
+  const instantiates = new Map();
+  const relationTerms = new Set();
+
+  for (const fact of facts) {
+    const subject = String(fact.subject);
+    if (fact.relation === 'ρ:kind' && fact.object === 'relation_occurrence') relationOccurrences.add(subject);
+    else if (fact.relation === 'ρ:kind' && fact.object === 'relation_term') relationTerms.add(subject);
+    else if (fact.relation === 'ρ:order' && fact.object === order) orderedHere.add(subject);
+    else if (fact.relation === 'ρ:instantiates' && fact.object?.ref !== undefined)
+      instantiates.set(subject, String(fact.object.ref));
   }
-  return unique(out);
+
+  const byTerm = new Map();
+  for (const occurrence of orderedHere) {
+    if (!relationOccurrences.has(occurrence)) continue;
+    const term = instantiates.get(occurrence);
+    if (!term || !relationTerms.has(term) || byTerm.has(term)) continue;
+    byTerm.set(term, { occurrence, relation_term: term, order });
+  }
+  return [...byTerm.values()];
 }
 
-function groundingEvidence(state) {
-  return (state.knowledge?.facts || []).filter(f =>
-    f.relation === 'ρ:surface_relation_cooccurrence' && f.object &&
-    typeof f.object.surface === 'string' && typeof f.object.relation_term === 'string');
-}
-function evidenceFor(state, surface, relationTerm) {
-  return groundingEvidence(state).filter(f =>
-    f.object.surface === surface && f.object.relation_term === relationTerm);
-}
-function activeGroundingRoute(state, surface, relationTerm) {
-  return (state.knowledge?.rules || []).find(rule => rule.active !== false &&
-    rule.provenance?.kind === 'surface_relation_grounding' &&
-    rule.provenance?.surface === surface && rule.provenance?.relation_term === relationTerm);
-}
-function nextRouteId(state, pending = []) {
-  let max = 0;
-  for (const rule of [...(state.knowledge?.rules || []), ...pending]) {
-    const match = /^surface-relation-grounding:(\d+)$/.exec(String(rule.id));
-    if (match) max = Math.max(max, Number(match[1]));
+// Rebuilt from M each call. These maps/sets are acceleration only; the facts and
+// rules they summarize remain the sole semantic authority.
+function groundingIndexes(state) {
+  const evidence = new Map();
+  for (const fact of state.knowledge?.facts || []) {
+    if (fact.relation !== 'ρ:surface_relation_cooccurrence' || !fact.object ||
+        typeof fact.object.surface !== 'string' || typeof fact.object.relation_term !== 'string') continue;
+    const key = groundingKey(fact.object.surface, fact.object.relation_term);
+    if (!evidence.has(key)) evidence.set(key, { episodes: new Set(), contexts: new Set() });
+    const bucket = evidence.get(key);
+    bucket.episodes.add(String(fact.subject));
+    bucket.contexts.add(fact.object.context_signature);
   }
-  return `surface-relation-grounding:${max + 1}`;
+
+  const active = new Set();
+  let maxRoute = 0;
+  for (const rule of state.knowledge?.rules || []) {
+    const match = /^surface-relation-grounding:(\d+)$/.exec(String(rule.id));
+    if (match) maxRoute = Math.max(maxRoute, Number(match[1]));
+    if (rule.active === false || rule.provenance?.kind !== 'surface_relation_grounding') continue;
+    active.add(groundingKey(String(rule.provenance.surface), String(rule.provenance.relation_term)));
+  }
+  return { evidence, active, nextRoute: maxRoute + 1 };
 }
 
 function relationalUpdate(state, originalContact, options = {}) {
@@ -129,8 +138,11 @@ function relationalUpdate(state, originalContact, options = {}) {
   if (!expressions.length) return null;
   const minSupport = options.minSupport ?? 3;
   const facts = [], rules = [];
+  const index = groundingIndexes(state);
+  let nextRoute = index.nextRoute;
 
   for (const candidate of expressions) for (const relation of relationTerms) {
+    const key = groundingKey(candidate.surface, relation.relation_term);
     const evidence = {
       expression: candidate.expression,
       token: candidate.length === 1 ? candidate.expression : undefined,
@@ -144,23 +156,21 @@ function relationalUpdate(state, originalContact, options = {}) {
     };
     facts.push([episode.id, 'ρ:surface_relation_cooccurrence', evidence]);
 
-    if (activeGroundingRoute(state, candidate.surface, relation.relation_term)) continue;
-    const prior = evidenceFor(state, candidate.surface, relation.relation_term);
-    const episodes = new Set(prior.map(f => String(f.subject)));
-    episodes.add(episode.id);
-    if (episodes.size < minSupport) continue;
+    if (!index.evidence.has(key)) index.evidence.set(key, { episodes: new Set(), contexts: new Set() });
+    const bucket = index.evidence.get(key);
+    bucket.episodes.add(episode.id);
+    bucket.contexts.add(candidate.context_signature);
 
-    const contexts = new Set(prior.map(f => f.object.context_signature));
-    contexts.add(evidence.context_signature);
-    if (contexts.size < Math.min(minSupport, 2)) continue;
+    if (index.active.has(key) || bucket.episodes.size < minSupport ||
+        bucket.contexts.size < Math.min(minSupport, 2)) continue;
 
     const support = {
-      support: episodes.size,
-      context_diversity: contexts.size,
+      support: bucket.episodes.size,
+      context_diversity: bucket.contexts.size,
       retained_contact: true,
       span_length: candidate.length,
     };
-    const routeId = nextRouteId(state, rules);
+    const routeId = `surface-relation-grounding:${nextRoute++}`;
     facts.push(
       [ref(routeId), 'ρ:surface_relation_support', support],
       [episode.id, 'ρ:supports', ref(routeId)],
@@ -178,8 +188,20 @@ function relationalUpdate(state, originalContact, options = {}) {
         authority: 'M_retained_crossmodal_contact',
       },
     });
+    index.active.add(key);
   }
   return facts.length || rules.length ? { relations: { facts, rules } } : null;
+}
+
+function currentMeaningIndex(state) {
+  const meanings = new Map();
+  for (const fact of state.knowledge?.current?.facts || []) {
+    if (fact.relation !== 'ρ:expresses' || fact.object?.ref === undefined) continue;
+    const surface = String(fact.subject);
+    if (!meanings.has(surface)) meanings.set(surface, new Set());
+    meanings.get(surface).add(String(fact.object.ref));
+  }
+  return meanings;
 }
 
 // Turn the meaning of what was just said into ordinary relational occurrence
@@ -190,14 +212,12 @@ function mentionUpdate(state, originalContact, options = {}) {
   if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface) return null;
   const episode = latestSurfaceEpisode(state);
   if (!episode) return null;
-  const currentFacts = state.knowledge?.current?.facts || [];
+  const meanings = currentMeaningIndex(state);
   const facts = [];
 
   for (const candidate of expressionCandidates(episode.tokens, options)) {
-    const meanings = unique(currentFacts
-      .filter(f => f.subject === candidate.surface && f.relation === 'ρ:expresses' && f.object?.ref !== undefined)
-      .map(f => String(f.object.ref)));
-    if (!meanings.length) continue;
+    const relationTerms = meanings.get(candidate.surface);
+    if (!relationTerms?.size) continue;
 
     const occurrence = `surface-expression-occurrence:${episode.id}:${candidate.start}:${candidate.length}`;
     facts.push(
@@ -212,7 +232,7 @@ function mentionUpdate(state, originalContact, options = {}) {
       [episode.id, 'ρ:contains_expression', ref(occurrence)],
       ['self', 'ρ:experienced', occurrence],
     );
-    for (const relationTerm of meanings) facts.push([occurrence, 'ρ:refers_to', ref(relationTerm)]);
+    for (const relationTerm of relationTerms) facts.push([occurrence, 'ρ:refers_to', ref(relationTerm)]);
   }
 
   return facts.length ? { relations: { facts } } : null;
@@ -222,13 +242,10 @@ function groundCurrent(state, originalContact, options = {}) {
   if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface || !state.current?.sequence) return state;
   const episode = latestSurfaceEpisode(state);
   if (!episode) return state;
-  const expressions = expressionCandidates(episode.tokens, options);
+  const meanings = currentMeaningIndex(state);
   const grounded = [];
-  for (const candidate of expressions) {
-    const meanings = unique((state.knowledge?.current?.facts || [])
-      .filter(f => f.subject === candidate.surface && f.relation === 'ρ:expresses' && f.object?.ref !== undefined)
-      .map(f => String(f.object.ref)));
-    for (const relationTerm of meanings) grounded.push({
+  for (const candidate of expressionCandidates(episode.tokens, options)) {
+    for (const relationTerm of meanings.get(candidate.surface) || []) grounded.push({
       token: candidate.length === 1 ? candidate.expression : undefined,
       expression: candidate.expression,
       span_tokens: candidate.tokens,
