@@ -45,9 +45,9 @@ Absence from conversation is `unknown`, never repository absence.
 
 Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
-Current cognitive head: `958e5f0a1c42948eb2c33de7188f526aab16478a`.
-Blueprint run `39858799005`: all gates through open discourse green; high-dimensional continuous sensing still running at this checkpoint.
-Dedicated recursive-temporal run `39858799006`: known slow regression still running. Previous dedicated run passed on the prior lifecycle head.
+Validated cognitive head: `958e5f0a1c42948eb2c33de7188f526aab16478a`.
+Blueprint run `39858799005`: success, all gates green.
+Dedicated recursive-temporal run `39858799006`: success.
 
 ## Failure / repair constraints
 
