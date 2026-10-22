@@ -87,11 +87,19 @@ function currentRelationTermForEmpirical() {
 const relationTerm = currentRelationTermForEmpirical();
 assert(relationTerm, 'embodied empirical relation has no generic first-class relation term');
 
-const occurrencesBefore = (M.knowledge?.facts || []).filter(fact =>
-  fact.relation === 'ρ:kind' && fact.object === 'relation_occurrence' &&
-  (M.knowledge?.facts || []).some(link => link.subject === fact.subject && link.relation === 'ρ:instantiates' && link.object?.ref === String(relationTerm))).length;
+function occurrenceCount(term) {
+  const facts = M.knowledge?.facts || [];
+  const instances = new Set(facts.filter(fact =>
+    fact.relation === 'ρ:instantiates' && fact.object?.ref === String(term)).map(fact => String(fact.subject)));
+  return facts.filter(fact => fact.relation === 'ρ:kind' && fact.object === 'relation_occurrence' && instances.has(String(fact.subject))).length;
+}
+const occurrencesBefore = occurrenceCount(relationTerm);
 
+// Grounding is evidence-based rather than turn-count based. Stop as soon as the
+// target relation has both a fresh generic occurrence and recurrent cross-modal
+// support for WORD; 72 contacts remains only a finite falsification bound.
 let labels = 0;
+let grounded = false;
 for (let i = 0; i < 72; i++) {
   const step = nextFrame();
   const contexts = [
@@ -105,8 +113,14 @@ for (let i = 0; i < 72; i++) {
     surface: { input: contexts[i % contexts.length], output: 'noted.' },
   });
   labels++;
+  const facts = M.knowledge?.current?.facts || [];
+  grounded = facts.some(fact =>
+    fact.subject === SURFACE && fact.relation === 'ρ:expresses' && fact.object?.ref === String(relationTerm)) &&
+    occurrenceCount(relationTerm) > occurrencesBefore;
+  if (grounded) break;
 }
-assert(labels === 72);
+assert(labels > 0 && labels <= 72);
+assert(grounded, 'raw surface co-occurrence did not ground the novel word to the embodied learned relation within bounded evidence');
 
 const currentFacts = M.knowledge?.current?.facts || [];
 const currentTerm = currentRelationTermForEmpirical() || relationTerm;
@@ -114,9 +128,7 @@ assert(currentFacts.some(fact =>
   fact.subject === SURFACE && fact.relation === 'ρ:expresses' && fact.object?.ref === String(currentTerm)),
   'raw surface co-occurrence did not ground the novel word to the embodied learned relation');
 
-const occurrencesAfter = (M.knowledge?.facts || []).filter(fact =>
-  fact.relation === 'ρ:kind' && fact.object === 'relation_occurrence' &&
-  (M.knowledge?.facts || []).some(link => link.subject === fact.subject && link.relation === 'ρ:instantiates' && link.object?.ref === String(currentTerm))).length;
+const occurrencesAfter = occurrenceCount(currentTerm);
 assert(occurrencesAfter > occurrencesBefore,
   'fresh supporting embodied experience produced no generic relation occurrence');
 
@@ -151,6 +163,7 @@ console.log(JSON.stringify({
   raw_surface_grounded_to_embodied_relation: true,
   surface_only_reference_recovered_embodied_relation: true,
   exact_embodied_and_surface_history_retained: true,
+  grounding_contacts_used: labels,
   modality_specific_language_authority: false,
   unrestricted_AGI_demonstrated: false,
 }, null, 2));
