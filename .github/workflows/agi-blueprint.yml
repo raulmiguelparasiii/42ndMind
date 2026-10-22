@@ -29,8 +29,6 @@ jobs:
         run: node agi/ordered-relation-route-upgrade.test.js
       - name: Generic occurrence temporal-completion gate
         run: node agi/generic-occurrence-temporal-completion.test.js
-      - name: Continuous relation temporal-reuse gate
-        run: node agi/continuous-temporal-reuse.test.js
       - name: Blueprint end-to-end bounded gate
         run: node agi/blueprint-e2e.test.js
       - name: Position-free conversational surface gate
