@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Internal evidence recurrence gate
+        run: node agi/internal-evidence-recurrence.test.js
       - name: Temporal relation counterevidence gate
         run: node agi/temporal-relation-counterevidence.test.js
       - name: Temporal expectation lifecycle gate
