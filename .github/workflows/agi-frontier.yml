@@ -7,8 +7,10 @@ on:
     paths:
       - 'agi/continuous-relational-contact.js'
       - 'agi/multisource-continuous-relations.js'
+      - 'agi/empirical-relation-occurrences.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/surface-relation-grounding.js'
+      - 'agi/embodied-crossmodal-grounding.test.js'
       - 'agi/surface-reference-integration.test.js'
       - 'agi/crossmodal-phrase-grounding.test.js'
       - 'agi/crossmodal-lexical-grounding.test.js'
@@ -42,6 +44,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Embodied cross-modal grounding
+        run: node agi/embodied-crossmodal-grounding.test.js
       - name: Grounded surface reference integration
         run: node agi/surface-reference-integration.test.js
       - name: Raw cross-modal phrase grounding
