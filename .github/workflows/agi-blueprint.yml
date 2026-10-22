@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Topology / dynamics generic-integration gate
+        run: node agi/topology-dynamics-integration.test.js
       - name: Internal evidence recurrence gate
         run: node agi/internal-evidence-recurrence.test.js
       - name: Temporal relation counterevidence gate
