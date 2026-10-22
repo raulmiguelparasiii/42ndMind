@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - experiment/one-live-m-architecture-20261020
+    paths-ignore:
+      - 'AGENTS.md'
+      - 'agi/CHECKPOINTS.md'
   workflow_dispatch:
 
 concurrency:
@@ -18,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Grounded expression action-realization gate
+        run: node agi/grounded-expression-action.test.js
       - name: Ordered relation route-upgrade gate
         run: node agi/ordered-relation-route-upgrade.test.js
       - name: Generic occurrence temporal-completion gate
