@@ -258,14 +258,28 @@ function completionTriples(schema, component) {
   return unique(out);
 }
 
+function counterexampledSchemas(state) {
+  // Counterevidence remains ordinary M content. This derived view owns no status:
+  // rebuilding it from canonical facts must always yield the same proposal
+  // eligibility. Support/history stays present even when a schema is reopened.
+  const out = new Set();
+  for (const fact of state.knowledge?.current?.facts || state.knowledge?.facts || [])
+    if (fact.relation === 'counterexample') out.add(String(fact.subject));
+  return out;
+}
+
 function proposeCompletions(state, components, order, cache, facts) {
+  const counterexampled = counterexampledSchemas(state);
   const proposals = new Map();
-  for (const schema of Object.values(cache.schemas)) for (const component of components) {
-    if (component.length >= schema.edges.length) continue;
-    for (const triple of completionTriples(schema, component)) {
-      const key = stable(triple);
-      if (!proposals.has(key)) proposals.set(key, { triple, schemas: [] });
-      proposals.get(key).schemas.push(schema.id);
+  for (const schema of Object.values(cache.schemas)) {
+    if (counterexampled.has(String(schema.id))) continue;
+    for (const component of components) {
+      if (component.length >= schema.edges.length) continue;
+      for (const triple of completionTriples(schema, component)) {
+        const key = stable(triple);
+        if (!proposals.has(key)) proposals.set(key, { triple, schemas: [] });
+        proposals.get(key).schemas.push(schema.id);
+      }
     }
   }
 
