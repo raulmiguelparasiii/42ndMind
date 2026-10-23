@@ -334,6 +334,45 @@ function discourseNeighbors(episodes, inputTokens) {
   const projected = chosen.rows.map(x => discourseProjection(x.e, chosen.signature)).filter(Boolean);
   return projected.length >= 2 ? { signature: chosen.signature, episodes: projected, score: chosen.score } : null;
 }
+
+// Generic set-valued raw-surface inference. Multi-relation schooling episodes
+// already retain the relation signature and concrete subject/object values in M.
+// Re-project their *input* surface through the existing template/role machinery,
+// then instantiate every independently grounded relation slot in the current raw
+// utterance. No conjunction token, grammar word, or proposition count is known.
+function inferRawSurfaceTriples(episodes, currentEpisode) {
+  const out = [];
+  const single = inferRawSurfaceTriple(episodes, currentEpisode);
+  if (single) out.push(single);
+  if (!currentEpisode || !Array.isArray(currentEpisode.input_tokens)) return unique(out);
+
+  const learned = discourseNeighbors(episodes.filter(e => e.id !== currentEpisode.id), currentEpisode.input_tokens);
+  if (!learned) return unique(out);
+  const projected = learned.episodes.map(e => ({
+    ...e,
+    output_tokens: Surface.compactTokens(e.input_tokens),
+  }));
+  const template = Surface.buildTemplate(projected.map(e => e.output_tokens));
+  const structuralTokens = Surface.compactTokens(currentEpisode.input_tokens);
+  const match = template && Surface.matchTemplate(structuralTokens, template);
+  if (!template || !match) return unique(out);
+
+  const channels = new Map();
+  for (const role of Surface.inferOutputRoles(projected, template)) {
+    if (!match.has(role.slot)) continue;
+    const value = surfaceTerm(match.get(role.slot));
+    if (value !== undefined) channels.set(role.channel, value);
+  }
+  const subject = channels.get(0);
+  if (subject === undefined) return unique(out);
+  for (let i = 0; i < learned.signature.length; i++) {
+    const object = channels.get(i + 1);
+    if (object === undefined) continue;
+    out.push({ subject, relation: learned.signature[i], object });
+  }
+  return unique(out);
+}
+
 function groundDiscourseFromCanonicalM(state, episodes, seq, subject) {
   const learned = discourseNeighbors(episodes, seq.input_tokens || []);
   if (!learned) return false;
@@ -430,8 +469,8 @@ function C(state, realityContact) {
   recordSurfaceRelationFrame(state, realityContact);
   recordSurfaceExpressionAttachments(state);
   if (rawSurfaceOnly) {
-    const episodes = sequenceEpisodes(state); const currentEpisode = episodes.at(-1); const triple = inferRawSurfaceTriple(episodes, currentEpisode);
-    if (triple) settleRawSurfaceProposal(state, currentEpisode.id, triple);
+    const episodes = sequenceEpisodes(state); const currentEpisode = episodes.at(-1);
+    for (const triple of inferRawSurfaceTriples(episodes, currentEpisode)) settleRawSurfaceProposal(state, currentEpisode.id, triple);
   }
   if (contact && typeof contact === 'object' && contact.surface && (contact.surface.output === undefined || contact.surface.output === null)) groundSurfaceFromCanonicalM(state);
   return state;
