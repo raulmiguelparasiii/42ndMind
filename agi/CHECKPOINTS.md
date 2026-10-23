@@ -39,14 +39,15 @@ Absence from conversation is `unknown`, never repository absence.
 - ordered-relation evidence-route upgrade, lifecycle evaluation, counterevidence reopening, and action realization;
 - arbitrary structured relation contact -> content-addressed terms + generic lived occurrences;
 - receptor topology + raw dynamics co-participation; renaming invariant, non-isomorphic topology distinguishable;
-- repeated differently named concrete graphs -> endpoint-independent structural schema candidate -> held-out isomorphic missing-edge proposal; non-isomorphic fork rejected;
-- structural schema corrigibility: later complete held-out motif adds independent support; explicit M counterevidence stops future transfer while schema/support/history remain.
+- endpoint-independent structural schema induction/held-out transfer with non-isomorphic rejection;
+- structural schema corrigibility: later complete motif adds support; explicit M counterevidence stops future transfer without deleting history;
+- structural refinement after defeat: the same graph abstraction learns a narrower opaque-context schema; matching held-out context transfers while context-free cue stays open.
 
-Primary structural regressions: `structural-relation-transfer.test.js`, `structural-schema-corrigibility.test.js`, `topology-dynamics-integration.test.js`.
+Primary structural regressions: `structural-relation-transfer.test.js`, `structural-schema-corrigibility.test.js`, `structural-schema-refinement.test.js`, `topology-dynamics-integration.test.js`.
 Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
 Validated cognitive head: `044ce4a8932149d86cbb4f0201b5aa569ffb6ed9`.
-Blueprint run `39885873841`: full success.
+Blueprint run `39885873841`: full success. Refinement test on unchanged cognition: run `39886712027`, focused gate success.
 
 ## Failure / repair constraints
 
@@ -64,41 +65,45 @@ Blueprint run `39885873841`: full success.
 12. **Occurrence anatomy must not self-reify:** representation metadata is not another world event.
 13. **Anti-cheat boundary:** generic normalization stays outside content-specific logic; never weaken guards to pass.
 14. **Independent structural bindings:** repeated same concrete binding is not new endpoint-independent support; exact raw contact still remains.
-15. **Structural support is contact-local:** a complete graph presented later is new support; do not silently stitch separate contacts across time unless that capability is separately learned/tested.
-16. **Schema counterevidence:** proposal eligibility is derived directly from canonical M `counterexample` facts; no semantic status copied into the structural cache.
-17. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
-18. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has a known long runtime.
-19. **Indexes:** temporal/structural caches are rebuildable acceleration only; deleting them must not alter warrant/contact.
+15. **Structural support is contact-local:** do not silently stitch separate contacts across time unless separately learned/tested.
+16. **Schema counterevidence:** proposal eligibility is derived directly from canonical M `counterexample` facts; no semantic status copied into cache.
+17. **Refinement:** defeat of a broad schema does not block a structurally distinct narrower schema from being learned by the same abstraction.
+18. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
+19. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has a known long runtime.
+20. **Indexes:** temporal/structural caches are rebuildable acceleration only; deleting them must not alter warrant/contact.
 
-## Closed: structural transfer + explicit corrigibility
+## Closed: structural correction at bounded graph scale
 
-`concrete motifs -> provisional structural schema -> unseen isomorphic proposal -> later support/counterevidence -> changed future transfer`
+`concrete motifs -> provisional schema -> held-out transfer -> support/counterevidence -> reopening -> narrower context-specific schema -> context-matched transfer`
 
-The schema never becomes truth merely from compression. Explicit counterevidence in M suppresses new transfer without deleting the schema, its independent supports, or historical proposals. Absence of a proposed edge is not treated as false.
+All remain M-owned proposals/evidence. No schema truth ledger, context table, or exception policy exists.
 
-## Current frontier: structural refinement after defeat
+## Current frontier: structural learning inside larger connected worlds
 
-A broad provisional schema can now be reopened by counterevidence. The next requirement is constructive correction rather than permanent global suppression:
+`structural-relational-abstraction.js` currently discards a connected component wholesale when it contains more than `MAX_COMPONENT_EDGES = 8`. That means adding unrelated-but-connected reality can make previously learnable local structure disappear from discovery entirely.
 
-`defeated broad schema + recurrent context-specific structure -> narrower endpoint-independent schema -> context-matched transfer only`
+Target:
+
+`large connected contacted graph -> bounded local structural views -> recurring local schema candidates`
 
 Requirements:
 
-- preserve the failure/test before changing cognition;
-- reuse current canonical graph abstraction; no exception table or context-specific code;
-- the broad counterexampled schema must remain historical and unable to transfer;
-- repeated positive motifs containing an additional opaque contextual relation may form a distinct more-specific schema;
-- a held-out cue with that same structural context may receive the missing-edge proposal;
-- an otherwise identical cue lacking the context must remain open;
-- context labels/endpoints are opaque and randomized/renamed in spirit; only topology may matter;
-- no copied schema status or hidden branching policy.
+- preserve focused failure before cognition changes;
+- input component must be larger than the current local search budget;
+- test must require bounded substructure learning, so merely raising the whole-component constant is not an acceptable repair;
+- exact full graph contact remains retained in M;
+- local views must preserve real connectivity/edge labels, not split by fixture/modality names;
+- repeated differently named large graphs must yield reusable endpoint-independent local schema(s);
+- no global exhaustive subgraph explosion: search remains bounded and deterministic;
+- local decomposition is proposal search only and owns no semantic status;
+- later frontier will require composition of those local schemas into larger structure; do not fake that in this step.
 
-Classification: first test **reuse** of existing structural abstraction. Extend only if the preserved falsification exposes a generic structural defect.
+Classification: **extension of the existing structural search view**, not a new structural learner.
 
 ## Later, not current
 
-- structural induction is still bounded by current finite component/search representation; recursive scaling beyond that bound remains a later generality test;
-- whole-book scale and unrestricted cross-domain developmental continuation remain broader conformance targets;
+- recursive composition of local structural schemas into relations spanning beyond one local search budget;
+- whole-book scale and unrestricted cross-domain developmental continuation;
 - unrestricted AGI is not demonstrated.
 
 ## Efficiency rules
