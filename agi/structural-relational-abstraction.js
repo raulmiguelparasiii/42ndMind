@@ -322,17 +322,30 @@ function counterexampledSchemas(state) {
   return out;
 }
 
+function schemaRelevantViews(schema, component) {
+  // Matching may ignore edges whose relation label is not represented anywhere in
+  // the learned schema, but only as a disposable search view. Exact contacted
+  // reality is never rewritten. This avoids exhaustive subgraph enumeration while
+  // allowing a known local relation to remain usable inside a cluttered world.
+  const labels = new Set(schema.edges.map(edge => edge[0]));
+  const filtered = component.filter(edge => labels.has(edge.labelKey));
+  if (filtered.length < 2) return [];
+  return connectedComponents(filtered)
+    .filter(view => view.length >= 2 && view.length < schema.edges.length);
+}
+
 function proposeCompletions(state, components, order, cache, facts) {
   const counterexampled = counterexampledSchemas(state);
   const proposals = new Map();
   for (const schema of Object.values(cache.schemas)) {
     if (counterexampled.has(String(schema.id))) continue;
     for (const component of components) {
-      if (component.length >= schema.edges.length) continue;
-      for (const triple of completionTriples(schema, component)) {
-        const key = stable(triple);
-        if (!proposals.has(key)) proposals.set(key, { triple, schemas: [] });
-        proposals.get(key).schemas.push(schema.id);
+      for (const view of schemaRelevantViews(schema, component)) {
+        for (const triple of completionTriples(schema, view)) {
+          const key = stable(triple);
+          if (!proposals.has(key)) proposals.set(key, { triple, schemas: [] });
+          proposals.get(key).schemas.push(schema.id);
+        }
       }
     }
   }
