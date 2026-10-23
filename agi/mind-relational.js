@@ -327,13 +327,17 @@ function discourseNeighbors(episodes, inputTokens, broadenSignature = false) {
     support: g.rows.length,
     subjects: unique(g.rows.flatMap(x => episodeSubjects(x.e))).length,
     score: g.rows.reduce((s, x) => s + x.score, 0) / g.rows.length,
-  })).filter(g => g.support >= 2 && g.subjects >= 2)
+  })).filter(g => broadenSignature ? g.support >= 1 : (g.support >= 2 && g.subjects >= 2))
     .sort((a, b) => b.score - a.score || b.support - a.support || stable(a.signature).localeCompare(stable(b.signature)));
   if (!ranked.length) return null;
   const chosen = ranked[0];
   const sourceRows = broadenSignature
     ? candidates.filter(x => same(x.signature, chosen.signature))
     : chosen.rows;
+  if (broadenSignature) {
+    const subjects = unique(sourceRows.flatMap(x => episodeSubjects(x.e))).length;
+    if (sourceRows.length < 2 || subjects < 2) return null;
+  }
   const projected = sourceRows.map(x => discourseProjection(x.e, chosen.signature)).filter(Boolean);
   return projected.length >= 2 ? { signature: chosen.signature, episodes: projected, score: chosen.score } : null;
 }
@@ -352,8 +356,8 @@ function inferRawSurfaceTriples(episodes, currentEpisode) {
   // Local similarity identifies the relation-set; role induction then broadens
   // over all grounded bindings of that same signature so current lexical values
   // cannot become accidental constants merely because their nearest examples
-  // repeat one entity/value combination. This broader view is input-only: output
-  // discourse keeps its local surface neighborhood.
+  // repeat one entity/value combination. Diversity is validated after broadening;
+  // output discourse keeps its stricter local surface neighborhood.
   const learned = discourseNeighbors(episodes.filter(e => e.id !== currentEpisode.id), currentEpisode.input_tokens, true);
   if (!learned) return unique(out);
   const projected = learned.episodes.map(e => ({
