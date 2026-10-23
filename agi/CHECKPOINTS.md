@@ -29,7 +29,9 @@ Absence from conversation is `unknown`, never repository absence.
 
 ## Solved / do not redo
 
-- variable-length/position-free language, context, single-relation raw-language acquisition/correction, open discourse, canonical multi-hop expression;
+- variable-length/position-free language, context, single- and multi-proposition raw-language acquisition/correction, open discourse, canonical multi-hop expression;
+- compound raw utterance -> several independently queryable/corrigible M relations; exact raw strings retained at `ρ:input_raw`;
+- compound surface role induction broadens across grounded bindings so nearest repeated values do not become accidental constants;
 - raw continuous same-time/delayed, unknown preservation, quantitative/nonlinear/joint/mixed-lag completion/correction/conflict;
 - learned relations becoming first-class occurrences and recursively higher-order material;
 - opaque word/phrase grounding to learned relations;
@@ -45,12 +47,12 @@ Absence from conversation is `unknown`, never repository absence.
 - learned small schema usable inside larger connected clutter via disposable schema-relevant matching;
 - recursive structural composition: independently learned lower schemas -> first-class grounded schema instances -> repeated endpoint-renamed composition -> depth-2 schema -> held-out >8-edge missing-relation proposal grounded by that higher schema.
 
+Primary language regressions: `compound-raw-language-acquisition.test.js`, `raw-language-acquisition.test.js`, `open-discourse.test.js`, `canonical-language-bridge.test.js`, `contextual-dialogue.test.js`, `variable-length-language.test.js`.
 Primary structural regressions: `recursive-structural-composition.test.js`, `embedded-structural-completion.test.js`, `large-connected-structural-world.test.js`, `structural-schema-refinement.test.js`, `structural-schema-corrigibility.test.js`, `structural-relation-transfer.test.js`, `topology-dynamics-integration.test.js`.
 Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
-Validated recursive-composition cognitive head: `f98395c130cf9cb1e456439e5d56951c41b6ed0d`.
-Test-only held-out correction head: `1ce7cf8b2cf4bbba84d2cc204e925a86069cdd52`.
-Blueprint run `40009451358`: full success.
+Current fully green blueprint head: `8cc12d8e875da7b786f77d92df5ca00b0a64596e`.
+Blueprint run `40012331554`: full success, including compound raw-language acquisition and all downstream regressions.
 
 ## Failure / repair constraints
 
@@ -74,43 +76,44 @@ Blueprint run `40009451358`: full success.
 18. **Large-world search:** never fix scale by raising `MAX_COMPONENT_EDGES`; use bounded connected views, not exhaustive subgraphs.
 19. **Embedded matching:** disposable schema-relevant views may ignore unrelated labels; exact contact remains M.
 20. **Recursive structural composition:** only schemas predating a contact may instantiate on that contact; a new schema cannot self-bootstrap its own support. Lower instances retain bindings/contact/source-schema provenance; higher schemas remain proposals.
-21. **Boundary test arithmetic matters:** 8 edges equals the local budget, not beyond it. The recursive held-out fixture needed a ninth connected irrelevant edge; repair was test-only.
-22. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
-23. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has known long runtime; high-dimensional continuous is a known slow blueprint tail.
-24. **Indexes:** temporal/structural caches are rebuildable acceleration only; deleting them must not alter warrant/contact.
-25. **Surface scaling debt:** `mind-relational.js` currently reconstructs surface episodes from all M facts for repeated language operations. This is correct but not long-life efficient; any optimization must be a rebuildable zero-authority index and preserve identical behavior when rebuilt from M.
+21. **Boundary test arithmetic matters:** 8 edges equals the local budget, not beyond it. Repair test arithmetic, not cognition.
+22. **Compound role locality:** nearest examples may identify a relation signature, but role induction must broaden across independent grounded bindings before treating lexical spans as variables.
+23. **Raw retention boundary:** tokenizer behavior is representation detail; exact surface history is asserted at `ρ:input_raw`, not by assuming fixture identifiers remain single tokens.
+24. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
+25. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has known long runtime; high-dimensional continuous is a known slow blueprint tail.
+26. **Indexes:** temporal/structural/surface caches are rebuildable acceleration only; deleting them must not alter warrant/contact/meaning.
 
-## Closed: recursive structural composition
+## Closed: compound raw-language acquisition
 
-`local schemas -> grounded schema instances -> composed derived view -> higher schema -> held-out higher-schema completion`
+`grounded compound schooling -> raw compound utterance -> multiple proposal relations -> recurrent independent warrant -> selective correction -> separate queries + broad discourse`
 
-The raw graph may exceed the local 8-edge search budget. Learned lower schemas compress grounded substructure only in a disposable view; exact raw contact remains canonical M. Repeated independent bindings support the higher schema. Held-out completion is an open proposal, never fabricated observation.
+No conjunction keyword rule, semantic dictionary, fixed proposition count, copied sentence truth, or output-to-input semantic shortcut. Each proposition remains separately corrigible in canonical M. Exact raw input remains beneath learned relations.
 
-## Current frontier: surface-only acquisition of multiple propositions from one utterance
+## Current frontier: long-life surface access without lifetime reconstruction
 
-Repository search and existing gates show broad *output* discourse already expresses several M relations, while raw-language acquisition currently promotes one inferred subject/relation/object triple from a surface-only episode. No existing gate demonstrates one raw compound utterance teaching several independently queryable M relations without supplying semantic triples beside it.
+`mind-relational.js::sequenceEpisodes(state)` currently rebuilds every surface episode by scanning all `M.knowledge.facts` each time raw-surface inference or expression grounding runs. This is correct but scales with total life history on every surface operation. Repository search shows no existing `agi/` long-life surface access gate or rebuildable surface-episode index.
 
 Target:
 
-`compound raw utterance -> several M-owned relation proposals -> independent recurrent warrant/correction -> separate specific queries + broad discourse`
+`persistent exact surface history in M -> rebuildable zero-authority episode index -> query/recent-learning access without repeated whole-life reconstruction`
 
 Requirements:
 
-- preserve one focused failure before cognition changes;
-- school the compound surface form on multiple independently crossed entities with structured contact, then remove structured semantics for the target utterance;
-- target utterance must contain at least two independent relations whose values do not predict one another;
-- one occurrence only proposes; recurrence supplies support;
-- each proposition must remain separately corrigible; correcting one must not rewrite the other;
-- queries for either relation must read canonical M, not a copied sentence/frame store;
-- broad output may compose the learned relations, but output discourse is not input semantic authority;
-- no sentence-specific parser, conjunction keyword rule, semantic dictionary, or fixed proposition count;
-- preserve exact raw tokens/contact and source episode provenance;
-- reuse the existing episode/template/role machinery if possible; classification is **extension of the existing surface-to-M proposal bridge**, not a new language mind.
+- preserve a focused failure before implementation;
+- no semantic/warrant/status data may become authoritative in the index; canonical M remains source of truth;
+- index may cache only a derived episode projection already reconstructible from M facts;
+- deletion/corruption/version mismatch must force rebuild from M and produce identical behavior;
+- recent surface contacts must update the index without rescanning lifetime history;
+- long unrelated history must not change a learned query/correction result;
+- do not add a memory subsystem, retrieval policy, embedding store, or copied truth ledger;
+- do not use a brittle wall-clock-only correctness criterion; assert rebuildability and bounded access mechanics directly;
+- exact raw strings/tokens/contact remain in M beneath the index.
+
+Classification: **zero-authority acceleration of the existing surface episode view**, not new cognition.
 
 ## Later, not current
 
-- long-life/whole-book scaling after compound semantic acquisition; specifically remove repeated full-history surface reconstruction with rebuildable zero-authority indexing if falsified by a long-stream gate;
-- frozen unseen long heterogeneous symbolic corpus / cross-domain continuation;
+- frozen unseen long heterogeneous symbolic corpus / cross-domain continuation after long-life access is efficient;
 - unrestricted AGI is not demonstrated.
 
 ## Efficiency rules
