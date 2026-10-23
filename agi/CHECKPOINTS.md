@@ -36,18 +36,18 @@ Absence from conversation is `unknown`, never repository absence.
 - empirical action/consequence relations entering the same substrate;
 - relation/expression/action/internal-evidence occurrences sharing generic `ρ:lived_order`;
 - learned order -> current M expectation without fabricating successor;
-- ordered-relation evidence-route upgrade, lifecycle evaluation, counterevidence reopening, and action realization;
-- arbitrary structured relation contact -> content-addressed terms + generic lived occurrences;
+- ordered-relation route upgrade, lifecycle evaluation, counterevidence reopening, action realization;
+- structured relation contact -> content-addressed terms + generic lived occurrences;
 - receptor topology + raw dynamics co-participation; renaming invariant, non-isomorphic topology distinguishable;
 - endpoint-independent structural schema induction/held-out transfer with non-isomorphic rejection;
-- structural schema corrigibility: later complete motif adds support; explicit M counterevidence stops future transfer without deleting history;
-- structural refinement after defeat: the same graph abstraction learns a narrower opaque-context schema; matching held-out context transfers while context-free cue stays open.
+- structural schema support/counterevidence and narrower refinement after broad defeat;
+- large connected contacted graphs no longer vanish from structural discovery: bounded connected <=8-edge neighborhoods are learned across renamed >8-edge worlds while full contact remains exact.
 
-Primary structural regressions: `structural-relation-transfer.test.js`, `structural-schema-corrigibility.test.js`, `structural-schema-refinement.test.js`, `topology-dynamics-integration.test.js`.
+Primary structural regressions: `large-connected-structural-world.test.js`, `structural-schema-refinement.test.js`, `structural-schema-corrigibility.test.js`, `structural-relation-transfer.test.js`, `topology-dynamics-integration.test.js`.
 Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
-Validated cognitive head: `044ce4a8932149d86cbb4f0201b5aa569ffb6ed9`.
-Blueprint run `39885873841`: full success. Refinement test on unchanged cognition: run `39886712027`, focused gate success.
+Validated cognitive head: `45449865d618fc6d12d2a4c013765bfcf33645ca`.
+Blueprint run `39887235082`: full success.
 
 ## Failure / repair constraints
 
@@ -61,44 +61,44 @@ Blueprint run `39885873841`: full success. Refinement test on unchanged cognitio
 8. **Partial disagreement:** common supported terms may remain; residual/disjoint alternatives stay open.
 9. **Counterevidence is reopening, not deletion:** history and independent support remain.
 10. **Internal evidence normalization:** internal M events are not fabricated external contact; structural identity, not event ID.
-11. **No internal-event recursion:** an internal evaluation shares its triggering lived order and does not recursively rerun lifecycle.
+11. **No internal-event recursion:** internal evaluation shares its triggering lived order and does not recursively rerun lifecycle.
 12. **Occurrence anatomy must not self-reify:** representation metadata is not another world event.
 13. **Anti-cheat boundary:** generic normalization stays outside content-specific logic; never weaken guards to pass.
 14. **Independent structural bindings:** repeated same concrete binding is not new endpoint-independent support; exact raw contact still remains.
 15. **Structural support is contact-local:** do not silently stitch separate contacts across time unless separately learned/tested.
 16. **Schema counterevidence:** proposal eligibility is derived directly from canonical M `counterexample` facts; no semantic status copied into cache.
-17. **Refinement:** defeat of a broad schema does not block a structurally distinct narrower schema from being learned by the same abstraction.
-18. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
-19. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has a known long runtime.
-20. **Indexes:** temporal/structural caches are rebuildable acceleration only; deleting them must not alter warrant/contact.
+17. **Refinement:** defeat of a broad schema does not block a structurally distinct narrower schema.
+18. **Large-world search:** never fix scale by raising `MAX_COMPONENT_EDGES`; oversized components are searched through real bounded connected neighborhoods. No exhaustive subgraph enumeration.
+19. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
+20. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has a known long runtime.
+21. **Indexes:** temporal/structural caches are rebuildable acceleration only; deleting them must not alter warrant/contact.
 
-## Closed: structural correction at bounded graph scale
+## Closed: bounded local structural learning in large worlds
 
-`concrete motifs -> provisional schema -> held-out transfer -> support/counterevidence -> reopening -> narrower context-specific schema -> context-matched transfer`
+`large connected graph -> bounded connected local views -> endpoint-independent local schemas`
 
-All remain M-owned proposals/evidence. No schema truth ledger, context table, or exception policy exists.
+One anchor grows through real shared endpoints to at most 8 edges. This is proposal search only; the untouched complete graph remains in M. The gate explicitly rejects a simple whole-component constant bump.
 
-## Current frontier: structural learning inside larger connected worlds
+## Current frontier: local schema completion inside larger connected context
 
-`structural-relational-abstraction.js` currently discards a connected component wholesale when it contains more than `MAX_COMPONENT_EDGES = 8`. That means adding unrelated-but-connected reality can make previously learnable local structure disappear from discovery entirely.
+A learned small schema must remain usable when its cue appears inside a larger connected world containing unrelated structure. Current completion compares one schema against an entire bounded local view and skips when the cue view has at least as many edges as the schema, so unrelated nearby edges can mask a valid local match.
 
 Target:
 
-`large connected contacted graph -> bounded local structural views -> recurring local schema candidates`
+`small learned schema + large connected cue containing that schema-minus-one-edge + unrelated connected edges -> missing-edge proposal`
 
 Requirements:
 
 - preserve focused failure before cognition changes;
-- input component must be larger than the current local search budget;
-- test must require bounded substructure learning, so merely raising the whole-component constant is not an acceptable repair;
-- exact full graph contact remains retained in M;
-- local views must preserve real connectivity/edge labels, not split by fixture/modality names;
-- repeated differently named large graphs must yield reusable endpoint-independent local schema(s);
-- no global exhaustive subgraph explosion: search remains bounded and deterministic;
-- local decomposition is proposal search only and owns no semantic status;
-- later frontier will require composition of those local schemas into larger structure; do not fake that in this step.
+- train the small schema independently; do not relearn it from the large cue;
+- large cue remains one connected component and exceeds the local schema size;
+- exact full cue contact stays in M;
+- proposal search may ignore structurally irrelevant edges only as a derived view; it may not delete/partition reality by fixture or modality names;
+- use schema relation labels/topology generically; repeated labels/ambiguity must remain open rather than guessed;
+- no exhaustive all-subgraph enumeration;
+- unrelated large-world clutter must not itself become evidence for the missing edge.
 
-Classification: **extension of the existing structural search view**, not a new structural learner.
+Classification: **extension of existing structural matching/search views**, not a new learner.
 
 ## Later, not current
 
