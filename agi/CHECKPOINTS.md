@@ -36,19 +36,17 @@ Absence from conversation is `unknown`, never repository absence.
 - empirical action/consequence relations entering the same substrate;
 - relation/expression/action/internal-evidence occurrences sharing generic `ρ:lived_order`;
 - learned order -> current M expectation without fabricating successor;
-- one ordered-relation identity accumulating stronger later evidence routes;
-- expectation lifecycle -> later reality evidence -> source-relation reopening;
-- grounded expression -> temporal relation -> expected action -> existing actuator, with bodily contradiction able to reopen temporal action;
-- arbitrary externally contacted relation facts -> content-addressed relation terms + per-contact generic lived occurrences;
-- opaque receptor-topology facts and learned raw dynamics co-participating in higher recurrence;
-- topology contact invariant to channel renaming while non-isomorphic topology remains distinguishable;
-- repeated differently named concrete relation graphs -> first-class endpoint-independent structural schema candidate -> held-out isomorphic missing-edge proposal, while a non-isomorphic fork is rejected.
+- ordered-relation evidence-route upgrade, lifecycle evaluation, counterevidence reopening, and action realization;
+- arbitrary structured relation contact -> content-addressed terms + generic lived occurrences;
+- receptor topology + raw dynamics co-participation; renaming invariant, non-isomorphic topology distinguishable;
+- repeated differently named concrete graphs -> endpoint-independent structural schema candidate -> held-out isomorphic missing-edge proposal; non-isomorphic fork rejected;
+- structural schema corrigibility: later complete held-out motif adds independent support; explicit M counterevidence stops future transfer while schema/support/history remain.
 
-Primary structural regression: `structural-relation-transfer.test.js`.
+Primary structural regressions: `structural-relation-transfer.test.js`, `structural-schema-corrigibility.test.js`, `topology-dynamics-integration.test.js`.
 Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
-Validated cognitive head: `60c86a1418826434c5981a94927f060fa859fc05`.
-Blueprint run `39862997904`: success, including structural-transfer, topology/dynamics, temporal/action, language, discourse, and high-dimensional sensing gates.
+Validated cognitive head: `044ce4a8932149d86cbb4f0201b5aa569ffb6ed9`.
+Blueprint run `39885873841`: full success.
 
 ## Failure / repair constraints
 
@@ -59,50 +57,48 @@ Blueprint run `39862997904`: success, including structural-transfer, topology/dy
 5. **Gappy projection overreach:** projected recurrence cannot license immediate-next expectation.
 6. **Phase artifacts:** pure alternation does not privilege one phase. Repair the test, not cognition.
 7. **Evidence-route birth order:** one ordered relation accumulates stronger later evidence routes.
-8. **Partial successor disagreement:** common terms may remain warranted; residual/disjoint alternatives remain open.
-9. **Counterevidence is reopening, not deletion:** direct unmet successor contests only that term's categorical warrant; history and independent support remain.
-10. **Internal evidence normalization:** internal M events are not fabricated external contact; reusable identity comes from relational structure, not event ID.
-11. **No internal-event recursion:** internally formed evaluation shares its triggering lived order and does not recursively rerun lifecycle.
-12. **Occurrence anatomy must not self-reify:** pre-normalized `kind/instantiates/order/lived_order` anatomy is representation, not new metadata-events.
-13. **Anti-cheat boundary:** generic normalization belongs outside content-specific lifecycle/domain logic; do not weaken guards to pass tests.
-14. **Structural recurrence needs independent bindings:** repeated frames on one concrete endpoint binding do not add endpoint-independent support. `60c86a...` deduplicates repeated derived structural bindings; exact raw contact remains in M.
-15. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
-16. **CI cost:** recursive continuous-temporal is >6 min and path-scoped. Frontier `embodied-crossmodal-grounding` has a pre-existing very long runtime.
-17. **Temporal/structural indexes:** rebuildable acceleration only; deleting them must not alter warrant or retained contact.
+8. **Partial disagreement:** common supported terms may remain; residual/disjoint alternatives stay open.
+9. **Counterevidence is reopening, not deletion:** history and independent support remain.
+10. **Internal evidence normalization:** internal M events are not fabricated external contact; structural identity, not event ID.
+11. **No internal-event recursion:** an internal evaluation shares its triggering lived order and does not recursively rerun lifecycle.
+12. **Occurrence anatomy must not self-reify:** representation metadata is not another world event.
+13. **Anti-cheat boundary:** generic normalization stays outside content-specific logic; never weaken guards to pass.
+14. **Independent structural bindings:** repeated same concrete binding is not new endpoint-independent support; exact raw contact still remains.
+15. **Structural support is contact-local:** a complete graph presented later is new support; do not silently stitch separate contacts across time unless that capability is separately learned/tested.
+16. **Schema counterevidence:** proposal eligibility is derived directly from canonical M `counterexample` facts; no semantic status copied into the structural cache.
+17. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
+18. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has a known long runtime.
+19. **Indexes:** temporal/structural caches are rebuildable acceleration only; deleting them must not alter warrant/contact.
 
-## Closed: structural law induction / transfer at proposal level
+## Closed: structural transfer + explicit corrigibility
 
-`independent concrete motifs -> endpoint-independent canonical graph schema candidate -> unseen isomorphic cue -> missing relation proposal`
+`concrete motifs -> provisional structural schema -> unseen isomorphic proposal -> later support/counterevidence -> changed future transfer`
 
-The schema/proposal is M content, endpoint names are not architectural knowledge, exact contact is retained, and non-isomorphic structure is rejected. Proposal is deliberately not truth.
+The schema never becomes truth merely from compression. Explicit counterevidence in M suppresses new transfer without deleting the schema, its independent supports, or historical proposals. Absence of a proposed edge is not treated as false.
 
-## Current frontier: structural schema corrigibility / warrant
+## Current frontier: structural refinement after defeat
 
-`agi/structural-relational-abstraction.js` currently creates `structural_relation_schema_candidate` with `ρ:formation_status = proposal`, stores independent `ρ:supported_by` pattern occurrences, and uses the schema to emit held-out relation proposals. Repository search shows no live canonical mechanism yet turns later held-out reality into support/defeat/reopening of that structural schema itself.
+A broad provisional schema can now be reopened by counterevidence. The next requirement is constructive correction rather than permanent global suppression:
 
-Target:
-
-`schema proposal -> held-out prediction/proposal -> later reality contact -> support or counterevidence -> schema warrant/reopening -> changed future transfer`
+`defeated broad schema + recurrent context-specific structure -> narrower endpoint-independent schema -> context-matched transfer only`
 
 Requirements:
 
-- preserve a focused failure before changing cognition;
-- do not redo structural identity/transfer or concrete topology/dynamics learning;
-- proposal/compression alone never becomes truth;
-- exact support/counterevidence remains ordinary M content with provenance;
-- absence of the predicted relation is not automatically false; defeat requires evaluable contradictory contact;
-- one contradicted instance reopens the affected schema claim rather than deleting history;
-- independent surviving support must remain visible;
-- future transfer must consult current M evidence, not a copied cache/status flag;
-- no schema-specific truth ledger, confidence table, or hidden rule authority;
-- use existing generic support/counterevidence semantics where semantically valid before extending them.
+- preserve the failure/test before changing cognition;
+- reuse current canonical graph abstraction; no exception table or context-specific code;
+- the broad counterexampled schema must remain historical and unable to transfer;
+- repeated positive motifs containing an additional opaque contextual relation may form a distinct more-specific schema;
+- a held-out cue with that same structural context may receive the missing-edge proposal;
+- an otherwise identical cue lacking the context must remain open;
+- context labels/endpoints are opaque and randomized/renamed in spirit; only topology may matter;
+- no copied schema status or hidden branching policy.
 
-Classification: **connection/extension of structural abstraction to existing M-owned evidence/correction semantics**. Search/falsify reuse before implementation.
+Classification: first test **reuse** of existing structural abstraction. Extend only if the preserved falsification exposes a generic structural defect.
 
 ## Later, not current
 
+- structural induction is still bounded by current finite component/search representation; recursive scaling beyond that bound remains a later generality test;
 - whole-book scale and unrestricted cross-domain developmental continuation remain broader conformance targets;
-- unrestricted autonomous relation discovery across arbitrary domains remains unproved;
 - unrestricted AGI is not demonstrated.
 
 ## Efficiency rules
