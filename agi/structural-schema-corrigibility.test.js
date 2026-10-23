@@ -58,9 +58,11 @@ const target1 = [held1[0], D, held1[2]];
 Mind.C(M, { relations: { facts: cue(...held1) } });
 assert(hasProposal(M, target1), 'supported structural schema did not propose on first held-out isomorphic cue');
 
-// Reality later supplies the proposed relation. The complete held-out instance must
-// become another independent support binding for the same schema, not a new truth authority.
-Mind.C(M, { relations: { facts: [target1] } });
+// Later reality presents the complete held-out motif. Structural recurrence is
+// contact-local by design; this test is not allowed to smuggle in cross-time graph
+// stitching as an extra capability. The new concrete binding must add support to
+// the same schema, not create a new truth authority.
+Mind.C(M, { relations: { facts: full(...held1) } });
 const supportAfter = values(M, schema, 'ρ:supported_by').filter(x => x?.ref !== undefined).map(x => String(x.ref));
 assert(new Set(supportAfter).size > new Set(supportBefore).size,
   'later held-out reality did not add independent support to the same structural schema');
