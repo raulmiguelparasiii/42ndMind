@@ -11,10 +11,11 @@ const Mind = require('./mind.js');
 const A = ['ρ:rc_a1_7x', 'ρ:rc_a2_4m', 'ρ:rc_a3_9q', 'ρ:rc_a4_2v'];
 const B = ['ρ:rc_b1_6p', 'ρ:rc_b2_3k', 'ρ:rc_b3_8n', 'ρ:rc_b4_5t'];
 const Z = 'ρ:rc_cross_1h';
+const N = 'ρ:rc_noise_0w';
 
 for (const file of ['mind.js', 'structural-relational-abstraction.js']) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
-  for (const token of [...A, ...B, Z]) assert(!source.includes(token), `${file} contains recursive-composition fixture knowledge: ${token}`);
+  for (const token of [...A, ...B, Z, N]) assert(!source.includes(token), `${file} contains recursive-composition fixture knowledge: ${token}`);
 }
 
 function stable(v) {
@@ -109,10 +110,11 @@ const higher = schemaIds(M).filter(id => schemaDepth(M, id) >= 2 &&
   values(M, id, 'ρ:composed_from_schema').some(x => refId(x) === schemaB));
 assert(higher.length >= 1, 'repeated local-schema compositions produced no first-class higher structural schema');
 
-// Held-out composition: both complete local schemas are present, but the cross
-// relation is absent. A successful proposal must include a depth-2 grounding route.
+// Held-out composition: both complete local schemas are present, the cross relation
+// is absent, and one connected irrelevant edge keeps raw contact beyond the 8-edge
+// budget. A successful proposal must include a depth-2 grounding route.
 const held = ['held:a', 'held:b', 'held:j', 'held:d', 'held:e'];
-const cue = composed(...held, false);
+const cue = [...composed(...held, false), [held[2], N, 'held:noise']];
 const target = [held[0], Z, held[4]];
 assert(cue.length > 8, 'held-out composed cue must exceed one local search budget');
 Mind.C(M, { relations: { facts: cue } });
