@@ -78,6 +78,15 @@ assert(currentHas(M, TARGET, REL_FORM, form0), 'recurrent compound evidence did 
 const tone1 = TONES[1];
 const raw1 = `${TARGET} bears ${tone1} while shaped ${form0}.`;
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: raw1, output: 'noted.' } });
+if (currentHas(M, TARGET, REL_TONE, tone0)) {
+  console.log('COMPOUND_CORRECTION_DIAGNOSTIC ' + JSON.stringify({
+    proposals: (M.knowledge?.facts || []).filter(f => f.relation === 'ρ:proposes_relation' && f.object && f.object.subject === TARGET && f.object.relation === REL_TONE)
+      .map(f => ({ episode: f.subject, object: f.object.object })),
+    routes: (M.knowledge?.rules || []).filter(r => r.provenance?.kind === 'surface_induction' && r.provenance?.subject === TARGET && r.provenance?.relation === REL_TONE)
+      .map(r => ({ id: r.id, active: r.active, object: r.provenance.object })),
+    current: (M.knowledge?.current?.facts || []).filter(f => f.subject === TARGET && f.relation === REL_TONE).map(f => f.object),
+  }, null, 2));
+}
 assert(!currentHas(M, TARGET, REL_TONE, tone0), 'old compound tone remained current after recurrent correction');
 assert(currentHas(M, TARGET, REL_TONE, tone1), 'corrected compound tone did not become current');
 assert(currentHas(M, TARGET, REL_FORM, form0), 'independent form was lost when only tone changed');
