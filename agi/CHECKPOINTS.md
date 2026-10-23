@@ -29,7 +29,7 @@ Absence from conversation is `unknown`, never repository absence.
 
 ## Solved / do not redo
 
-- variable-length/position-free language, context, raw-language acquisition/correction, open discourse, canonical multi-hop expression;
+- variable-length/position-free language, context, single-relation raw-language acquisition/correction, open discourse, canonical multi-hop expression;
 - raw continuous same-time/delayed, unknown preservation, quantitative/nonlinear/joint/mixed-lag completion/correction/conflict;
 - learned relations becoming first-class occurrences and recursively higher-order material;
 - opaque word/phrase grounding to learned relations;
@@ -41,14 +41,16 @@ Absence from conversation is `unknown`, never repository absence.
 - receptor topology + raw dynamics co-participation; renaming invariant, non-isomorphic topology distinguishable;
 - endpoint-independent structural schema induction/held-out transfer with non-isomorphic rejection;
 - structural schema support/counterevidence and narrower refinement after broad defeat;
-- large connected contacted graphs no longer vanish from structural discovery: bounded connected <=8-edge neighborhoods are learned across renamed >8-edge worlds while full contact remains exact;
-- a learned small schema remains usable inside a larger connected cue: disposable schema-label-relevant views remove unrelated matching clutter without altering exact contact or fabricating the missing edge.
+- large connected contacted graphs -> bounded connected <=8-edge local schemas while full contact remains exact;
+- learned small schema usable inside larger connected clutter via disposable schema-relevant matching;
+- recursive structural composition: independently learned lower schemas -> first-class grounded schema instances -> repeated endpoint-renamed composition -> depth-2 schema -> held-out >8-edge missing-relation proposal grounded by that higher schema.
 
-Primary structural regressions: `embedded-structural-completion.test.js`, `large-connected-structural-world.test.js`, `structural-schema-refinement.test.js`, `structural-schema-corrigibility.test.js`, `structural-relation-transfer.test.js`, `topology-dynamics-integration.test.js`.
+Primary structural regressions: `recursive-structural-composition.test.js`, `embedded-structural-completion.test.js`, `large-connected-structural-world.test.js`, `structural-schema-refinement.test.js`, `structural-schema-corrigibility.test.js`, `structural-relation-transfer.test.js`, `topology-dynamics-integration.test.js`.
 Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
-Validated cognitive head: `38225e079cfcf1be18e88c4a390b22a87c15b2e2`.
-Blueprint run `39888053669`: full success.
+Validated recursive-composition cognitive head: `f98395c130cf9cb1e456439e5d56951c41b6ed0d`.
+Test-only held-out correction head: `1ce7cf8b2cf4bbba84d2cc204e925a86069cdd52`.
+Blueprint run `40009451358`: full success.
 
 ## Failure / repair constraints
 
@@ -65,49 +67,50 @@ Blueprint run `39888053669`: full success.
 11. **No internal-event recursion:** internal evaluation shares its triggering lived order and does not recursively rerun lifecycle.
 12. **Occurrence anatomy must not self-reify:** representation metadata is not another world event.
 13. **Anti-cheat boundary:** generic normalization stays outside content-specific logic; never weaken guards to pass.
-14. **Independent structural bindings:** repeated same concrete binding is not new endpoint-independent support; exact raw contact still remains.
+14. **Independent structural bindings:** repeated same concrete binding is not new endpoint-independent support.
 15. **Structural support is contact-local:** do not silently stitch separate contacts across time unless separately learned/tested.
-16. **Schema counterevidence:** proposal eligibility is derived directly from canonical M `counterexample` facts; no semantic status copied into cache.
+16. **Schema counterevidence:** proposal eligibility derives from canonical M counterexample facts; no copied status.
 17. **Refinement:** defeat of a broad schema does not block a structurally distinct narrower schema.
-18. **Large-world search:** never fix scale by raising `MAX_COMPONENT_EDGES`; oversized components use real bounded connected neighborhoods. No exhaustive subgraph enumeration.
-19. **Embedded matching:** schema-label filtering is a disposable view only. Exact cue edges stay in M; repeated-label ambiguity must remain open rather than guessed.
-20. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
-21. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has a known long runtime.
-22. **Indexes:** temporal/structural caches are rebuildable acceleration only; deleting them must not alter warrant/contact.
+18. **Large-world search:** never fix scale by raising `MAX_COMPONENT_EDGES`; use bounded connected views, not exhaustive subgraphs.
+19. **Embedded matching:** disposable schema-relevant views may ignore unrelated labels; exact contact remains M.
+20. **Recursive structural composition:** only schemas predating a contact may instantiate on that contact; a new schema cannot self-bootstrap its own support. Lower instances retain bindings/contact/source-schema provenance; higher schemas remain proposals.
+21. **Boundary test arithmetic matters:** 8 edges equals the local budget, not beyond it. The recursive held-out fixture needed a ninth connected irrelevant edge; repair was test-only.
+22. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
+23. **CI cost:** recursive continuous-temporal is >6 min and path-scoped; frontier `embodied-crossmodal-grounding` has known long runtime; high-dimensional continuous is a known slow blueprint tail.
+24. **Indexes:** temporal/structural caches are rebuildable acceleration only; deleting them must not alter warrant/contact.
+25. **Surface scaling debt:** `mind-relational.js` currently reconstructs surface episodes from all M facts for repeated language operations. This is correct but not long-life efficient; any optimization must be a rebuildable zero-authority index and preserve identical behavior when rebuilt from M.
 
-## Closed: bounded local structural learning and embedded completion
+## Closed: recursive structural composition
 
-`large contacted graph -> bounded connected local views -> endpoint-independent local schemas -> schema-guided completion inside larger connected context`
+`local schemas -> grounded schema instances -> composed derived view -> higher schema -> held-out higher-schema completion`
 
-The local work budget remains 8 edges. Search may derive bounded neighborhoods or schema-relevant views, but untouched complete contact remains canonical M. A completion is an open proposal grounded by the learned schema, never fabricated observation.
+The raw graph may exceed the local 8-edge search budget. Learned lower schemas compress grounded substructure only in a disposable view; exact raw contact remains canonical M. Repeated independent bindings support the higher schema. Held-out completion is an open proposal, never fabricated observation.
 
-## Current frontier: recursive composition of local structural schemas
+## Current frontier: surface-only acquisition of multiple propositions from one utterance
 
-Repository search confirms structural schemas are first-class M subjects, but structural discovery still operates on concrete contacted edges only. A learned schema/instance does not yet become structural material from which a higher schema can span beyond one local 8-edge search budget.
+Repository search and existing gates show broad *output* discourse already expresses several M relations, while raw-language acquisition currently promotes one inferred subject/relation/object triple from a surface-only episode. No existing gate demonstrates one raw compound utterance teaching several independently queryable M relations without supplying semantic triples beside it.
 
 Target:
 
-`independently learned local schemas + repeated connected compositions whose raw graph exceeds one local budget -> first-class grounded schema instances -> higher structural relation/schema -> held-out completion requiring composition`
+`compound raw utterance -> several M-owned relation proposals -> independent recurrent warrant/correction -> separate specific queries + broad discourse`
 
 Requirements:
 
 - preserve one focused failure before cognition changes;
-- train lower schemas independently from the held-out composition;
-- do not raise `MAX_COMPONENT_EDGES` or enumerate all subgraphs;
-- reuse existing first-class relation-term/M machinery rather than create a schema-composition mind;
-- a lower schema instance must retain the concrete binding/contact and source-schema provenance that grounds it;
-- proposals do not self-warrant: a schema candidate or completion proposal cannot become higher-level truth merely by being proposed;
-- repeated independent grounded compositions, not one repeated concrete binding, must supply higher-level support;
-- endpoint renaming must preserve the composed structure; non-isomorphic compositions must remain distinct;
-- ambiguous lower-schema mappings remain alternatives rather than guessed bindings;
-- exact raw contact remains below every composed abstraction;
-- held-out success must require the composed learned structure, not a single <=8-edge raw neighborhood shortcut.
-
-Classification: likely **connection/extension of existing structural abstraction using first-class relation terms**, not a new learner. Search/falsify reuse before implementation.
+- school the compound surface form on multiple independently crossed entities with structured contact, then remove structured semantics for the target utterance;
+- target utterance must contain at least two independent relations whose values do not predict one another;
+- one occurrence only proposes; recurrence supplies support;
+- each proposition must remain separately corrigible; correcting one must not rewrite the other;
+- queries for either relation must read canonical M, not a copied sentence/frame store;
+- broad output may compose the learned relations, but output discourse is not input semantic authority;
+- no sentence-specific parser, conjunction keyword rule, semantic dictionary, or fixed proposition count;
+- preserve exact raw tokens/contact and source episode provenance;
+- reuse the existing episode/template/role machinery if possible; classification is **extension of the existing surface-to-M proposal bridge**, not a new language mind.
 
 ## Later, not current
 
-- whole-book scale and unrestricted cross-domain developmental continuation;
+- long-life/whole-book scaling after compound semantic acquisition; specifically remove repeated full-history surface reconstruction with rebuildable zero-authority indexing if falsified by a long-stream gate;
+- frozen unseen long heterogeneous symbolic corpus / cross-domain continuation;
 - unrestricted AGI is not demonstrated.
 
 ## Efficiency rules
