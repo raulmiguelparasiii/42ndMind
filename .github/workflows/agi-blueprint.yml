@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Large connected structural-world gate
+        run: node agi/large-connected-structural-world.test.js
       - name: Structural schema refinement-after-defeat gate
         run: node agi/structural-schema-refinement.test.js
       - name: Structural schema corrigibility gate
