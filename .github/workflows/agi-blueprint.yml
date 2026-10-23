@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Compound raw-language acquisition gate
+        run: node agi/compound-raw-language-acquisition.test.js
       - name: Recursive structural-composition gate
         run: node agi/recursive-structural-composition.test.js
       - name: Embedded local structural-completion gate
