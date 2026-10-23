@@ -44,14 +44,16 @@ Absence from conversation is `unknown`, never repository absence.
 - endpoint-independent structural schema induction/held-out transfer with non-isomorphic rejection;
 - structural schema support/counterevidence and narrower refinement after broad defeat;
 - bounded connected structural views, embedded matching, recursive depth-2 structural composition;
-- long-life surface access through versioned append-synchronized `surface_episode_index`, rebuildable from canonical M with identical behavior after deletion/version invalidation.
+- long-life surface access through versioned append-synchronized `surface_episode_index`, rebuildable from canonical M with identical behavior after deletion/version invalidation;
+- frozen long-life symbolic->numeric continuation: late relation learning after substantial prior life, raw-only target acquisition/correction, canonical derivation, broad discourse, then later raw quantitative learning in the same M.
 
 Primary language regressions: `long-life-surface-access.test.js`, `compound-raw-language-acquisition.test.js`, `raw-language-acquisition.test.js`, `open-discourse.test.js`, `canonical-language-bridge.test.js`, `contextual-dialogue.test.js`, `variable-length-language.test.js`.
 Primary structural regressions: `recursive-structural-composition.test.js`, `embedded-structural-completion.test.js`, `large-connected-structural-world.test.js`, `structural-schema-refinement.test.js`, `structural-schema-corrigibility.test.js`, `structural-relation-transfer.test.js`, `topology-dynamics-integration.test.js`.
 Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
-Current fully green cognitive head: `a9f62ab6860a0ef05671480e08f01d6ef02ce7ce`.
-Blueprint run `40020732067`: full success across long-life surface, compound language, recursive structure, temporal/action, discourse, and high-dimensional sensing gates.
+Current fully green cognitive head remains `a9f62ab6860a0ef05671480e08f01d6ef02ce7ce`.
+Blueprint run `40020732067`: full success.
+Valid frozen certification commit `1d7d6d250e818963928e1025b83e6780203bcc06`, run `40022176858`: success with freeze integrity verified and independently crossed evaluator roles. Held-out execution took about 7m02s.
 
 ## Failure / repair constraints
 
@@ -77,49 +79,35 @@ Blueprint run `40020732067`: full success across long-life surface, compound lan
 20. **Raw retention:** exact surface history is asserted at `ρ:input_raw`, not tokenizer assumptions.
 21. **Surface episode index:** derived projection only; append-sync; invalid/missing version rebuilds from canonical M; never answer truth from cache.
 22. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
-23. **CI cost:** recursive continuous-temporal >6 min/path-scoped; frontier embodied-crossmodal and high-dimensional sensing are known slow gates.
-24. **Certification evaluator identifiability:** a held-out denominator must independently vary the roles it asks cognition to distinguish. A deterministic role correlation makes the measurement invalid, not a license to patch cognition.
+23. **CI/runtime cost:** recursive continuous-temporal >6 min/path-scoped; frontier embodied-crossmodal and high-dimensional sensing are known slow gates; the valid long-life held-out certification itself took ~7m02s and is now a measured scaling cost.
+24. **Certification evaluator identifiability:** a held-out denominator must independently vary roles it asks cognition to distinguish. Deterministic role correlation invalidates the evaluator rather than licensing a cognitive patch.
 
-## Closed: long-life surface access
+## Certification record
 
-`exact surface facts in M -> rebuildable episode projection -> incremental append synchronization -> unchanged language behavior after long unrelated history -> deletion/version rebuild from M`
+Attempt 1 (`e0b7c7902d93962197dce956af208bf3f323e3ff`, run `40021652878`) is preserved as invalid: its status role was deterministically tied to signal, then the target intentionally broke that correlation. No cognition changed from that result.
 
-The cache is disposable; canonical M remains sufficient.
+Valid refreeze: `d72b7edd7aa21523d7a3a167688d599f02838929`, still over cognitive head `a9f62ab6860a0ef05671480e08f01d6ef02ce7ce`.
+Valid held-out v2: `1d7d6d250e818963928e1025b83e6780203bcc06`, run `40022176858`.
+Demonstrated under frozen cognition:
 
-## Certification attempt 1: invalid evaluator, preserved
+`64 unrelated symbolic episodes -> newly introduced ontology -> recurrent raw-only target acquisition -> proposal gating -> canonical derived fact -> selective correction preserving independent facts -> broad discourse from current canonical M -> later raw affine relation discovery/completion`
 
-Freeze boundary: `e769fc430e0bdb1c63a23ad97dcd078496ec218e` over unchanged cognitive head `a9f62ab6860a0ef05671480e08f01d6ef02ce7ce`.
-Held-out commit: `e0b7c7902d93962197dce956af208bf3f323e3ff`.
-Run `40021652878` passed the freeze-integrity check and failed only at `broad discourse lost canonical derived status`.
+Runtime-generated ontology, one M, one C, exact earlier contact retained, no parallel cognitive authority.
 
-The evaluator itself was confounded: schooling assigned `status = STATUSES[signalIx]`, making status a deterministic function of signal, then demanded a target whose derived status broke that correlation. The roles were therefore not independently identifiable. The failed evaluator/test remains unchanged and is not a tuning set. This attempt supplies no valid pass/fail evidence about the frozen cognition at that criterion.
+## Current frontier: qualitatively broader raw reality, not more language fixtures
 
-No cognitive/runtime file changed after this result.
+The frozen long-life cross-domain continuation passed. Do not add another overlapping surface curriculum merely to increase counts. Search next for a genuinely different missing reality-contact class: spatial/visual-like raw structure, richer multiscale streams, or another capability the blueprint requires but current tests do not establish.
 
-## Current frontier: refrozen unseen long heterogeneous continuation
+Before implementation:
 
-This documentation-only commit is a new evaluation freeze over the same unchanged cognitive head. The next commit may add only a fresh held-out certification test + workflow. The failed attempt above remains untouched.
+- search existing topology/high-dimensional/waveform/structural tests and authorities;
+- identify the first blueprint claim not already covered;
+- preserve one decisive falsification;
+- keep receptor geometry/physical interface facts in S/M, not a vision module;
+- learned spatial/temporal structure must become ordinary M relation material and remain corrigible;
+- no object labels, detector, embedding model, or modality-specific cognitive authority.
 
-Fresh evaluator requirements:
-
-- runtime-generated vocabulary/ontology;
-- one uninterrupted M;
-- substantial unrelated symbolic history before a late domain;
-- late target facts learned from recurrent raw surface contact, not answer-shaped triples;
-- tone/signal/status schooling must be independently crossed; the test must assert the relevant anti-correlation/identifiability conditions before evaluating discourse;
-- selective raw correction changes only the contradicted relation;
-- canonical reasoning must derive an independent relation from a late raw-learned premise;
-- broad discourse must express the corrected + independent + derived current canonical facts;
-- same individual then learns/completes a novel raw numeric relation;
-- exact earlier contact remains in M;
-- no cognition changes after this freeze; a valid held-out failure rejects the candidate and requires a new developmental head/freeze.
-
-Classification: **certification/evaluation only**. No architecture change permitted during this attempt.
-
-## Later, not current
-
-- if the valid frozen evaluation passes: increase environmental breadth without changing C;
-- unrestricted AGI is not demonstrated by bounded green regressions alone.
+Classification: **unknown until repository search**; reuse/connection preferred over extension.
 
 ## Efficiency rules
 
@@ -128,11 +116,11 @@ Classification: **certification/evaluation only**. No architecture change permit
 - no whole-life rescan every contact when bounded/rebuildable access suffices;
 - no subsystem until search falsifies reuse of existing authority;
 - one decisive falsification > overlapping capability tests;
-- conceptual test error => invalidate/replace the evaluator without tuning cognition;
+- conceptual test error => invalidate/replace evaluator without tuning cognition;
 - continuity note stays compact.
 
 ## Certification boundary
 
 Historical freezes prove only stated bounded claims. Final AGI requires cognition frozen before evaluation, precommitted denominator, no leakage/post-failure cognitive patching, no privileged representation shortcut, cross-domain transfer, and ordinary-interface access to the same machinery.
 
-`green regressions != AGI`.
+`green regressions != unrestricted AGI`.
