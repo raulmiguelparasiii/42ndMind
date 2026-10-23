@@ -278,7 +278,7 @@ function attachedSurfacePhrase(state, value) {
     .sort((a, b) => sequenceEpisodeNumber(a.object.source_episode) - sequenceEpisodeNumber(b.object.source_episode));
   if (!rows.length) return undefined;
   const variants = unique(rows.map(f => f.object.tokens));
-  return variants.length === 1 ? variants[0] : rows.at(-1).object.tokens;
+  return variants.length === 1 && rows.length ? variants[0] : rows.at(-1).object.tokens;
 }
 
 function currentObjects(state, subject, relation) {
@@ -308,7 +308,7 @@ function discourseProjection(e, signature) {
   }
   return { ...e, channels };
 }
-function discourseNeighbors(episodes, inputTokens) {
+function discourseNeighbors(episodes, inputTokens, broadenSignature = false) {
   const candidates = episodes
     .filter(e => Array.isArray(e.input_tokens) && Array.isArray(e.output_tokens) && discourseSignature(e).length >= 2)
     .map(e => ({ e, signature: discourseSignature(e), score: structuralSimilarity(inputTokens, e.input_tokens) }))
@@ -331,7 +331,10 @@ function discourseNeighbors(episodes, inputTokens) {
     .sort((a, b) => b.score - a.score || b.support - a.support || stable(a.signature).localeCompare(stable(b.signature)));
   if (!ranked.length) return null;
   const chosen = ranked[0];
-  const projected = chosen.rows.map(x => discourseProjection(x.e, chosen.signature)).filter(Boolean);
+  const sourceRows = broadenSignature
+    ? candidates.filter(x => same(x.signature, chosen.signature))
+    : chosen.rows;
+  const projected = sourceRows.map(x => discourseProjection(x.e, chosen.signature)).filter(Boolean);
   return projected.length >= 2 ? { signature: chosen.signature, episodes: projected, score: chosen.score } : null;
 }
 
@@ -346,7 +349,12 @@ function inferRawSurfaceTriples(episodes, currentEpisode) {
   if (single) out.push(single);
   if (!currentEpisode || !Array.isArray(currentEpisode.input_tokens)) return unique(out);
 
-  const learned = discourseNeighbors(episodes.filter(e => e.id !== currentEpisode.id), currentEpisode.input_tokens);
+  // Local similarity identifies the relation-set; role induction then broadens
+  // over all grounded bindings of that same signature so current lexical values
+  // cannot become accidental constants merely because their nearest examples
+  // repeat one entity/value combination. This broader view is input-only: output
+  // discourse keeps its local surface neighborhood.
+  const learned = discourseNeighbors(episodes.filter(e => e.id !== currentEpisode.id), currentEpisode.input_tokens, true);
   if (!learned) return unique(out);
   const projected = learned.episodes.map(e => ({
     ...e,
