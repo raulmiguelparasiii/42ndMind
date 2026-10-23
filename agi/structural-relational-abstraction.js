@@ -1,9 +1,9 @@
 'use strict';
 
-// Zero-state structural abstraction over externally contacted symbolic relations.
-// Durable schema candidates, support, and proposals are ordinary M facts. The
-// local index under state.structure is rebuildable acceleration only: deleting it
-// cannot change what M warrants or what historical contact exists.
+// Zero-state structural abstraction over contacted symbolic relations.
+// Durable schema candidates, support, instances, and proposals are ordinary M
+// facts. The local index under state.structure is rebuildable acceleration only:
+// deleting it cannot change what M warrants or what historical contact exists.
 
 const crypto = require('crypto');
 const RNF = require('../relational-normal-form.js');
@@ -15,6 +15,7 @@ function unique(xs) { const m = new Map(); for (const x of xs || []) m.set(stabl
 
 const REPRESENTATION_PREDICATES = new Set(['ρ:kind', 'ρ:instantiates', 'ρ:order', 'ρ:lived_order']);
 const MAX_COMPONENT_EDGES = 8;
+const INDEX_VERSION = 2;
 
 function endpoint(v) {
   if (typeof v === 'string') return { value: v, form: 'value', key: stable(v) };
@@ -37,9 +38,7 @@ function contactEdges(contact) {
   return out;
 }
 
-function boundedComponentViews(component) {
-  if (component.length <= MAX_COMPONENT_EDGES) return [component];
-
+function adjacencyFor(component) {
   const byNode = new Map();
   component.forEach((edge, i) => {
     for (const node of [edge.from.key, edge.to.key]) {
@@ -59,16 +58,18 @@ function boundedComponentViews(component) {
       for (const j of byNode.get(node) || []) if (j !== i) out.add(j);
     return out;
   }
+  return { rankKey, adjacent };
+}
 
-  // One bounded connected neighborhood per edge anchor. This is local proposal
-  // search, not a partition or semantic representation: exact full contact stays
-  // in M. Growth always crosses a real shared endpoint and stops at the fixed
-  // local work budget instead of enumerating exponentially many subgraphs.
+function connectedViewsOfSize(component, size) {
+  if (component.length < size || size < 1) return [];
+  if (component.length === size) return [component];
+  const { rankKey, adjacent } = adjacencyFor(component);
   const views = [], seen = new Set();
   for (let anchor = 0; anchor < component.length; anchor++) {
     const selected = new Set([anchor]);
     const frontier = adjacent(anchor);
-    while (selected.size < MAX_COMPONENT_EDGES && frontier.size) {
+    while (selected.size < size && frontier.size) {
       let best = null, bestKey = null;
       for (const candidate of frontier) {
         const key = rankKey(candidate);
@@ -81,7 +82,7 @@ function boundedComponentViews(component) {
       selected.add(best);
       for (const next of adjacent(best)) if (!selected.has(next)) frontier.add(next);
     }
-    if (selected.size < 2) continue;
+    if (selected.size !== size) continue;
     const indices = [...selected].sort((a, b) => a - b);
     const key = indices.join(',');
     if (seen.has(key)) continue;
@@ -91,7 +92,15 @@ function boundedComponentViews(component) {
   return views;
 }
 
-function connectedComponents(edges) {
+function boundedComponentViews(component) {
+  if (component.length <= MAX_COMPONENT_EDGES) return [component];
+  // One bounded connected neighborhood per edge anchor. This is local proposal
+  // search, not a partition or semantic representation: exact full contact stays
+  // in M and no exhaustive subgraph enumeration is introduced.
+  return connectedViewsOfSize(component, MAX_COMPONENT_EDGES);
+}
+
+function rawConnectedComponents(edges) {
   const byNode = new Map();
   edges.forEach((edge, i) => {
     for (const node of [edge.from.key, edge.to.key]) {
@@ -112,9 +121,13 @@ function connectedComponents(edges) {
         seen.add(next); queue.push(next);
       }
     }
-    if (component.length >= 2) out.push(...boundedComponentViews(component));
+    if (component.length >= 2) out.push(component);
   }
   return out;
+}
+
+function connectedComponents(edges) {
+  return rawConnectedComponents(edges).flatMap(boundedComponentViews);
 }
 
 function canonicalComponent(edges) {
@@ -158,20 +171,23 @@ function rebuildIndex(state, throughOrder) {
     } else if (kind === 'structural_relation_schema_candidate') {
       const signature = oneValue(facts, 'ρ:schema_signature', x => typeof x === 'string');
       const edges = oneValue(facts, 'ρ:schema_edges', Array.isArray);
-      if (signature && edges) schemas[id] = { id, signature, edges };
+      const depth = oneValue(facts, 'ρ:schema_depth', Number.isFinite) || 1;
+      const composedFrom = facts.filter(f => f.relation === 'ρ:composed_from_schema' && f.object?.ref !== undefined)
+        .map(f => String(f.object.ref));
+      if (signature && edges) schemas[id] = { id, signature, edges, depth, composedFrom: unique(composedFrom).sort() };
     }
   }
   for (const record of Object.values(bySignature)) {
     record.ids = unique(record.ids.map(String)).sort();
     record.bindings = unique(record.bindings.map(String)).sort();
   }
-  return { version: 1, indexed_through_order: throughOrder, by_signature: bySignature, schemas };
+  return { version: INDEX_VERSION, indexed_through_order: throughOrder, by_signature: bySignature, schemas };
 }
 
 function ensureIndex(state, order) {
   if (!state.structure) state.structure = {};
   let cache = state.structure.structural_abstraction_index;
-  if (!cache || cache.version !== 1 || cache.indexed_through_order !== order - 1) {
+  if (!cache || cache.version !== INDEX_VERSION || cache.indexed_through_order !== order - 1) {
     cache = rebuildIndex(state, order - 1);
     state.structure.structural_abstraction_index = cache;
   }
@@ -185,17 +201,18 @@ function patternOccurrenceId(order, component) {
   return `structural-pattern-occurrence:${order}:${digest(concrete)}`;
 }
 
-function recordCurrentPatterns(state, contact, order, cache, facts) {
-  const components = connectedComponents(contactEdges(contact));
+function recordComponents(state, components, order, cache, facts, metadata = {}) {
+  const depth = Number.isFinite(metadata.depth) ? metadata.depth : 1;
+  const composedFrom = unique((metadata.composedFrom || []).map(String)).sort();
+  const instanceIds = unique((metadata.instanceIds || []).map(String)).sort();
+
   for (const component of components) {
     const canonical = canonicalComponent(component);
     let record = cache.by_signature[canonical.signature];
     if (!record) record = cache.by_signature[canonical.signature] = { ids: [], bindings: [], edges: canonical.edges };
 
-    // Exact raw contact is already retained by canonical M. Repeating the same
-    // structural signature on the same concrete endpoint binding adds no new
-    // endpoint-independent evidence, so do not grow a redundant derived pattern
-    // occurrence for every repeated sensor/contact frame.
+    // Exact raw/derived grounding already remains in M. The same concrete binding
+    // is not new endpoint-independent evidence.
     const newBinding = !record.bindings.includes(canonical.binding_signature);
     let occurrence = null;
     if (newBinding) {
@@ -212,23 +229,31 @@ function recordCurrentPatterns(state, contact, order, cache, facts) {
         [occurrence, 'ρ:lived_order', order],
         [occurrence, 'ρ:based_on_contact', ref(`lived-contact:${order}`)],
       );
+      for (const instance of instanceIds) facts.push([occurrence, 'ρ:derived_from_schema_instance', ref(instance)]);
     }
 
-    // Recurrence on one exact binding is not endpoint-independent evidence.
     if (record.bindings.length < 2) continue;
     const id = schemaId(canonical.signature);
     if (!cache.schemas[id]) {
-      cache.schemas[id] = { id, signature: canonical.signature, edges: canonical.edges };
+      cache.schemas[id] = { id, signature: canonical.signature, edges: canonical.edges, depth, composedFrom };
       facts.push(
         [id, 'ρ:kind', 'structural_relation_schema_candidate'],
         [id, 'ρ:schema_signature', canonical.signature],
         [id, 'ρ:schema_edges', canonical.edges],
+        [id, 'ρ:schema_depth', depth],
         [id, 'ρ:formation_status', 'proposal'],
         ['self', 'ρ:structural_schema_candidate', ref(id)],
       );
+      for (const source of composedFrom) facts.push([id, 'ρ:composed_from_schema', ref(source)]);
     }
     if (occurrence) facts.push([id, 'ρ:supported_by', ref(occurrence)]);
   }
+  return components;
+}
+
+function recordCurrentPatterns(state, contact, order, cache, facts) {
+  const components = connectedComponents(contactEdges(contact));
+  recordComponents(state, components, order, cache, facts, { depth: 1 });
   return components;
 }
 
@@ -364,6 +389,105 @@ function proposeCompletions(state, components, order, cache, facts) {
   }
 }
 
+function concreteEdgeKey(edge) { return stable([edge.labelKey, edge.from.key, edge.to.key]); }
+function nodeEndpoints(component) {
+  const out = new Map();
+  for (const edge of component) {
+    out.set(edge.from.key, edge.from);
+    out.set(edge.to.key, edge.to);
+  }
+  return out;
+}
+function fullSchemaMappings(schema, component) {
+  if (component.length !== schema.edges.length) return [];
+  const schemaSet = new Set(schema.edges.map(schemaEdgeKey));
+  return candidateMappings(schema.edges, component).filter(mapping => {
+    const represented = new Set(component.map(edge => stable([
+      edge.labelKey, mapping.get(edge.from.key), mapping.get(edge.to.key),
+    ])));
+    return represented.size === schemaSet.size && [...schemaSet].every(key => represented.has(key));
+  });
+}
+function schemaInstanceViews(schema, allEdges) {
+  const labels = new Set(schema.edges.map(edge => edge[0]));
+  const filtered = allEdges.filter(edge => labels.has(edge.labelKey));
+  if (filtered.length < schema.edges.length) return [];
+  const views = [];
+  for (const component of rawConnectedComponents(filtered))
+    views.push(...connectedViewsOfSize(component, schema.edges.length));
+  return views;
+}
+
+function recognizeSchemaInstances(state, schemas, allEdges, order, facts) {
+  const defeated = counterexampledSchemas(state);
+  const instances = [], seen = new Set();
+  for (const schema of schemas) {
+    if (!schema?.edges?.length || defeated.has(String(schema.id))) continue;
+    for (const view of schemaInstanceViews(schema, allEdges)) {
+      const endpoints = nodeEndpoints(view);
+      for (const mapping of fullSchemaMappings(schema, view)) {
+        const bindings = [...mapping.entries()].map(([key, role]) => {
+          const ep = endpoints.get(key);
+          return { role, value: ep.value, form: ep.form, key: ep.key };
+        }).sort((a, b) => a.role - b.role || stable(a.value).localeCompare(stable(b.value)));
+        const identity = [schema.id, bindings.map(x => [x.role, x.value, x.form])];
+        const id = `structural-schema-instance:${order}:${digest(identity)}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const covered = new Set(view.map(concreteEdgeKey));
+        const instance = { id, schema, depth: schema.depth || 1, bindings, covered };
+        instances.push(instance);
+        facts.push(
+          [id, 'ρ:kind', 'structural_schema_instance'],
+          [id, 'ρ:instantiates_schema', ref(schema.id)],
+          [id, 'ρ:schema_depth', instance.depth],
+          [id, 'ρ:schema_bindings', bindings.map(x => ({ role: x.role, value: x.value, form: x.form }))],
+          [id, 'ρ:formation_status', 'proposal'],
+          [id, 'ρ:based_on_contact', ref(`lived-contact:${order}`)],
+        );
+      }
+    }
+  }
+  return instances;
+}
+
+function schemaRoleEdge(instance, binding) {
+  const relation = `ρ:structural-schema-role:${digest([instance.schema.signature, binding.role])}`;
+  const from = endpoint(instance.id);
+  const to = { value: binding.value, form: binding.form, key: binding.key };
+  const label = { relation, subject_form: from.form, object_form: to.form };
+  return { label, labelKey: stable(label), from, to };
+}
+
+function compositionViews(instances, rawEdges) {
+  const out = [];
+  for (let i = 0; i < instances.length; i++) for (let j = i + 1; j < instances.length; j++) {
+    const a = instances[i], b = instances[j];
+    if (a.id === b.id) continue;
+    const aKeys = new Set(a.bindings.map(x => x.key));
+    const bKeys = new Set(b.bindings.map(x => x.key));
+    const bound = new Set([...aKeys, ...bKeys]);
+    const shared = [...aKeys].some(key => bKeys.has(key));
+    const covered = new Set([...a.covered, ...b.covered]);
+    const connectors = rawEdges.filter(edge => bound.has(edge.from.key) && bound.has(edge.to.key) && !covered.has(concreteEdgeKey(edge)));
+    if (!shared && !connectors.length) continue;
+
+    const edges = [
+      ...a.bindings.map(binding => schemaRoleEdge(a, binding)),
+      ...b.bindings.map(binding => schemaRoleEdge(b, binding)),
+      ...connectors,
+    ];
+    if (edges.length < 2 || edges.length > MAX_COMPONENT_EDGES) continue;
+    out.push({
+      component: edges,
+      depth: Math.max(a.depth, b.depth) + 1,
+      composedFrom: unique([a.schema.id, b.schema.id]).sort(),
+      instanceIds: [a.id, b.id].sort(),
+    });
+  }
+  return out;
+}
+
 function relationalUpdate(state, originalContact) {
   if (!state || state.whole !== 1 || !state.structure) return null;
   const order = state.structure.lived_contact_order;
@@ -372,9 +496,28 @@ function relationalUpdate(state, originalContact) {
   if (edges.length < 2) return null;
 
   const cache = ensureIndex(state, order);
+  // Only schemas that predate this contact may instantiate on it. A schema first
+  // proposed by the current contact cannot recursively support itself.
+  const schemasBefore = Object.values(cache.schemas).map(schema => ({
+    ...schema,
+    edges: schema.edges.map(edge => [...edge]),
+    composedFrom: [...(schema.composedFrom || [])],
+  }));
+
   const facts = [];
   const components = recordCurrentPatterns(state, originalContact, order, cache, facts);
   proposeCompletions(state, components, order, cache, facts);
+
+  // Complete lower schemas are now first-class grounded instances. Pairwise
+  // recompression replaces each matched local graph with role-binding edges only
+  // in a disposable derived view; exact raw edges remain untouched in M.
+  const instances = recognizeSchemaInstances(state, schemasBefore, edges, order, facts);
+  const composed = compositionViews(instances, edges);
+  for (const view of composed) {
+    recordComponents(state, [view.component], order, cache, facts, view);
+  }
+  if (composed.length) proposeCompletions(state, composed.map(x => x.component), order, cache, facts);
+
   cache.indexed_through_order = order;
   return facts.length ? { relations: { facts } } : null;
 }
