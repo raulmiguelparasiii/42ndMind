@@ -45,23 +45,102 @@ function sequenceEpisodeNumber(id) {
   const n = Number(String(id).split(':').at(-1));
   return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
 }
-function sequenceEpisodes(state) {
-  const groups = new Map();
-  for (const f of state.knowledge?.facts || []) {
-    if (typeof f.subject !== 'string' || !f.subject.startsWith('sequence-contact:')) continue;
-    if (!groups.has(f.subject)) groups.set(f.subject, { id: f.subject, channels: new Map(), relations: [] });
-    const e = groups.get(f.subject);
-    if (f.relation === 'ρ:input_tokens' && Array.isArray(f.object)) e.input_tokens = f.object.slice();
-    else if (f.relation === 'ρ:output_tokens' && Array.isArray(f.object)) e.output_tokens = f.object.slice();
-    else if (f.relation === 'ρ:contact_channel' && f.object && Number.isInteger(f.object.index)) e.channels.set(f.object.index, f.object.value);
-    else if (f.relation === 'ρ:contact_relation' && f.object && typeof f.object === 'object') {
-      if (Object.prototype.hasOwnProperty.call(f.object, 'subject') && Object.prototype.hasOwnProperty.call(f.object, 'relation') && Object.prototype.hasOwnProperty.call(f.object, 'object')) e.relations.push({ ...f.object });
-    } else if (f.relation === 'ρ:proposes_relation' && f.object && typeof f.object === 'object') {
-      if (Object.prototype.hasOwnProperty.call(f.object, 'subject') && Object.prototype.hasOwnProperty.call(f.object, 'relation') && Object.prototype.hasOwnProperty.call(f.object, 'object')) e.relations.push({ ...f.object, source: 'proposal', order: Number.MAX_SAFE_INTEGER });
-    }
+
+// Surface episodes are durable only as ordinary M facts. This cache is a
+// rebuildable projection of those facts, never semantic or epistemic authority.
+// It exists solely so each later surface contact can process the newly appended
+// fact suffix instead of reconstructing the entire surface life repeatedly.
+const SURFACE_EPISODE_INDEX_VERSION = 1;
+function emptySurfaceEpisodeIndex(rebuilds = 1) {
+  return {
+    version: SURFACE_EPISODE_INDEX_VERSION,
+    authority: 'zero_authority_rebuildable',
+    fact_count: 0,
+    episode_count: 0,
+    rebuilds,
+    incremental_syncs: 0,
+    episodes: [],
+    positions: {},
+  };
+}
+function cachedEpisode(index, id) {
+  const key = String(id);
+  let position = index.positions?.[key];
+  if (!Number.isInteger(position) || !index.episodes?.[position] || index.episodes[position].id !== key) {
+    position = index.episodes.length;
+    if (!index.positions || typeof index.positions !== 'object') index.positions = {};
+    index.positions[key] = position;
+    index.episodes.push({ id: key, channels: [], relations: [] });
   }
-  for (const e of groups.values()) e.relations.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
-  return [...groups.values()].sort((a, b) => sequenceEpisodeNumber(a.id) - sequenceEpisodeNumber(b.id));
+  return index.episodes[position];
+}
+function applySurfaceEpisodeFact(index, fact, dirty) {
+  if (typeof fact?.subject !== 'string' || !fact.subject.startsWith('sequence-contact:')) return;
+  const e = cachedEpisode(index, fact.subject);
+  dirty.add(e.id);
+  if (fact.relation === 'ρ:input_tokens' && Array.isArray(fact.object)) e.input_tokens = fact.object.slice();
+  else if (fact.relation === 'ρ:output_tokens' && Array.isArray(fact.object)) e.output_tokens = fact.object.slice();
+  else if (fact.relation === 'ρ:contact_channel' && fact.object && Number.isInteger(fact.object.index)) {
+    const at = e.channels.findIndex(x => x[0] === fact.object.index);
+    const pair = [fact.object.index, fact.object.value];
+    if (at >= 0) e.channels[at] = pair; else e.channels.push(pair);
+    e.channels.sort((a, b) => a[0] - b[0]);
+  } else if (fact.relation === 'ρ:contact_relation' && fact.object && typeof fact.object === 'object') {
+    if (Object.prototype.hasOwnProperty.call(fact.object, 'subject') && Object.prototype.hasOwnProperty.call(fact.object, 'relation') && Object.prototype.hasOwnProperty.call(fact.object, 'object'))
+      e.relations.push({ ...fact.object });
+  } else if (fact.relation === 'ρ:proposes_relation' && fact.object && typeof fact.object === 'object') {
+    if (Object.prototype.hasOwnProperty.call(fact.object, 'subject') && Object.prototype.hasOwnProperty.call(fact.object, 'relation') && Object.prototype.hasOwnProperty.call(fact.object, 'object'))
+      e.relations.push({ ...fact.object, source: 'proposal', order: Number.MAX_SAFE_INTEGER });
+  }
+}
+function validSurfaceEpisodeIndex(index, facts) {
+  return !!(index && index.version === SURFACE_EPISODE_INDEX_VERSION &&
+    index.authority === 'zero_authority_rebuildable' && Array.isArray(index.episodes) &&
+    index.positions && typeof index.positions === 'object' && Number.isInteger(index.fact_count) &&
+    index.fact_count >= 0 && index.fact_count <= facts.length);
+}
+function surfaceEpisodeIndex(state) {
+  const facts = state.knowledge?.facts || [];
+  if (!state.structure || typeof state.structure !== 'object') state.structure = {};
+  let index = state.structure.surface_episode_index;
+  let start = 0;
+  let rebuilding = false;
+  if (!validSurfaceEpisodeIndex(index, facts)) {
+    const rebuilds = Number.isInteger(index?.rebuilds) ? index.rebuilds + 1 : 1;
+    index = emptySurfaceEpisodeIndex(rebuilds);
+    state.structure.surface_episode_index = index;
+    rebuilding = true;
+  } else {
+    start = index.fact_count;
+  }
+
+  if (start < facts.length) {
+    const dirty = new Set();
+    for (let i = start; i < facts.length; i++) applySurfaceEpisodeFact(index, facts[i], dirty);
+    for (const id of dirty) {
+      const position = index.positions[id];
+      const episode = index.episodes[position];
+      if (episode) episode.relations.sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+    }
+    index.fact_count = facts.length;
+    index.episode_count = index.episodes.length;
+    if (!rebuilding) index.incremental_syncs++;
+  } else {
+    index.episode_count = index.episodes.length;
+  }
+  return index;
+}
+function sequenceEpisodes(state) {
+  const index = surfaceEpisodeIndex(state);
+  return index.episodes
+    .map(e => ({
+      id: e.id,
+      ...(Array.isArray(e.input_tokens) ? { input_tokens: e.input_tokens.slice() } : {}),
+      ...(Array.isArray(e.output_tokens) ? { output_tokens: e.output_tokens.slice() } : {}),
+      channels: new Map(Array.isArray(e.channels) ? e.channels.map(x => [x[0], x[1]]) : []),
+      relations: Array.isArray(e.relations) ? e.relations.map(x => ({ ...x })) : [],
+    }))
+    .sort((a, b) => sequenceEpisodeNumber(a.id) - sequenceEpisodeNumber(b.id));
 }
 
 function directRole(episodes, queryTokens, channel) {
