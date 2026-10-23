@@ -37,6 +37,60 @@ function contactEdges(contact) {
   return out;
 }
 
+function boundedComponentViews(component) {
+  if (component.length <= MAX_COMPONENT_EDGES) return [component];
+
+  const byNode = new Map();
+  component.forEach((edge, i) => {
+    for (const node of [edge.from.key, edge.to.key]) {
+      if (!byNode.has(node)) byNode.set(node, []);
+      byNode.get(node).push(i);
+    }
+  });
+  const degree = key => (byNode.get(key) || []).length;
+  const rankKey = i => stable([
+    component[i].labelKey,
+    degree(component[i].from.key),
+    degree(component[i].to.key),
+  ]);
+  function adjacent(i) {
+    const out = new Set();
+    for (const node of [component[i].from.key, component[i].to.key])
+      for (const j of byNode.get(node) || []) if (j !== i) out.add(j);
+    return out;
+  }
+
+  // One bounded connected neighborhood per edge anchor. This is local proposal
+  // search, not a partition or semantic representation: exact full contact stays
+  // in M. Growth always crosses a real shared endpoint and stops at the fixed
+  // local work budget instead of enumerating exponentially many subgraphs.
+  const views = [], seen = new Set();
+  for (let anchor = 0; anchor < component.length; anchor++) {
+    const selected = new Set([anchor]);
+    const frontier = adjacent(anchor);
+    while (selected.size < MAX_COMPONENT_EDGES && frontier.size) {
+      let best = null, bestKey = null;
+      for (const candidate of frontier) {
+        const key = rankKey(candidate);
+        if (best === null || key < bestKey || (key === bestKey && candidate < best)) {
+          best = candidate; bestKey = key;
+        }
+      }
+      frontier.delete(best);
+      if (selected.has(best)) continue;
+      selected.add(best);
+      for (const next of adjacent(best)) if (!selected.has(next)) frontier.add(next);
+    }
+    if (selected.size < 2) continue;
+    const indices = [...selected].sort((a, b) => a - b);
+    const key = indices.join(',');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    views.push(indices.map(i => component[i]));
+  }
+  return views;
+}
+
 function connectedComponents(edges) {
   const byNode = new Map();
   edges.forEach((edge, i) => {
@@ -58,7 +112,7 @@ function connectedComponents(edges) {
         seen.add(next); queue.push(next);
       }
     }
-    if (component.length >= 2 && component.length <= MAX_COMPONENT_EDGES) out.push(component);
+    if (component.length >= 2) out.push(...boundedComponentViews(component));
   }
   return out;
 }
