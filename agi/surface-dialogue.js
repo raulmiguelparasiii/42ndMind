@@ -54,10 +54,11 @@ function spans(tokens, maxLength = 3) {
     for(let length=1;length<=maxLength&&start+length<=compact.length;length++) {
       const part=compact.slice(start,start+length);
       if(part.some(x=>!lexical(x))) break;
-      out.push({ tokens:part, text:Surface.renderTokens(part), length });
+      const key=stable(part);
+      if(!out.some(x=>x.key===key)) out.push({key,tokens:part,text:Surface.renderTokens(part),length});
     }
   }
-  return unique(out);
+  return out;
 }
 function containsSpan(tokens, phrase) {
   const input=Surface.compactTokens(tokens||[]), p=Surface.compactTokens(phrase||[]);
@@ -93,23 +94,33 @@ function questionAnswerRows(es) {
   return rows;
 }
 
-// Contrastive intent induction. A phrase is useful only when it has recurrent
-// support across independent subjects and all of its observed Q->A consequences
-// point to one relation. Thus common words such as "what" or "is" do not acquire
-// a relation when they occur in several different question intents.
+// Contrastive intent induction uses both sides of lived dialogue. A span may be
+// informative because people use it in questions ("where") or because it is the
+// stable relational wording in grounded assertions ("likes"). It is accepted only
+// when recurrence across independent subjects points to exactly one relation.
 function intentCues(rows) {
   const evidence=new Map();
-  for(const row of rows) for(const span of spans(row.q.input_tokens)) {
-    const key=stable(span.tokens);
-    if(!evidence.has(key)) evidence.set(key,{tokens:span.tokens,text:span.text,length:span.length,rows:[]});
-    evidence.get(key).rows.push(row);
+  function add(row,tokens,side) {
+    for(const span of spans(tokens)) {
+      if(!evidence.has(span.key)) evidence.set(span.key,{tokens:span.tokens,text:span.text,length:span.length,rows:[],sides:new Set()});
+      const e=evidence.get(span.key);
+      e.rows.push(row); e.sides.add(side);
+    }
+  }
+  for(const row of rows) {
+    add(row,row.q.input_tokens,'question');
+    add(row,row.a.input_tokens,'grounded_assertion');
   }
   const cues=[];
   for(const e of evidence.values()) {
-    const relations=unique(e.rows.map(x=>x.relation));
-    const subjects=unique(e.rows.map(x=>x.subject));
-    if(relations.length!==1||e.rows.length<3||subjects.length<3) continue;
-    cues.push({...e,relation:relations[0],support:e.rows.length,subject_diversity:subjects.length});
+    // One Q/A pair contributes the same relation twice when a span occurs on both
+    // sides; count unique dialogue rows rather than raw span occurrences.
+    const uniqueRows=unique(e.rows.map(r=>({q:r.q.id,a:r.a.id,subject:r.subject,relation:r.relation,object:r.object})))
+      .map(key=>e.rows.find(r=>r.q.id===key.q&&r.a.id===key.a));
+    const relations=unique(uniqueRows.map(x=>x.relation));
+    const subjects=unique(uniqueRows.map(x=>x.subject));
+    if(relations.length!==1||uniqueRows.length<3||subjects.length<3) continue;
+    cues.push({...e,rows:uniqueRows,relation:relations[0],support:uniqueRows.length,subject_diversity:subjects.length,sides:[...e.sides].sort()});
   }
   cues.sort((a,b)=>b.length-a.length||b.subject_diversity-a.subject_diversity||b.support-a.support||a.text.localeCompare(b.text));
   return cues;
@@ -118,19 +129,11 @@ function intentCues(rows) {
 function subjectFromQuery(state, rows, relation, tokens) {
   const candidates=[];
   const relationSubjects=new Set(rows.filter(r=>same(r.relation,relation)).map(r=>stable(r.subject)));
-
-  // Prefer M-owned expression attachments. These are learned from grounded lived
-  // contact and are not a hard-coded entity dictionary.
   for(const f of state.knowledge?.facts||[]) {
     if(f.relation!=='ρ:surface_expression'||!f.object||!Array.isArray(f.object.tokens)) continue;
     if(!containsSpan(tokens,f.object.tokens)) continue;
-    // A known subject of this relation is especially strong evidence, but a
-    // separately grounded entity may be novel for the relation and is still valid.
     candidates.push({value:f.subject,known:relationSubjects.has(stable(f.subject)),length:f.object.tokens.length});
   }
-
-  // The historical Q->A adjacency also grounds exact subject mentions even when
-  // an older contact did not create a surface-expression attachment.
   for(const row of rows.filter(r=>same(r.relation,relation))) {
     const phrase=attachedPhrase(state,row.subject) || [String(row.subject)];
     if(containsSpan(tokens,phrase)) candidates.push({value:row.subject,known:true,length:phrase.length});
@@ -157,8 +160,6 @@ function resolveQuestion(state, es, seq) {
     }
   }
 
-  // Structural fallback for a construction whose discriminative cue is not yet
-  // isolated. This remains learned from lived Q->A adjacency, not from a parser.
   const byRelation=new Map();
   for(const row of rows) {
     const key=stable(row.relation);
@@ -179,15 +180,20 @@ function resolveQuestion(state, es, seq) {
   return null;
 }
 
-// Use grounded INPUT constructions to speak a canonical fact. Comprehension and
-// expression are therefore two directions through the same learned relation.
+// Speak using only answer-turn constructions for this relation. Other grounded
+// sentences may express the same relation in different syntax, but mixing those
+// unrelated construction families destroys variable identity. Dialogue adjacency
+// itself tells M which observed assertions functioned as answers.
 function renderCanonicalFact(state, es, subject, relation, object) {
+  const qa=questionAnswerRows(es);
   const rows=[];
-  for(const e of es) {
-    if(!Array.isArray(e.input_tokens)) continue;
-    const rs=contactRelations(e);
-    if(rs.length!==1||!same(rs[0].relation,relation)) continue;
-    rows.push({...e,channels:new Map([[0,rs[0].subject],[1,rs[0].relation],[2,rs[0].object]]),output_tokens:Surface.compactTokens(e.input_tokens)});
+  for(const row of qa) {
+    if(!same(row.relation,relation)||!Array.isArray(row.a.input_tokens)) continue;
+    rows.push({
+      ...row.a,
+      channels:new Map([[0,row.subject],[1,row.relation],[2,row.object]]),
+      output_tokens:Surface.compactTokens(row.a.input_tokens),
+    });
   }
   if(rows.length<3) return null;
   const template=Surface.buildTemplate(rows.map(e=>e.output_tokens));
@@ -216,7 +222,7 @@ function respond(state, originalContact) {
   seq.expression=rendered.expression;
   seq.unresolved_output_positions=[];
   seq.dialogue_induction=true;
-  seq.intent_evidence=(resolved.cues||[]).map(c=>({surface:c.text,support:c.support,subject_diversity:c.subject_diversity}));
+  seq.intent_evidence=(resolved.cues||[]).map(c=>({surface:c.text,support:c.support,subject_diversity:c.subject_diversity,sides:c.sides}));
   seq.output_template=rendered.template;
   seq.output_roles=rendered.roles;
   seq.canonical_grounding={subject:resolved.subject,relation:resolved.relation,object:objects[0],source:'M.knowledge.current.facts',authority:'canonical_M',status:'grounded_from_lived_dialogue'};
