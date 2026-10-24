@@ -6,6 +6,7 @@ on:
       - experiment/one-live-m-prose-learning-20261023
     paths:
       - 'agi-prose-reasoning-certification.test.js'
+      - 'agi/raw-paraphrase-learning.test.js'
       - '.github/workflows/agi-prose-reasoning-certification.yml'
   workflow_dispatch:
 
@@ -24,3 +25,5 @@ jobs:
           node-version: 22
       - name: Prose to reasoning certification
         run: node agi-prose-reasoning-certification.test.js
+      - name: Novel raw paraphrase learning falsification
+        run: node agi/raw-paraphrase-learning.test.js
