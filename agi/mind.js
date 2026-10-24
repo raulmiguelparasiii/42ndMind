@@ -9,6 +9,7 @@
 
 const Relational = require('./mind-relational.js');
 const OrderedSurface = require('./ordered-surface-contact.js');
+const RawConceptDefinition = require('./raw-concept-definition.js');
 const RawProposalExpressions = require('./raw-proposal-expression-grounding.js');
 const SourcedClaims = require('./sourced-surface-claims.js');
 const Continuous = require('./continuous-relational-contact.js');
@@ -223,9 +224,12 @@ function C(state, realityContact) {
   Relational.C(state, realityContact);
 
   // Raw proposal formation already happened inside Relational.C. Preserve exact
-  // observed endpoint expressions for later rendering, and preserve explicitly
-  // sourced prose as claims-with-provenance rather than direct actuality.
+  // observed endpoint expressions for later rendering, learn explicit relational
+  // definitions from already-grounded rule/surface structure, and preserve sourced
+  // prose as claims-with-provenance rather than direct actuality.
   if (realityContact && typeof realityContact === 'object' && realityContact.surface) {
+    const definitionUpdate = RawConceptDefinition.relationalUpdate(state, realityContact);
+    if (definitionUpdate) Relational.C(state, definitionUpdate);
     const expressionUpdate = RawProposalExpressions.relationalUpdate(state);
     if (expressionUpdate) Relational.C(state, expressionUpdate);
     const sourcedUpdate = SourcedClaims.relationalUpdate(state, realityContact);
