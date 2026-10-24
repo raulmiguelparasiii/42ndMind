@@ -85,8 +85,15 @@ for (let i = 0; i < definitions.length; i++) {
   paired(M, `${example} is less than ${high}.`, 'noted.', [example, REL_LESS, high]);
   paired(M, `what category is ${example}?`, `it is ${concept}.`, [example, REL_CATEGORY, concept]);
 }
-for (const value of [TARGET, TARGET_LOW, TARGET_HIGH])
-  paired(M, `${value} is a number.`, 'noted.', [value, REL_NUMBER_KIND, 'number']);
+
+// The held-out comparison remains unseen, but each numeral identity receives
+// recurrent grounded experience before scaffolding is withdrawn. This satisfies
+// the same recurrence requirement used elsewhere in M rather than granting a
+// one-shot privileged interpretation to the final question.
+for (let round = 0; round < 3; round++) {
+  for (const value of [TARGET, TARGET_LOW, TARGET_HIGH])
+    paired(M, `${value} is a number.`, 'noted.', [value, REL_NUMBER_KIND, 'number']);
+}
 
 assert(!has(M, TARGET, REL_GREATER, TARGET_LOW));
 assert(!has(M, TARGET, REL_LESS, TARGET_HIGH));
@@ -139,6 +146,7 @@ console.log(JSON.stringify({
   teacher_grounding_source: 'mathematically_checked_relational_contact',
   ordinary_english_schooling: true,
   crossed_math_examples_remove_role_correlation: true,
+  recurrent_numeral_identity_grounding: true,
   target_definition_semantic_rules_supplied: 0,
   target_premise_semantic_triples_supplied: 0,
   target_question_semantic_channels_supplied: 0,
