@@ -1,0 +1,49 @@
+name: AGI continue grown conversation
+on:
+  push:
+    branches: [experiment/one-live-m-prose-learning-20261023]
+    paths:
+      - 'agi/surface-dialogue.js'
+      - 'agi/surface-social-grounding.js'
+      - 'agi/surface-turn-completion.js'
+      - 'agi/live-mind.js'
+      - 'agi/continue-grown-conversation.js'
+      - '.github/workflows/agi-continue-grown-conversation.yml'
+  workflow_dispatch:
+concurrency:
+  group: agi-continue-grown-conversation
+  cancel-in-progress: true
+permissions:
+  actions: read
+  contents: read
+jobs:
+  continue-conversation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Recover the same grown individual
+        uses: actions/download-artifact@v4
+        with:
+          name: grown-M
+          path: ${{ runner.temp }}/grown
+          github-token: ${{ github.token }}
+          repository: raulmiguelparasiii/42ndMind
+          run-id: 40117359811
+      - name: Continue its life and converse
+        env:
+          MIND_STATE_IN: ${{ runner.temp }}/grown/grown-M.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M.json
+        run: |
+          set -euo pipefail
+          node agi/continue-grown-conversation.js
+      - name: Preserve the same continued individual
+        uses: actions/upload-artifact@v4
+        with:
+          name: continued-M
+          path: ${{ runner.temp }}/continued-M.json
+          retention-days: 30
+          compression-level: 9
