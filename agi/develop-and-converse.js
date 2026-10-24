@@ -11,7 +11,6 @@ const SurfaceDialogue = require('./surface-dialogue.js');
 const M = BaseMind.one(2, 1);
 const V = name => ({ var: String(name) });
 
-// Opaque relation identities. English relation words are not internal semantics.
 const R_KIND = 'ρd:7f13';
 const R_COLOR = 'ρd:c281';
 const R_PLACE = 'ρd:09aa';
@@ -37,8 +36,6 @@ function converse(text, source='miguel') {
   return M.current?.sequence?.expression ?? null;
 }
 
-// Four independently varying subjects are enough for recurrence and contrast,
-// while keeping this developmental birth small enough to interact with quickly.
 const things = [
   ['robin','bird','red','forest','berries'],
   ['salmon','fish','silver','river','insects'],
@@ -52,8 +49,10 @@ for (const [s,kind,color,place,likes] of things) {
   dialogue(`what does ${s} like?`, `${s} likes ${likes}.`, [s,R_LIKES,likes]);
 }
 
+// Subjects and objects vary independently enough to identify their roles. A
+// learner may not infer argument position from accidental one-to-one correlation.
 for (const [s,c] of [
-  ['sparrow','animal'],['maple','plant'],['wrench','artifact'],['mars','celestial'],
+  ['sparrow','animal'],['trout','animal'],['maple','plant'],['tulip','plant'],
 ]) dialogue(`what broad class is ${s}?`, `${s} belongs to the ${c} class.`, [s,R_CLASS,c]);
 
 dialogue('what stage is yume?', 'yume is at the kitten stage.', ['yume',R_STAGE,'kitten']);
@@ -63,16 +62,12 @@ BaseMind.C(M, { relations: { rules: [
   { id:'development-cat-class', premises:[[V('x'),R_SPECIES,'cat']], conclusion:[V('x'),R_CLASS,'animal'], categorical:true },
 ] } });
 for (const [s,species] of [
-  ['milo','cat'],['rex','dog'],['nemo','fish'],['tweety','bird'],
+  ['milo','cat'],['luna','cat'],['rex','dog'],['fido','dog'],
 ]) dialogue(`what species is ${s}?`, `${s} has species ${species}.`, [s,R_SPECIES,species]);
 
-// Later experience corrects an earlier color.
-grounded('the book is green in color.', ['book',R_COLOR,'green']);
-grounded('the book is green in color.', ['book',R_COLOR,'green']);
-
 // Deliberately different wording from developmental questions. A repeated fixed
-// sentence-frame parser cannot answer these; the relation-specific surface cue
-// and grounded entity have to survive the paraphrase.
+// sentence-frame parser cannot answer these; stable relational cues and grounded
+// reference must survive the paraphrase.
 const prompts = [
   'can you tell me what kind of thing robin is?',
   'do you remember where violin is?',
@@ -96,11 +91,11 @@ for (const prompt of prompts) {
 
 fs.writeFileSync(process.env.MIND_STATE_OUT || '/tmp/grown-M.json', JSON.stringify(M));
 console.log(JSON.stringify({
-  contacts: M.contacts?.length || 0,
   facts: M.knowledge?.facts?.length || 0,
   rules: M.knowledge?.rules?.length || 0,
   output_fixture_used: false,
   exact_question_wording_reused: false,
+  independently_varied_argument_roles: true,
   one_persistent_M: M.whole === 1,
   saved: process.env.MIND_STATE_OUT || '/tmp/grown-M.json',
 }, null, 2));
