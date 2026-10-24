@@ -3,11 +3,12 @@
 // Zero-state social grounding over canonical M.
 //
 // A surface assertion may omit one participant because language can refer to the
-// speaker or addressee implicitly (deixis).  We do not encode any pronoun.  Across
-// grounded lived examples we ask only whether a relational argument repeatedly
-// equals the actual source/target of the utterance or a varying surface slot.
-// Later raw sourced utterances may therefore become claims-with-provenance.  This
-// helper owns no dictionary, parser, truth ledger, or persistent state.
+// speaker or addressee implicitly. We encode no pronoun. Across grounded lived
+// examples we ask whether a relational argument repeatedly equals the actual
+// source/target of the utterance or a varying surface slot. Because raw experience
+// is retained, stronger later grounding may also reinterpret an earlier utterance
+// that was not understood when first heard. Resulting content remains sourced
+// testimony, not automatically world actuality.
 
 const Surface = require('./surface-template.js');
 
@@ -60,17 +61,19 @@ function valueFrom(resolver,current,match){
   }
   return undefined;
 }
-function inferredClaim(state,contact){
-  const es=episodes(state); if(es.length<4) return null;
-  const current=es.at(-1); if(!current||!Array.isArray(current.input_tokens)) return null;
-  if(current.source===undefined&&contact?.surface?.source!==undefined) current.source=contact.surface.source;
-  if(current.target===undefined&&contact?.surface?.target!==undefined) current.target=contact.surface.target;
-  const historical=[];
-  for(const e of es.slice(0,-1)){
+function groundedRows(es,excludeId){
+  const out=[];
+  for(const e of es){
+    if(e.id===excludeId) continue;
     const rs=directRelations(e);
-    if(rs.length===1&&Array.isArray(e.input_tokens)) historical.push({episode:e,triple:rs[0]});
+    if(rs.length===1&&Array.isArray(e.input_tokens)) out.push({episode:e,triple:rs[0]});
   }
-  const groups=new Map();
+  return out;
+}
+function inferForEpisode(es,current){
+  if(!current||!Array.isArray(current.input_tokens)||current.source===undefined) return null;
+  if(directRelations(current).length) return null;
+  const historical=groundedRows(es,current.id), groups=new Map();
   for(const row of historical){ const key=stable(row.triple.relation); if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(row); }
   const candidates=[];
   for(const rows0 of groups.values()){
@@ -78,50 +81,59 @@ function inferredClaim(state,contact){
       .sort((a,b)=>b.score-a.score||episodeNumber(b.episode.id)-episodeNumber(a.episode.id));
     if((ranked[0]?.score??0)<0.2) continue;
     const near=ranked.filter(x=>x.score>=Math.max(0.2,ranked[0].score-0.18)).slice(0,24);
-    if(near.length<3) continue;
+    if(near.length<3||unique(near.map(x=>x.episode.source)).length<2) continue;
     const template=Surface.buildTemplate(near.map(x=>compact(x.episode.input_tokens)));
     const match=template&&Surface.matchTemplate(compact(current.input_tokens),template);
     if(!template||!match) continue;
-    const subjectResolver=resolver(near,template,'subject');
-    const objectResolver=resolver(near,template,'object');
+    const subjectResolver=resolver(near,template,'subject'), objectResolver=resolver(near,template,'object');
     if(!subjectResolver||!objectResolver) continue;
     const subject=valueFrom(subjectResolver,current,match), object=valueFrom(objectResolver,current,match);
     if(subject===undefined||object===undefined) continue;
-    candidates.push({
-      subject, relation:near[0].triple.relation, object,
-      support:near.length,
-      score:near.reduce((s,x)=>s+x.score,0)/near.length,
-      subject_role:subjectResolver.kind,
-      object_role:objectResolver.kind,
-      support_episodes:near.map(x=>x.episode.id),
-    });
+    candidates.push({subject,relation:near[0].triple.relation,object,support:near.length,
+      score:near.reduce((s,x)=>s+x.score,0)/near.length,subject_role:subjectResolver.kind,object_role:objectResolver.kind,
+      support_episodes:near.map(x=>x.episode.id)});
   }
   candidates.sort((a,b)=>b.score-a.score||b.support-a.support||stable(a.relation).localeCompare(stable(b.relation)));
   if(!candidates.length) return null;
-  const top=candidates.filter(x=>Math.abs(x.score-candidates[0].score)<1e-9&&x.support===candidates[0].support);
-  const triples=unique(top.map(x=>({subject:x.subject,relation:x.relation,object:x.object})));
-  if(triples.length!==1) return null;
-  return top[0];
+  const best=candidates[0];
+  const peers=candidates.filter(x=>Math.abs(x.score-best.score)<1e-9&&x.support===best.support);
+  const triples=unique(peers.map(x=>({subject:x.subject,relation:x.relation,object:x.object})));
+  return triples.length===1?best:null;
 }
-function relationalUpdate(state,contact){
-  if(!contact?.surface||contact.surface.source===undefined||contact.surface.source===null) return null;
-  const learned=inferredClaim(state,contact); if(!learned) return null;
-  const es=episodes(state), episode=es.at(-1); if(!episode) return null;
-  const existing=(state.knowledge?.facts||[]).some(f=>f.relation==='ρ:source_episode'&&f.object?.ref===episode.id&&String(f.subject).startsWith('social-claim:'));
-  if(existing) return null;
+function claimedEpisodes(state){
+  const ids=new Set();
+  for(const f of state.knowledge?.facts||[])
+    if(f.relation==='ρ:source_episode'&&f.object?.ref!==undefined&&String(f.subject).startsWith('social-claim:')) ids.add(String(f.object.ref));
+  return ids;
+}
+function claimFacts(episode,learned){
   const claimId=`social-claim:${episode.id}`;
-  return {relations:{facts:[
+  return [
     [claimId,'ρ:kind','sourced_claim_occurrence'],
     [claimId,'ρ:epistemic_status','claim_with_provenance'],
     [claimId,'ρ:claim_subject',learned.subject],
     [claimId,'ρ:claim_relation',learned.relation],
     [claimId,'ρ:claim_object',learned.object],
-    [claimId,'ρ:claimed_by',contact.surface.source],
+    [claimId,'ρ:claimed_by',episode.source],
     [claimId,'ρ:source_episode',{ref:episode.id}],
-    [claimId,'ρ:induction_support',{support:learned.support,score:learned.score,subject_role:learned.subject_role,object_role:learned.object_role,support_episodes:learned.support_episodes}],
+    [claimId,'ρ:induction_support',{support:learned.support,score:learned.score,subject_role:learned.subject_role,object_role:learned.object_role,support_episodes:learned.support_episodes,retrospective:true}],
     [episode.id,'ρ:expressed_claim',{ref:claimId}],
     ['self','ρ:encountered_claim',{ref:claimId}],
-  ]}};
+  ];
+}
+function relationalUpdate(state,contact){
+  if(!contact?.surface) return null;
+  const es=episodes(state); if(es.length<4) return null;
+  const claimed=claimedEpisodes(state), facts=[];
+  // Reconsider a bounded recent slice whenever new experience arrives. Retention
+  // is canonical; this scan merely allows later-stabilized structure to explain
+  // earlier raw experience without asking reality to repeat itself.
+  for(const episode of es.slice(-96).reverse()){
+    if(claimed.has(episode.id)||episode.source===undefined||directRelations(episode).length) continue;
+    const learned=inferForEpisode(es,episode); if(!learned) continue;
+    facts.push(...claimFacts(episode,learned)); claimed.add(episode.id);
+  }
+  return facts.length?{relations:{facts}}:null;
 }
 
 module.exports={relationalUpdate};
