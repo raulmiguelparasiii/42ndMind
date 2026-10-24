@@ -55,26 +55,6 @@ function tripleParts(triple) {
       Object.prototype.hasOwnProperty.call(triple, 'object')) return triple;
   return null;
 }
-function projectedGroundedInference(state, input) {
-  const probe = structuredClone(state);
-  Mind.C(probe, { surface: { input, output: 'noted.' } });
-  const episode = SurfaceStructure.latestSurfaceEpisode(probe);
-  const facts = probe.knowledge?.facts || [];
-  const grounded = facts.filter(f => f.relation === 'ρ:grounded_surface_relation_alignment');
-  const projectedFacts = facts
-    .filter(f => f.relation !== 'ρ:surface_known_fact_alignment' && f.relation !== 'ρ:grounded_surface_relation_alignment')
-    .concat(grounded.map(f => ({ ...f, relation: 'ρ:surface_known_fact_alignment', object: { ...f.object, source: 'diagnostic_projection' } })));
-  const projected = {
-    ...probe,
-    knowledge: { ...probe.knowledge, facts: projectedFacts },
-    structure: { ...(probe.structure || {}) },
-  };
-  delete projected.structure.surface_structure_index;
-  const inferred = SurfaceStructure.inferTriples(projected, episode);
-  const expressions = (projected.knowledge?.facts || []).filter(f => f.relation === 'ρ:surface_expression' &&
-    f.object?.tokens && ['15', '10'].includes(f.object.tokens.join(''))).map(f => ({ value: f.subject, tokens: f.object.tokens }));
-  return { episode, inferred, expressions };
-}
 
 const M = Mind.one(1, 1);
 
@@ -125,11 +105,22 @@ const learnedDefinition = (M.knowledge?.rules || []).find(rule => {
 assert(learnedDefinition, 'raw English definition did not become a canonical M rule');
 assert.strictEqual(learnedDefinition.provenance?.kind, 'surface_definition_induction');
 
-const directDiagnostic = projectedGroundedInference(M, `${TARGET} is greater than ${TARGET_LOW}.`);
-console.log('GROUNDED ZERO-STATE INFERENCE', JSON.stringify(directDiagnostic, null, 2));
+const gtText = `${TARGET} is greater than ${TARGET_LOW}.`;
+Mind.C(M, { surface: { input: gtText, output: 'noted.' } });
+const gtEpisode = SurfaceStructure.latestSurfaceEpisode(M);
+const firstGtProposals = (M.knowledge?.facts || []).filter(f =>
+  String(f.subject) === String(gtEpisode?.id) && f.relation === 'ρ:proposes_relation').map(f => f.object);
+console.log('FIRST RAW GREATER PROPOSALS', JSON.stringify({
+  episode: gtEpisode?.id,
+  proposals: firstGtProposals,
+  current: (M.knowledge?.current?.facts || []).filter(f =>
+    (f.subject === TARGET || f.subject === String(TARGET)) && f.relation === REL_GREATER),
+}, null, 2));
+Mind.C(M, { surface: { input: gtText, output: 'noted.' } });
+Mind.C(M, { surface: { input: gtText, output: 'noted.' } });
 
-for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${TARGET} is greater than ${TARGET_LOW}.`, output: 'noted.' } });
-for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${TARGET} is less than ${TARGET_HIGH}.`, output: 'noted.' } });
+const ltText = `${TARGET} is less than ${TARGET_HIGH}.`;
+for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: ltText, output: 'noted.' } });
 
 assert(has(M, TARGET, REL_GREATER, TARGET_LOW), 'raw English did not recover the grounded meaning of greater than');
 assert(has(M, TARGET, REL_LESS, TARGET_HIGH), 'raw English did not recover the grounded meaning of less than');
