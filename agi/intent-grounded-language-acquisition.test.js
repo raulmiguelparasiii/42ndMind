@@ -12,14 +12,17 @@ const Mind = require('./mind.js');
 // Actions and their consequences are separate lived contacts. Training wording is
 // deliberately crossed and varied: no exact action-specific phrase reaches the
 // temporal support threshold, while the action-bearing word does. Held-out probes
-// combine familiar pieces in forms never demonstrated. Passing therefore requires
-// stable relational learning below whole-utterance memorization.
+// combine familiar pieces in forms never demonstrated. A new synonym is then
+// introduced late in the same life to require continued acquisition rather than a
+// closed schooling phase.
 
 const COMMAND_A = 'raise';
 const COMMAND_B = 'lower';
+const LATE_WORD = 'ascend';
 const FILLERS = ['look', 'ready', 'again', 'okay'];
 const CONCERN_BASE = 50;
 const TRAINING_ROUNDS = 12;
+const LATE_ROUNDS = 9;
 const TEMPORAL_SUPPORT = 8;
 
 const A_FORMS = [
@@ -34,6 +37,12 @@ const B_FORMS = [
 ];
 const HELD_OUT_A = 'please could you raise it now';
 const HELD_OUT_B = 'please could you lower it now';
+const LATE_FORMS = [
+  'please ascend now',
+  'could you ascend',
+  'ascend it please',
+];
+const HELD_OUT_LATE = 'please could you ascend it now';
 
 for (const file of [
   'mind.js',
@@ -43,17 +52,19 @@ for (const file of [
   'surface-relation-grounding.js',
 ]) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
-  for (const word of [COMMAND_A, COMMAND_B])
-    assert(!source.includes(`'${word}'`) && !source.includes(`\"${word}\"`), `${file} contains command-specific knowledge: ${word}`);
+  for (const word of [COMMAND_A, COMMAND_B, LATE_WORD])
+    assert(!source.includes(`'${word}'`) && !source.includes(`\"${word}\"`), `${file} contains curriculum-specific knowledge: ${word}`);
 }
 
-// Each exact action-specific training utterance occurs below the learner's support
-// threshold. The recurring lexical invariant is the action-bearing word itself.
 for (const form of [...A_FORMS, ...B_FORMS]) {
   const appearances = TRAINING_ROUNDS / 3;
-  assert(appearances < TEMPORAL_SUPPORT, 'an exact training phrase could reach temporal support by itself');
+  assert(appearances < TEMPORAL_SUPPORT, 'an exact initial training phrase could reach temporal support by itself');
 }
-assert(!A_FORMS.includes(HELD_OUT_A) && !B_FORMS.includes(HELD_OUT_B));
+for (const form of LATE_FORMS) {
+  const appearances = LATE_ROUNDS / 3;
+  assert(appearances < TEMPORAL_SUPPORT, 'an exact late training phrase could reach temporal support by itself');
+}
+assert(!A_FORMS.includes(HELD_OUT_A) && !B_FORMS.includes(HELD_OUT_B) && !LATE_FORMS.includes(HELD_OUT_LATE));
 
 const M = Mind.one(2, 1);
 assert.strictEqual(M.whole, 1);
@@ -82,6 +93,10 @@ function hasLivedExpression(raw) {
   const occurrences = new Set(facts.filter(f =>
     f.relation === 'ρ:instantiates' && f.object?.ref === term).map(f => String(f.subject)));
   return facts.some(f => occurrences.has(String(f.subject)) && f.relation === 'ρ:kind' && f.object === 'lived_occurrence');
+}
+function hasAnySurfaceTerm(raw) {
+  const term = `surface:${raw}`;
+  return (M.knowledge?.facts || []).some(f => f.subject === term || f.object?.ref === term);
 }
 
 function consequenceFor(intendedAction, actualAction) {
@@ -143,7 +158,6 @@ assert(hasLearnedSuccessor(`surface:${COMMAND_B}`, `action:motor:${ACTION_B}`),
   'stable lived experience did not learn the second word-to-action successor');
 
 // Shared context words were deliberately crossed over both opposed intentions.
-// They must not become the action discriminator.
 for (const shared of ['please', 'could', 'you', 'now', 'it']) {
   assert(!(hasLearnedSuccessor(`surface:${shared}`, `action:motor:${ACTION_A}`) &&
            hasLearnedSuccessor(`surface:${shared}`, `action:motor:${ACTION_B}`)),
@@ -159,10 +173,22 @@ function probe(raw, expectedAction, startingAction) {
     `held-out utterance ${JSON.stringify(raw)} did not recover its lived intended action`);
 }
 
-// Neither whole probe utterance occurred during schooling. The same learned word
-// meaning must remain effective inside a new surface context.
 probe(HELD_OUT_A, ACTION_A, ACTION_B);
 probe(HELD_OUT_B, ACTION_B, ACTION_A);
+
+// Continuous-learning boundary: this word and every phrase containing it are new
+// after the earlier language has already been acquired and used successfully.
+assert.strictEqual(hasAnySurfaceTerm(LATE_WORD), false, 'late word leaked into earlier life');
+for (let round = 0; round < LATE_ROUNDS; round++)
+  demonstrate(LATE_FORMS[round % LATE_FORMS.length], ACTION_A, FILLERS[(round + 2) % FILLERS.length]);
+
+assert(hasLivedExpression(LATE_WORD), 'late word did not become lived language material');
+assert.strictEqual((M.knowledge?.facts || []).some(f =>
+  f.subject === `surface:${LATE_WORD}` && f.relation === 'ρ:expresses'), false,
+  'late word received an explicit semantic dictionary link');
+assert(hasLearnedSuccessor(`surface:${LATE_WORD}`, `action:motor:${ACTION_A}`),
+  'late-life intent experience did not acquire the new word');
+probe(HELD_OUT_LATE, ACTION_A, ACTION_B);
 
 const facts = M.knowledge?.facts || [];
 const learnedOrdered = new Set(facts.filter(f =>
@@ -189,8 +215,11 @@ console.log(JSON.stringify({
   opposed_intents_learned_from_varied_wording: true,
   exact_action_specific_phrase_below_support_threshold: true,
   shared_context_words_crossed_between_intents: true,
-  held_out_surface_combinations: [HELD_OUT_A, HELD_OUT_B],
+  initial_held_out_surface_combinations: [HELD_OUT_A, HELD_OUT_B],
+  late_word_absent_before_late_life: true,
+  late_word_learned_from_intent_only: true,
+  late_held_out_surface_combination: HELD_OUT_LATE,
   held_out_language_controls_existing_actuator_via_M: true,
   hidden_command_or_language_authority: false,
 }, null, 2));
-console.log('INTENT-GROUNDED LANGUAGE ACQUISITION AND TRANSFER: PASS');
+console.log('CONTINUOUS INTENT-GROUNDED LANGUAGE ACQUISITION AND TRANSFER: PASS');
