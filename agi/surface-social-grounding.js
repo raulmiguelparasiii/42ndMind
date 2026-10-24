@@ -44,11 +44,20 @@ function episodes(state){
   return [...groups.values()].sort((a,b)=>episodeNumber(a.id)-episodeNumber(b.id));
 }
 function directRelations(e){ return (e?.relations||[]).filter(r=>r.source==='simultaneous_relational_contact'); }
+function channelIndex(channel){ return channel==='subject'?0:2; }
 function resolver(rows,template,channel){
   if(rows.every(r=>r.episode.source!==undefined&&same(r.triple[channel],r.episode.source))) return {kind:'source'};
   if(rows.every(r=>r.episode.target!==undefined&&same(r.triple[channel],r.episode.target))) return {kind:'target'};
-  const projected=rows.map(r=>({output_tokens:compact(r.episode.input_tokens),channels:new Map([[0,r.triple.subject],[1,r.triple.relation],[2,r.triple.object]])}));
-  const role=Surface.inferOutputRoles(projected,template).find(x=>x.channel===(channel==='subject'?0:2));
+
+  // Agency may already explain another argument that happens to covary one-to-one
+  // with this visible slot.  Do not let that hidden argument steal the slot.  The
+  // surface role is inferred only against the argument we are presently resolving.
+  const index=channelIndex(channel);
+  const projected=rows.map(r=>({
+    output_tokens:compact(r.episode.input_tokens),
+    channels:new Map([[index,r.triple[channel]]]),
+  }));
+  const role=Surface.inferOutputRoles(projected,template).find(x=>x.channel===index);
   return role?{kind:'slot',slot:role.slot}:null;
 }
 function valueFrom(resolver,current,match){
@@ -125,9 +134,6 @@ function relationalUpdate(state,contact){
   if(!contact?.surface) return null;
   const es=episodes(state); if(es.length<4) return null;
   const claimed=claimedEpisodes(state), facts=[];
-  // Reconsider a bounded recent slice whenever new experience arrives. Retention
-  // is canonical; this scan merely allows later-stabilized structure to explain
-  // earlier raw experience without asking reality to repeat itself.
   for(const episode of es.slice(-96).reverse()){
     if(claimed.has(episode.id)||episode.source===undefined||directRelations(episode).length) continue;
     const learned=inferForEpisode(es,episode); if(!learned) continue;
