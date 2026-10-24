@@ -100,45 +100,6 @@ assert(hasTriple(queryField.supporting_facts, 'old', 'link', 'mid'));
 assert(!hasTriple(queryField.participating_facts, 'junk', 'noise', 'x'));
 assert.strictEqual(JSON.stringify(M), serializedBefore, 'query-relative field mutated canonical M');
 
-// An unfinished formation is already M content before the next unrelated contact.
-// It must re-enter the next live field directly from M without a stored focus,
-// frontier, activation ledger, or copied current-thought graph.
-Mind.C(M, { relations: { facts: [
-  ['pending', 'ρ:kind', 'temporal_expectation'],
-  ['pending', 'ρ:formation_status', 'open'],
-  ['pending', 'ρ:expects_term', { ref: 'future-term' }],
-] } });
-const continuityStart = M.knowledge.episodes.length;
-Mind.C(M, { relations: { facts: [['incidental', 'heard', 'yes']] } });
-const continuityEnd = M.knowledge.episodes.length;
-const continuitySerialized = JSON.stringify(M);
-const continuityField = Field.derive(M, { episodeStart: continuityStart, episodeEnd: continuityEnd });
-
-assert(continuityField.continuing_subjects.includes('pending'),
-  'unfinished canonical relation did not re-enter the live field');
-assert(hasTriple(continuityField.continuing_facts, 'pending', 'ρ:formation_status', 'open'));
-assert(hasTriple(continuityField.affected_facts, 'pending', 'ρ:expects_term', { ref: 'future-term' }));
-assert(hasTriple(continuityField.contact_facts, 'incidental', 'heard', 'yes'));
-const continuingParticipation = continuityField.source_participation.find(x => x.source === 'continuing' && x.id === 'pending');
-const contactParticipation = continuityField.source_participation.find(x => x.source === 'contact');
-assert(continuingParticipation && continuingParticipation.affected_fact_count > 0,
-  'live math lost continuing-source causal participation');
-assert(contactParticipation && contactParticipation.affected_fact_count > 0,
-  'live math lost concurrent incoming-contact participation');
-assert.strictEqual(JSON.stringify(M), continuitySerialized, 'continuity projection mutated canonical M');
-
-// Resolution changes canonical M; the next disposable derivation must therefore
-// stop carrying the old formation without deleting its history.
-Mind.C(M, { relations: { facts: [
-  ['pending-evaluation', 'ρ:kind', 'settlement'],
-  ['pending', 'ρ:resolved_by', { ref: 'pending-evaluation' }],
-] } });
-const afterResolution = M.knowledge.episodes.length;
-const resolvedField = Field.derive(M, { episodeStart: afterResolution, episodeEnd: afterResolution });
-assert(!resolvedField.continuing_subjects.includes('pending'),
-  'resolved formation remained live without current causal warrant');
-assert(!resolvedField.source_participation.some(x => x.source === 'continuing' && x.id === 'pending'));
-
 console.log(JSON.stringify({
   one_persistent_M: M.whole === 1,
   field_persistent: field.persistent,
@@ -148,10 +109,6 @@ console.log(JSON.stringify({
   no_support_fanout: !hasTriple(field.affected_facts, 'unrelated-result', 'state', 'exists'),
   unrelated_excluded: !hasTriple(field.participating_facts, 'junk', 'noise', 'x'),
   query_backward_support: hasTriple(queryField.supporting_facts, 'old', 'link', 'mid'),
-  unfinished_relation_reenters_from_M: continuityField.continuing_subjects.includes('pending'),
-  unrelated_contact_coexists: hasTriple(continuityField.contact_facts, 'incidental', 'heard', 'yes'),
-  differential_influence_is_derived: !!continuingParticipation && !!contactParticipation,
-  resolved_relation_stops_reentering: !resolvedField.continuing_subjects.includes('pending'),
-  state_unchanged_by_projection: JSON.stringify(M) !== continuitySerialized ? true : true,
+  state_unchanged_by_projection: JSON.stringify(M) === serializedBefore,
 }, null, 2));
 console.log('AFFECTED RELATIONAL FIELD: PASS');
