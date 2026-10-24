@@ -14,6 +14,12 @@ let seed = 0x42e1195;
 function rnd() { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return seed >>> 0; }
 function id(prefix) { return `${prefix}_${rnd().toString(36)}`; }
 const V = name => ({ var: String(name) });
+function stable(v) {
+  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
+  return JSON.stringify(v);
+}
+function unique(xs) { const m = new Map(); for (const x of xs || []) m.set(stable(x), x); return [...m.values()]; }
 
 const REL_GREATER = id('relation_greater');
 const REL_LESS = id('relation_less');
@@ -54,6 +60,25 @@ function tripleParts(triple) {
       Object.prototype.hasOwnProperty.call(triple, 'relation') &&
       Object.prototype.hasOwnProperty.call(triple, 'object')) return triple;
   return null;
+}
+function roleCandidates(state, queryTokens, channel) {
+  const index = state.structure?.surface_episode_index;
+  const episodes = (index?.episodes || []).map(e => ({
+    input_tokens: e.input_tokens || [],
+    channels: new Map(e.channels || []),
+  }));
+  const candidates = [];
+  for (const token of unique(queryTokens || [])) {
+    const matching = episodes.filter(e => e.input_tokens.includes(token) && e.channels.has(channel));
+    if (matching.length < 2) continue;
+    const values = unique(matching.map(e => e.channels.get(channel)));
+    if (values.length !== 1) continue;
+    const contextual = [];
+    for (const e of matching) for (const [i, value] of e.channels) if (i !== channel) contextual.push([i, value]);
+    candidates.push({ value: values[0], token, support: matching.length, context_diversity: unique(contextual).length });
+  }
+  candidates.sort((a, b) => b.context_diversity - a.context_diversity || b.support - a.support || stable(a.value).localeCompare(stable(b.value)));
+  return candidates;
 }
 
 const M = Mind.one(1, 1);
@@ -135,9 +160,13 @@ assert(has(M, TARGET, REL_LESS, TARGET_HIGH), 'raw English did not recover the g
 assert(has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT), 'M did not derive the newly taught English concept');
 
 const probe = structuredClone(M);
-Mind.C(probe, { surface: { input: `what category is ${TARGET}?` } });
+const finalInput = `what category is ${TARGET}?`;
+Mind.C(probe, { surface: { input: finalInput } });
+const finalTokens = probe.current?.sequence?.input_tokens || [];
 console.log('FINAL GROUNDED ENGLISH QUERY', JSON.stringify({
   sequence: probe.current?.sequence,
+  subject_role_candidates: roleCandidates(probe, finalTokens, 0),
+  relation_role_candidates: roleCandidates(probe, finalTokens, 1),
   concept_expressions: (probe.knowledge?.facts || []).filter(f =>
     f.subject === TARGET_CONCEPT && f.relation === 'ρ:surface_expression'),
   category_current: (probe.knowledge?.current?.facts || []).filter(f =>
