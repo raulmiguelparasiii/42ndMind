@@ -1,0 +1,29 @@
+name: AGI raw prose learning falsification
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-prose-learning-20261023
+    paths:
+      - 'agi/raw-prose-learning.test.js'
+      - 'agi/mind.js'
+      - 'agi/mind-relational.js'
+      - 'agi/surface-template.js'
+      - 'agi/one-live-blueprint.js'
+      - '.github/workflows/agi-prose-learning.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: agi-prose-learning-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Raw prose learning falsification
+        run: node agi/raw-prose-learning.test.js
