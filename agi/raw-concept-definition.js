@@ -180,11 +180,19 @@ function inferRawDefinition(state) {
     if (!match) continue;
 
     const rule = clone(rows[0].rule);
+    const attachments = [];
     for (const [slot, path] of learned.mapping) {
       if (!match.has(slot)) continue;
-      const raw = Surface.renderTokens(match.get(slot));
+      const span = match.get(slot);
+      const raw = Surface.renderTokens(span);
       const example = getAt(rule, path);
-      setAt(rule, path, coerceLike(raw, example));
+      const value = coerceLike(raw, example);
+      setAt(rule, path, value);
+      attachments.push({
+        value,
+        tokens: Surface.compactTokens(span),
+        path: clone(path),
+      });
     }
     rule.id = nextRuleId(state);
     rule.provenance = {
@@ -194,18 +202,41 @@ function inferRawDefinition(state) {
       definition_episode: episode.id,
       authority: 'canonical_M_rule',
     };
-    candidates.push(rule);
+    candidates.push({ rule, attachments });
   }
 
-  const distinct = unique(candidates.map(rule => ({
-    premises: rule.premises,
-    conclusion: rule.conclusion,
-    categorical: rule.categorical === true,
+  const distinct = unique(candidates.map(candidate => ({
+    premises: candidate.rule.premises,
+    conclusion: candidate.rule.conclusion,
+    categorical: candidate.rule.categorical === true,
   })));
   if (distinct.length !== 1 || candidates.length !== 1) return null;
+
+  const chosen = candidates[0];
+  const expressionFacts = [];
+  const seen = new Set();
+  for (const attachment of chosen.attachments) {
+    if (!isSurfaceConstant(attachment.value) || !attachment.tokens.length) continue;
+    const key = stable([attachment.value, attachment.tokens]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    expressionFacts.push([attachment.value, 'ρ:surface_expression', {
+      tokens: attachment.tokens,
+      source_episode: episode.id,
+      source_role: 'learned_rule_surface_constant',
+      rule_path: attachment.path,
+      source: 'raw_surface_rule_slot',
+      exact_contact: true,
+      semantic_authority: 'none',
+    }]);
+  }
+
   return { relations: {
-    facts: [[episode.id, 'ρ:defines_rule', { ref: candidates[0].id }]],
-    rules: [candidates[0]],
+    facts: [
+      [episode.id, 'ρ:defines_rule', { ref: chosen.rule.id }],
+      ...expressionFacts,
+    ],
+    rules: [chosen.rule],
   } };
 }
 
