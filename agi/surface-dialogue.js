@@ -130,10 +130,6 @@ function intentCues(rows) {
   cues.sort((a,b)=>b.length-a.length||b.subject_diversity-a.subject_diversity||b.support-a.support||a.text.localeCompare(b.text));
   return cues;
 }
-
-// Deixis is learned from physical agency, not from a pronoun table. If a surface
-// span repeatedly occurs while the asked-about subject is the actual speaker, it
-// can later resolve to the current speaker. The same works for the addressee.
 function deicticCues(rows) {
   const evidence=new Map();
   for(const row of rows) {
@@ -162,10 +158,7 @@ function deicticSubject(rows,currentEpisode,tokens) {
   const role=roles[0];
   return role==='source'?currentEpisode?.source:role==='target'?currentEpisode?.target:undefined;
 }
-function subjectFromQuery(state, rows, relation, tokens, currentEpisode) {
-  const deictic=deicticSubject(rows,currentEpisode,tokens);
-  if(deictic!==undefined) return deictic;
-
+function explicitSubject(state, rows, relation, tokens) {
   const candidates=[];
   const relationSubjects=new Set(rows.filter(r=>same(r.relation,relation)).map(r=>stable(r.subject)));
   for(const f of state.knowledge?.facts||[]) {
@@ -178,12 +171,18 @@ function subjectFromQuery(state, rows, relation, tokens, currentEpisode) {
     if(containsSpan(tokens,phrase)) candidates.push({value:row.subject,known:true,length:phrase.length});
   }
   if(!candidates.length) return undefined;
-  candidates.sort((a,b)=>Number(b.known)-Number(a.known)||b.length-a.length||stable(a.value).localeCompare(stable(b.value)));
-  const top=candidates.filter(x=>x.known===candidates[0].known&&x.length===candidates[0].length);
+  candidates.sort((a,b)=>b.length-a.length||Number(b.known)-Number(a.known)||stable(a.value).localeCompare(stable(b.value)));
+  const top=candidates.filter(x=>x.length===candidates[0].length);
   const values=unique(top.map(x=>x.value));
   return values.length===1?values[0]:undefined;
 }
-
+function subjectFromQuery(state, rows, relation, tokens, currentEpisode) {
+  // Explicit reference outranks deictic language. This prevents a polite phrase
+  // such as "would you say Yume..." from turning "you" into the queried subject.
+  const explicit=explicitSubject(state,rows,relation,tokens);
+  if(explicit!==undefined) return explicit;
+  return deicticSubject(rows,currentEpisode,tokens);
+}
 function resolveQuestion(state, es, seq) {
   const currentEpisode=es.at(-1), historical=es.slice(0,-1), rows=questionAnswerRows(historical);
   const matches=intentCues(rows).filter(c=>containsSpan(seq.input_tokens,c.tokens));
@@ -210,7 +209,6 @@ function resolveQuestion(state, es, seq) {
   }
   return null;
 }
-
 function renderCanonicalFact(state, es, subject, relation, object) {
   const qa=questionAnswerRows(es), rows=[];
   for(const row of qa) {
@@ -224,7 +222,6 @@ function renderCanonicalFact(state, es, subject, relation, object) {
   if(!filled.tokens||filled.unresolved.length) return null;
   return {tokens:filled.tokens,expression:Surface.renderTokens(filled.tokens),template,roles};
 }
-
 function respond(state, originalContact) {
   if(!originalContact||typeof originalContact!=='object'||!originalContact.surface) return false;
   if(originalContact.surface.output!==undefined&&originalContact.surface.output!==null) return false;
@@ -244,4 +241,4 @@ function respond(state, originalContact) {
   return true;
 }
 
-module.exports={respond,episodes,questionAnswerRows};
+module.exports={respond,episodes,questionAnswerRows,resolveQuestion,renderCanonicalFact,currentObjects,intentCues,deicticCues};
