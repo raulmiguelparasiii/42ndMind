@@ -1,0 +1,9 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.live"
+
+[deploy]
+numReplicas = 1
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ALWAYS"
