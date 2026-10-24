@@ -1,0 +1,71 @@
+name: AGI ordinary live conversation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - experiment/one-live-m-prose-learning-20261023
+    paths:
+      - '.github/workflows/agi-live-conversation.yml'
+
+jobs:
+  conversation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Talk to one fresh M through the live host
+        shell: bash
+        run: |
+          set -euo pipefail
+          export MIND_STATE_PATH="$RUNNER_TEMP/conversation-M.json"
+          export MIND_PORT=4242
+          node agi/live-individual.js > "$RUNNER_TEMP/live.log" 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4242/health >/dev/null; then break; fi
+            sleep 0.25
+          done
+          node <<'NODE'
+          const prompts = [
+            "Hi. I'm Miguel. I'm trying to understand whether you can think. How are you?",
+            "What do you think I mean by 'think' in that sentence?",
+            "I just told you my name. What is it?",
+            "Suppose I have two apples and get one more. How many apples do I have now?",
+            "Why?",
+            "Here's a new fact: Yume is a kitten. What is Yume?",
+            "If Yume grows into an adult cat, is Yume still the same individual? Explain your answer.",
+            "I'm going to say something false: all cats are blue. Should you believe me just because I said it?",
+            "What have we been talking about so far?",
+            "Tell me something you inferred from this conversation that I did not explicitly state."
+          ];
+          async function say(text) {
+            const start = performance.now();
+            const r = await fetch('http://127.0.0.1:4242/say', {
+              method: 'POST',
+              headers: {'content-type':'application/json'},
+              body: JSON.stringify({text, source:'ordinary conversation with Miguel'})
+            });
+            const x = await r.json();
+            const ms = Math.round((performance.now()-start)*10)/10;
+            const seq = x?.current?.sequence || null;
+            const expression = seq?.expression ?? null;
+            console.log('\nMIGUEL:', text);
+            console.log('M:', expression === null ? '<no expressed reply>' : expression);
+            console.log('elapsed_ms:', ms);
+            if (!r.ok) console.log('HTTP_ERROR:', JSON.stringify(x));
+            return expression;
+          }
+          (async()=>{
+            let last = null;
+            for (const p of prompts) last = await say(p);
+            if (last) await say(`You just said: "${last}". What led you to that answer?`);
+          })().catch(e=>{ console.error(e); process.exit(1); });
+          NODE
+          kill -TERM "$PID"
+          wait "$PID"
+          trap - EXIT
