@@ -91,16 +91,34 @@ function currentEpisodeHasChannels(state, episodeId) {
 }
 
 // A raw span can accumulate several surface-expression identities over a life
-// (for example numeric 15 and textual "15"). The grounded projection may resolve
-// that ambiguity only when canonical M itself currently supports exactly one of
-// those candidates as an endpoint somewhere in settled knowledge. If zero or more
-// than one candidates are current, all variants remain and the generic learner
-// continues to withhold rather than guess.
+// (for example numeric 15 and textual "15"). Simultaneous grounded contact is the
+// strongest identity evidence available here: if one surface span has exactly one
+// value across grounded alignments, reuse that value. Only when grounded evidence
+// does not resolve the span may canonical current M disambiguate it. If either
+// source remains ambiguous, all variants survive and the learner withholds.
 function canonicalExpressionProjection(state, facts) {
   const currentValues = new Set();
   for (const fact of state.knowledge?.current?.facts || []) {
     currentValues.add(stable(fact.subject));
     currentValues.add(stable(fact.object));
+  }
+
+  const groundedByPhrase = new Map();
+  function addGrounded(span, value) {
+    if (!Array.isArray(span)) return;
+    const key = stable(Surface.compactTokens(span));
+    if (!groundedByPhrase.has(key)) groundedByPhrase.set(key, []);
+    groundedByPhrase.get(key).push(value);
+  }
+  for (const fact of facts) {
+    if (fact.relation !== 'ρ:grounded_surface_relation_alignment' || !fact.object) continue;
+    addGrounded(fact.object.subject_span, fact.object.subject);
+    addGrounded(fact.object.object_span, fact.object.object);
+  }
+  const groundedPreferred = new Map();
+  for (const [key, values] of groundedByPhrase) {
+    const distinct = unique(values);
+    if (distinct.length === 1) groundedPreferred.set(key, stable(distinct[0]));
   }
 
   const groups = new Map();
@@ -115,6 +133,13 @@ function canonicalExpressionProjection(state, facts) {
   for (const [key, rows] of groups) {
     const candidates = unique(rows.map(row => row.subject));
     if (candidates.length < 2) continue;
+
+    const grounded = groundedPreferred.get(key);
+    if (grounded !== undefined && candidates.some(value => stable(value) === grounded)) {
+      preferred.set(key, grounded);
+      continue;
+    }
+
     const current = candidates.filter(value => currentValues.has(stable(value)));
     if (current.length === 1) preferred.set(key, stable(current[0]));
   }
