@@ -66,8 +66,6 @@ function tripleParts(triple) {
 
 const M = Mind.one(1, 1);
 
-// School the meanings of ordinary comparison constructions against actual math.
-// The teacher computes truth with arithmetic and presents the corresponding M fact.
 const comparisonPairs = [
   [8, 2], [13, 4], [21, 6], [34, 11], [55, 18], [72, 31], [90, 44], [101, 63],
 ];
@@ -101,6 +99,15 @@ for (let i = 0; i < definitions.length; i++) {
 
 for (const value of [TARGET, TARGET_LOW, TARGET_HIGH])
   paired(M, `${value} is a number.`, 'noted.', [value, REL_NUMBER_KIND, 'number']);
+
+const groundedBeforeTarget = (M.knowledge?.facts || []).filter(f => f.relation === 'ρ:grounded_surface_relation_alignment');
+console.log('GROUNDED TEACHER ALIGNMENTS', JSON.stringify({
+  total: groundedBeforeTarget.length,
+  greater: groundedBeforeTarget.filter(f => f.object?.relation === REL_GREATER).length,
+  less: groundedBeforeTarget.filter(f => f.object?.relation === REL_LESS).length,
+  number_kind: groundedBeforeTarget.filter(f => f.object?.relation === REL_NUMBER_KIND).length,
+  greater_samples: groundedBeforeTarget.filter(f => f.object?.relation === REL_GREATER).slice(0, 2),
+}, null, 2));
 
 assert(!has(M, TARGET, REL_GREATER, TARGET_LOW), 'target greater-than fact existed before raw English');
 assert(!has(M, TARGET, REL_LESS, TARGET_HIGH), 'target less-than fact existed before raw English');
