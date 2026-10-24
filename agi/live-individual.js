@@ -7,7 +7,6 @@
 // the canonical C settles that contact synchronously into the same M, M is saved
 // atomically, and the process returns to the OS event loop until reality changes.
 
-const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const http = require('node:http');
 const os = require('node:os');
@@ -15,8 +14,9 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const Mind = require('./mind.js');
 
-const host = process.env.MIND_HOST || '127.0.0.1';
-const port = integerEnv('MIND_PORT', 4242, 1, 65535);
+const cloudPort = process.env.PORT === undefined ? 4242 : Number(process.env.PORT);
+const host = process.env.MIND_HOST || (process.env.RAILWAY_ENVIRONMENT_ID ? '0.0.0.0' : '127.0.0.1');
+const port = integerEnv('MIND_PORT', cloudPort, 1, 65535);
 const statePath = path.resolve(process.env.MIND_STATE_PATH || path.join(os.homedir(), '.42ndmind', 'live-M.json'));
 const actionCount = integerEnv('MIND_ACTIONS', 1, 1, 1024);
 const concernCount = integerEnv('MIND_CONCERNS', 1, 0, 1024);
@@ -92,7 +92,6 @@ function view(state, includeState = false) {
     episodes,
     motor: state?.motor,
     current: state?.current ?? null,
-    state_path: statePath,
   };
   if (includeState) result.M = state;
   return result;
@@ -104,6 +103,8 @@ async function loadOrBirth() {
     const raw = await fsp.readFile(statePath, 'utf8');
     const parsed = JSON.parse(raw);
     if (!parsed || parsed.whole !== 1) throw new Error('saved state is not one whole M');
+    if (parsed.action_count !== actionCount || parsed.concern_count !== concernCount)
+      throw new Error('saved M is incompatible with configured actuator/concern interface');
     M = parsed;
     return { born: false };
   } catch (error) {
@@ -182,10 +183,10 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     if (req.method === 'GET' && url.pathname === '/') return text(res, 200, page, 'text/html; charset=utf-8');
+    if (req.method === 'GET' && url.pathname === '/health')
+      return json(res, 200, { alive: true, whole: M?.whole });
     if (!authorized(req)) return json(res, 401, { error: 'unauthorized' });
 
-    if (req.method === 'GET' && url.pathname === '/health')
-      return json(res, 200, { alive: true, whole: M?.whole, pid: process.pid, state_path: statePath });
     if (req.method === 'GET' && url.pathname === '/state')
       return json(res, 200, view(M, url.searchParams.get('full') === '1'));
 
