@@ -1,0 +1,26 @@
+name: AGI prose reasoning certification
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-prose-learning-20261023
+    paths:
+      - 'agi-prose-reasoning-certification.test.js'
+      - '.github/workflows/agi-prose-reasoning-certification.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: agi-prose-reasoning-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Prose to reasoning certification
+        run: node agi-prose-reasoning-certification.test.js
