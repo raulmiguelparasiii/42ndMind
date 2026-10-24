@@ -35,10 +35,12 @@ function step(state, contact) {
   const episodeEnd = state.knowledge?.episodes?.length || episodeStart;
   const field = AffectedField.derive(state, { episodeStart, episodeEnd, query });
 
-  // Transitional expression transport. Existing renderers still operate after
-  // the current field has been determined. They may fail to express a warranted
-  // relation; such failure does not change the field or canonical M.
-  if (!SurfaceDialogue.respond(state, contact)) TurnCompletion.respond(state, contact);
+  // Expression is downstream of the already-derived live relation. Language may
+  // learn how to express that relation, but it does not get to choose a different
+  // thought when the field already identifies one uniquely. The legacy dialogue
+  // induction remains only as a transitional fallback where live interpretation
+  // is still absent.
+  if (!SurfaceDialogue.respond(state, contact, field)) TurnCompletion.respond(state, contact);
 
   return {
     state,
