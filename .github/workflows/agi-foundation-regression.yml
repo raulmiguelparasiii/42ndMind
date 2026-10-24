@@ -20,6 +20,10 @@ on:
       - '.github/workflows/agi-foundation-regression.yml'
   workflow_dispatch:
 
+concurrency:
+  group: agi-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   foundation:
     runs-on: ubuntu-latest
@@ -30,7 +34,10 @@ jobs:
         with:
           node-version: 22
       - name: Contact before meaning
-        run: node agi/contact-before-meaning.test.js 2>&1 | tee contact-before-meaning.log
+        shell: bash
+        run: |
+          set -o pipefail
+          node agi/contact-before-meaning.test.js 2>&1 | tee contact-before-meaning.log
       - name: Capture contact-before-meaning diagnostic
         if: always()
         uses: actions/upload-artifact@v4
