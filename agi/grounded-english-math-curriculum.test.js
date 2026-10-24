@@ -23,20 +23,18 @@ const V = name => ({ var: String(name) });
 const REL_GREATER = id('relation_greater');
 const REL_LESS = id('relation_less');
 const REL_CATEGORY = id('relation_category');
+const REL_NUMBER_KIND = id('relation_number_kind');
 const TARGET_CONCEPT = 'midrange';
-// The target comparison itself is held out, while each numeral has already been
-// grounded in unrelated mathematical examples. This isolates English relation
-// transfer from the separate problem of learning a brand-new numeral symbol.
-const TARGET = 13;
-const TARGET_LOW = 2;
-const TARGET_HIGH = 34;
+const TARGET = 15;
+const TARGET_LOW = 10;
+const TARGET_HIGH = 20;
 
 for (const file of [
   'mind.js', 'mind-relational.js', 'surface-template.js', 'surface-structure-grounding.js',
   'raw-proposal-expression-grounding.js', 'raw-concept-definition.js',
 ]) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
-  for (const secret of [REL_GREATER, REL_LESS, REL_CATEGORY, TARGET_CONCEPT])
+  for (const secret of [REL_GREATER, REL_LESS, REL_CATEGORY, REL_NUMBER_KIND, TARGET_CONCEPT])
     assert(!source.includes(secret), `${file} contains English-curriculum target knowledge: ${secret}`);
 }
 
@@ -105,6 +103,12 @@ for (let i = 0; i < definitions.length; i++) {
   paired(M, `what category is ${example}?`, `it is ${concept}.`, [example, REL_CATEGORY, concept]);
 }
 
+// Ground only the identities of the held-out numeral symbols through an unrelated
+// relation. This is prerequisite vocabulary, not target comparison teaching.
+// No target greater/less/category relation appears in these contacts.
+for (const value of [TARGET, TARGET_LOW, TARGET_HIGH])
+  paired(M, `${value} is a number.`, 'noted.', [value, REL_NUMBER_KIND, 'number']);
+
 assert(!has(M, TARGET, REL_GREATER, TARGET_LOW), 'target greater-than fact existed before raw English');
 assert(!has(M, TARGET, REL_LESS, TARGET_HIGH), 'target less-than fact existed before raw English');
 assert(!has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT), 'target category existed before raw English');
@@ -153,6 +157,7 @@ for (const forbidden of [
 console.log(JSON.stringify({
   teacher_grounding_source: 'mathematically_checked_relational_contact',
   ordinary_english_schooling: true,
+  heldout_numerals_grounded_only_by_unrelated_number_identity: true,
   target_definition_semantic_rules_supplied: 0,
   target_premise_semantic_triples_supplied: 0,
   target_question_semantic_channels_supplied: 0,
