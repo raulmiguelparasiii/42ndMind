@@ -33,6 +33,10 @@ function teach(M, input, output, facts) {
 function has(M, s, r, o) {
   return (M.knowledge?.current?.facts || []).some(f => f.subject === s && f.relation === r && f.object === o);
 }
+function proposed(M, s, r, o) {
+  return (M.knowledge?.facts || []).some(f => f.relation === 'ρ:proposes_relation' && f.object &&
+    f.object.subject === s && f.object.relation === r && f.object.object === o);
+}
 function ask(M, input) {
   const q = structuredClone(M);
   Mind.C(q, { surface: { input } });
@@ -70,12 +74,41 @@ for (let i = 0; i < entities.length; i++) {
   Mind.C(M, { surface: { input: `${v} ${novelVerb} ${e}.`, output: 'noted.' } });
 }
 
+// Lifetime access for learned surface structure is a rebuildable acceleration,
+// not a semantic store. Ordinary updates append-sync it; deleting or invalidating
+// it must reconstruct identical proposal behavior from canonical M.
+const index = M.structure?.surface_structure_index;
+assert(index && index.version === 1 && index.authority === 'zero_authority_rebuildable',
+  'surface structure acceleration is missing or claims authority');
+assert(Number.isInteger(index.fact_count) && index.fact_count <= M.knowledge.facts.length,
+  'surface structure index lacks a valid canonical-M watermark');
+assert(Number.isInteger(index.incremental_syncs) && index.incremental_syncs > 0,
+  'surface structure index did not incrementally synchronize later facts');
+
+const probeText = `${targetValue} ${novelVerb} ${target}.`;
+const cachedProbe = structuredClone(M);
+Mind.C(cachedProbe, { surface: { input: probeText, output: 'noted.' } });
+assert(proposed(cachedProbe, target, REL, targetValue), 'cached learned construction did not propose target fact');
+
+const rebuiltProbe = structuredClone(M);
+delete rebuiltProbe.structure.surface_structure_index;
+Mind.C(rebuiltProbe, { surface: { input: probeText, output: 'noted.' } });
+assert(proposed(rebuiltProbe, target, REL, targetValue), 'deleting surface structure index changed learned-construction behavior');
+assert(rebuiltProbe.structure.surface_structure_index?.authority === 'zero_authority_rebuildable',
+  'surface structure index did not rebuild from canonical M');
+
+const staleProbe = structuredClone(M);
+staleProbe.structure.surface_structure_index.version = -1;
+Mind.C(staleProbe, { surface: { input: probeText, output: 'noted.' } });
+assert(proposed(staleProbe, target, REL, targetValue), 'invalidating surface structure index changed learned-construction behavior');
+assert.strictEqual(staleProbe.structure.surface_structure_index.version, 1, 'stale surface structure index was not rebuilt');
+
 // Applying the same newly learned construction to unseen target/value must create
 // only a proposal first, then become current after recurrent raw evidence.
-Mind.C(M, { surface: { input: `${targetValue} ${novelVerb} ${target}.`, output: 'noted.' } });
+Mind.C(M, { surface: { input: probeText, output: 'noted.' } });
 assert(!has(M, target, REL, targetValue), 'one use of newly learned paraphrase self-warranted target fact');
-Mind.C(M, { surface: { input: `${targetValue} ${novelVerb} ${target}.`, output: 'noted.' } });
-Mind.C(M, { surface: { input: `${targetValue} ${novelVerb} ${target}.`, output: 'noted.' } });
+Mind.C(M, { surface: { input: probeText, output: 'noted.' } });
+Mind.C(M, { surface: { input: probeText, output: 'noted.' } });
 
 assert(has(M, target, REL, targetValue),
   'mind did not learn a new target fact through a construction whose meaning had to be learned from known facts');
@@ -107,6 +140,7 @@ console.log(JSON.stringify({
   known_facts_used_to_ground_new_construction: true,
   target_semantic_triples_supplied: 0,
   first_target_use_self_warranted: false,
+  surface_structure_index_zero_authority_rebuildable: true,
   new_construction_transferred_to_new_target: true,
   learned_construction_remained_corrigible: true,
   conversational_access_from_canonical_M: true,
