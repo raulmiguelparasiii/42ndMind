@@ -204,10 +204,10 @@ function currentMeaningIndex(state) {
   return meanings;
 }
 
-// Turn the meaning of what was just said into ordinary relational occurrence
-// content. This does not assert the referred relation as a new world event; the
-// exact surface episode is the lived contact, and the occurrence merely points
-// from that expression span to an already-grounded relation term.
+// Every heard lexical expression is first ordinary lived material, even before
+// the mind knows what it means. A learned meaning only enriches that same event
+// with ρ:refers_to. This keeps acquisition direction correct: expression contact
+// exists first; semantic reference can emerge later from retained experience.
 function mentionUpdate(state, originalContact, options = {}) {
   if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface) return null;
   const episode = latestSurfaceEpisode(state);
@@ -216,9 +216,7 @@ function mentionUpdate(state, originalContact, options = {}) {
   const facts = [];
 
   for (const candidate of expressionCandidates(episode.tokens, options)) {
-    const relationTerms = meanings.get(candidate.surface);
-    if (!relationTerms?.size) continue;
-
+    const relationTerms = meanings.get(candidate.surface) || new Set();
     const occurrence = `surface-expression-occurrence:${episode.id}:${candidate.start}:${candidate.length}`;
     facts.push(
       [occurrence, 'ρ:kind', 'surface_expression_occurrence'],
