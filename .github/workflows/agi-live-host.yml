@@ -1,0 +1,57 @@
+name: AGI live host infrastructure check
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-prose-learning-20261023
+    paths:
+      - 'agi/live-individual.js'
+      - 'agi/install-live-individual.sh'
+      - '.github/workflows/agi-live-host.yml'
+  workflow_dispatch:
+
+jobs:
+  live-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: node --check agi/live-individual.js
+      - name: Birth, contact, persist, restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          export MIND_STATE_PATH="$RUNNER_TEMP/live-M.json"
+          export MIND_PORT=4242
+          node agi/live-individual.js > "$RUNNER_TEMP/live-1.log" 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4242/health > "$RUNNER_TEMP/health-1.json"; then break; fi
+            sleep 0.25
+          done
+          curl -fsS -H 'content-type: application/json' \
+            -d '{"surface":{"input":"first live contact"}}' \
+            http://127.0.0.1:4242/say > "$RUNNER_TEMP/after-contact.json"
+          BEFORE=$(node -e "const x=require(process.argv[1]); console.log(x.facts)" "$RUNNER_TEMP/after-contact.json")
+          kill -TERM "$PID"
+          wait "$PID"
+          trap - EXIT
+
+          node agi/live-individual.js > "$RUNNER_TEMP/live-2.log" 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4242/state > "$RUNNER_TEMP/after-restart.json"; then break; fi
+            sleep 0.25
+          done
+          AFTER=$(node -e "const x=require(process.argv[1]); console.log(x.facts)" "$RUNNER_TEMP/after-restart.json")
+          test "$AFTER" -eq "$BEFORE"
+          test -s "$MIND_STATE_PATH"
+          kill -TERM "$PID"
+          wait "$PID"
+          trap - EXIT
