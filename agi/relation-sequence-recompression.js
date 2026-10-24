@@ -24,6 +24,10 @@ function unique(xs) { const m = new Map(); for (const x of xs || []) m.set(stabl
 function ref(id) { return { ref: String(id) }; }
 function normalizedTerms(xs) { return unique((xs || []).map(String)).sort(); }
 function sameEvent(a, b) { return stable(normalizedTerms(a)) === stable(normalizedTerms(b)); }
+function eventContains(observed, expected) {
+  const present = new Set(normalizedTerms(observed));
+  return normalizedTerms(expected).every(term => present.has(term));
+}
 
 function orderedLivedOccurrences(state) {
   const groups = new Map();
@@ -217,6 +221,60 @@ function appendCompressedFacts(compressed, view, existing, routeKeys, facts) {
   }
 }
 
+// Whole simultaneous events need not repeat identically for a stable relation to
+// exist. For every recurrent first-class term, intersect the terms in its actual
+// immediate successor events. A surviving successor core is relation evidence:
+// the anchor term was followed by those same terms despite changing co-present
+// material. This is a zero-state projection over retained M, usable by words,
+// actions, sounds, learned relations, or any future modality alike.
+function appendTermSuccessorFacts(observations, minimumOccurrences, existing, routeKeys, facts) {
+  const anchors = new Map();
+  for (let i = 0; i + 1 < observations.length; i++) {
+    const event = observations[i];
+    const successor = new Set(observations[i + 1].relations);
+    for (const anchor of event.relations) {
+      if (!anchors.has(anchor)) anchors.set(anchor, { count: 0, core: new Set(successor) });
+      const record = anchors.get(anchor);
+      record.count++;
+      if (record.count > 1)
+        for (const candidate of [...record.core]) if (!successor.has(candidate)) record.core.delete(candidate);
+    }
+  }
+
+  for (const [anchor, record] of [...anchors.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    if (record.count < minimumOccurrences || !record.core.size) continue;
+    const successor = normalizedTerms([...record.core]);
+    const expansion = [
+      { simultaneous_relations: [ref(anchor)] },
+      { simultaneous_relations: successor.map(ref) },
+    ];
+    const id = temporalId(1, expansion);
+    const route = {
+      kind: 'term_successor_projection',
+      basis: [anchor],
+      successor_core: successor,
+    };
+    const routeKey = stable([id, route]);
+    if (!routeKeys.has(routeKey)) {
+      routeKeys.add(routeKey);
+      facts.push([id, 'ρ:ordered_evidence_route', route]);
+    }
+
+    if (existing.has(id)) continue;
+    existing.add(id);
+    facts.push(
+      [id, 'ρ:kind', 'learned_ordered_relation'],
+      [id, 'ρ:ordered_expansion', expansion],
+      [id, 'ρ:depth', 1],
+      [id, 'ρ:occurrences_at_birth', record.count],
+      [id, 'ρ:authority', 'M_retained_lived_occurrences'],
+      ['self', 'ρ:learned_relation', ref(id)],
+      [id, 'ρ:ordered_projection_kind', 'term_successor_projection'],
+      [id, 'ρ:ordered_projection_basis', [ref(anchor)]],
+    );
+  }
+}
+
 function relationalUpdate(state, options = {}) {
   const observations = orderedLivedOccurrences(state);
   const checkpoint = Math.max(4, options.checkpoint || 8);
@@ -231,6 +289,7 @@ function relationalUpdate(state, options = {}) {
     const compressed = Sequence.recompress(null, view.stream, { maxRules: options.maxRules || 128 });
     appendCompressedFacts(compressed, view, existing, routeKeys, facts);
   }
+  appendTermSuccessorFacts(observations, checkpoint, existing, routeKeys, facts);
   return facts.length ? { relations: { facts } } : null;
 }
 
@@ -281,25 +340,33 @@ function flattenLearned(id, index, trail = new Set()) {
   return events;
 }
 
-function matchedPrefixLength(observations, expansion) {
+function matchedPrefixLength(observations, expansion, allowObservedSuperset = false) {
   const max = Math.min(observations.length, expansion.length - 1);
   for (let length = max; length >= 1; length--) {
     const start = observations.length - length;
     let same = true;
     for (let i = 0; i < length; i++) {
-      if (!sameEvent(observations[start + i].relations, expansion[i])) { same = false; break; }
+      const observed = observations[start + i].relations;
+      const expected = expansion[i];
+      const matches = allowObservedSuperset ? eventContains(observed, expected) : sameEvent(observed, expected);
+      if (!matches) { same = false; break; }
     }
     if (same) return length;
   }
   return 0;
 }
 
+function hasRoute(node, kind) {
+  return Array.isArray(node.routes) && node.routes.some(route => route?.kind === kind);
+}
+
 function licensesImmediateSuccessor(node) {
-  // New relations accumulate all search/evidence routes. Any literal-adjacency
-  // route can license immediate succession even if the relation was born through
-  // a gappy projection. Legacy relations without route facts retain old behavior.
+  // New relations accumulate all search/evidence routes. Literal adjacency or a
+  // recurrent term-specific immediate-successor route can license succession.
+  // Legacy relations without route facts retain old behavior.
   if (Array.isArray(node.routes) && node.routes.length) return node.routes.some(route =>
-    route?.kind === 'full' || route?.kind === 'contiguous_suffix_projection');
+    route?.kind === 'full' || route?.kind === 'contiguous_suffix_projection' ||
+    route?.kind === 'term_successor_projection');
   return node.projection === undefined || node.projection === 'contiguous_suffix_projection';
 }
 
@@ -372,7 +439,7 @@ function completionUpdate(state) {
     if (!x.kind || !licensesImmediateSuccessor(x)) continue;
     const expansion = flattenLearned(id, index);
     if (expansion.length < 2) continue;
-    const prefixLength = matchedPrefixLength(observations, expansion);
+    const prefixLength = matchedPrefixLength(observations, expansion, hasRoute(x, 'term_successor_projection'));
     if (!prefixLength) continue;
     const prefixEvents = observations.slice(-prefixLength);
     const nextTerms = normalizedTerms(expansion[prefixLength]);
