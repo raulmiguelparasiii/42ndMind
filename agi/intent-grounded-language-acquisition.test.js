@@ -5,23 +5,35 @@ const fs = require('fs');
 const path = require('path');
 const Mind = require('./mind.js');
 
-// One falsification for the missing child-like language bridge.
+// One falsification for child-like intent-grounded language acquisition.
 //
 // No semantic channel, relation triple, dictionary entry, parsed command, output
-// demonstration, or pre-grounded word is supplied. An utterance is only heard.
-// The individual's next physical action and the world consequence are later lived
-// contacts. Passing requires the one M/C substrate to discover enough stable order
-// to let a later raw utterance constrain action through M's existing temporal
-// completion machinery.
-//
-// The evaluator knows which action the other agent intends only to generate and
-// score world consequences. That mapping is never presented to M.
+// demonstration, or pre-grounded word is supplied. Utterances are only heard.
+// Actions and their consequences are separate lived contacts. Training wording is
+// deliberately crossed and varied: no exact action-specific phrase reaches the
+// temporal support threshold, while the action-bearing word does. Held-out probes
+// combine familiar pieces in forms never demonstrated. Passing therefore requires
+// stable relational learning below whole-utterance memorization.
 
 const COMMAND_A = 'raise';
 const COMMAND_B = 'lower';
 const FILLERS = ['look', 'ready', 'again', 'okay'];
 const CONCERN_BASE = 50;
 const TRAINING_ROUNDS = 12;
+const TEMPORAL_SUPPORT = 8;
+
+const A_FORMS = [
+  'please raise now',
+  'could you raise',
+  'raise it please',
+];
+const B_FORMS = [
+  'please lower now',
+  'could you lower',
+  'lower it please',
+];
+const HELD_OUT_A = 'please could you raise it now';
+const HELD_OUT_B = 'please could you lower it now';
 
 for (const file of [
   'mind.js',
@@ -34,6 +46,14 @@ for (const file of [
   for (const word of [COMMAND_A, COMMAND_B])
     assert(!source.includes(`'${word}'`) && !source.includes(`\"${word}\"`), `${file} contains command-specific knowledge: ${word}`);
 }
+
+// Each exact action-specific training utterance occurs below the learner's support
+// threshold. The recurring lexical invariant is the action-bearing word itself.
+for (const form of [...A_FORMS, ...B_FORMS]) {
+  const appearances = TRAINING_ROUNDS / 3;
+  assert(appearances < TEMPORAL_SUPPORT, 'an exact training phrase could reach temporal support by itself');
+}
+assert(!A_FORMS.includes(HELD_OUT_A) && !B_FORMS.includes(HELD_OUT_B));
 
 const M = Mind.one(2, 1);
 assert.strictEqual(M.whole, 1);
@@ -76,36 +96,59 @@ const CONTEXT_CONCERN = {
 };
 
 function demonstrate(raw, intendedAction, filler) {
-  // Arrange a real successful interaction: hear -> act -> consequence. Targeting
-  // the motor is teacher/world staging outside M, analogous to a caregiver making
-  // the referent/action clear. No internal semantic fact is inserted.
+  // Caregiver/world staging makes a successful referent/action episode available
+  // without inserting its interpretation into M: hear -> embodied action -> result.
   moveMotorTo(intendedAction);
   hear(raw);
-
-  // Fail at the first missing prerequisite rather than spending a full curriculum
-  // before discovering that unheard language never entered the lived substrate.
-  assert(hasLivedExpression(raw), 'unknown raw command never became lived relational material');
+  assert(hasLivedExpression(raw), 'unknown raw utterance never became lived relational material');
 
   const acted = M.motor;
   Mind.C(M, { frame: neutralFrame(consequenceFor(intendedAction, acted)) });
   assert.strictEqual(acted, intendedAction, 'training interaction failed to enact intended action');
 
-  // Break phase-only recurrence with unrelated language and physical variation.
+  // Unrelated language and physical variation prevent phase-only recurrence.
   hear(filler);
   Mind.C(M, { frame: neutralFrame(CONTEXT_CONCERN[filler]) });
 }
 
 for (let round = 0; round < TRAINING_ROUNDS; round++) {
-  demonstrate(COMMAND_A, ACTION_A, FILLERS[round % FILLERS.length]);
-  demonstrate(COMMAND_B, ACTION_B, FILLERS[(round * 3 + 1) % FILLERS.length]);
+  demonstrate(A_FORMS[round % A_FORMS.length], ACTION_A, FILLERS[round % FILLERS.length]);
+  demonstrate(B_FORMS[(round + 1) % B_FORMS.length], ACTION_B, FILLERS[(round * 3 + 1) % FILLERS.length]);
 }
 
-// There was never an externally supplied semantic interpretation of either word.
+// No explicit semantic interpretation of either verb was ever supplied.
 assert.strictEqual((M.knowledge?.facts || []).some(f =>
   (f.subject === `surface:${COMMAND_A}` || f.subject === `surface:${COMMAND_B}`) && f.relation === 'ρ:expresses'), false,
-  'test accidentally pre-grounded a command through an explicit semantic expression link');
+  'test accidentally pre-grounded an action word through an explicit semantic expression link');
 assert(hasLivedExpression(COMMAND_A));
 assert(hasLivedExpression(COMMAND_B));
+
+function orderedRelationExpansions() {
+  const facts = M.knowledge?.facts || [];
+  const ids = new Set(facts.filter(f => f.relation === 'ρ:kind' && f.object === 'learned_ordered_relation').map(f => String(f.subject)));
+  return facts.filter(f => ids.has(String(f.subject)) && f.relation === 'ρ:ordered_expansion' && Array.isArray(f.object))
+    .map(f => ({ id: String(f.subject), expansion: f.object }));
+}
+function eventTerms(component) {
+  return (component?.simultaneous_relations || []).filter(x => x?.ref !== undefined).map(x => String(x.ref));
+}
+function hasLearnedSuccessor(anchor, successor) {
+  return orderedRelationExpansions().some(row => row.expansion.length === 2 &&
+    eventTerms(row.expansion[0]).includes(anchor) && eventTerms(row.expansion[1]).includes(successor));
+}
+
+assert(hasLearnedSuccessor(`surface:${COMMAND_A}`, `action:motor:${ACTION_A}`),
+  'stable lived experience did not learn the first word-to-action successor');
+assert(hasLearnedSuccessor(`surface:${COMMAND_B}`, `action:motor:${ACTION_B}`),
+  'stable lived experience did not learn the second word-to-action successor');
+
+// Shared context words were deliberately crossed over both opposed intentions.
+// They must not become the action discriminator.
+for (const shared of ['please', 'could', 'you', 'now', 'it']) {
+  assert(!(hasLearnedSuccessor(`surface:${shared}`, `action:motor:${ACTION_A}`) &&
+           hasLearnedSuccessor(`surface:${shared}`, `action:motor:${ACTION_B}`)),
+    `shared context token ${shared} became an indiscriminate command shortcut`);
+}
 
 function probe(raw, expectedAction, startingAction) {
   moveMotorTo(startingAction);
@@ -113,11 +156,13 @@ function probe(raw, expectedAction, startingAction) {
   assert.strictEqual(M.motor, startingAction);
   hear(raw);
   assert.strictEqual(M.motor, expectedAction,
-    `raw utterance ${JSON.stringify(raw)} did not recover its lived intended action`);
+    `held-out utterance ${JSON.stringify(raw)} did not recover its lived intended action`);
 }
 
-probe(COMMAND_A, ACTION_A, ACTION_B);
-probe(COMMAND_B, ACTION_B, ACTION_A);
+// Neither whole probe utterance occurred during schooling. The same learned word
+// meaning must remain effective inside a new surface context.
+probe(HELD_OUT_A, ACTION_A, ACTION_B);
+probe(HELD_OUT_B, ACTION_B, ACTION_A);
 
 const facts = M.knowledge?.facts || [];
 const learnedOrdered = new Set(facts.filter(f =>
@@ -125,7 +170,7 @@ const learnedOrdered = new Set(facts.filter(f =>
 assert(learnedOrdered.size > 0, 'no generic ordered relation was learned from the interactions');
 assert(facts.some(f => f.relation === 'ρ:expects_term' &&
   (f.object?.ref === `action:motor:${ACTION_A}` || f.object?.ref === `action:motor:${ACTION_B}`)),
-  'successful command use produced no M-owned expected action term');
+  'successful held-out command use produced no M-owned expected action term');
 
 for (const forbidden of [
   'english_parser', 'semantic_dictionary', 'language_state', 'command_table',
@@ -141,8 +186,11 @@ console.log(JSON.stringify({
   demonstrated_outputs_supplied: 0,
   raw_unknown_expressions_became_lived_material: true,
   action_and_consequence_followed_as_separate_reality_contacts: true,
-  both_opposed_intents_learned: true,
-  surface_only_intent_controls_existing_actuator_via_M: true,
+  opposed_intents_learned_from_varied_wording: true,
+  exact_action_specific_phrase_below_support_threshold: true,
+  shared_context_words_crossed_between_intents: true,
+  held_out_surface_combinations: [HELD_OUT_A, HELD_OUT_B],
+  held_out_language_controls_existing_actuator_via_M: true,
   hidden_command_or_language_authority: false,
 }, null, 2));
-console.log('INTENT-GROUNDED LANGUAGE ACQUISITION: PASS');
+console.log('INTENT-GROUNDED LANGUAGE ACQUISITION AND TRANSFER: PASS');
