@@ -30,7 +30,14 @@ jobs:
         with:
           node-version: 22
       - name: Contact before meaning
-        run: node agi/contact-before-meaning.test.js
+        run: node agi/contact-before-meaning.test.js 2>&1 | tee contact-before-meaning.log
+      - name: Capture contact-before-meaning diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contact-before-meaning-log
+          path: contact-before-meaning.log
+          if-no-files-found: error
       - name: Internal evidence recurrence
         run: node agi/internal-evidence-recurrence.test.js
       - name: Temporal relation counterevidence
