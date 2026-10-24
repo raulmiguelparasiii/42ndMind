@@ -4,16 +4,11 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const Mind = require('./mind.js');
+const SurfaceStructure = require('./surface-structure-grounding.js');
 
 // One end-to-end English-learning gate.
-//
-// During schooling, an external teacher supplies ordinary English together with
-// mathematically checked relational contact. This is developmental grounding, not
-// runtime parsing: cognition contains no English dictionary or comparison rules.
-// After schooling, all semantic scaffolding is removed. A new English definition,
-// its English premises, and the final English question arrive through surface only.
-// Passing requires the same M/C machinery to learn the target relations and rule,
-// derive the new concept, and express the answer from canonical M.
+// During schooling, ordinary English is paired with mathematically checked
+// relational contact. After schooling, semantic scaffolding is removed.
 
 let seed = 0x42e1195;
 function rnd() { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return seed >>> 0; }
@@ -44,10 +39,7 @@ function paired(M, input, output, fact) {
 function categoryRule(ruleId, concept, low, high) {
   return {
     id: ruleId,
-    premises: [
-      [V('x'), REL_GREATER, low],
-      [V('x'), REL_LESS, high],
-    ],
+    premises: [[V('x'), REL_GREATER, low], [V('x'), REL_LESS, high]],
     conclusion: [V('x'), REL_CATEGORY, concept],
     categorical: true,
   };
@@ -63,35 +55,48 @@ function tripleParts(triple) {
       Object.prototype.hasOwnProperty.call(triple, 'object')) return triple;
   return null;
 }
+function projectedGroundedInference(state, input) {
+  const probe = structuredClone(state);
+  Mind.C(probe, { surface: { input, output: 'noted.' } });
+  const episode = SurfaceStructure.latestSurfaceEpisode(probe);
+  const facts = probe.knowledge?.facts || [];
+  const grounded = facts.filter(f => f.relation === 'ρ:grounded_surface_relation_alignment');
+  const projectedFacts = facts
+    .filter(f => f.relation !== 'ρ:surface_known_fact_alignment' && f.relation !== 'ρ:grounded_surface_relation_alignment')
+    .concat(grounded.map(f => ({ ...f, relation: 'ρ:surface_known_fact_alignment', object: { ...f.object, source: 'diagnostic_projection' } })));
+  const projected = {
+    ...probe,
+    knowledge: { ...probe.knowledge, facts: projectedFacts },
+    structure: { ...(probe.structure || {}) },
+  };
+  delete projected.structure.surface_structure_index;
+  const inferred = SurfaceStructure.inferTriples(projected, episode);
+  const expressions = (projected.knowledge?.facts || []).filter(f => f.relation === 'ρ:surface_expression' &&
+    f.object?.tokens && ['15', '10'].includes(f.object.tokens.join(''))).map(f => ({ value: f.subject, tokens: f.object.tokens }));
+  return { episode, inferred, expressions };
+}
 
 const M = Mind.one(1, 1);
 
-// Cross the mathematically true examples so surface roles are identifiable from
-// evidence rather than accidental one-to-one correlation. Each greater value is
-// observed with several lesser values, and each lesser value with several greater
-// values. The inverse English construction is grounded from the same true contacts.
 const greaterValues = [8, 13, 21, 34];
 const lesserValues = [2, 4, 6];
 const comparisonPairs = greaterValues.flatMap(greater => lesserValues.map(lesser => [greater, lesser]));
 for (let round = 0; round < 2; round++) {
   for (const [greater, lesser] of comparisonPairs) {
-    assert(greater > lesser, 'teacher attempted to ground a false greater-than example');
-    assert(lesser < greater, 'teacher attempted to ground a false less-than example');
+    assert(greater > lesser);
+    assert(lesser < greater);
     paired(M, `${greater} is greater than ${lesser}.`, 'noted.', [greater, REL_GREATER, lesser]);
     paired(M, `${lesser} is less than ${greater}.`, 'noted.', [lesser, REL_LESS, greater]);
   }
 }
 
 const definitions = [
-  ['tiny', 0, 5, 3],
-  ['small', 5, 10, 7],
-  ['moderate', 20, 30, 24],
-  ['large', 30, 40, 36],
-  ['huge', 50, 60, 57],
+  ['tiny', 0, 5, 3], ['small', 5, 10, 7], ['moderate', 20, 30, 24],
+  ['large', 30, 40, 36], ['huge', 50, 60, 57],
 ];
 for (let i = 0; i < definitions.length; i++) {
   const [concept, low, high, example] = definitions[i];
-  assert(example > low && example < high, 'teacher category example violates its mathematical definition');
+  assert(example > low && example < high);
   Mind.C(M, {
     surface: { input: `${concept} means greater than ${low} and less than ${high}.`, output: 'noted.' },
     relations: { rules: [categoryRule(`english-school-definition:${i + 1}`, concept, low, high)] },
@@ -100,58 +105,49 @@ for (let i = 0; i < definitions.length; i++) {
   paired(M, `${example} is less than ${high}.`, 'noted.', [example, REL_LESS, high]);
   paired(M, `what category is ${example}?`, `it is ${concept}.`, [example, REL_CATEGORY, concept]);
 }
-
 for (const value of [TARGET, TARGET_LOW, TARGET_HIGH])
   paired(M, `${value} is a number.`, 'noted.', [value, REL_NUMBER_KIND, 'number']);
 
-assert(!has(M, TARGET, REL_GREATER, TARGET_LOW), 'target greater-than fact existed before raw English');
-assert(!has(M, TARGET, REL_LESS, TARGET_HIGH), 'target less-than fact existed before raw English');
-assert(!has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT), 'target category existed before raw English');
-assert(!(M.knowledge?.rules || []).some(rule => JSON.stringify(rule).includes(TARGET_CONCEPT)),
-  'target definition existed before raw English');
+assert(!has(M, TARGET, REL_GREATER, TARGET_LOW));
+assert(!has(M, TARGET, REL_LESS, TARGET_HIGH));
+assert(!has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT));
+assert(!(M.knowledge?.rules || []).some(rule => JSON.stringify(rule).includes(TARGET_CONCEPT)));
 
 Mind.C(M, { surface: { input: `${TARGET_CONCEPT} means greater than ${TARGET_LOW} and less than ${TARGET_HIGH}.`, output: 'noted.' } });
-
 const learnedDefinition = (M.knowledge?.rules || []).find(rule => {
   if (rule.active === false || !Array.isArray(rule.premises) || rule.premises.length !== 2) return false;
   const conclusion = tripleParts(rule.conclusion);
   const premises = rule.premises.map(tripleParts);
-  return conclusion && premises.every(Boolean) &&
-    conclusion.relation === REL_CATEGORY && conclusion.object === TARGET_CONCEPT &&
+  return conclusion && premises.every(Boolean) && conclusion.relation === REL_CATEGORY && conclusion.object === TARGET_CONCEPT &&
     premises.some(p => p.relation === REL_GREATER && p.object === TARGET_LOW) &&
     premises.some(p => p.relation === REL_LESS && p.object === TARGET_HIGH);
 });
 assert(learnedDefinition, 'raw English definition did not become a canonical M rule');
-assert.strictEqual(learnedDefinition.provenance?.kind, 'surface_definition_induction',
-  'raw English definition bypassed the learned surface-definition route');
+assert.strictEqual(learnedDefinition.provenance?.kind, 'surface_definition_induction');
+
+const directDiagnostic = projectedGroundedInference(M, `${TARGET} is greater than ${TARGET_LOW}.`);
+console.log('GROUNDED ZERO-STATE INFERENCE', JSON.stringify(directDiagnostic, null, 2));
 
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${TARGET} is greater than ${TARGET_LOW}.`, output: 'noted.' } });
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${TARGET} is less than ${TARGET_HIGH}.`, output: 'noted.' } });
 
 assert(has(M, TARGET, REL_GREATER, TARGET_LOW), 'raw English did not recover the grounded meaning of greater than');
 assert(has(M, TARGET, REL_LESS, TARGET_HIGH), 'raw English did not recover the grounded meaning of less than');
-assert(has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT),
-  'M did not derive the newly taught English concept from the two raw English premises');
+assert(has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT), 'M did not derive the newly taught English concept');
 
 const probe = structuredClone(M);
 Mind.C(probe, { surface: { input: `what category is ${TARGET}?` } });
-assert.strictEqual(probe.current?.sequence?.expression, `it is ${TARGET_CONCEPT}.`,
-  'M could not use learned English to answer the held-out English question');
-assert.strictEqual(probe.current?.sequence?.canonical_grounding?.authority, 'canonical_M',
-  'held-out English answer was not grounded in canonical M');
-assert.strictEqual(probe.current?.sequence?.canonical_grounding?.object, TARGET_CONCEPT,
-  'held-out English answer did not express the newly learned concept');
+assert.strictEqual(probe.current?.sequence?.expression, `it is ${TARGET_CONCEPT}.`);
+assert.strictEqual(probe.current?.sequence?.canonical_grounding?.authority, 'canonical_M');
+assert.strictEqual(probe.current?.sequence?.canonical_grounding?.object, TARGET_CONCEPT);
 
-for (const forbidden of [
-  'english_parser', 'parser_state', 'grammar_state', 'language_state', 'semantic_dictionary',
-  'english_dictionary', 'response_table', 'truth_ledger', 'teacher_state',
-]) assert.strictEqual(M[forbidden], undefined, `parallel English authority appeared: ${forbidden}`);
+for (const forbidden of ['english_parser','parser_state','grammar_state','language_state','semantic_dictionary','english_dictionary','response_table','truth_ledger','teacher_state'])
+  assert.strictEqual(M[forbidden], undefined, `parallel English authority appeared: ${forbidden}`);
 
 console.log(JSON.stringify({
   teacher_grounding_source: 'mathematically_checked_relational_contact',
   ordinary_english_schooling: true,
   crossed_math_examples_remove_role_correlation: true,
-  heldout_numerals_grounded_only_by_unrelated_number_identity: true,
   target_definition_semantic_rules_supplied: 0,
   target_premise_semantic_triples_supplied: 0,
   target_question_semantic_channels_supplied: 0,
