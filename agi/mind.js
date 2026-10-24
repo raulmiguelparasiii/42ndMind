@@ -223,6 +223,13 @@ function C(state, realityContact) {
   budgetWholeRecompression(state, realityContact);
   Relational.C(state, realityContact);
 
+  // Contact precedes meaning. Every top-level R becomes ordinary lived M material
+  // before language, quantitative, structural, action, or semantic helpers run.
+  // Those helpers may later enrich this same lived order but cannot decide whether
+  // the contact happened or whether it is available for future relation discovery.
+  const boundary = GenericOccurrences.beginContact(state, realityContact);
+  if (boundary?.update) Relational.C(state, boundary.update);
+
   // Raw proposal formation already happened inside Relational.C. Preserve exact
   // observed endpoint expressions for later rendering, learn explicit relational
   // definitions from already-grounded rule/surface structure, and preserve sourced
@@ -263,10 +270,10 @@ function C(state, realityContact) {
   const mention = SurfaceRelationGrounding.mentionUpdate(state, realityContact);
   if (mention) Relational.C(state, mention);
 
-  // Normalize every occurrence produced by this top-level reality contact onto
-  // one whole-life coordinate. Relation, expression, and action provenance stays
-  // intact; this only gives all of them the same generic temporal anatomy.
-  const lived = GenericOccurrences.relationalUpdate(state, realityContact);
+  // Interpretations produced during this update are normalized onto the boundary
+  // that already existed before interpretation. No helper can create a second
+  // lived order or make an uninterpreted contact disappear from experience.
+  const lived = GenericOccurrences.relationalUpdate(state, realityContact, boundary);
   if (lived?.update) Relational.C(state, lived.update);
 
   // Recurrent symbolic relation graphs can propose endpoint-independent schema
