@@ -7,8 +7,8 @@ const RelationSequence = require('./relation-sequence-recompression.js');
 
 // Frontier falsification. Expectation formation/completion is already solved.
 // Seed only that established M anatomy, then require the public C to connect it
-// to exact next-order lived occurrences. Lifecycle must use generic occurrence
-// kinds rather than action/expression/relation branches.
+// to later lived occurrences that can actually bear on it. Unrelated contact
+// must not erase unfinished relational pressure merely because it happened next.
 
 const EXP = 'fixture:lifecycle:expression:A';
 const REL = 'fixture:lifecycle:relation:R';
@@ -119,17 +119,25 @@ assert.deepStrictEqual(partial.unmet, [REL]);
 assert.deepStrictEqual(partial.unknown, []);
 assert(partial.occurrences.length === 3, 'partial evaluation lost exact successor occurrence provenance');
 
-// Unknown is not false: an action expectation cannot be called violated when the
-// next contacted event contains no occurrence of the action instantiation kind.
-const unknownExpectation = seedExpectation([ACT_B]);
-const unknownEvent = nextEvent([{ term: EXP, kind: 'surface_expression_occurrence' }]);
-const unknown = evaluationFor(unknownExpectation.id);
-assert(unknown, 'unevaluable successor was not represented');
-assert.strictEqual(unknown.result, 'unevaluable');
-assert.strictEqual(unknown.order, unknownEvent.order);
-assert.deepStrictEqual(unknown.fulfilled, []);
-assert.deepStrictEqual(unknown.unmet, []);
-assert.deepStrictEqual(unknown.unknown, [ACT_B]);
+// Unknown is not false and is not completion. An action expectation must remain
+// live while an unrelated expression event passes through the same one M.
+const continuingExpectation = seedExpectation([ACT_B]);
+const unrelatedEvent = nextEvent([{ term: EXP, kind: 'surface_expression_occurrence' }]);
+assert.strictEqual(evaluationFor(continuingExpectation.id), null,
+  'wholly unrelated contact incorrectly became an expectation lifecycle event');
+assert(!hasFact(M, continuingExpectation.id, 'ρ:resolved_by', x => x?.ref !== undefined),
+  'unrelated contact incorrectly extinguished unfinished relational pressure');
+
+// The same still-open expectation must then meet the first later event capable of
+// bearing on it, without a copied predictor/workspace state.
+const laterBearingEvent = nextEvent([{ term: ACT_B, kind: 'action_occurrence' }]);
+const continued = evaluationFor(continuingExpectation.id);
+assert(continued, 'unfinished expectation did not survive to later bearing reality');
+assert.strictEqual(continued.result, 'fulfilled');
+assert.strictEqual(continued.order, laterBearingEvent.order);
+assert.deepStrictEqual(continued.fulfilled, [ACT_B]);
+assert.deepStrictEqual(continued.unmet, []);
+assert.deepStrictEqual(continued.unknown, []);
 
 // True violation: an action occurrence was contacted, but it instantiated a
 // different action term from the expected one.
@@ -154,13 +162,13 @@ assert.deepStrictEqual(fulfilled.fulfilled, [REL]);
 assert.deepStrictEqual(fulfilled.unmet, []);
 assert.deepStrictEqual(fulfilled.unknown, []);
 
-for (const expectation of [partialExpectation, unknownExpectation, violatedExpectation, fulfilledExpectation]) {
+for (const expectation of [partialExpectation, continuingExpectation, violatedExpectation, fulfilledExpectation]) {
   assert(hasFact(M, expectation.id, 'ρ:formation_status', x => x === 'open'),
     'original expectation formation history was mutated away');
   assert(hasFact(M, expectation.id, 'ρ:resolved_by', x => x?.ref !== undefined),
-    'historical expectation remained semantically current after successor evaluation');
+    'bearing reality failed to settle a historical expectation');
 }
-for (const event of [partialEvent, unknownEvent, violatedEvent, fulfilledEvent])
+for (const event of [partialEvent, unrelatedEvent, laterBearingEvent, violatedEvent, fulfilledEvent])
   for (const occurrence of event.ids) assert(hasFact(M, occurrence, 'ρ:lived_order', x => x === event.order),
     'exact successor occurrence history was not retained');
 
@@ -172,11 +180,11 @@ console.log(JSON.stringify({
   one_public_C_for_new_life: true,
   expression_relation_action_terms_share_lifecycle: true,
   partial_fulfillment_preserved: true,
-  unknown_not_false: true,
+  unrelated_contact_does_not_resolve: true,
+  unfinished_relation_survives_to_later_bearing_contact: true,
   evaluable_contradiction_is_violation: true,
   fulfillment_provenanced_to_exact_occurrences: true,
   original_expectation_history_retained: true,
-  resolved_expectation_not_current_open_state: true,
   parallel_lifecycle_authority: false,
   unrestricted_AGI_demonstrated: false,
 }, null, 2));
