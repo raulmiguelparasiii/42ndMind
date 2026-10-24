@@ -4,9 +4,14 @@ on:
   push:
     branches:
       - experiment/one-live-m-prose-learning-20261023
+      - experiment/live-relational-field-20261024
     paths:
       - 'agi/mind.js'
       - 'agi/mind-relational.js'
+      - 'agi/live-mind.js'
+      - 'agi/surface-query.js'
+      - 'agi/affected-relational-field.js'
+      - 'agi/affected-relational-field.test.js'
       - 'agi/generic-lived-occurrences.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/contact-before-meaning.test.js'
@@ -45,6 +50,8 @@ jobs:
           name: contact-before-meaning-log
           path: contact-before-meaning.log
           if-no-files-found: error
+      - name: Affected relational field
+        run: node agi/affected-relational-field.test.js
       - name: Internal evidence recurrence
         run: node agi/internal-evidence-recurrence.test.js
       - name: Temporal relation counterevidence
