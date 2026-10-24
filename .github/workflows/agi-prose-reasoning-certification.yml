@@ -7,8 +7,11 @@ on:
     paths:
       - 'agi-prose-reasoning-certification.test.js'
       - 'agi/raw-paraphrase-learning.test.js'
+      - 'agi/raw-concept-definition.test.js'
       - 'agi/raw-proposal-expression-grounding.js'
       - 'agi/surface-structure-grounding.js'
+      - 'agi/raw-concept-definition.js'
+      - 'agi/mind.js'
       - '.github/workflows/agi-prose-reasoning-certification.yml'
   workflow_dispatch:
 
@@ -29,3 +32,5 @@ jobs:
         run: node agi-prose-reasoning-certification.test.js
       - name: Novel raw paraphrase learning falsification
         run: node agi/raw-paraphrase-learning.test.js
+      - name: Raw concept definition falsification
+        run: node agi/raw-concept-definition.test.js
