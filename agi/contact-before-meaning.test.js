@@ -62,13 +62,24 @@ function livedAt(M, order) {
     'uninterpreted valid contact was not promoted to generic lived material');
   assert.strictEqual(livedAt(M, 1).length, 1,
     'uninterpreted valid contact created duplicate generic events at one lived order');
+}
 
-  Mind.C(M, unknown);
-  const termsAfterRepeat = [...subjectsOfKind(M, 'reality_contact_term')];
-  assert.deepStrictEqual(termsAfterRepeat, rawTerms,
-    'identical opaque contact did not reuse one content-addressed raw term');
+// Repeated ordinary valid contact must reuse one content-addressed raw term while
+// retaining distinct lived instances. This is separate from rule-contact fallback
+// because canonical M deliberately rejects re-ingestion of the same rule ID.
+{
+  const M = Mind.one(1, 1);
+  const repeated = { surface: { input: 'vexa nori', output: 'ack.' } };
+  Mind.C(M, repeated);
+  Mind.C(M, repeated);
+
+  const rawTerms = [...subjectsOfKind(M, 'reality_contact_term')];
+  assert.strictEqual(rawTerms.length, 1,
+    'identical valid contacts did not reuse one content-addressed raw term');
+  assert(values(M, rawTerms[0], 'ρ:contact_content').some(x => JSON.stringify(x) === JSON.stringify(repeated)),
+    'repeated valid contact lost exact raw content');
   assert.strictEqual([...subjectsOfKind(M, 'reality_contact_occurrence')].length, 2,
-    'repeated opaque contact did not retain two distinct lived instances');
+    'repeated valid contact did not retain two distinct lived instances');
 }
 
 // Specific occurrence: preserve raw contact/provenance, but do not let its wrapper
@@ -125,7 +136,7 @@ function livedAt(M, order) {
 console.log(JSON.stringify({
   exact_contact_precedes_interpretation: true,
   uninterpreted_valid_contact_remains_generic_lived_material: true,
-  identical_unknown_contact_reuses_raw_term: true,
+  repeated_valid_contact_reuses_raw_term: true,
   raw_provenance_is_retained_when_specific_occurrence_exists: true,
   raw_wrapper_does_not_duplicate_specific_semantic_event: true,
   existing_temporal_relation_survives_contact_before_meaning: true,
