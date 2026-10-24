@@ -263,63 +263,23 @@ function renderCanonicalFact(state, es, subject, relation, object, currentEpisod
   candidates.sort((a,b)=>b.support-a.support||a.expression.length-b.expression.length);
   return candidates[0]||null;
 }
-
-// Expression transport may use one uniquely current canonical relation already
-// selected by the live relational calculation. It does not choose what the mind
-// is about: query matches and referential cues were derived upstream from M and
-// the present contact. Ambiguity remains unexpressed rather than being resolved
-// here by another dialogue authority.
-function liveFieldFact(field) {
-  if(!field||field.authority!=='derived_zero_state') return null;
-  const candidates=unique([...(field.query_matches||[]),...(field.referential_cues||[])]
-    .filter(f=>f&&Object.prototype.hasOwnProperty.call(f,'subject')&&
-      Object.prototype.hasOwnProperty.call(f,'relation')&&Object.prototype.hasOwnProperty.call(f,'object'))
-    .map(f=>({subject:f.subject,relation:f.relation,object:f.object})));
-  return candidates.length===1?candidates[0]:null;
-}
-function applyRendered(seq, rendered, grounding, extras={}) {
-  seq.output_tokens=rendered.tokens;
-  seq.expression=rendered.expression;
-  seq.unresolved_output_positions=[];
-  seq.output_template=rendered.template;
-  seq.output_roles=rendered.roles;
-  seq.canonical_grounding=grounding;
-  Object.assign(seq,extras);
-}
-function respond(state, originalContact, field=null) {
+function respond(state, originalContact) {
   if(!originalContact||typeof originalContact!=='object'||!originalContact.surface) return false;
   if(originalContact.surface.output!==undefined&&originalContact.surface.output!==null) return false;
   const seq=state.current?.sequence; if(!seq||!Array.isArray(seq.input_tokens)||seq.expression) return false;
   const es=episodes(state); if(es.length<2) return false;
-  const currentEpisode=es.at(-1);
-
-  const live=liveFieldFact(field);
-  if(live) {
-    const rendered=renderCanonicalFact(state,es,live.subject,live.relation,live.object,currentEpisode);
-    if(rendered) {
-      applyRendered(seq,rendered,{
-        subject:live.subject,relation:live.relation,object:live.object,
-        source:'live_relational_field',authority:'canonical_M',status:'current_fact',
-      },{live_relational_expression:true});
-      return true;
-    }
-  }
-
-  // Transitional fallback for contacts whose live relational interpretation is
-  // not yet available. This preserves learned language ability while keeping it
-  // downstream of the live-field route whenever that route is determinate.
   const resolved=resolveQuestion(state,es,seq); if(!resolved) return false;
   const found=currentObjects(state,resolved.subject,resolved.relation); if(found.objects.length!==1) return false;
   const rendered=renderCanonicalFact(state,es,resolved.subject,resolved.relation,found.objects[0],resolved.currentEpisode); if(!rendered) return false;
-  applyRendered(seq,rendered,{
-    subject:resolved.subject,relation:resolved.relation,object:found.objects[0],
-    source:found.epistemic_status==='current_fact'?'M.knowledge.current.facts':'M.sourced_claims',
-    authority:'canonical_M',status:found.epistemic_status,
-  },{
-    dialogue_induction:true,
-    intent_evidence:(resolved.cues||[]).map(c=>({surface:c.text,support:c.support,subject_diversity:c.subject_diversity,sides:c.sides})),
-  });
+  seq.output_tokens=rendered.tokens;
+  seq.expression=rendered.expression;
+  seq.unresolved_output_positions=[];
+  seq.dialogue_induction=true;
+  seq.intent_evidence=(resolved.cues||[]).map(c=>({surface:c.text,support:c.support,subject_diversity:c.subject_diversity,sides:c.sides}));
+  seq.output_template=rendered.template;
+  seq.output_roles=rendered.roles;
+  seq.canonical_grounding={subject:resolved.subject,relation:resolved.relation,object:found.objects[0],source:found.epistemic_status==='current_fact'?'M.knowledge.current.facts':'M.sourced_claims',authority:'canonical_M',status:found.epistemic_status};
   return true;
 }
 
-module.exports={respond,episodes,questionAnswerRows,resolveQuestion,renderCanonicalFact,currentObjects,intentCues,deicticCues,liveFieldFact};
+module.exports={respond,episodes,questionAnswerRows,resolveQuestion,renderCanonicalFact,currentObjects,intentCues,deicticCues};
