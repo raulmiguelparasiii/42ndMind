@@ -6,6 +6,8 @@ on:
       - experiment/one-live-m-prose-learning-20261023
     paths:
       - 'agi-prose-randomized-certification.test.js'
+      - 'agi/raw-proposal-expression-grounding.js'
+      - 'agi/surface-structure-grounding.js'
       - '.github/workflows/agi-prose-randomized-certification.yml'
   workflow_dispatch:
 
