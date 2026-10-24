@@ -7,6 +7,8 @@ on:
     paths:
       - 'agi-prose-reasoning-certification.test.js'
       - 'agi/raw-paraphrase-learning.test.js'
+      - 'agi/raw-proposal-expression-grounding.js'
+      - 'agi/surface-structure-grounding.js'
       - '.github/workflows/agi-prose-reasoning-certification.yml'
   workflow_dispatch:
 
