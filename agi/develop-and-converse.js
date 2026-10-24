@@ -5,9 +5,10 @@
 // M is addressed conversationally and its own expressions are printed.
 
 const fs = require('node:fs');
-const Mind = require('./live-mind.js');
+const BaseMind = require('./mind.js');
+const SurfaceDialogue = require('./surface-dialogue.js');
 
-const M = Mind.one(2, 1);
+const M = BaseMind.one(2, 1);
 const V = name => ({ var: String(name) });
 
 // Opaque relation identities. English words do not name these relations in code.
@@ -19,16 +20,21 @@ const R_CLASS = 'ρd:44e0';
 const R_STAGE = 'ρd:e572';
 const R_SPECIES = 'ρd:69ac';
 
-function hear(text, source='speaker') {
-  Mind.C(M, { surface: { input: text, source } });
-  return M.current?.sequence?.expression ?? null;
+function experience(text, source='speaker') {
+  BaseMind.C(M, { surface: { input: text, source } });
 }
 function grounded(text, triple, source='teacher') {
-  Mind.C(M, { surface: { input: text, source }, relations: { facts: [triple] } });
+  BaseMind.C(M, { surface: { input: text, source }, relations: { facts: [triple] } });
 }
 function dialogue(question, answerText, triple) {
-  hear(question, 'learner');
+  experience(question, 'learner');
   grounded(answerText, triple, 'teacher');
+}
+function converse(text, source='miguel') {
+  const contact = { surface: { input: text, source } };
+  BaseMind.C(M, contact);
+  SurfaceDialogue.respond(M, contact);
+  return M.current?.sequence?.expression ?? null;
 }
 
 const things = [
@@ -59,32 +65,24 @@ for (const [s,kind,color,place,likes] of things) {
   dialogue(`what does ${s} like?`, `${s} likes ${likes}.`, [s,R_LIKES,likes]);
 }
 
-// More independent examples for the class relation, so a later derived class can
-// be spoken even when that subject/class pairing was never uttered.
 for (const [s,c] of [
   ['sparrow','animal'],['trout','animal'],['maple','plant'],['tulip','plant'],
   ['wrench','artifact'],['fork','artifact'],['guitar','artifact'],['mars','celestial'],
   ['venus','celestial'],['jupiter','celestial'],
 ]) dialogue(`what broad class is ${s}?`, `${s} belongs to the ${c} class.`, [s,R_CLASS,c]);
 
-// Yume's immediate grounded experience. Her broader classification is not stated.
 dialogue('what stage is yume?', 'yume is at the kitten stage.', ['yume',R_STAGE,'kitten']);
 grounded('a kitten is a cat species stage.', ['kitten',R_SPECIES,'cat']);
 
-// General relational rules are taught as structure rather than target answers.
-// They apply to any entity satisfying the premise, not specifically to Yume.
-Mind.C(M, { relations: { rules: [
+BaseMind.C(M, { relations: { rules: [
   { id:'development-stage-species', premises:[[V('x'),R_STAGE,'kitten']], conclusion:[V('x'),R_SPECIES,'cat'], categorical:true },
   { id:'development-cat-class', premises:[[V('x'),R_SPECIES,'cat']], conclusion:[V('x'),R_CLASS,'animal'], categorical:true },
 ] } });
 
-// Give the species relation its own independently varied language experience.
 for (const [s,species] of [
   ['milo','cat'],['luna','cat'],['rex','dog'],['fido','dog'],['nemo','fish'],['dory','fish']
 ]) dialogue(`what species is ${s}?`, `${s} has species ${species}.`, [s,R_SPECIES,species]);
 
-// Let the same individual encounter a little correction and change rather than a
-// perfectly static textbook life.
 grounded('the book is green in color.', ['book',R_COLOR,'green']);
 grounded('the book is green in color.', ['book',R_COLOR,'green']);
 
@@ -102,7 +100,7 @@ const prompts = [
 console.log('--- ORDINARY CONVERSATION WITH THE GROWN M ---');
 for (const prompt of prompts) {
   const started = performance.now();
-  const reply = hear(prompt, 'miguel');
+  const reply = converse(prompt, 'miguel');
   const elapsed = Math.round((performance.now()-started)*10)/10;
   console.log(`MIGUEL: ${prompt}`);
   console.log(`M: ${reply ?? '<no expressed reply>'}`);
