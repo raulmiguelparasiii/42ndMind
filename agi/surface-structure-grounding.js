@@ -45,6 +45,9 @@ function latestSurfaceEpisode(state) {
   }
   return best;
 }
+function externallyChanneled(state, episodeId) {
+  return (state.knowledge?.facts || []).some(f => f.subject === episodeId && f.relation === 'ρ:contact_channel');
+}
 
 function currentExpressionMatches(state, inputTokens) {
   const byValue = new Map();
@@ -221,11 +224,9 @@ function proposalUpdate(state, episodeId, triple) {
   } };
 }
 
-function relationalUpdate(state, originalContact) {
-  if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface ||
-      originalContact.relations || Array.isArray(originalContact.surface.channels)) return null;
+function relationalUpdate(state) {
   const episode = latestSurfaceEpisode(state);
-  if (!episode) return null;
+  if (!episode || externallyChanneled(state, episode.id)) return null;
 
   // When the sentence describes a fact M already independently knows, retain only
   // the alignment evidence. It must never create another truth route for that fact.
