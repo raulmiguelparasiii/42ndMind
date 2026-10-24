@@ -34,7 +34,9 @@ Absence from conversation is unknown, never repository absence.
 
 As of 2026-10-24 the explicit seven-way proposer-side cognitive-faculty branch is retired from the live tree. Do not recreate `cognitive-relation-candidates.js`, its test, or the English convergence test as an architecture path.
 
-The useful generic results underneath it remain:
+The persisted Universal Language state was checked after retirement and contains none of the retired `attention`, `focus`, `broad_intent`, or `cognitive` candidate labels.
+
+The useful generic results underneath the retired branch remain:
 
 ```text
 one-state persistence
@@ -63,7 +65,8 @@ The human labels memory/remember/recollect/attention/focus are not implementatio
 - endpoint-independent structural schema induction/transfer/corrigibility/refinement;
 - bounded connected structural views and recursive structural composition;
 - rebuildable long-life surface episode index;
-- frozen long-life symbolic -> numeric continuation in the same M.
+- frozen long-life symbolic -> numeric continuation in the same M;
+- disposable affected relational field from current contact/query + canonical rule dependencies, with no workspace state.
 
 ## Preserved failure constraints
 
@@ -83,7 +86,8 @@ The human labels memory/remember/recollect/attention/focus are not implementatio
 14. Certification must independently vary the roles it asks cognition to distinguish.
 15. A surface renderer succeeding or failing is not evidence that a fact is or is not in M.
 16. A named cognitive phenomenon is never sufficient reason to add a named faculty.
-17. A current relational field, if exposed, must be disposable and recomputable from canonical M plus the contact boundary.
+17. A current relational field must be disposable and recomputable from canonical M plus the contact boundary.
+18. Backward support is context, not a new forward root. Never let support fan outward into unrelated M.
 
 ## Current diagnosis from ordinary conversation
 
@@ -93,19 +97,17 @@ Observed ordinary-conversation failures are not all missing-knowledge failures. 
 
 Therefore do not patch individual prompts such as name, why, or summary questions.
 
-## Current frontier: expose C's affected dependency field
+## Stabilized connection: C's affected dependency field
 
-The current task is a connection, not a new subsystem.
+Implemented on working head `4da532b03ea1f26dbab772b1d5fcd0bf9ccfd1e3` before live-branch promotion.
 
-Required derived object:
+Derived object:
 
 ```text
 A(M; current contact, optional learned relational cue)
 ```
 
-A must be computed from existing canonical relational closure and dependency structure.
-
-Required semantics:
+Semantics:
 
 ```text
 current contact facts/rule changes = roots
@@ -118,11 +120,30 @@ unrelated M = excluded
 
 Crucially, backward support does not become a new forward root merely because it is old context. This prevents one old shared fact from expanding the field into a whole-M workspace.
 
-A must not be stored in M. It may be returned to an inspector/expression boundary as a disposable view.
+Implementation:
+
+- `agi/affected-relational-field.js`: pure directional dependency/support projection over canonical `M.knowledge.current` and the exact relational episodes produced during one top-level contact;
+- `agi/surface-query.js`: learned surface interpretation may contribute only an open `{subject, relation}` cue, not an answer or warrant;
+- `agi/live-mind.js::step`: brackets one top-level contact, lets canonical M settle, derives the field, then permits transitional expression transport;
+- no field/activation object is written into M.
+
+Validation:
+
+- foundation run `40129606156`: success after first generic field connection;
+- foundation run `40129808246`: success after live-wrapper non-persistence guard;
+- current contact propagated through two derivation levels;
+- required old support was exposed;
+- an older conclusion sharing that support did not enter the affected wave;
+- unrelated M stayed outside the field;
+- field inspection left serialized M unchanged;
+- `live-mind.step()` returned the field without persisting it anywhere in M;
+- all existing contact-before-meaning, internal-evidence, temporal, action-reopening, grounded-expression-action, route-upgrade, and generic-occurrence foundation regressions remained green.
+
+Classification: **connection**. No new cognitive faculty or authority was introduced.
 
 ## Surface direction
 
-The intended architecture is:
+The intended architecture is now explicit:
 
 ```text
 surface/receptor contact
@@ -132,7 +153,9 @@ surface/receptor contact
  -> expression/action transduction
 ```
 
-Existing surface templates may remain transitional transport, but they must not become the authority that decides what the mind is thinking about.
+Existing surface templates remain transitional transport. They are not evidence that the live-field/judgment problem is solved end-to-end, and they must not become the authority that decides what the mind is thinking about.
+
+Current known boundary: some remembered/social knowledge is represented as first-class sourced-claim structure rather than as a literal current world triple. The affected-field query currently roots literal canonical triples. Do not solve this by promoting testimony/induction to actuality or by adding prompt-specific retrieval. If this becomes the next falsification, normalize reified relational content/provenance generically inside M while preserving epistemic status.
 
 ## Efficiency rules
 
