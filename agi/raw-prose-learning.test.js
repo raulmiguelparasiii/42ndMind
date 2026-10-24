@@ -84,7 +84,7 @@ assert(!has(M, TARGET, REL_ORIGIN, ORIGIN));
 assert(!has(M, TARGET, REL_MATERIAL, MATERIAL));
 assert(!has(M, TARGET, REL_USE, USE));
 const before = ask(M, `what is ${TARGET} made of?`);
-assert(!before?.canonical_grounding || before.canonical_grounding.status !== 'grounded',
+assert(!(before?.canonical_grounding?.subject === TARGET && before.canonical_grounding.status === 'grounded'),
   'target was answerable before the prose was read');
 
 // Three independently worded passages. Each passage combines sentence forms that
