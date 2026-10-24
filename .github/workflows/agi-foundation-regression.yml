@@ -13,6 +13,7 @@ on:
       - 'agi/affected-relational-field.js'
       - 'agi/affected-relational-field.test.js'
       - 'agi/live-field-integration.test.js'
+      - 'agi/live-relational-continuity-probe.js'
       - 'agi/generic-lived-occurrences.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/contact-before-meaning.test.js'
@@ -55,6 +56,8 @@ jobs:
         run: node agi/affected-relational-field.test.js
       - name: Live field integration
         run: node agi/live-field-integration.test.js
+      - name: Live relational continuity probe
+        run: node agi/live-relational-continuity-probe.js
       - name: Internal evidence recurrence
         run: node agi/internal-evidence-recurrence.test.js
       - name: Temporal relation counterevidence
