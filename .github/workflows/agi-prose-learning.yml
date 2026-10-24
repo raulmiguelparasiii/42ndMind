@@ -6,12 +6,14 @@ on:
       - experiment/one-live-m-prose-learning-20261023
     paths:
       - 'agi/raw-prose-learning.test.js'
+      - 'agi/sourced-prose-provenance.test.js'
       - 'agi/mind.js'
       - 'agi/mind-relational.js'
       - 'agi/surface-template.js'
       - 'agi/one-live-blueprint.js'
       - 'agi/ordered-surface-contact.js'
       - 'agi/raw-proposal-expression-grounding.js'
+      - 'agi/sourced-surface-claims.js'
       - '.github/workflows/agi-prose-learning.yml'
   workflow_dispatch:
 
@@ -40,12 +42,14 @@ jobs:
             -e 'tressa_prose_material' \
             agi/mind.js agi/mind-relational.js agi/one-live-blueprint.js \
             agi/surface-template.js agi/ordered-surface-contact.js \
-            agi/raw-proposal-expression-grounding.js; then
+            agi/raw-proposal-expression-grounding.js agi/sourced-surface-claims.js; then
             echo 'prose fixture leaked into runtime code'
             exit 1
           fi
       - name: Raw prose learning falsification
         run: node agi/raw-prose-learning.test.js
+      - name: Sourced prose provenance falsification
+        run: node agi/sourced-prose-provenance.test.js
       - name: Raw language acquisition regression
         run: node agi/raw-language-acquisition.test.js
       - name: Compound raw language regression
