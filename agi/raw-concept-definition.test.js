@@ -26,7 +26,7 @@ const partialEntity = word('entity_partial');
 
 for (const file of [
   'mind.js', 'mind-relational.js', 'one-live-blueprint.js', 'surface-template.js',
-  'surface-structure-grounding.js', 'raw-proposal-expression-grounding.js',
+  'surface-structure-grounding.js', 'raw-proposal-expression-grounding.js', 'raw-concept-definition.js',
 ]) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
   for (const secret of [REL_A, REL_B, REL_KIND, DEF, JOIN, targetConcept, targetA, targetB, targetEntity])
