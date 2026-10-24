@@ -7,8 +7,13 @@
 // alignments across diverse bindings are reduced through the same generic surface
 // template/role machinery. Transfer to a new binding remains proposal-gated and,
 // when recurrent, uses the existing M-owned surface_induction route anatomy.
+//
+// The surface_structure_index below is acceleration only. It is append-synchronized
+// from canonical M facts, versioned, disposable, and completely rebuildable.
 
 const Surface = require('./surface-template.js');
+
+const INDEX_VERSION = 1;
 
 function stable(v) {
   if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
@@ -23,6 +28,114 @@ function episodeNumber(id) {
   return Number.isFinite(n) ? n : -1;
 }
 function compact(xs) { return Surface.compactTokens(xs || []); }
+function pushMap(map, key, value) {
+  if (!Array.isArray(map[key])) map[key] = [];
+  map[key].push(value);
+}
+
+function emptyIndex(rebuilds = 1) {
+  return {
+    version: INDEX_VERSION,
+    authority: 'zero_authority_rebuildable',
+    fact_count: 0,
+    rebuilds,
+    incremental_syncs: 0,
+    latest_episode_id: null,
+    episodes: {},
+    expressions: [],
+    expressions_by_first: {},
+    expressions_by_phrase: {},
+    expression_attachment_keys: {},
+    alignments_by_relation: {},
+    proposals_by_key: {},
+    proposals_by_episode: {},
+    supports_by_episode: {},
+  };
+}
+function validIndex(index, facts) {
+  return !!(index && index.version === INDEX_VERSION &&
+    index.authority === 'zero_authority_rebuildable' &&
+    Number.isInteger(index.fact_count) && index.fact_count >= 0 && index.fact_count <= facts.length &&
+    index.episodes && typeof index.episodes === 'object' &&
+    Array.isArray(index.expressions) &&
+    index.expressions_by_first && typeof index.expressions_by_first === 'object' &&
+    index.expressions_by_phrase && typeof index.expressions_by_phrase === 'object' &&
+    index.expression_attachment_keys && typeof index.expression_attachment_keys === 'object' &&
+    index.alignments_by_relation && typeof index.alignments_by_relation === 'object' &&
+    index.proposals_by_key && typeof index.proposals_by_key === 'object' &&
+    index.proposals_by_episode && typeof index.proposals_by_episode === 'object' &&
+    index.supports_by_episode && typeof index.supports_by_episode === 'object');
+}
+function episodeRecord(index, id) {
+  const key = String(id);
+  if (!index.episodes[key]) index.episodes[key] = { id: key, channeled: false };
+  return index.episodes[key];
+}
+function applyFact(index, fact) {
+  const subject = String(fact?.subject);
+  if (subject.startsWith('sequence-contact:')) {
+    const episode = episodeRecord(index, subject);
+    if (fact.relation === 'ρ:input_tokens' && Array.isArray(fact.object)) {
+      episode.input_tokens = fact.object.slice();
+      if (!index.latest_episode_id || episodeNumber(subject) > episodeNumber(index.latest_episode_id))
+        index.latest_episode_id = subject;
+    } else if (fact.relation === 'ρ:input_raw') episode.input_raw = fact.object;
+    else if (fact.relation === 'ρ:contact_channel') episode.channeled = true;
+  }
+
+  if (fact?.relation === 'ρ:surface_expression' && fact.object && Array.isArray(fact.object.tokens)) {
+    const tokens = compact(fact.object.tokens);
+    if (tokens.length) {
+      const entry = {
+        value: fact.subject,
+        tokens,
+        source_episode: fact.object.source_episode,
+      };
+      const at = index.expressions.length;
+      index.expressions.push(entry);
+      pushMap(index.expressions_by_first, stable(tokens[0]), at);
+      pushMap(index.expressions_by_phrase, stable(tokens), at);
+      index.expression_attachment_keys[stable([fact.subject, fact.object.source_episode, tokens])] = true;
+    }
+  } else if (fact?.relation === 'ρ:surface_known_fact_alignment' && fact.object &&
+      Object.prototype.hasOwnProperty.call(fact.object, 'relation')) {
+    const key = stable(fact.object.relation);
+    if (!index.alignments_by_relation[key]) index.alignments_by_relation[key] = {
+      relation: fact.object.relation,
+      rows: [],
+    };
+    index.alignments_by_relation[key].rows.push({ episode: fact.subject, ...fact.object });
+  } else if (fact?.relation === 'ρ:proposes_relation' && fact.object && typeof fact.object === 'object' &&
+      Object.prototype.hasOwnProperty.call(fact.object, 'subject') &&
+      Object.prototype.hasOwnProperty.call(fact.object, 'relation') &&
+      Object.prototype.hasOwnProperty.call(fact.object, 'object')) {
+    const row = { episode: String(fact.subject), triple: fact.object };
+    pushMap(index.proposals_by_episode, String(fact.subject), row);
+    pushMap(index.proposals_by_key, stable([fact.object.subject, fact.object.relation]), row);
+  } else if (fact?.relation === 'ρ:supports' && fact.object?.ref !== undefined) {
+    pushMap(index.supports_by_episode, String(fact.subject), String(fact.object.ref));
+  }
+}
+function surfaceStructureIndex(state) {
+  const facts = state.knowledge?.facts || [];
+  if (!state.structure || typeof state.structure !== 'object') state.structure = {};
+  let index = state.structure.surface_structure_index;
+  let start = 0;
+  let rebuilding = false;
+  if (!validIndex(index, facts)) {
+    const rebuilds = Number.isInteger(index?.rebuilds) ? index.rebuilds + 1 : 1;
+    index = emptyIndex(rebuilds);
+    state.structure.surface_structure_index = index;
+    rebuilding = true;
+  } else start = index.fact_count;
+
+  if (start < facts.length) {
+    for (let i = start; i < facts.length; i++) applyFact(index, facts[i]);
+    index.fact_count = facts.length;
+    if (!rebuilding) index.incremental_syncs++;
+  }
+  return index;
+}
 
 function phraseAt(tokens, phrase) {
   const a = compact(tokens), b = compact(phrase);
@@ -34,29 +147,41 @@ function phraseAt(tokens, phrase) {
   }
   return hits;
 }
-
 function latestSurfaceEpisode(state) {
-  let best = null;
-  for (const fact of state.knowledge?.facts || []) {
-    if (fact.relation !== 'ρ:input_tokens' || !Array.isArray(fact.object) ||
-        typeof fact.subject !== 'string' || !fact.subject.startsWith('sequence-contact:')) continue;
-    if (!best || episodeNumber(fact.subject) > episodeNumber(best.id))
-      best = { id: fact.subject, input_tokens: fact.object.slice() };
-  }
-  return best;
+  const index = surfaceStructureIndex(state);
+  const id = index.latest_episode_id;
+  if (!id || !index.episodes[id]?.input_tokens) return null;
+  const e = index.episodes[id];
+  return { id, input_tokens: e.input_tokens.slice(), input_raw: e.input_raw };
 }
 function externallyChanneled(state, episodeId) {
-  return (state.knowledge?.facts || []).some(f => f.subject === episodeId && f.relation === 'ρ:contact_channel');
+  return !!surfaceStructureIndex(state).episodes[String(episodeId)]?.channeled;
+}
+function proposalsForEpisode(state, episodeId) {
+  return (surfaceStructureIndex(state).proposals_by_episode[String(episodeId)] || [])
+    .map(row => ({ episode: row.episode, triple: row.triple }));
+}
+function supportsForEpisode(state, episodeId) {
+  return [...new Set(surfaceStructureIndex(state).supports_by_episode[String(episodeId)] || [])];
+}
+function hasExpressionAttachment(state, value, episodeId, tokens) {
+  return surfaceStructureIndex(state).expression_attachment_keys[stable([value, episodeId, compact(tokens)])] === true;
 }
 
 function currentExpressionMatches(state, inputTokens) {
+  const index = surfaceStructureIndex(state);
+  const candidateIndexes = new Set();
+  for (const token of unique(compact(inputTokens)))
+    for (const at of index.expressions_by_first[stable(token)] || []) candidateIndexes.add(at);
+
   const byValue = new Map();
-  for (const fact of state.knowledge?.facts || []) {
-    if (fact.relation !== 'ρ:surface_expression' || !fact.object || !Array.isArray(fact.object.tokens)) continue;
-    const hits = phraseAt(inputTokens, fact.object.tokens);
+  for (const at of candidateIndexes) {
+    const expression = index.expressions[at];
+    if (!expression) continue;
+    const hits = phraseAt(inputTokens, expression.tokens);
     if (hits.length !== 1) continue;
-    const key = stable(fact.subject);
-    if (!byValue.has(key)) byValue.set(key, { value: fact.subject, hits: [] });
+    const key = stable(expression.value);
+    if (!byValue.has(key)) byValue.set(key, { value: expression.value, hits: [] });
     byValue.get(key).hits.push(hits[0]);
   }
   return [...byValue.values()]
@@ -70,6 +195,9 @@ function knownFactAlignment(state, currentEpisode) {
   const matches = currentExpressionMatches(state, currentEpisode.input_tokens);
   if (matches.length < 2) return null;
   const matched = new Map(matches.map(x => [stable(x.value), x]));
+
+  // Current settled facts are query-relative state, not lifetime history. Scanning
+  // them here avoids copying a second truth index while eliminating lifetime rescans.
   const candidates = unique((state.knowledge?.current?.facts || [])
     .filter(f => matched.has(stable(f.subject)) && matched.has(stable(f.object)) && !same(f.subject, f.object))
     .map(f => ({ subject: f.subject, relation: f.relation, object: f.object })));
@@ -90,52 +218,27 @@ function knownFactAlignment(state, currentEpisode) {
   };
 }
 
-function episodeTokens(state) {
-  const map = new Map();
-  for (const fact of state.knowledge?.facts || []) {
-    if (fact.relation === 'ρ:input_tokens' && Array.isArray(fact.object) &&
-        typeof fact.subject === 'string' && fact.subject.startsWith('sequence-contact:'))
-      map.set(fact.subject, fact.object.slice());
-  }
-  return map;
-}
-function alignments(state, currentId) {
-  return (state.knowledge?.facts || [])
-    .filter(f => f.relation === 'ρ:surface_known_fact_alignment' && f.subject !== currentId && f.object &&
-      Object.prototype.hasOwnProperty.call(f.object, 'subject') &&
-      Object.prototype.hasOwnProperty.call(f.object, 'relation') &&
-      Object.prototype.hasOwnProperty.call(f.object, 'object'))
-    .map(f => ({ episode: f.subject, ...f.object }));
-}
 function valueForPhrase(state, phrase) {
-  const values = unique((state.knowledge?.facts || [])
-    .filter(f => f.relation === 'ρ:surface_expression' && f.object && Array.isArray(f.object.tokens) &&
-      same(compact(f.object.tokens), compact(phrase)))
-    .map(f => f.subject));
+  const index = surfaceStructureIndex(state);
+  const values = unique((index.expressions_by_phrase[stable(compact(phrase))] || [])
+    .map(at => index.expressions[at]?.value)
+    .filter(v => v !== undefined));
   return values.length === 1 ? values[0] : undefined;
 }
-
 function inferTriples(state, currentEpisode) {
   if (!currentEpisode || !Array.isArray(currentEpisode.input_tokens)) return [];
-  const tokenMap = episodeTokens(state);
-  const groups = new Map();
-  for (const row of alignments(state, currentEpisode.id)) {
-    if (!tokenMap.has(row.episode)) continue;
-    const key = stable(row.relation);
-    if (!groups.has(key)) groups.set(key, { relation: row.relation, rows: [] });
-    groups.get(key).rows.push(row);
-  }
-
+  const index = surfaceStructureIndex(state);
   const candidates = [];
-  for (const group of groups.values()) {
-    const rows = group.rows;
+
+  for (const group of Object.values(index.alignments_by_relation)) {
+    const rows = (group.rows || []).filter(row => row.episode !== currentEpisode.id && index.episodes[String(row.episode)]?.input_tokens);
     const subjects = unique(rows.map(x => x.subject));
     const objects = unique(rows.map(x => x.object));
     if (rows.length < 4 || subjects.length < 3 || objects.length < 2) continue;
 
     const projected = rows.map(row => ({
       id: row.episode,
-      output_tokens: compact(tokenMap.get(row.episode)),
+      output_tokens: compact(index.episodes[String(row.episode)].input_tokens),
       channels: new Map([[0, row.subject], [2, row.object]]),
     }));
     const template = Surface.buildTemplate(projected.map(e => e.output_tokens));
@@ -156,10 +259,9 @@ function inferTriples(state, currentEpisode) {
 }
 
 function proposalRows(state, subject, relation) {
-  return (state.knowledge?.facts || [])
-    .filter(f => f.relation === 'ρ:proposes_relation' && f.object &&
-      same(f.object.subject, subject) && same(f.object.relation, relation))
-    .map(f => ({ episode: String(f.subject), object: f.object.object }))
+  const index = surfaceStructureIndex(state);
+  return (index.proposals_by_key[stable([subject, relation])] || [])
+    .map(row => ({ episode: row.episode, object: row.triple.object }))
     .sort((a, b) => episodeNumber(a.episode) - episodeNumber(b.episode));
 }
 function recurrentObjectWithCurrent(state, episodeId, triple, minEpisodes = 2) {
@@ -240,4 +342,13 @@ function relationalUpdate(state) {
   return proposalUpdate(state, episode.id, triples[0]);
 }
 
-module.exports = { relationalUpdate, knownFactAlignment, inferTriples };
+module.exports = {
+  relationalUpdate,
+  knownFactAlignment,
+  inferTriples,
+  latestSurfaceEpisode,
+  proposalsForEpisode,
+  supportsForEpisode,
+  hasExpressionAttachment,
+  surfaceStructureIndex,
+};
