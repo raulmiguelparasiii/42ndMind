@@ -4,10 +4,11 @@
 // participating in one present settlement.
 //
 // This module owns no cognition. It writes nothing to M, stores no activation,
-// and has no truth/status authority. Current contact/query facts are forward
-// roots. Older facts may enter only as support for conclusions affected by those
-// roots. Support-only facts never become new forward roots, which prevents the
-// view from expanding into a connected-component workspace over the whole M.
+// and has no truth/status authority. Present contact, present referential cues,
+// present query cues, and still-unresolved consequences may be forward roots.
+// Older facts may enter only as support for conclusions affected by those roots.
+// Support-only facts never become new forward roots, which prevents this view
+// from becoming a persistent workspace or connected-component scan over M.
 
 function stable(v) {
   if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
@@ -45,6 +46,22 @@ function queryMatches(fact, query) {
 function ruleRef(term) {
   return term && typeof term === 'object' && !Array.isArray(term) &&
     Object.keys(term).length === 1 && typeof term.ref === 'string' ? term.ref : null;
+}
+function directRefs(value) {
+  if (value && typeof value === 'object' && !Array.isArray(value) && value.ref !== undefined)
+    return [String(value.ref)];
+  if (Array.isArray(value)) return value
+    .filter(x => x && typeof x === 'object' && !Array.isArray(x) && x.ref !== undefined)
+    .map(x => String(x.ref));
+  return [];
+}
+function relationalObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) &&
+    Object.prototype.hasOwnProperty.call(value, 'subject') &&
+    Object.prototype.hasOwnProperty.call(value, 'relation') &&
+    Object.prototype.hasOwnProperty.call(value, 'object')
+    ? { subject: value.subject, relation: value.relation, object: value.object }
+    : null;
 }
 
 function factIndex(facts) {
@@ -98,6 +115,24 @@ function episodeSlice(state, start, end) {
   return episodes.slice(from, Math.max(from, to));
 }
 
+// Continuity is derived from unfinished consequence, not from an "open" label by
+// itself. A formation can continue only when it is still unresolved AND one of
+// its own current facts directly points at a term that M says can be instantiated
+// by later reality. This excludes open summaries/conflicts that have no directly
+// future-bearable consequence, while remaining independent of modality names.
+function continuingFacts(facts) {
+  const open = new Set(), resolved = new Set(), instantiable = new Set();
+  for (const fact of facts) {
+    const subject = String(fact.subject);
+    if (fact.relation === 'ρ:formation_status' && fact.object === 'open') open.add(subject);
+    else if (fact.relation === 'ρ:resolved_by' && fact.object?.ref !== undefined) resolved.add(subject);
+    else if (fact.relation === 'ρ:instantiation_kind') instantiable.add(subject);
+  }
+  const live = new Set([...open].filter(subject => !resolved.has(subject)));
+  return facts.filter(fact => live.has(String(fact.subject)) &&
+    directRefs(fact.object).some(ref => instantiable.has(ref)));
+}
+
 function derive(state, options = {}) {
   if (!state || state.whole !== 1) throw new Error('affected field requires one whole M');
   const currentFacts = state.knowledge?.current?.facts || [];
@@ -110,15 +145,33 @@ function derive(state, options = {}) {
   const rootKeys = new Set();
   const rootRuleIds = new Set();
   const contactFacts = [];
+  const referentialCues = [];
+
+  function root(fact) { rootKeys.add(factKey(fact)); }
 
   for (const episode of episodes) {
     for (const raw of episode.facts || []) {
       const key = factKey(raw);
       const canonical = index.byKey.get(key);
       if (canonical) {
-        rootKeys.add(key);
+        root(canonical);
         contactFacts.push(canonical);
       }
+
+      // A current contact can refer to an already-canonical relation without
+      // asserting it anew. If the object itself has ordinary relation anatomy and
+      // exactly matches an M fact, use that fact only as a zero-authority cue into
+      // M. This lets present reality engage what it is about while preserving the
+      // canonical fact's own warrant and provenance.
+      const mentioned = relationalObject(raw.object);
+      if (mentioned) {
+        const existing = index.byKey.get(factKey(mentioned));
+        if (existing) {
+          root(existing);
+          referentialCues.push(existing);
+        }
+      }
+
       // A direct fact about a rule can change which closure is current. Treat the
       // referenced rule as changed without knowing the semantic name of the
       // control relation.
@@ -128,10 +181,15 @@ function derive(state, options = {}) {
     for (const id of episode.rules || []) if (byRule.has(String(id))) rootRuleIds.add(String(id));
   }
 
+  // Still-unresolved consequences re-enter from canonical M itself. Only the
+  // specific future-bearable relation facts are roots; the rest of the subject's
+  // metadata/provenance does not become a workspace merely because it is open.
+  const continuing = continuingFacts(currentFacts);
+  for (const fact of continuing) root(fact);
+
   const matchedQuery = [];
   if (options.query) for (const fact of currentFacts) if (queryMatches(fact, options.query)) {
-    const key = factKey(fact);
-    rootKeys.add(key);
+    root(fact);
     matchedQuery.push(fact);
   }
 
@@ -204,6 +262,9 @@ function derive(state, options = {}) {
     episode_ids: episodes.map(e => e.id),
     query: options.query ? clone(options.query) : null,
     contact_facts: contactFacts.map(clone),
+    referential_cues: referentialCues.map(clone),
+    continuing_subjects: [...new Set(continuing.map(f => String(f.subject)))].sort(),
+    continuing_facts: continuing.map(clone),
     query_matches: matchedQuery.map(clone),
     affected_facts: affectedFacts.map(clone),
     supporting_facts: supportingFacts.map(clone),
@@ -213,4 +274,4 @@ function derive(state, options = {}) {
   };
 }
 
-module.exports = { derive, supportRoutes, factKey };
+module.exports = { derive, supportRoutes, factKey, continuingFacts };
