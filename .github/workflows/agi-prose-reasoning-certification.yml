@@ -8,6 +8,7 @@ on:
       - 'agi-prose-reasoning-certification.test.js'
       - 'agi/raw-paraphrase-learning.test.js'
       - 'agi/raw-concept-definition.test.js'
+      - 'agi/grounded-english-math-curriculum.test.js'
       - 'agi/raw-proposal-expression-grounding.js'
       - 'agi/surface-structure-grounding.js'
       - 'agi/raw-concept-definition.js'
@@ -34,3 +35,5 @@ jobs:
         run: node agi/raw-paraphrase-learning.test.js
       - name: Raw concept definition falsification
         run: node agi/raw-concept-definition.test.js
+      - name: Grounded English from mathematics
+        run: node agi/grounded-english-math-curriculum.test.js
