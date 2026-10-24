@@ -29,6 +29,7 @@ Absence from conversation is `unknown`, never repository absence.
 
 ## Solved / do not redo
 
+- every valid top-level `R` is retained as content-addressed raw contact material before interpretation; later specific occurrences enrich the same lived order, while the raw occurrence becomes generic `lived_occurrence` material only when no more-specific occurrence emerges;
 - variable-length/position-free language, context, single- and multi-proposition raw-language acquisition/correction, open discourse, canonical multi-hop expression;
 - compound raw utterance -> several independently queryable/corrigible M relations; exact raw strings retained at `ρ:input_raw`;
 - compound surface role induction broadens across independently grounded bindings;
@@ -49,10 +50,12 @@ Absence from conversation is `unknown`, never repository absence.
 
 Primary language regressions: `long-life-surface-access.test.js`, `compound-raw-language-acquisition.test.js`, `raw-language-acquisition.test.js`, `open-discourse.test.js`, `canonical-language-bridge.test.js`, `contextual-dialogue.test.js`, `variable-length-language.test.js`.
 Primary structural regressions: `recursive-structural-composition.test.js`, `embedded-structural-completion.test.js`, `large-connected-structural-world.test.js`, `structural-schema-refinement.test.js`, `structural-schema-corrigibility.test.js`, `structural-relation-transfer.test.js`, `topology-dynamics-integration.test.js`.
-Primary temporal/action regressions: `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
+Primary temporal/action regressions: `contact-before-meaning.test.js`, `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
 
-Current fully green cognitive head remains `a9f62ab6860a0ef05671480e08f01d6ef02ce7ce`.
-Blueprint run `40020732067`: full success.
+Current stabilized runtime cognition last changed at `be1facd8509dfa567a420dc68f7f68cdd8c5374e`.
+Current fully green executable/test head: `815ea0769dc21e04c87f521cd56e9ff5022fd3b1`.
+Full regression run `40104687010`: success across foundation, language, structural, and integration groups.
+Fast foundation run `40104687129`: success with real pipeline failure propagation.
 Valid frozen certification commit `1d7d6d250e818963928e1025b83e6780203bcc06`, run `40022176858`: success with freeze integrity verified and independently crossed evaluator roles. Held-out execution took about 7m02s.
 
 ## Failure / repair constraints
@@ -79,8 +82,9 @@ Valid frozen certification commit `1d7d6d250e818963928e1025b83e6780203bcc06`, ru
 20. **Raw retention:** exact surface history is asserted at `ρ:input_raw`, not tokenizer assumptions.
 21. **Surface episode index:** derived projection only; append-sync; invalid/missing version rebuilds from canonical M; never answer truth from cache.
 22. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
-23. **CI/runtime cost:** recursive continuous-temporal >6 min/path-scoped; frontier embodied-crossmodal and high-dimensional sensing are known slow gates; the valid long-life held-out certification itself took ~7m02s and is now a measured scaling cost.
+23. **CI/runtime cost:** recursive continuous-temporal >6 min/path-scoped; frontier embodied-crossmodal and high-dimensional sensing are known slow gates; valid long-life held-out certification took ~7m02s; raw prose is also a long gate. Full regression is split into independent foundation/language/structural/integration jobs, and the fast foundation workflow catches representation/temporal regressions first. CI scheduling has zero cognitive authority.
 24. **Certification evaluator identifiability:** a held-out denominator must independently vary roles it asks cognition to distinguish. Deterministic role correlation invalidates the evaluator rather than licensing a cognitive patch.
+25. **Raw provenance vs semantic event:** exact raw `R` remains in M before interpretation, but its provenance wrapper may not become a second simultaneous generic semantic term when a more-specific lived occurrence already represents that contact. Promote the raw occurrence into generic `lived_occurrence` only as fallback when no more-specific occurrence emerges.
 
 ## Certification record
 
@@ -96,7 +100,7 @@ Runtime-generated ontology, one M, one C, exact earlier contact retained, no par
 
 ## Current frontier: qualitatively broader raw reality, not more language fixtures
 
-The frozen long-life cross-domain continuation passed. Do not add another overlapping surface curriculum merely to increase counts. Search next for a genuinely different missing reality-contact class: spatial/visual-like raw structure, richer multiscale streams, or another capability the blueprint requires but current tests do not establish.
+The contact-before-meaning foundation is stabilized and fully green; do not reopen it without a falsification. The frozen long-life cross-domain continuation also passed. Do not add another overlapping surface curriculum merely to increase counts. Search next for a genuinely different missing reality-contact class: spatial/visual-like raw structure, richer multiscale streams, or another capability the blueprint requires but current tests do not establish.
 
 Before implementation:
 
