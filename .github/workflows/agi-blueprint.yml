@@ -21,6 +21,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Raw multi-sentence prose learning gate
+        run: node agi/raw-prose-learning.test.js
+      - name: Sourced prose provenance gate
+        run: node agi/sourced-prose-provenance.test.js
+      - name: Randomized held-out prose gate
+        run: node agi-prose-randomized-certification.test.js
+      - name: Prose-to-reasoning gate
+        run: node agi-prose-reasoning-certification.test.js
       - name: Long-life surface access gate
         run: node agi/long-life-surface-access.test.js
       - name: Compound raw-language acquisition gate
