@@ -70,9 +70,6 @@ for (let round = 0; round < 2; round++) {
   }
 }
 
-// Several different entities share each category. That breaks the accidental
-// one-to-one correlation between query subject and answer object, so the English
-// output role must be learned from the repeated category value itself.
 const definitions = [
   ['tiny', 0, 5, [1, 2, 3]],
   ['small', 5, 10, [6, 7, 8]],
@@ -94,10 +91,6 @@ for (let i = 0; i < definitions.length; i++) {
   }
 }
 
-// The held-out comparison remains unseen, but each numeral identity receives
-// recurrent grounded experience before scaffolding is withdrawn. This satisfies
-// the same recurrence requirement used elsewhere in M rather than granting a
-// one-shot privileged interpretation to the final question.
 for (let round = 0; round < 3; round++) {
   for (const value of [TARGET, TARGET_LOW, TARGET_HIGH])
     paired(M, `${value} is a number.`, 'noted.', [value, REL_NUMBER_KIND, 'number']);
@@ -143,6 +136,13 @@ assert(has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT), 'M did not derive the newly
 
 const probe = structuredClone(M);
 Mind.C(probe, { surface: { input: `what category is ${TARGET}?` } });
+console.log('FINAL GROUNDED ENGLISH QUERY', JSON.stringify({
+  sequence: probe.current?.sequence,
+  concept_expressions: (probe.knowledge?.facts || []).filter(f =>
+    f.subject === TARGET_CONCEPT && f.relation === 'ρ:surface_expression'),
+  category_current: (probe.knowledge?.current?.facts || []).filter(f =>
+    f.subject === TARGET && f.relation === REL_CATEGORY),
+}, null, 2));
 assert.strictEqual(probe.current?.sequence?.expression, `it is ${TARGET_CONCEPT}.`);
 assert.strictEqual(probe.current?.sequence?.canonical_grounding?.authority, 'canonical_M');
 assert.strictEqual(probe.current?.sequence?.canonical_grounding?.object, TARGET_CONCEPT);
