@@ -6,6 +6,7 @@ on:
       - experiment/one-live-m-prose-learning-20261023
     paths:
       - 'agi/intent-grounded-language-acquisition.test.js'
+      - 'agi/intent-action-authority-diagnostic.test.js'
       - 'agi/generic-lived-occurrences.js'
       - 'agi/relation-sequence-recompression.js'
       - 'agi/surface-relation-grounding.js'
@@ -26,11 +27,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Intent-grounded language acquisition
+      - name: Diagnose late action authority
         shell: bash
         run: |
           set +e
-          node agi/intent-grounded-language-acquisition.test.js > /tmp/intent-language.log 2>&1
+          node agi/intent-action-authority-diagnostic.test.js > /tmp/intent-action-diagnostic.log 2>&1
           code=$?
-          tail -n 160 /tmp/intent-language.log
+          tail -n 220 /tmp/intent-action-diagnostic.log
           exit $code
