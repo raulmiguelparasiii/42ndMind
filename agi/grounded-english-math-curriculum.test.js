@@ -70,20 +70,28 @@ for (let round = 0; round < 2; round++) {
   }
 }
 
+// Several different entities share each category. That breaks the accidental
+// one-to-one correlation between query subject and answer object, so the English
+// output role must be learned from the repeated category value itself.
 const definitions = [
-  ['tiny', 0, 5, 3], ['small', 5, 10, 7], ['moderate', 20, 30, 24],
-  ['large', 30, 40, 36], ['huge', 50, 60, 57],
+  ['tiny', 0, 5, [1, 2, 3]],
+  ['small', 5, 10, [6, 7, 8]],
+  ['moderate', 20, 30, [21, 24, 29]],
+  ['large', 30, 40, [31, 36, 39]],
+  ['huge', 50, 60, [51, 57, 59]],
 ];
 for (let i = 0; i < definitions.length; i++) {
-  const [concept, low, high, example] = definitions[i];
-  assert(example > low && example < high);
+  const [concept, low, high, examples] = definitions[i];
   Mind.C(M, {
     surface: { input: `${concept} means greater than ${low} and less than ${high}.`, output: 'noted.' },
     relations: { rules: [categoryRule(`english-school-definition:${i + 1}`, concept, low, high)] },
   });
-  paired(M, `${example} is greater than ${low}.`, 'noted.', [example, REL_GREATER, low]);
-  paired(M, `${example} is less than ${high}.`, 'noted.', [example, REL_LESS, high]);
-  paired(M, `what category is ${example}?`, `it is ${concept}.`, [example, REL_CATEGORY, concept]);
+  for (const example of examples) {
+    assert(example > low && example < high);
+    paired(M, `${example} is greater than ${low}.`, 'noted.', [example, REL_GREATER, low]);
+    paired(M, `${example} is less than ${high}.`, 'noted.', [example, REL_LESS, high]);
+    paired(M, `what category is ${example}?`, `it is ${concept}.`, [example, REL_CATEGORY, concept]);
+  }
 }
 
 // The held-out comparison remains unseen, but each numeral identity receives
@@ -146,6 +154,7 @@ console.log(JSON.stringify({
   teacher_grounding_source: 'mathematically_checked_relational_contact',
   ordinary_english_schooling: true,
   crossed_math_examples_remove_role_correlation: true,
+  crossed_category_examples_remove_answer_role_correlation: true,
   recurrent_numeral_identity_grounding: true,
   target_definition_semantic_rules_supplied: 0,
   target_premise_semantic_triples_supplied: 0,
