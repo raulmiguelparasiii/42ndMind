@@ -74,6 +74,19 @@ const learnedRule = (M.knowledge?.rules || []).find(rule =>
   Array.isArray(rule.conclusion) && rule.conclusion[1] === REL_KIND && rule.conclusion[2] === targetConcept &&
   rule.premises.some(p => p[1] === REL_A && p[2] === targetA) &&
   rule.premises.some(p => p[1] === REL_B && p[2] === targetB));
+if (!learnedRule) {
+  const facts = M.knowledge?.facts || [];
+  const contactRules = facts.filter(f => f.relation === 'ρ:contact_rule');
+  const inputTokens = facts.filter(f => f.relation === 'ρ:input_tokens').map(f => ({ episode: f.subject, tokens: f.object }));
+  const defines = facts.filter(f => f.relation === 'ρ:defines_rule');
+  console.log('RAW CONCEPT DEFINITION DIAGNOSTIC', JSON.stringify({
+    contact_rule_count: contactRules.length,
+    contact_rules: contactRules.map(f => ({ episode: f.subject, rule: f.object?.rule })),
+    input_tokens: inputTokens,
+    defines_rule_facts: defines,
+    knowledge_rules: (M.knowledge?.rules || []).map(r => ({ id: r.id, premises: r.premises, conclusion: r.conclusion, active: r.active, provenance: r.provenance })),
+  }, null, 2));
+}
 assert(learnedRule, 'raw definition did not create the new concept rule in canonical M');
 
 // The target entity is never mentioned in the definition. Its ordinary facts
