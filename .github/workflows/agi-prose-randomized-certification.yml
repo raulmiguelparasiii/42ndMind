@@ -1,0 +1,26 @@
+name: AGI randomized prose certification
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-prose-learning-20261023
+    paths:
+      - 'agi-prose-randomized-certification.test.js'
+      - '.github/workflows/agi-prose-randomized-certification.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: agi-prose-randomized-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Randomized raw prose certification
+        run: node agi-prose-randomized-certification.test.js
