@@ -27,4 +27,10 @@ jobs:
         with:
           node-version: 22
       - name: Grounded English from mathematics
-        run: node agi/grounded-english-math-curriculum.test.js
+        shell: bash
+        run: |
+          set +e
+          node agi/grounded-english-math-curriculum.test.js > /tmp/grounded-english.log 2>&1
+          code=$?
+          tail -n 120 /tmp/grounded-english.log
+          exit $code
