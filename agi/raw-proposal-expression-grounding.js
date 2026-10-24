@@ -90,6 +90,43 @@ function currentEpisodeHasChannels(state, episodeId) {
   return (state.knowledge?.facts || []).some(f => String(f.subject) === String(episodeId) && f.relation === 'ρ:contact_channel');
 }
 
+// A raw span can accumulate several surface-expression identities over a life
+// (for example numeric 15 and textual "15"). The grounded projection may resolve
+// that ambiguity only when canonical M itself currently supports exactly one of
+// those candidates as an endpoint somewhere in settled knowledge. If zero or more
+// than one candidates are current, all variants remain and the generic learner
+// continues to withhold rather than guess.
+function canonicalExpressionProjection(state, facts) {
+  const currentValues = new Set();
+  for (const fact of state.knowledge?.current?.facts || []) {
+    currentValues.add(stable(fact.subject));
+    currentValues.add(stable(fact.object));
+  }
+
+  const groups = new Map();
+  for (const fact of facts) {
+    if (fact.relation !== 'ρ:surface_expression' || !fact.object || !Array.isArray(fact.object.tokens)) continue;
+    const key = stable(Surface.compactTokens(fact.object.tokens));
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(fact);
+  }
+
+  const preferred = new Map();
+  for (const [key, rows] of groups) {
+    const candidates = unique(rows.map(row => row.subject));
+    if (candidates.length < 2) continue;
+    const current = candidates.filter(value => currentValues.has(stable(value)));
+    if (current.length === 1) preferred.set(key, stable(current[0]));
+  }
+
+  return facts.filter(fact => {
+    if (fact.relation !== 'ρ:surface_expression' || !fact.object || !Array.isArray(fact.object.tokens)) return true;
+    const key = stable(Surface.compactTokens(fact.object.tokens));
+    const wanted = preferred.get(key);
+    return wanted === undefined || stable(fact.subject) === wanted;
+  });
+}
+
 // Reuse SurfaceStructure without giving grounded teaching its own parser or
 // proposal authority. A disposable projection relabels only M-owned grounded
 // alignments as the generic alignment evidence SurfaceStructure already consumes.
@@ -97,7 +134,8 @@ function currentEpisodeHasChannels(state, episodeId) {
 // constructions for the same relation never collapse into one template family.
 function groundedStructureUpdate(state, episode) {
   if (!episode || currentEpisodeHasChannels(state, episode.id)) return null;
-  const facts = state.knowledge?.facts || [];
+  const allFacts = state.knowledge?.facts || [];
+  const facts = canonicalExpressionProjection(state, allFacts);
   const grounded = facts.filter(f => f.relation === 'ρ:grounded_surface_relation_alignment');
   if (!grounded.length) return null;
 
