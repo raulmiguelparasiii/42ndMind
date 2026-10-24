@@ -84,9 +84,11 @@ function contactedTriples(contact) {
 }
 
 // Phase 1: establish reality contact as lived material immediately after the
-// canonical contact has entered M. This is intentionally pre-semantic. The exact
-// contact is retained as opaque content on a content-addressed term. Identical
-// contacts share the term, while every lived instance remains a distinct event.
+// canonical contact has entered M. This is intentionally pre-semantic. Exact raw
+// content is retained before interpretation. The raw occurrence is not yet put
+// into the generic temporal term stream because a more specific occurrence may
+// be formed from the same contact later in this C update. If none is formed,
+// Phase 2 promotes this raw occurrence as the contact's generic lived material.
 function beginContact(state, originalContact) {
   if (!state || state.whole !== 1) return null;
 
@@ -106,7 +108,6 @@ function beginContact(state, originalContact) {
     [contactTerm, 'ρ:contact_content', originalContact],
     [contactTerm, 'ρ:instantiation_kind', 'reality_contact_occurrence'],
     [contactOccurrence, 'ρ:kind', 'reality_contact_occurrence'],
-    [contactOccurrence, 'ρ:kind', 'lived_occurrence'],
     [contactOccurrence, 'ρ:instantiates', ref(contactTerm)],
     [contactOccurrence, 'ρ:order', order],
     [contactOccurrence, 'ρ:lived_order', order],
@@ -133,14 +134,15 @@ function beginContact(state, originalContact) {
     contactTerm,
     contactOccurrence,
     frameIndex,
-    occurrence_count: 1,
+    occurrence_count: 0,
   };
 }
 
 // Phase 2: after ordinary C helpers have had a chance to derive meaning or other
 // structure, normalize those M-owned results onto the SAME lived order. No second
-// contact is created. Direct callers without a supplied boundary retain backwards
-// compatibility by establishing the boundary themselves.
+// contact is created. If nothing more specific emerged, promote the already-
+// retained raw contact occurrence so unknown experience can still recur and be
+// discovered by the same generic relation machinery.
 function relationalUpdate(state, originalContact, suppliedBoundary = null) {
   if (!state || state.whole !== 1) return null;
   const boundary = suppliedBoundary || beginContact(state, originalContact);
@@ -150,7 +152,7 @@ function relationalUpdate(state, originalContact, suppliedBoundary = null) {
   const contactId = boundary.contactId;
   const frameIndex = boundary.frameIndex;
   const facts = suppliedBoundary ? [] : [...(boundary.update?.relations?.facts || [])];
-  const occurrenceIds = new Set([boundary.contactOccurrence]);
+  const occurrenceIds = new Set();
   const bySubject = factsBySubject(state);
 
   // Structured relation contact is an occurrence too. This adds relational
@@ -179,7 +181,8 @@ function relationalUpdate(state, originalContact, suppliedBoundary = null) {
 
   // Already-normalized generic occurrences supplied by another zero-state bridge
   // remain valid current-life events. The raw contact occurrence itself is skipped
-  // because beginContact already established its anatomy.
+  // here because it is the fallback representation, not an extra simultaneous
+  // semantic term beside a more specific occurrence.
   for (const [subject, subjectFacts] of bySubject) {
     if (subject === boundary.contactOccurrence) continue;
     const isLived = subjectFacts.some(f => f.relation === 'ρ:kind' && f.object === 'lived_occurrence');
@@ -255,6 +258,16 @@ function relationalUpdate(state, originalContact, suppliedBoundary = null) {
       for (const kind of occurrenceKinds(subjectFacts)) facts.push([surface, 'ρ:instantiation_kind', kind]);
       occurrenceIds.add(subject);
     }
+  }
+
+  // If the contact produced no more specific first-class lived occurrence, the
+  // exact raw contact itself is the event available to future recurrence/search.
+  // This keeps unfamiliar experience learnable without duplicating already-
+  // interpreted experience into both a wrapper term and its derived meaning.
+  if (!occurrenceIds.size) {
+    if (!hasFact(state, boundary.contactOccurrence, 'ρ:kind', x => x === 'lived_occurrence'))
+      facts.push([boundary.contactOccurrence, 'ρ:kind', 'lived_occurrence']);
+    occurrenceIds.add(boundary.contactOccurrence);
   }
 
   return {
