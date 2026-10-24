@@ -7,7 +7,7 @@ on:
       - 'agi/surface-social-grounding.js'
       - 'agi/surface-turn-completion.js'
       - 'agi/live-mind.js'
-      - 'agi/continue-grown-conversation.js'
+      - 'agi/continue-grown-conversation-2.js'
       - '.github/workflows/agi-continue-grown-conversation.yml'
   workflow_dispatch:
 concurrency:
@@ -25,25 +25,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Recover the same grown individual
+      - name: Recover the same continued individual
         uses: actions/download-artifact@v4
         with:
-          name: grown-M
-          path: ${{ runner.temp }}/grown
+          name: continued-M
+          path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40117359811
-      - name: Continue its life and converse
+          run-id: 40117852052
+      - name: Continue its life after later stabilization
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/grown/grown-M.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M2.json
         run: |
           set -euo pipefail
-          node agi/continue-grown-conversation.js
-      - name: Preserve the same continued individual
+          node agi/continue-grown-conversation-2.js
+      - name: Preserve the same individual again
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M
-          path: ${{ runner.temp }}/continued-M.json
+          name: continued-M2
+          path: ${{ runner.temp }}/continued-M2.json
           retention-days: 30
           compression-level: 9
