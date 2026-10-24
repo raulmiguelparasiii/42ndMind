@@ -141,6 +141,43 @@ Validation:
 
 Classification: **connection**. No new cognitive faculty or authority was introduced.
 
+## Live continuation from unfinished consequence
+
+Promoted live head: `1c9e65bc730ed7f0d6ba1274cb926e1594b3af85`.
+
+This frontier was steered by direct inspection of the actual saved M4 individual, not by a synthetic benchmark or CI green light. The saved state contained 22,210 retained relational facts and 22,237 current closure facts.
+
+The human-side clue was continuous balance: an already-formed relation stays consequential because an expected consequence remains unfinished while other reality can enter concurrently. The repository translation is therefore not a task set, focus state, activation ledger, or scalar priority. It is unfinished relational consequence remaining ordinary canonical M material until reality can actually bear on it.
+
+Two corrections survived direct inspection:
+
+1. `formation_status = open` by itself is not continuation. The actual M contained unresolved temporal-conflict summaries that were open historically but had no directly future-bearable consequence. Rooting every open subject would have recreated a stale workspace. `affected-relational-field.js` now admits continuation only from unresolved formation facts that directly reference a term M already knows can be instantiated by later reality. Only those future-bearable facts re-enter the disposable affected field.
+2. An unrelated event must not extinguish an unfinished expectation. `relation-sequence-recompression.js::lifecycleUpdate` is now current-event local: after C has normalized the present top-level contact onto one lived order, the lifecycle asks only whether that current event fulfills or contradicts an unresolved expectation. If it does neither, no evaluation is written and the relation remains unfinished in M for the next contact. It no longer reconstructs lived history and searches forward for a successor on every update.
+
+Direct actual-M inspection:
+
+- current lived order 121 contained 34 surface-expression occurrences and bore on no unresolved temporal expectation, so lifecycle settlement was empty rather than manufacturing resolution;
+- the one real historical expectation at order 103 expected `surface:hello`; actual order 104 contained another `surface_expression_occurrence`, so the event-local rule still identifies genuine counterevidence and preserves the historical violation;
+- the current utterance about Yume contained a zero-authority relation reference to canonical `yume -> animal`; the affected field used that reference without asserting new truth and immediately exposed its actual support chain `yume -> cat -> kitten`;
+- the two unresolved historical conflict summaries contributed zero continuing roots;
+- local inspection of the event-local lifecycle over the 22k-fact saved M was on the order of a few milliseconds rather than a historical successor search.
+
+A speculative attempt to make the live field directly drive speech was retracted during the same live inspection. The current learned surface induction would misread the novel `why ... belongs to the animal class` sentence from assertion-side phrase evidence and merely restate the class relation. A referential cue may therefore make a relation live without licensing an utterance. Do not wire a live referent straight to expression until the corresponding communicative relation itself has been learned.
+
+No `attention`, `focus`, `task_set`, `goal_state`, `working_memory`, persistent affected field, predictor ledger, or copied frontier was added.
+
+The live interpretation is now:
+
+```text
+unfinished canonical consequence
+ + current reality contact
+ -> current-event bearing / non-bearing
+ -> settlement if reality bears
+ -> otherwise the consequence remains unfinished in canonical M
+```
+
+and the disposable field may expose that still-unfinished consequence on the next settlement without storing a second cognitive state.
+
 ## Surface direction
 
 The intended architecture is now explicit:
@@ -159,6 +196,7 @@ Current known boundary: some remembered/social knowledge is represented as first
 
 ## Efficiency rules
 
+- development is steered by direct live-state/math inspection; regressions are later collateral-damage guards, not cognition evaluators;
 - active structural failure first; expensive regressions only when relevant runtime changes;
 - no whole-life rescan as a cognitive requirement;
 - local/rebuildable indexes only;
