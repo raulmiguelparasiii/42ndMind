@@ -15,11 +15,15 @@ const entities = Array.from({ length: 6 }, () => word('entity'));
 const values = Array.from({ length: 3 }, () => word('value'));
 const target = word('target');
 const targetValue = word('targetvalue');
+const correctedValue = word('correctedvalue');
 const assignment = [0, 0, 1, 1, 2, 2];
 
-for (const file of ['mind.js', 'mind-relational.js', 'surface-template.js', 'ordered-surface-contact.js']) {
+for (const file of [
+  'mind.js', 'mind-relational.js', 'surface-template.js', 'ordered-surface-contact.js',
+  'raw-proposal-expression-grounding.js', 'surface-structure-grounding.js',
+]) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
-  for (const secret of [REL, novelVerb, target, targetValue])
+  for (const secret of [REL, novelVerb, target, targetValue, correctedValue])
     assert(!source.includes(secret), `${file} contains runtime-generated paraphrase fixture ${secret}`);
 }
 
@@ -50,10 +54,12 @@ for (let round = 0; round < 2; round++) {
 // Ground target/value surface identities through unrelated relations only. The
 // held-out REL fact must remain absent before the novel construction is applied.
 for (let i = 0; i < 3; i++) {
-  teach(M, `${target} is specimen.`, 'noted.', [[target, word('kindrel'), 'specimen']]);
-  teach(M, `${targetValue} is token.`, 'noted.', [[targetValue, word('valuerel'), 'token']]);
+  teach(M, `${target} is specimen.`, 'noted.', [[target, `kindrel_${i}`, 'specimen']]);
+  teach(M, `${targetValue} is token.`, 'noted.', [[targetValue, `valuerel_a_${i}`, 'token']]);
+  teach(M, `${correctedValue} is token.`, 'noted.', [[correctedValue, `valuerel_b_${i}`, 'token']]);
 }
 assert(!has(M, target, REL, targetValue));
+assert(!has(M, target, REL, correctedValue));
 
 // Completely new order and opaque verb. These sentences describe facts M already
 // knows, but no semantic triples/channels accompany the sentences. Their only
@@ -77,6 +83,20 @@ const answer = ask(M, `what mark has ${target}?`);
 assert(answer?.expression?.includes(targetValue), 'newly learned paraphrase fact was not available to conversation');
 assert.strictEqual(answer?.canonical_grounding?.authority, 'canonical_M');
 
+// The learned construction must remain corrigible through the same route family.
+// One contradictory use stays a proposal; recurrent later use reopens the old
+// route and establishes the corrected value without erasing the construction.
+Mind.C(M, { surface: { input: `${correctedValue} ${novelVerb} ${target}.`, output: 'noted.' } });
+assert(has(M, target, REL, targetValue) && !has(M, target, REL, correctedValue),
+  'one contradictory use of learned construction prematurely rewrote current knowledge');
+Mind.C(M, { surface: { input: `${correctedValue} ${novelVerb} ${target}.`, output: 'noted.' } });
+Mind.C(M, { surface: { input: `${correctedValue} ${novelVerb} ${target}.`, output: 'noted.' } });
+assert(!has(M, target, REL, targetValue), 'old learned-construction route remained current after recurrent correction');
+assert(has(M, target, REL, correctedValue), 'learned construction did not support later correction');
+const corrected = ask(M, `what mark has ${target}?`);
+assert(corrected?.expression?.includes(correctedValue), 'corrected learned-construction fact was not conversationally accessible');
+assert.strictEqual(corrected?.canonical_grounding?.authority, 'canonical_M');
+
 for (const forbidden of ['grammar_state', 'parser_state', 'semantic_dictionary', 'language_state', 'response_table', 'truth_ledger'])
   assert.strictEqual(M[forbidden], undefined, `parallel language authority appeared: ${forbidden}`);
 
@@ -88,6 +108,7 @@ console.log(JSON.stringify({
   target_semantic_triples_supplied: 0,
   first_target_use_self_warranted: false,
   new_construction_transferred_to_new_target: true,
+  learned_construction_remained_corrigible: true,
   conversational_access_from_canonical_M: true,
   one_persistent_M: M.whole === 1,
   unrestricted_english_demonstrated: false,
