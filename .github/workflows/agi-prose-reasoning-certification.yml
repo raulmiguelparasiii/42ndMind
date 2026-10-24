@@ -1,24 +1,24 @@
-name: AGI grounded English certification
+name: AGI intent-grounded language certification
 
 on:
   push:
     branches:
       - experiment/one-live-m-prose-learning-20261023
     paths:
-      - 'agi/grounded-english-math-curriculum.test.js'
-      - 'agi/raw-proposal-expression-grounding.js'
-      - 'agi/surface-structure-grounding.js'
-      - 'agi/raw-concept-definition.js'
+      - 'agi/intent-grounded-language-acquisition.test.js'
+      - 'agi/generic-lived-occurrences.js'
+      - 'agi/relation-sequence-recompression.js'
+      - 'agi/surface-relation-grounding.js'
       - 'agi/mind.js'
       - '.github/workflows/agi-prose-reasoning-certification.yml'
   workflow_dispatch:
 
 concurrency:
-  group: agi-grounded-english-${{ github.ref }}
+  group: agi-intent-language-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  english:
+  language:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -26,11 +26,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Grounded English from mathematics
+      - name: Intent-grounded language acquisition
         shell: bash
         run: |
           set +e
-          node agi/grounded-english-math-curriculum.test.js > /tmp/grounded-english.log 2>&1
+          node agi/intent-grounded-language-acquisition.test.js > /tmp/intent-language.log 2>&1
           code=$?
-          tail -n 120 /tmp/grounded-english.log
+          tail -n 160 /tmp/intent-language.log
           exit $code
