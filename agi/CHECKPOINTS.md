@@ -2,129 +2,149 @@
 
 Law: `M(t+1) = C(M(t) ⊕ R(t+1))`.
 
-`agi/BLUEPRINT.tex` is the engineering spec. `agi/mind.js` is the public developmental entrypoint. Durable cognition is canonical `M`; helpers may derive/propose/index/render/recompress but own no independent memory, truth, semantics, planning authority, modality mind, or copied world model.
+`agi/BLUEPRINT.tex` is the engineering spec. `agi/mind.js` is the public developmental entrypoint. Durable cognition is canonical M. Helpers may derive/propose/index/render/recompress but own no independent memory, truth, semantics, planning authority, modality mind, copied world model, or persistent cognitive workspace.
 
-This is the compact live ledger. Replace stale frontier text; do not append narrative history.
+Read `agi/ARCHITECTURE_DECISION_20261024_LIVE_FIELD.md` before changing current attention/thinking/conversation architecture.
 
 ## Before architectural/semantic change
 
-1. Read `AGENTS.md` and this file fully.
-2. Search implementation/tests before declaring anything missing.
-3. Locate existing authority + preserved failure.
+1. Read `AGENTS.md`, this file, and the current architecture decision.
+2. Search implementation/tests/history before declaring anything missing.
+3. Locate the existing source of truth and preserved failure.
 4. Classify: `reuse`, `connection`, `extension`, or `replacement`.
 5. Preserve regressions; no duplicate semantic/status/planning authority.
-6. Record changed frontier, failure/repair, or material inefficiency here.
+6. Historical removed branches are audit evidence, not implementation permission.
 
-Absence from conversation is `unknown`, never repository absence.
+Absence from conversation is unknown, never repository absence.
 
 ## Locked authority
 
-- one persistent canonical `M`; one public `C`;
+- one persistent canonical M; one public C;
 - exact lived contact remains beneath compression/search views;
 - `null`/uncontacted = unknown, not false;
 - proposals do not warrant themselves; reality can defeat/reopen structure;
-- expressions, relations, actions, evidence, provenance, alternatives, higher relations are M material;
+- expressions, relations, actions, evidence, provenance, alternatives, and higher relations are M material;
 - no planner/reward policy/hidden dictionary/copied truth ledger;
-- caches/indexes/windows/queues/recompression schedules are zero-authority only.
+- caches/indexes/windows/queues/recompression schedules are zero-authority only;
+- no attention/focus/working-memory/current-thought state;
+- no eager autobiographical frontier on each contact;
+- Stone remains corrigible knowledge in M, never a hidden thought evaluator.
+
+## Purged current-tree route
+
+As of 2026-10-24 the explicit seven-way proposer-side cognitive-faculty branch is retired from the live tree. Do not recreate `cognitive-relation-candidates.js`, its test, or the English convergence test as an architecture path.
+
+The useful generic results underneath it remain:
+
+```text
+one-state persistence
+occurrence identity
+relation reuse
+query-relative completion/history access
+recursive relation structure
+```
+
+The human labels memory/remember/recollect/attention/focus are not implementation requirements.
 
 ## Solved / do not redo
 
-- every valid top-level `R` is retained as content-addressed raw contact material before interpretation; later specific occurrences enrich the same lived order, while the raw occurrence becomes generic `lived_occurrence` material only when no more-specific occurrence emerges;
-- variable-length/position-free language, context, single- and multi-proposition raw-language acquisition/correction, open discourse, canonical multi-hop expression;
-- compound raw utterance -> several independently queryable/corrigible M relations; exact raw strings retained at `ρ:input_raw`;
-- compound surface role induction broadens across independently grounded bindings;
-- raw continuous same-time/delayed, unknown preservation, quantitative/nonlinear/joint/mixed-lag completion/correction/conflict;
-- learned relations becoming first-class occurrences and recursively higher-order material;
+- every valid top-level R is retained before interpretation;
+- variable-length/position-free language and compound raw-language acquisition/correction;
+- canonical multi-hop expression and broad discourse from current canonical M;
+- raw continuous same-time/delayed, quantitative/nonlinear/joint/mixed-lag relation learning;
+- learned relations as first-class occurrences and recursively higher-order material;
 - opaque word/phrase grounding to learned relations;
-- empirical action/consequence relations entering the same substrate;
-- relation/expression/action/internal-evidence occurrences sharing generic `ρ:lived_order`;
-- learned order -> current M expectation without fabricating successor;
-- ordered-relation route upgrade, lifecycle evaluation, counterevidence reopening, action realization;
-- structured relation contact -> content-addressed terms + generic lived occurrences;
-- receptor topology + raw dynamics co-participation; renaming invariant, non-isomorphic topology distinguishable;
-- endpoint-independent structural schema induction/held-out transfer with non-isomorphic rejection;
-- structural schema support/counterevidence and narrower refinement after broad defeat;
-- bounded connected structural views, embedded matching, recursive depth-2 structural composition;
-- long-life surface access through versioned append-synchronized `surface_episode_index`, rebuildable from canonical M with identical behavior after deletion/version invalidation;
-- frozen long-life symbolic->numeric continuation: late relation learning after substantial prior life, raw-only target acquisition/correction, canonical derivation, broad discourse, then later raw quantitative learning in the same M.
+- empirical action/consequence relations in the same substrate;
+- generic lived order across relation/expression/action/internal evidence;
+- learned order -> current expectation without fabricating successor;
+- lifecycle evaluation, counterevidence reopening, action realization;
+- structured relation contact -> content-addressed terms + lived occurrences;
+- receptor topology + raw dynamics co-participation;
+- endpoint-independent structural schema induction/transfer/corrigibility/refinement;
+- bounded connected structural views and recursive structural composition;
+- rebuildable long-life surface episode index;
+- frozen long-life symbolic -> numeric continuation in the same M.
 
-Primary language regressions: `long-life-surface-access.test.js`, `compound-raw-language-acquisition.test.js`, `raw-language-acquisition.test.js`, `open-discourse.test.js`, `canonical-language-bridge.test.js`, `contextual-dialogue.test.js`, `variable-length-language.test.js`.
-Primary structural regressions: `recursive-structural-composition.test.js`, `embedded-structural-completion.test.js`, `large-connected-structural-world.test.js`, `structural-schema-refinement.test.js`, `structural-schema-corrigibility.test.js`, `structural-relation-transfer.test.js`, `topology-dynamics-integration.test.js`.
-Primary temporal/action regressions: `contact-before-meaning.test.js`, `internal-evidence-recurrence.test.js`, `temporal-expectation-lifecycle.test.js`, `temporal-relation-counterevidence.test.js`, `action-warrant-reopening.test.js`, `grounded-expression-action.test.js`, `ordered-relation-route-upgrade.test.js`, `generic-occurrence-temporal-completion.test.js`.
+## Preserved failure constraints
 
-Current stabilized runtime cognition last changed at `be1facd8509dfa567a420dc68f7f68cdd8c5374e`.
-Current fully green executable/test head: `815ea0769dc21e04c87f521cd56e9ff5022fd3b1`.
-Full regression run `40104687010`: success across foundation, language, structural, and integration groups.
-Fast foundation run `40104687129`: success with real pipeline failure propagation.
-Valid frozen certification commit `1d7d6d250e818963928e1025b83e6780203bcc06`, run `40022176858`: success with freeze integrity verified and independently crossed evaluator roles. Held-out execution took about 7m02s.
+1. Duplicate authority: never copy status/definitions where live dereference from M exists.
+2. Persistence is fundamental; retrieval is query-relative.
+3. Temporal projections may not erase modalities or invent immediate-next warrant.
+4. Search starvation must not be hidden by global budget inflation.
+5. Counterevidence reopens; it does not erase history or independent support.
+6. Internal evidence is M evidence, not fabricated external contact.
+7. Occurrence representation metadata must not self-reify as another event.
+8. Generic normalization stays outside content-specific logic.
+9. Structural support is contact-local unless a separately learned relation spans contacts.
+10. Large-world search uses bounded connected views, not a global workspace.
+11. Recursive structure may not self-bootstrap on the same contact.
+12. Exact raw R remains retained before interpretation.
+13. Surface indexes are rebuildable acceleration only.
+14. Certification must independently vary the roles it asks cognition to distinguish.
+15. A surface renderer succeeding or failing is not evidence that a fact is or is not in M.
+16. A named cognitive phenomenon is never sufficient reason to add a named faculty.
+17. A current relational field, if exposed, must be disposable and recomputable from canonical M plus the contact boundary.
 
-## Failure / repair constraints
+## Current diagnosis from ordinary conversation
 
-1. **Duplicate authority:** never copy status/definitions where live dereference from M exists.
-2. **Eager lifetime retrieval:** persistence is fundamental; retrieval is query-relative.
-3. **Temporal modality interference:** preserve complete events; search projections may not erase modalities.
-4. **Search starvation:** bounded affected/suffix search; never hide failure by inflating global budgets.
-5. **Gappy projection overreach:** projected recurrence cannot license immediate-next expectation.
-6. **Phase/test identifiability:** if the world does not distinguish competing roles/phases, repair the test, not cognition.
-7. **Evidence-route birth order:** one ordered relation accumulates stronger later evidence routes.
-8. **Partial disagreement:** common supported terms may remain; residual/disjoint alternatives stay open.
-9. **Counterevidence is reopening, not deletion:** history and independent support remain.
-10. **Internal evidence normalization:** internal M events are not fabricated external contact; structural identity, not event ID.
-11. **No internal-event recursion:** internal evaluation shares its triggering lived order and does not recursively rerun lifecycle.
-12. **Occurrence anatomy must not self-reify:** representation metadata is not another world event.
-13. **Anti-cheat boundary:** generic normalization stays outside content-specific logic; never weaken guards to pass.
-14. **Independent structural bindings:** repeated/correlated bindings are not independent evidence for distinct semantic roles.
-15. **Structural support is contact-local:** do not silently stitch separate contacts across time unless separately learned/tested.
-16. **Schema counterevidence/refinement:** canonical M owns defeat; narrower distinct schemas may survive broad defeat.
-17. **Large-world search:** bounded connected views, not global budget inflation.
-18. **Recursive structural composition:** only schemas predating a contact may instantiate on that contact; no self-bootstrap.
-19. **Compound role locality:** broaden across independent grounded bindings before treating lexical spans as variables.
-20. **Raw retention:** exact surface history is asserted at `ρ:input_raw`, not tokenizer assumptions.
-21. **Surface episode index:** derived projection only; append-sync; invalid/missing version rebuilds from canonical M; never answer truth from cache.
-22. **Frontier bloat:** reuse solved preconditions; newly claimed learning still needs reality contact.
-23. **CI/runtime cost:** recursive continuous-temporal >6 min/path-scoped; frontier embodied-crossmodal and high-dimensional sensing are known slow gates; valid long-life held-out certification took ~7m02s; raw prose is also a long gate. Full regression is split into independent foundation/language/structural/integration jobs, and the fast foundation workflow catches representation/temporal regressions first. CI scheduling has zero cognitive authority.
-24. **Certification evaluator identifiability:** a held-out denominator must independently vary roles it asks cognition to distinguish. Deterministic role correlation invalidates the evaluator rather than licensing a cognitive patch.
-25. **Raw provenance vs semantic event:** exact raw `R` remains in M before interpretation, but its provenance wrapper may not become a second simultaneous generic semantic term when a more-specific lived occurrence already represents that contact. Promote the raw occurrence into generic `lived_occurrence` only as fallback when no more-specific occurrence emerges.
+Newest continuation head before this work: `d0c55185e16354f09ed6d1e75f9ff0f79cf4f884`.
 
-## Certification record
+Observed ordinary-conversation failures are not all missing-knowledge failures. In the saved individual, some requested relations already exist in M while downstream expression remains unresolved. Broader questions also expose that current surface completion can choose a narrow relation/template before the broader M-owned dependency structure becomes the object of settlement.
 
-Attempt 1 (`e0b7c7902d93962197dce956af208bf3f323e3ff`, run `40021652878`) is preserved as invalid: its status role was deterministically tied to signal, then the target intentionally broke that correlation. No cognition changed from that result.
+Therefore do not patch individual prompts such as name, why, or summary questions.
 
-Valid refreeze: `d72b7edd7aa21523d7a3a167688d599f02838929`, still over cognitive head `a9f62ab6860a0ef05671480e08f01d6ef02ce7ce`.
-Valid held-out v2: `1d7d6d250e818963928e1025b83e6780203bcc06`, run `40022176858`.
-Demonstrated under frozen cognition:
+## Current frontier: expose C's affected dependency field
 
-`64 unrelated symbolic episodes -> newly introduced ontology -> recurrent raw-only target acquisition -> proposal gating -> canonical derived fact -> selective correction preserving independent facts -> broad discourse from current canonical M -> later raw affine relation discovery/completion`
+The current task is a connection, not a new subsystem.
 
-Runtime-generated ontology, one M, one C, exact earlier contact retained, no parallel cognitive authority.
+Required derived object:
 
-## Current frontier: qualitatively broader raw reality, not more language fixtures
+```text
+A(M; current contact, optional learned relational cue)
+```
 
-The contact-before-meaning foundation is stabilized and fully green; do not reopen it without a falsification. The frozen long-life cross-domain continuation also passed. Do not add another overlapping surface curriculum merely to increase counts. Search next for a genuinely different missing reality-contact class: spatial/visual-like raw structure, richer multiscale streams, or another capability the blueprint requires but current tests do not establish.
+A must be computed from existing canonical relational closure and dependency structure.
 
-Before implementation:
+Required semantics:
 
-- search existing topology/high-dimensional/waveform/structural tests and authorities;
-- identify the first blueprint claim not already covered;
-- preserve one decisive falsification;
-- keep receptor geometry/physical interface facts in S/M, not a vision module;
-- learned spatial/temporal structure must become ordinary M relation material and remain corrigible;
-- no object labels, detector, embedding model, or modality-specific cognitive authority.
+```text
+current contact facts/rule changes = roots
+current query cue, when learned, may select matching current canonical facts but adds no truth
+forward rule dependency from roots = affected wave
+old facts actually required by affected derivations = supporting context
+support of supporting derived facts = recursively exposed backward
+unrelated M = excluded
+```
 
-Classification: **unknown until repository search**; reuse/connection preferred over extension.
+Crucially, backward support does not become a new forward root merely because it is old context. This prevents one old shared fact from expanding the field into a whole-M workspace.
+
+A must not be stored in M. It may be returned to an inspector/expression boundary as a disposable view.
+
+## Surface direction
+
+The intended architecture is:
+
+```text
+surface/receptor contact
+ -> learned relational cue
+ -> canonical C/M settlement
+ -> derived affected field
+ -> expression/action transduction
+```
+
+Existing surface templates may remain transitional transport, but they must not become the authority that decides what the mind is thinking about.
 
 ## Efficiency rules
 
-- active falsification first; expensive regressions only when relevant runtime changed;
-- no global budget increases to hide starvation;
-- no whole-life rescan every contact when bounded/rebuildable access suffices;
-- no subsystem until search falsifies reuse of existing authority;
-- one decisive falsification > overlapping capability tests;
-- conceptual test error => invalidate/replace evaluator without tuning cognition;
-- continuity note stays compact.
+- active structural failure first; expensive regressions only when relevant runtime changes;
+- no whole-life rescan as a cognitive requirement;
+- local/rebuildable indexes only;
+- one decisive generic connection is better than overlapping capability fixtures;
+- conceptual evaluator error invalidates the evaluator, not cognition;
+- continuity notes stay compact.
 
 ## Certification boundary
 
-Historical freezes prove only stated bounded claims. Final AGI requires cognition frozen before evaluation, precommitted denominator, no leakage/post-failure cognitive patching, no privileged representation shortcut, cross-domain transfer, and ordinary-interface access to the same machinery.
+Historical freezes prove only their stated bounded claims. Final AGI requires frozen cognition before evaluation, precommitted denominator, no leakage/post-failure cognitive patching, no privileged representation shortcut, cross-domain transfer, and ordinary-interface access to the same machinery.
 
 `green regressions != unrestricted AGI`.

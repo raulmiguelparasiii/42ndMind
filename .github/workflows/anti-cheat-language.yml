@@ -12,7 +12,6 @@ on:
       - 'universal-math-graph.js'
       - 'universal-math-types.js'
       - 'abstract-intent-kernel.js'
-      - 'cognitive-relation-candidates.js'
       - 'recursive-intent-composition.js'
       - 'math-hypotheses.js'
       - 'english-math-bridge.js'
@@ -37,8 +36,6 @@ on:
       - 'stone-referent-frame.test.js'
       - 'stone-universal-kernel.test.js'
       - 'abstract-intent-kernel.test.js'
-      - 'cognitive-relation-candidates.test.js'
-      - 'cognitive-english-live.test.js'
       - 'universal-math-types.test.js'
       - 'recursive-intent-composition.test.js'
       - 'math-hypotheses.test.js'
@@ -112,8 +109,6 @@ jobs:
       - run: node stone-referent-frame.test.js
       - run: node stone-universal-kernel.test.js
       - run: node abstract-intent-kernel.test.js
-      - run: node cognitive-relation-candidates.test.js
-      - run: node cognitive-english-live.test.js
       - run: node universal-math-types.test.js
       - run: node recursive-intent-composition.test.js
       - run: node math-hypotheses.test.js
