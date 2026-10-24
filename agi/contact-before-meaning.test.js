@@ -29,37 +29,46 @@ function livedAt(M, order) {
   return [...lived].filter(id => values(M, id, 'ρ:lived_order').includes(order));
 }
 
-// Unknown contact: no parser/learner is allowed to decide that this experience
-// does not count. Exact content is retained and the raw occurrence becomes the
-// generic event because nothing more specific emerged.
+// Opaque but VALID contact: a contacted relational rule whose premise has never
+// occurred. Canonical C accepts the rule as R, but no more-specific lived
+// occurrence represents this contact yet. Exact contact must therefore survive
+// beneath a generic raw occurrence without inventing meaning for the rule.
 {
   const M = Mind.one(1, 1);
-  const unknown = {
-    opaque_contact: {
-      channel: 'unfamiliar',
-      payload: [17, '§', null, { q: 41 }],
-    },
-  };
+  const unknown = { relations: { rules: [{
+    id: 'fixture:contact-before-meaning:opaque-rule',
+    premises: [[
+      { var: 'x' },
+      'fixture:contact-before-meaning:opaque-predicate',
+      'fixture:contact-before-meaning:opaque-value',
+    ]],
+    conclusion: [
+      { var: 'x' },
+      'fixture:contact-before-meaning:opaque-conclusion',
+      true,
+    ],
+    provenance: { kind: 'unfamiliar_contact' },
+  }] } };
   Mind.C(M, unknown);
 
   const rawTerms = [...subjectsOfKind(M, 'reality_contact_term')];
-  assert.strictEqual(rawTerms.length, 1, 'unknown contact did not create one raw contact term');
+  assert.strictEqual(rawTerms.length, 1, 'opaque valid contact did not create one raw contact term');
   assert(values(M, rawTerms[0], 'ρ:contact_content').some(x => JSON.stringify(x) === JSON.stringify(unknown)),
-    'exact unknown contact was not retained before/under later interpretation');
+    'exact opaque contact was not retained before/under later interpretation');
 
   const rawOccurrences = [...subjectsOfKind(M, 'reality_contact_occurrence')];
-  assert.strictEqual(rawOccurrences.length, 1, 'unknown contact did not create one raw occurrence');
+  assert.strictEqual(rawOccurrences.length, 1, 'opaque valid contact did not create one raw occurrence');
   assert(subjectsOfKind(M, 'lived_occurrence').has(rawOccurrences[0]),
-    'uninterpreted contact was not promoted to generic lived material');
+    'uninterpreted valid contact was not promoted to generic lived material');
   assert.strictEqual(livedAt(M, 1).length, 1,
-    'uninterpreted contact created duplicate generic events at one lived order');
+    'uninterpreted valid contact created duplicate generic events at one lived order');
 
   Mind.C(M, unknown);
   const termsAfterRepeat = [...subjectsOfKind(M, 'reality_contact_term')];
   assert.deepStrictEqual(termsAfterRepeat, rawTerms,
-    'identical unknown contact did not reuse one content-addressed raw term');
+    'identical opaque contact did not reuse one content-addressed raw term');
   assert.strictEqual([...subjectsOfKind(M, 'reality_contact_occurrence')].length, 2,
-    'repeated unknown contact did not retain two distinct lived instances');
+    'repeated opaque contact did not retain two distinct lived instances');
 }
 
 // Specific occurrence: preserve raw contact/provenance, but do not let its wrapper
@@ -115,7 +124,7 @@ function livedAt(M, order) {
 
 console.log(JSON.stringify({
   exact_contact_precedes_interpretation: true,
-  uninterpreted_contact_remains_generic_lived_material: true,
+  uninterpreted_valid_contact_remains_generic_lived_material: true,
   identical_unknown_contact_reuses_raw_term: true,
   raw_provenance_is_retained_when_specific_occurrence_exists: true,
   raw_wrapper_does_not_duplicate_specific_semantic_event: true,
