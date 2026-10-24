@@ -48,15 +48,8 @@ function channelIndex(channel){ return channel==='subject'?0:2; }
 function resolver(rows,template,channel){
   if(rows.every(r=>r.episode.source!==undefined&&same(r.triple[channel],r.episode.source))) return {kind:'source'};
   if(rows.every(r=>r.episode.target!==undefined&&same(r.triple[channel],r.episode.target))) return {kind:'target'};
-
-  // Agency may already explain another argument that happens to covary one-to-one
-  // with this visible slot.  Do not let that hidden argument steal the slot.  The
-  // surface role is inferred only against the argument we are presently resolving.
   const index=channelIndex(channel);
-  const projected=rows.map(r=>({
-    output_tokens:compact(r.episode.input_tokens),
-    channels:new Map([[index,r.triple[channel]]]),
-  }));
+  const projected=rows.map(r=>({output_tokens:compact(r.episode.input_tokens),channels:new Map([[index,r.triple[channel]]])}));
   const role=Surface.inferOutputRoles(projected,template).find(x=>x.channel===index);
   return role?{kind:'slot',slot:role.slot}:null;
 }
@@ -79,6 +72,27 @@ function groundedRows(es,excludeId){
   }
   return out;
 }
+
+// Do not collapse unrelated phrasings into one universal variable template.  A
+// construction family must be recurrently similar in its own surface form before
+// it can explain a new utterance.  This is what prevents a later "hello" from
+// being treated as a one-slot instance of "I'm <name>" merely because both are
+// short utterances by speakers.
+function coherentFamilies(rows,currentTokens){
+  const families=[];
+  for(const seed of rows){
+    const members=rows.map(row=>({row,score:similarity(seed.episode.input_tokens,row.episode.input_tokens)}))
+      .filter(x=>x.score>=0.42)
+      .sort((a,b)=>b.score-a.score||episodeNumber(b.row.episode.id)-episodeNumber(a.row.episode.id));
+    const subjects=unique(members.map(x=>x.row.episode.source));
+    if(members.length<2||subjects.length<2) continue;
+    const key=members.map(x=>x.row.episode.id).sort().join('|');
+    if(families.some(x=>x.key===key)) continue;
+    const currentScore=similarity(currentTokens,seed.episode.input_tokens);
+    families.push({key,rows:members.map(x=>x.row),currentScore});
+  }
+  return families.sort((a,b)=>b.currentScore-a.currentScore||b.rows.length-a.rows.length);
+}
 function inferForEpisode(es,current){
   if(!current||!Array.isArray(current.input_tokens)||current.source===undefined) return null;
   if(directRelations(current).length) return null;
@@ -86,26 +100,26 @@ function inferForEpisode(es,current){
   for(const row of historical){ const key=stable(row.triple.relation); if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(row); }
   const candidates=[];
   for(const rows0 of groups.values()){
-    const ranked=rows0.map(row=>({...row,score:similarity(current.input_tokens,row.episode.input_tokens)}))
-      .sort((a,b)=>b.score-a.score||episodeNumber(b.episode.id)-episodeNumber(a.episode.id));
-    if((ranked[0]?.score??0)<0.2) continue;
-    const near=ranked.filter(x=>x.score>=Math.max(0.2,ranked[0].score-0.18)).slice(0,24);
-    if(near.length<3||unique(near.map(x=>x.episode.source)).length<2) continue;
-    const template=Surface.buildTemplate(near.map(x=>compact(x.episode.input_tokens)));
-    const match=template&&Surface.matchTemplate(compact(current.input_tokens),template);
-    if(!template||!match) continue;
-    const subjectResolver=resolver(near,template,'subject'), objectResolver=resolver(near,template,'object');
-    if(!subjectResolver||!objectResolver) continue;
-    const subject=valueFrom(subjectResolver,current,match), object=valueFrom(objectResolver,current,match);
-    if(subject===undefined||object===undefined) continue;
-    candidates.push({subject,relation:near[0].triple.relation,object,support:near.length,
-      score:near.reduce((s,x)=>s+x.score,0)/near.length,subject_role:subjectResolver.kind,object_role:objectResolver.kind,
-      support_episodes:near.map(x=>x.episode.id)});
+    for(const family of coherentFamilies(rows0,current.input_tokens)){
+      if(family.currentScore<0.42) continue;
+      const rows=family.rows;
+      const template=Surface.buildTemplate(rows.map(x=>compact(x.episode.input_tokens)));
+      const match=template&&Surface.matchTemplate(compact(current.input_tokens),template);
+      if(!template||!match) continue;
+      const subjectResolver=resolver(rows,template,'subject'), objectResolver=resolver(rows,template,'object');
+      if(!subjectResolver||!objectResolver) continue;
+      const subject=valueFrom(subjectResolver,current,match), object=valueFrom(objectResolver,current,match);
+      if(subject===undefined||object===undefined) continue;
+      const rowScores=rows.map(x=>similarity(current.input_tokens,x.episode.input_tokens));
+      const score=rowScores.reduce((s,x)=>s+x,0)/rowScores.length;
+      candidates.push({subject,relation:rows[0].triple.relation,object,support:rows.length,score,
+        subject_role:subjectResolver.kind,object_role:objectResolver.kind,support_episodes:rows.map(x=>x.episode.id)});
+    }
   }
-  candidates.sort((a,b)=>b.score-a.score||b.support-a.support||stable(a.relation).localeCompare(stable(b.relation)));
+  candidates.sort((a,b)=>(b.score*b.support)-(a.score*a.support)||b.score-a.score||b.support-a.support||stable(a.relation).localeCompare(stable(b.relation)));
   if(!candidates.length) return null;
-  const best=candidates[0];
-  const peers=candidates.filter(x=>Math.abs(x.score-best.score)<1e-9&&x.support===best.support);
+  const best=candidates[0], bestWeight=best.score*best.support;
+  const peers=candidates.filter(x=>Math.abs(x.score*x.support-bestWeight)<1e-9);
   const triples=unique(peers.map(x=>({subject:x.subject,relation:x.relation,object:x.object})));
   return triples.length===1?best:null;
 }
@@ -125,7 +139,7 @@ function claimFacts(episode,learned){
     [claimId,'ρ:claim_object',learned.object],
     [claimId,'ρ:claimed_by',episode.source],
     [claimId,'ρ:source_episode',{ref:episode.id}],
-    [claimId,'ρ:induction_support',{support:learned.support,score:learned.score,subject_role:learned.subject_role,object_role:learned.object_role,support_episodes:learned.support_episodes,retrospective:true}],
+    [claimId,'ρ:induction_support',{support:learned.support,score:learned.score,weight:learned.support*learned.score,subject_role:learned.subject_role,object_role:learned.object_role,support_episodes:learned.support_episodes,retrospective:true}],
     [episode.id,'ρ:expressed_claim',{ref:claimId}],
     ['self','ρ:encountered_claim',{ref:claimId}],
   ];
