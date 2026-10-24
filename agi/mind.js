@@ -9,6 +9,7 @@
 
 const Relational = require('./mind-relational.js');
 const OrderedSurface = require('./ordered-surface-contact.js');
+const RawProposalExpressions = require('./raw-proposal-expression-grounding.js');
 const Continuous = require('./continuous-relational-contact.js');
 const MultiSourceContinuous = require('./multisource-continuous-relations.js');
 const EmpiricalRelations = require('./empirical-relation-occurrences.js');
@@ -220,6 +221,15 @@ function C(state, realityContact) {
 
   budgetWholeRecompression(state, realityContact);
   Relational.C(state, realityContact);
+
+  // Raw-language proposal formation happens inside Relational.C. If a proposal's
+  // subject/object was literally present as an exact span in the same utterance,
+  // preserve that observed expression relation in M. This gives later rendering
+  // access to newly encountered names/values without granting the proposal truth.
+  if (realityContact && typeof realityContact === 'object' && realityContact.surface) {
+    const expressionUpdate = RawProposalExpressions.relationalUpdate(state);
+    if (expressionUpdate) Relational.C(state, expressionUpdate);
+  }
 
   const hasFrame = !!frameFrom(realityContact);
   if (hasFrame) {
