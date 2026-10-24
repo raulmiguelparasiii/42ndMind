@@ -95,13 +95,17 @@ function attachedPhrase(state, value) {
   const variants=unique(rows.map(f=>f.object.tokens));
   return variants.length===1 ? variants[0] : rows.at(-1).object.tokens;
 }
+function conversationalReply(q,a) {
+  if(q.source===undefined||q.target===undefined||a.source===undefined||a.target===undefined) return false;
+  return same(q.source,a.target)&&same(q.target,a.source);
+}
 
 function questionAnswerRows(es) {
   const rows=[];
   for(let i=0;i+1<es.length;i++) {
     const q=es[i], a=es[i+1];
     const qr=contactRelations(q), ar=contactRelations(a);
-    if(!Array.isArray(q.input_tokens)||qr.length!==0||ar.length!==1) continue;
+    if(!Array.isArray(q.input_tokens)||qr.length!==0||ar.length!==1||!conversationalReply(q,a)) continue;
     const r=ar[0];
     rows.push({q,a,subject:r.subject,relation:r.relation,object:r.object});
   }
