@@ -1,0 +1,59 @@
+name: One live M architecture
+
+# Architecture gate for the stacked one-live-M experiment.
+# Root/canonical changes still run this suite. AGI-wrapper-only development has
+# its own frontier/blueprint gates and must not serialize behind unrelated roots.
+on:
+  push:
+    branches:
+      - 'experiment/one-live-m-architecture-20261020'
+    paths-ignore:
+      - 'agi/**'
+      - 'AGENTS.md'
+      - '.github/workflows/agi-*.yml'
+      - '.github/workflows/one-live-m-architecture.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: one-live-m-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Preserve current state-separation falsification
+        run: node one-live-m-baseline.test.js
+      - name: Preserve canonical living fixed-point invariant
+        run: node living-relational-m.test.js
+      - name: Move bounded math hypothesis state into canonical M
+        run: node mind-math-hypotheses.test.js
+      - name: Preserve pre-connection M-owned warrant visibility gap
+        run: node one-live-m-warrant-baseline.test.js
+      - name: Prove live warrant propagation through generic M support routes
+        run: node one-live-m-warrant-propagation.test.js
+      - name: Single-life general-claim falsification
+        run: node one-live-m-general-claim.test.js
+      - name: Preserve PR 47 recursive hypothesis-language growth
+        run: node recursive-hypothesis-growth.test.js
+      - name: Canonical one-mind regression
+        run: node one-mind.test.js
+      - name: Canonical structured-knowledge anti-cheat regression
+        run: node structured-knowledge.test.js
+      - name: ULT math authority regression
+        run: node math-hypotheses.test.js
+      - name: ULT stabilization regression
+        run: node universal-intent.test.js
+      - name: ULT reuse/completion regression
+        run: node universal-relational-completion.test.js
+      - name: Canonical language regression
+        run: node language-school.test.js
+      - name: Temporal regression
+        run: node temporal-recompression.test.js

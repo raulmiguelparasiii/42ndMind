@@ -1,0 +1,82 @@
+name: AGI frontier falsification
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-architecture-20261020
+    paths:
+      - 'agi/continuous-relational-contact.js'
+      - 'agi/multisource-continuous-relations.js'
+      - 'agi/empirical-relation-occurrences.js'
+      - 'agi/generic-lived-occurrences.js'
+      - 'agi/relation-sequence-recompression.js'
+      - 'agi/surface-relation-grounding.js'
+      - 'agi/generic-occurrence-temporal-unification.test.js'
+      - 'agi/embodied-crossmodal-grounding.test.js'
+      - 'agi/surface-reference-integration.test.js'
+      - 'agi/crossmodal-phrase-grounding.test.js'
+      - 'agi/crossmodal-lexical-grounding.test.js'
+      - 'agi/cross-route-conflict.test.js'
+      - 'agi/cross-route-conflict-reopening.test.js'
+      - 'agi/single-channel-waveform.test.js'
+      - 'agi/multiscale-waveform.test.js'
+      - 'agi/long-horizon-waveform.test.js'
+      - 'agi/quantitative-continuous-completion.test.js'
+      - 'agi/quantitative-continuous-correction.test.js'
+      - 'agi/continuous-unknown-not-false.test.js'
+      - 'agi/quantitative-chain-completion.test.js'
+      - 'agi/nonlinear-continuous-completion.test.js'
+      - 'agi/multisource-continuous-completion.test.js'
+      - 'agi/multisource-temporal-completion.test.js'
+      - 'agi/mind.js'
+      - 'agi/mind-relational.js'
+      - 'agi/one-live-blueprint.js'
+      - '.github/workflows/agi-frontier.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: agi-frontier-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generic occurrence temporal unification
+        run: node agi/generic-occurrence-temporal-unification.test.js
+      - name: Embodied cross-modal grounding
+        run: node agi/embodied-crossmodal-grounding.test.js
+      - name: Grounded surface reference integration
+        run: node agi/surface-reference-integration.test.js
+      - name: Raw cross-modal phrase grounding
+        run: node agi/crossmodal-phrase-grounding.test.js
+      - name: Raw cross-modal lexical grounding
+        run: node agi/crossmodal-lexical-grounding.test.js
+      - name: Cross-route conflict reopening
+        run: node agi/cross-route-conflict-reopening.test.js
+      - name: Cross-route continuous conflict
+        run: node agi/cross-route-conflict.test.js
+      - name: Mixed-lag multi-source continuous completion
+        run: node agi/multisource-temporal-completion.test.js
+      - name: Multi-source continuous relation completion
+        run: node agi/multisource-continuous-completion.test.js
+      - name: Nonlinear continuous relation completion
+        run: node agi/nonlinear-continuous-completion.test.js
+      - name: Quantitative relation chain completion
+        run: node agi/quantitative-chain-completion.test.js
+      - name: Continuous unknown is not false
+        run: node agi/continuous-unknown-not-false.test.js
+      - name: Quantitative continuous relation correction
+        run: node agi/quantitative-continuous-correction.test.js
+      - name: Quantitative continuous relation completion
+        run: node agi/quantitative-continuous-completion.test.js
+      - name: Long-horizon raw waveform recurrence
+        run: node agi/long-horizon-waveform.test.js
+      - name: Multiscale raw waveform recurrence
+        run: node agi/multiscale-waveform.test.js
+      - name: Single-channel waveform recurrence
+        run: node agi/single-channel-waveform.test.js

@@ -1,0 +1,35 @@
+name: AGI recursive continuous temporal regression
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-architecture-20261020
+    paths:
+      - 'one-mind.js'
+      - 'sequence-recompression.js'
+      - 'agi/mind.js'
+      - 'agi/mind-relational.js'
+      - 'agi/one-live-blueprint.js'
+      - 'agi/continuous-relational-contact.js'
+      - 'agi/multisource-continuous-relations.js'
+      - 'agi/empirical-relation-occurrences.js'
+      - 'agi/generic-lived-occurrences.js'
+      - 'agi/relation-sequence-recompression.js'
+      - 'agi/continuous-temporal-reuse.test.js'
+  workflow_dispatch:
+
+concurrency:
+  group: agi-recursive-temporal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  recursive-temporal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Continuous relation -> higher recursive temporal relation
+        run: node agi/continuous-temporal-reuse.test.js

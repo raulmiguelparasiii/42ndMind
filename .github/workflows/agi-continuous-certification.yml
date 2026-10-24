@@ -1,0 +1,29 @@
+name: Frozen continuous AGI certification
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-architecture-20261020
+    paths:
+      - 'agi/post-freeze-continuous-certification.test.js'
+      - '.github/workflows/agi-continuous-certification.yml'
+  workflow_dispatch:
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run post-freeze evaluation against frozen cognition
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp agi/post-freeze-continuous-certification.test.js /tmp/post-freeze-continuous-certification.test.js
+          git checkout --detach 40cdaeceb32c78c01a1cd324405e7f156c9bf3b7
+          cp /tmp/post-freeze-continuous-certification.test.js agi/post-freeze-continuous-certification.test.js
+          node agi/post-freeze-continuous-certification.test.js

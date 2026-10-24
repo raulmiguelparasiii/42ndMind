@@ -1,0 +1,79 @@
+name: AGI blueprint developmental gate
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-architecture-20261020
+    paths-ignore:
+      - 'AGENTS.md'
+      - 'agi/CHECKPOINTS.md'
+  workflow_dispatch:
+
+concurrency:
+  group: agi-blueprint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  blueprint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Long-life surface access gate
+        run: node agi/long-life-surface-access.test.js
+      - name: Compound raw-language acquisition gate
+        run: node agi/compound-raw-language-acquisition.test.js
+      - name: Recursive structural-composition gate
+        run: node agi/recursive-structural-composition.test.js
+      - name: Embedded local structural-completion gate
+        run: node agi/embedded-structural-completion.test.js
+      - name: Large connected structural-world gate
+        run: node agi/large-connected-structural-world.test.js
+      - name: Structural schema refinement-after-defeat gate
+        run: node agi/structural-schema-refinement.test.js
+      - name: Structural schema corrigibility gate
+        run: node agi/structural-schema-corrigibility.test.js
+      - name: Structural relation transfer gate
+        run: node agi/structural-relation-transfer.test.js
+      - name: Topology / dynamics generic-integration gate
+        run: node agi/topology-dynamics-integration.test.js
+      - name: Internal evidence recurrence gate
+        run: node agi/internal-evidence-recurrence.test.js
+      - name: Temporal relation counterevidence gate
+        run: node agi/temporal-relation-counterevidence.test.js
+      - name: Temporal expectation lifecycle gate
+        run: node agi/temporal-expectation-lifecycle.test.js
+      - name: Action warrant correction / reopening gate
+        run: node agi/action-warrant-reopening.test.js
+      - name: Grounded expression action-realization gate
+        run: node agi/grounded-expression-action.test.js
+      - name: Ordered relation route-upgrade gate
+        run: node agi/ordered-relation-route-upgrade.test.js
+      - name: Generic occurrence temporal-completion gate
+        run: node agi/generic-occurrence-temporal-completion.test.js
+      - name: Blueprint end-to-end bounded gate
+        run: node agi/blueprint-e2e.test.js
+      - name: Position-free conversational surface gate
+        run: node agi/free-surface.test.js
+      - name: Concurrent whole-life blueprint gate
+        run: node agi/whole-life.test.js
+      - name: Conversational relation-role and correction gate
+        run: node agi/conversation-growth.test.js
+      - name: Randomized late-relation generality gate
+        run: node agi/randomized-generality.test.js
+      - name: Canonical-M language grounding gate
+        run: node agi/canonical-language-bridge.test.js
+      - name: Public entrypoint whole-life gate
+        run: node agi/public-entrypoint.test.js
+      - name: Variable-length language gate
+        run: node agi/variable-length-language.test.js
+      - name: Multi-turn contextual dialogue gate
+        run: node agi/contextual-dialogue.test.js
+      - name: Raw-language acquisition gate
+        run: node agi/raw-language-acquisition.test.js
+      - name: Open multi-relation discourse gate
+        run: node agi/open-discourse.test.js
+      - name: High-dimensional continuous sensing gate
+        run: node agi/high-dimensional-continuous.test.js

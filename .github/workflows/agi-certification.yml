@@ -1,0 +1,15 @@
+name: Frozen AGI candidate certification
+
+on:
+  workflow_dispatch:
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify frozen candidate and run post-freeze cross-domain certification
+        run: node agi/post-freeze-certification.test.js

@@ -1,0 +1,33 @@
+name: Frozen long-life cross-domain certification
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-architecture-20261020
+    paths:
+      - 'agi/post-freeze-long-life-cross-domain-certification.test.js'
+      - '.github/workflows/agi-long-life-certification.yml'
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Verify frozen cognition boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          FREEZE=e769fc430e0bdb1c63a23ad97dcd078496ec218e
+          test "$(git rev-parse HEAD^)" = "$FREEZE"
+          changed="$(git diff --name-only "$FREEZE" HEAD)"
+          echo "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(agi/post-freeze-long-life-cross-domain-certification\.test\.js|\.github/workflows/agi-long-life-certification\.yml)$' || true)"
+          test -z "$bad"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run held-out long-life cross-domain certification
+        run: node agi/post-freeze-long-life-cross-domain-certification.test.js

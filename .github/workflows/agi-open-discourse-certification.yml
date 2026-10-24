@@ -1,0 +1,15 @@
+name: Frozen AGI open-discourse certification
+
+on:
+  workflow_dispatch:
+
+jobs:
+  certify-open-discourse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify frozen candidate and certify open discourse correction
+        run: node agi/post-freeze-open-discourse-certification.test.js
