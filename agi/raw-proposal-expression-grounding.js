@@ -6,8 +6,8 @@
 // examples; that structure may later propose a new binding through the same
 // surface_induction route anatomy. Teacher-grounded surface/relation contacts are
 // retained as a distinct evidence route and projected through that same generic
-// construction learner only when the ordinary self-alignment route has no match.
-// No path owns truth, grammar state, memory, or a semantic dictionary.
+// construction learner. No path owns truth, grammar state, memory, or a semantic
+// dictionary.
 
 const Surface = require('./surface-template.js');
 const SurfaceStructure = require('./surface-structure-grounding.js');
@@ -165,11 +165,12 @@ function relationalUpdate(state) {
   const groundedAlignment = directGroundedAlignment(state, episode);
   if (groundedAlignment) facts.push(groundedAlignment);
 
-  // Preserve the already-proven self-alignment path whenever it recognizes the
-  // current construction. Only an otherwise-unresolved raw surface contact gets a
-  // second zero-state projection over explicitly grounded teacher alignments.
+  // Self-aligned and teacher-grounded evidence are independent zero-state views
+  // over the same canonical M. A surface alias recognized by one view must not
+  // suppress recurrence evidence from the other. Both may propose; canonical
+  // recurrence/reopening remains the only route that can settle either proposal.
   let groundedStructural = null;
-  if (!currentEpisodeHasChannels(state, episode.id) && !updateHasStructuralLearning(ordinaryStructural))
+  if (!currentEpisodeHasChannels(state, episode.id))
     groundedStructural = groundedStructureUpdate(state, episode);
   if (groundedStructural) {
     facts.push(...(groundedStructural.relations?.facts || []));
