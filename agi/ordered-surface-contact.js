@@ -54,12 +54,14 @@ function expand(state, realityContact) {
 
   const serial = (state?.knowledge?.episodes?.length || 0) + 1;
   const containerId = `ordered-surface-container:${serial}`;
+  const source = surface.source ?? realityContact.source;
   const containerFacts = [
     [containerId, 'ρ:kind', 'ordered_surface_container'],
     [containerId, 'ρ:input_raw', String(surface.input)],
     [containerId, 'ρ:segment_count', inputs.length],
     ['self', 'ρ:experienced', containerId],
   ];
+  if (source !== undefined && source !== null) containerFacts.push([containerId, 'ρ:source', source]);
   for (let i = 0; i < inputs.length; i++) {
     containerFacts.push([containerId, 'ρ:contains_surface_segment', { index: i, input: inputs[i] }]);
   }
