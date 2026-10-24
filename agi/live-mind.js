@@ -35,11 +35,10 @@ function step(state, contact) {
   const episodeEnd = state.knowledge?.episodes?.length || episodeStart;
   const field = AffectedField.derive(state, { episodeStart, episodeEnd, query });
 
-  // Expression is downstream of the already-derived live relation when the
-  // individual has learned that this surface contact is asking for one. A mere
-  // referential cue can make a relation live without licensing an utterance; this
-  // prevents novel forms from being answered by blindly restating the cue.
-  if (!SurfaceDialogue.respond(state, contact, query ? field : null)) TurnCompletion.respond(state, contact);
+  // Transitional expression transport. Existing renderers still operate after
+  // the current field has been determined. They may fail to express a warranted
+  // relation; such failure does not change the field or canonical M.
+  if (!SurfaceDialogue.respond(state, contact)) TurnCompletion.respond(state, contact);
 
   return {
     state,
