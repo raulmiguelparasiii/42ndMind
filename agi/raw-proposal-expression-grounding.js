@@ -42,12 +42,56 @@ function structuralProposals(update, episodeId) {
     .map(f => ({ episode: String(f[0]), triple: f[2] }));
 }
 
+// A simultaneous surface + relational teacher contact is genuine grounding
+// evidence. Preserve only the correspondence that was actually present in that
+// same lived episode: which visible endpoint spans expressed channel 0 and 2, and
+// which M relation occupied channel 1. This does not parse language or add truth;
+// the relational contact already supplied the fact. It merely makes that grounded
+// correspondence available to the same generic construction learner used later
+// when semantic scaffolding is absent.
+function directGroundedAlignment(state, episode) {
+  if (!episode || !Array.isArray(episode.input_tokens)) return null;
+  const channels = new Map();
+  for (const fact of state.knowledge?.facts || []) {
+    if (String(fact.subject) !== String(episode.id) || fact.relation !== 'ρ:contact_channel' ||
+        !fact.object || !Number.isInteger(fact.object.index)) continue;
+    channels.set(fact.object.index, fact.object.value);
+  }
+  if (![0, 1, 2].every(i => channels.has(i))) return null;
+
+  const subject = channels.get(0);
+  const relation = channels.get(1);
+  const object = channels.get(2);
+  const subjectSpan = exactSpan(episode.input_tokens, subject);
+  const objectSpan = exactSpan(episode.input_tokens, object);
+  if (!subjectSpan || !objectSpan) return null;
+
+  const already = (state.knowledge?.facts || []).some(f =>
+    String(f.subject) === String(episode.id) && f.relation === 'ρ:surface_known_fact_alignment' &&
+    f.object && stable(f.object.subject) === stable(subject) &&
+    stable(f.object.relation) === stable(relation) && stable(f.object.object) === stable(object));
+  if (already) return null;
+
+  return [episode.id, 'ρ:surface_known_fact_alignment', {
+    subject,
+    relation,
+    object,
+    subject_span: subjectSpan,
+    object_span: objectSpan,
+    source: 'simultaneous_grounded_surface_relation',
+    authority: 'alignment_only',
+  }];
+}
+
 function relationalUpdate(state) {
   const structural = SurfaceStructure.relationalUpdate(state);
   const episode = SurfaceStructure.latestSurfaceEpisode(state);
   const facts = [...(structural?.relations?.facts || [])];
   const rules = [...(structural?.relations?.rules || [])];
   if (!episode) return facts.length || rules.length ? { relations: { facts, rules } } : null;
+
+  const groundedAlignment = directGroundedAlignment(state, episode);
+  if (groundedAlignment) facts.push(groundedAlignment);
 
   // Existing proposals are retrieved from the append-synchronized zero-authority
   // projection. Proposals created by the structural update in this same call are
