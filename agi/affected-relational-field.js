@@ -4,11 +4,11 @@
 // participating in one present settlement.
 //
 // This module owns no cognition. It writes nothing to M, stores no activation,
-// and has no truth/status authority. Current contact/query facts and canonical
-// unfinished formation facts may be forward roots. Older facts may enter only as
-// support for conclusions affected by those roots. Support-only facts never
-// become new forward roots, which prevents the view from expanding into a
-// connected-component workspace over the whole M.
+// and has no truth/status authority. Present contact, present referential cues,
+// present query cues, and still-unresolved consequences may be forward roots.
+// Older facts may enter only as support for conclusions affected by those roots.
+// Support-only facts never become new forward roots, which prevents this view
+// from becoming a persistent workspace or connected-component scan over M.
 
 function stable(v) {
   if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
@@ -46,6 +46,22 @@ function queryMatches(fact, query) {
 function ruleRef(term) {
   return term && typeof term === 'object' && !Array.isArray(term) &&
     Object.keys(term).length === 1 && typeof term.ref === 'string' ? term.ref : null;
+}
+function directRefs(value) {
+  if (value && typeof value === 'object' && !Array.isArray(value) && value.ref !== undefined)
+    return [String(value.ref)];
+  if (Array.isArray(value)) return value
+    .filter(x => x && typeof x === 'object' && !Array.isArray(x) && x.ref !== undefined)
+    .map(x => String(x.ref));
+  return [];
+}
+function relationalObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) &&
+    Object.prototype.hasOwnProperty.call(value, 'subject') &&
+    Object.prototype.hasOwnProperty.call(value, 'relation') &&
+    Object.prototype.hasOwnProperty.call(value, 'object')
+    ? { subject: value.subject, relation: value.relation, object: value.object }
+    : null;
 }
 
 function factIndex(facts) {
@@ -99,33 +115,22 @@ function episodeSlice(state, start, end) {
   return episodes.slice(from, Math.max(from, to));
 }
 
-// A continuing relation is not a stored focus state. It is recomputed from the
-// canonical formation/resolution facts already in M. The current convention is
-// intentionally structural and narrow: any formation explicitly still open and
-// not yet linked to a resolving relation remains unfinished. This includes the
-// repository's temporal expectations without naming their modality or type.
-function continuingSubjects(facts) {
-  const open = new Set(), resolved = new Set();
+// Continuity is derived from unfinished consequence, not from an "open" label by
+// itself. A formation can continue only when it is still unresolved AND one of
+// its own current facts directly points at a term that M says can be instantiated
+// by later reality. This excludes open summaries/conflicts that have no directly
+// future-bearable consequence, while remaining independent of modality names.
+function continuingFacts(facts) {
+  const open = new Set(), resolved = new Set(), instantiable = new Set();
   for (const fact of facts) {
     const subject = String(fact.subject);
     if (fact.relation === 'ρ:formation_status' && fact.object === 'open') open.add(subject);
     else if (fact.relation === 'ρ:resolved_by' && fact.object?.ref !== undefined) resolved.add(subject);
+    else if (fact.relation === 'ρ:instantiation_kind') instantiable.add(subject);
   }
-  return [...open].filter(subject => !resolved.has(subject)).sort();
-}
-
-function addOrigin(originByKey, key, origin) {
-  if (!originByKey.has(key)) originByKey.set(key, new Set());
-  const set = originByKey.get(key);
-  const before = set.size;
-  set.add(origin);
-  return set.size !== before;
-}
-function originDescriptor(origin) {
-  if (origin === 'contact') return { source: 'contact', id: 'current_contact' };
-  if (origin === 'query') return { source: 'query', id: 'current_query' };
-  if (origin.startsWith('continuing:')) return { source: 'continuing', id: origin.slice('continuing:'.length) };
-  return { source: 'derived', id: origin };
+  const live = new Set([...open].filter(subject => !resolved.has(subject)));
+  return facts.filter(fact => live.has(String(fact.subject)) &&
+    directRefs(fact.object).some(ref => instantiable.has(ref)));
 }
 
 function derive(state, options = {}) {
@@ -140,24 +145,33 @@ function derive(state, options = {}) {
   const rootKeys = new Set();
   const rootRuleIds = new Set();
   const contactFacts = [];
-  const originByKey = new Map();
-  const rootCountByOrigin = new Map();
+  const referentialCues = [];
 
-  function root(fact, origin) {
-    const key = factKey(fact);
-    rootKeys.add(key);
-    if (addOrigin(originByKey, key, origin))
-      rootCountByOrigin.set(origin, (rootCountByOrigin.get(origin) || 0) + 1);
-  }
+  function root(fact) { rootKeys.add(factKey(fact)); }
 
   for (const episode of episodes) {
     for (const raw of episode.facts || []) {
       const key = factKey(raw);
       const canonical = index.byKey.get(key);
       if (canonical) {
-        root(canonical, 'contact');
+        root(canonical);
         contactFacts.push(canonical);
       }
+
+      // A current contact can refer to an already-canonical relation without
+      // asserting it anew. If the object itself has ordinary relation anatomy and
+      // exactly matches an M fact, use that fact only as a zero-authority cue into
+      // M. This lets present reality engage what it is about while preserving the
+      // canonical fact's own warrant and provenance.
+      const mentioned = relationalObject(raw.object);
+      if (mentioned) {
+        const existing = index.byKey.get(factKey(mentioned));
+        if (existing) {
+          root(existing);
+          referentialCues.push(existing);
+        }
+      }
+
       // A direct fact about a rule can change which closure is current. Treat the
       // referenced rule as changed without knowing the semantic name of the
       // control relation.
@@ -167,20 +181,15 @@ function derive(state, options = {}) {
     for (const id of episode.rules || []) if (byRule.has(String(id))) rootRuleIds.add(String(id));
   }
 
-  // Unfinished canonical formations re-enter the present calculation from M
-  // itself. Nothing is copied into persistent current/focus state. If a formation
-  // is resolved, it simply ceases to be a root on the next derivation.
-  const continuing = continuingSubjects(currentFacts);
-  const continuingSet = new Set(continuing);
-  const continuingFacts = [];
-  for (const fact of currentFacts) if (continuingSet.has(String(fact.subject))) {
-    continuingFacts.push(fact);
-    root(fact, `continuing:${String(fact.subject)}`);
-  }
+  // Still-unresolved consequences re-enter from canonical M itself. Only the
+  // specific future-bearable relation facts are roots; the rest of the subject's
+  // metadata/provenance does not become a workspace merely because it is open.
+  const continuing = continuingFacts(currentFacts);
+  for (const fact of continuing) root(fact);
 
   const matchedQuery = [];
   if (options.query) for (const fact of currentFacts) if (queryMatches(fact, options.query)) {
-    root(fact, 'query');
+    root(fact);
     matchedQuery.push(fact);
   }
 
@@ -204,32 +213,18 @@ function derive(state, options = {}) {
     changed = false;
     for (const fact of derivedFacts) {
       const key = factKey(fact);
+      if (wave.has(key)) continue;
       const ruleId = String(fact.derived_from);
       const routes = routesFor(fact);
       const affectedRoutes = rootRuleIds.has(ruleId)
         ? routes
         : routes.filter(route => route.some(support => wave.has(factKey(support))));
       if (!affectedRoutes.length) continue;
-
-      if (!wave.has(key)) {
-        wave.add(key);
-        participant.add(key);
-        participatingRules.add(ruleId);
-        changed = true;
-      }
-
-      // Preserve exact causal provenance of the live wave. This is not a priority
-      // score: it records which root source actually reaches each affected fact.
-      // If another source later reaches the same fact, that new influence can then
-      // propagate further on the next fixed-point pass.
-      if (rootRuleIds.has(ruleId)) changed = addOrigin(originByKey, key, 'contact') || changed;
-      for (const route of affectedRoutes) for (const support of route) {
-        const supportKey = factKey(support);
-        participant.add(supportKey);
-        if (!wave.has(supportKey)) continue;
-        for (const origin of originByKey.get(supportKey) || [])
-          changed = addOrigin(originByKey, key, origin) || changed;
-      }
+      wave.add(key);
+      participant.add(key);
+      participatingRules.add(ruleId);
+      for (const route of affectedRoutes) for (const support of route) participant.add(factKey(support));
+      changed = true;
     }
   }
 
@@ -259,21 +254,6 @@ function derive(state, options = {}) {
   const supportingFacts = [...supporting].map(key => index.byKey.get(key)).filter(Boolean);
   const participatingFacts = [...participant].map(key => index.byKey.get(key)).filter(Boolean);
 
-  // This is the live math for differential influence: no externally assigned
-  // scalar weight exists. Each source reports how many forward-affected facts in
-  // this settlement actually depend on it. Unrelated contact may therefore be
-  // present without displacing a continuing unfinished relational organization.
-  const affectedCountByOrigin = new Map();
-  for (const key of wave) for (const origin of originByKey.get(key) || [])
-    affectedCountByOrigin.set(origin, (affectedCountByOrigin.get(origin) || 0) + 1);
-  const sourceParticipation = [...affectedCountByOrigin.entries()]
-    .map(([origin, affected]) => ({
-      ...originDescriptor(origin),
-      root_fact_count: rootCountByOrigin.get(origin) || 0,
-      affected_fact_count: affected,
-    }))
-    .sort((a, b) => b.affected_fact_count - a.affected_fact_count || a.source.localeCompare(b.source) || String(a.id).localeCompare(String(b.id)));
-
   return {
     whole: 1,
     kind: 'affected_relational_field',
@@ -282,16 +262,16 @@ function derive(state, options = {}) {
     episode_ids: episodes.map(e => e.id),
     query: options.query ? clone(options.query) : null,
     contact_facts: contactFacts.map(clone),
-    continuing_subjects: continuing.slice(),
-    continuing_facts: continuingFacts.map(clone),
+    referential_cues: referentialCues.map(clone),
+    continuing_subjects: [...new Set(continuing.map(f => String(f.subject)))].sort(),
+    continuing_facts: continuing.map(clone),
     query_matches: matchedQuery.map(clone),
     affected_facts: affectedFacts.map(clone),
     supporting_facts: supportingFacts.map(clone),
     participating_facts: participatingFacts.map(clone),
-    source_participation: sourceParticipation.map(clone),
     rules: [...participatingRules].map(id => clone(byRule.get(id))).filter(Boolean),
     bounds: { support_routes_per_derivation: maxRoutes },
   };
 }
 
-module.exports = { derive, supportRoutes, factKey, continuingSubjects };
+module.exports = { derive, supportRoutes, factKey, continuingFacts };
