@@ -4,8 +4,10 @@
 // Exact proposal endpoint expressions remain ordinary M facts. Separately, a raw
 // construction may align with a uniquely known current M fact across diverse
 // examples; that structure may later propose a new binding through the same
-// surface_induction route anatomy. Neither path owns truth, grammar state, memory,
-// or a semantic dictionary.
+// surface_induction route anatomy. Teacher-grounded surface/relation contacts are
+// retained as a distinct evidence route and projected through that same generic
+// construction learner only when the ordinary self-alignment route has no match.
+// No path owns truth, grammar state, memory, or a semantic dictionary.
 
 const Surface = require('./surface-template.js');
 const SurfaceStructure = require('./surface-structure-grounding.js');
@@ -41,14 +43,15 @@ function structuralProposals(update, episodeId) {
       Object.prototype.hasOwnProperty.call(f[2], 'object'))
     .map(f => ({ episode: String(f[0]), triple: f[2] }));
 }
+function updateHasStructuralLearning(update) {
+  return !!((update?.relations?.rules || []).length || (update?.relations?.facts || []).some(f =>
+    Array.isArray(f) && (f[1] === 'ρ:proposes_relation' || f[1] === 'ρ:surface_known_fact_alignment')));
+}
 
 // A simultaneous surface + relational teacher contact is genuine grounding
-// evidence. Preserve only the correspondence that was actually present in that
-// same lived episode: which visible endpoint spans expressed channel 0 and 2, and
-// which M relation occupied channel 1. This does not parse language or add truth;
-// the relational contact already supplied the fact. It merely makes that grounded
-// correspondence available to the same generic construction learner used later
-// when semantic scaffolding is absent.
+// evidence. Preserve only the correspondence actually present in that same lived
+// episode. It is deliberately not stored as the self-alignment relation, because
+// one semantic relation can have several different learned surface constructions.
 function directGroundedAlignment(state, episode) {
   if (!episode || !Array.isArray(episode.input_tokens)) return null;
   const channels = new Map();
@@ -67,12 +70,12 @@ function directGroundedAlignment(state, episode) {
   if (!subjectSpan || !objectSpan) return null;
 
   const already = (state.knowledge?.facts || []).some(f =>
-    String(f.subject) === String(episode.id) && f.relation === 'ρ:surface_known_fact_alignment' &&
+    String(f.subject) === String(episode.id) && f.relation === 'ρ:grounded_surface_relation_alignment' &&
     f.object && stable(f.object.subject) === stable(subject) &&
     stable(f.object.relation) === stable(relation) && stable(f.object.object) === stable(object));
   if (already) return null;
 
-  return [episode.id, 'ρ:surface_known_fact_alignment', {
+  return [episode.id, 'ρ:grounded_surface_relation_alignment', {
     subject,
     relation,
     object,
@@ -83,22 +86,65 @@ function directGroundedAlignment(state, episode) {
   }];
 }
 
+function currentEpisodeHasChannels(state, episodeId) {
+  return (state.knowledge?.facts || []).some(f => String(f.subject) === String(episodeId) && f.relation === 'ρ:contact_channel');
+}
+
+// Reuse SurfaceStructure without giving grounded teaching its own parser or
+// proposal authority. A disposable projection relabels only M-owned grounded
+// alignments as the generic alignment evidence SurfaceStructure already consumes.
+// Self-aligned examples are excluded from this projection so distinct surface
+// constructions for the same relation never collapse into one template family.
+function groundedStructureUpdate(state, episode) {
+  if (!episode || currentEpisodeHasChannels(state, episode.id)) return null;
+  const facts = state.knowledge?.facts || [];
+  const grounded = facts.filter(f => f.relation === 'ρ:grounded_surface_relation_alignment');
+  if (!grounded.length) return null;
+
+  const projectedFacts = facts
+    .filter(f => f.relation !== 'ρ:surface_known_fact_alignment' && f.relation !== 'ρ:grounded_surface_relation_alignment')
+    .concat(grounded.map(f => ({
+      ...f,
+      relation: 'ρ:surface_known_fact_alignment',
+      object: { ...f.object, source: 'projected_grounded_surface_relation' },
+    })));
+  const projected = {
+    ...state,
+    knowledge: { ...state.knowledge, facts: projectedFacts },
+    structure: { ...(state.structure || {}) },
+  };
+  delete projected.structure.surface_structure_index;
+  return SurfaceStructure.relationalUpdate(projected);
+}
+
 function relationalUpdate(state) {
-  const structural = SurfaceStructure.relationalUpdate(state);
+  const ordinaryStructural = SurfaceStructure.relationalUpdate(state);
   const episode = SurfaceStructure.latestSurfaceEpisode(state);
-  const facts = [...(structural?.relations?.facts || [])];
-  const rules = [...(structural?.relations?.rules || [])];
+  const facts = [...(ordinaryStructural?.relations?.facts || [])];
+  const rules = [...(ordinaryStructural?.relations?.rules || [])];
   if (!episode) return facts.length || rules.length ? { relations: { facts, rules } } : null;
 
   const groundedAlignment = directGroundedAlignment(state, episode);
   if (groundedAlignment) facts.push(groundedAlignment);
 
+  // Preserve the already-proven self-alignment path whenever it recognizes the
+  // current construction. Only an otherwise-unresolved raw surface contact gets a
+  // second zero-state projection over explicitly grounded teacher alignments.
+  let groundedStructural = null;
+  if (!currentEpisodeHasChannels(state, episode.id) && !updateHasStructuralLearning(ordinaryStructural))
+    groundedStructural = groundedStructureUpdate(state, episode);
+  if (groundedStructural) {
+    facts.push(...(groundedStructural.relations?.facts || []));
+    rules.push(...(groundedStructural.relations?.rules || []));
+  }
+
   // Existing proposals are retrieved from the append-synchronized zero-authority
-  // projection. Proposals created by the structural update in this same call are
+  // projection. Proposals created in either structural view in this same call are
   // included directly because they have not entered canonical M yet.
   const proposals = unique([
     ...SurfaceStructure.proposalsForEpisode(state, episode.id),
-    ...structuralProposals(structural, episode.id),
+    ...structuralProposals(ordinaryStructural, episode.id),
+    ...structuralProposals(groundedStructural, episode.id),
   ].map(row => row.triple));
 
   for (const proposal of proposals) {
