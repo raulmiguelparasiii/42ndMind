@@ -66,6 +66,13 @@ function containsSpan(tokens, phrase) {
   }
   return false;
 }
+function tokenSimilarity(a0,b0) {
+  const a=new Set(Surface.compactTokens(a0||[]).map(stable));
+  const b=new Set(Surface.compactTokens(b0||[]).map(stable));
+  if(!a.size&&!b.size) return 1;
+  let hit=0; for(const x of a) if(b.has(x)) hit++;
+  return hit/Math.max(1,a.size+b.size-hit);
+}
 function claimObjects(state, subject, relation) {
   const by=new Map();
   for(const f of state.knowledge?.facts||[]) {
@@ -99,7 +106,6 @@ function conversationalReply(q,a) {
   if(q.source===undefined||q.target===undefined||a.source===undefined||a.target===undefined) return false;
   return same(q.source,a.target)&&same(q.target,a.source);
 }
-
 function questionAnswerRows(es) {
   const rows=[];
   for(let i=0;i+1<es.length;i++) {
@@ -124,7 +130,9 @@ function intentCues(rows) {
   const cues=[];
   for(const e of evidence.values()) {
     const rs=[...e.rows.values()], relations=unique(rs.map(x=>x.relation)), subjects=unique(rs.map(x=>x.subject));
-    if(relations.length!==1||rs.length<3||subjects.length<3) continue;
+    // Two independent subjects are sufficient when the phrase is contrastively
+    // unique across every observed dialogue relation. More exposure strengthens it.
+    if(relations.length!==1||rs.length<2||subjects.length<2) continue;
     cues.push({...e,rows:rs,relation:relations[0],support:rs.length,subject_diversity:subjects.length,sides:[...e.sides].sort()});
   }
   cues.sort((a,b)=>b.length-a.length||b.subject_diversity-a.subject_diversity||b.support-a.support||a.text.localeCompare(b.text));
@@ -177,8 +185,6 @@ function explicitSubject(state, rows, relation, tokens) {
   return values.length===1?values[0]:undefined;
 }
 function subjectFromQuery(state, rows, relation, tokens, currentEpisode) {
-  // Explicit reference outranks deictic language. This prevents a polite phrase
-  // such as "would you say Yume..." from turning "you" into the queried subject.
   const explicit=explicitSubject(state,rows,relation,tokens);
   if(explicit!==undefined) return explicit;
   return deicticSubject(rows,currentEpisode,tokens);
@@ -190,7 +196,7 @@ function resolveQuestion(state, es, seq) {
     const topLength=matches[0].length, strongest=matches.filter(x=>x.length===topLength), relations=unique(strongest.map(x=>x.relation));
     if(relations.length===1) {
       const relation=relations[0], subject=subjectFromQuery(state,rows,relation,seq.input_tokens,currentEpisode);
-      if(subject!==undefined) return {subject,relation,cues:strongest.filter(x=>same(x.relation,relation)),rows};
+      if(subject!==undefined) return {subject,relation,cues:strongest.filter(x=>same(x.relation,relation)),rows,currentEpisode};
     }
   }
 
@@ -205,22 +211,57 @@ function resolveQuestion(state, es, seq) {
     const role=Surface.inferOutputRoles(projected,template).find(r=>r.channel===0);
     if(!role||!match.has(role.slot)) continue;
     const subject=Surface.renderTokens(match.get(role.slot));
-    if(subject) return {subject,relation:rs[0].relation,cues:[],rows};
+    if(subject) return {subject,relation:rs[0].relation,cues:[],rows,currentEpisode};
   }
   return null;
 }
-function renderCanonicalFact(state, es, subject, relation, object) {
-  const qa=questionAnswerRows(es), rows=[];
-  for(const row of qa) {
-    if(!same(row.relation,relation)||!Array.isArray(row.a.input_tokens)) continue;
-    rows.push({...row.a,channels:new Map([[0,row.subject],[1,row.relation],[2,row.object]]),output_tokens:Surface.compactTokens(row.a.input_tokens)});
+function implicitArgumentRole(rows, key) {
+  if(rows.every(row=>row.a.target!==undefined&&same(row[key],row.a.target))) return 'answer_target';
+  if(rows.every(row=>row.a.source!==undefined&&same(row[key],row.a.source))) return 'answer_source';
+  return null;
+}
+function coherentAnswerFamilies(rows) {
+  const families=[];
+  for(const seed of rows) {
+    const ranked=rows.map(row=>({row,score:tokenSimilarity(seed.a.input_tokens,row.a.input_tokens)}))
+      .sort((a,b)=>b.score-a.score||episodeNumber(b.row.a.id)-episodeNumber(a.row.a.id));
+    const family=ranked.filter(x=>x.score>=0.45).map(x=>x.row);
+    const key=family.map(x=>x.a.id).sort().join('|');
+    if(family.length>=2&&!families.some(x=>x.key===key)) families.push({key,rows:family});
   }
-  if(rows.length<3) return null;
-  const template=Surface.buildTemplate(rows.map(e=>e.output_tokens)); if(!template) return null;
-  const roles=Surface.inferOutputRoles(rows,template), channels=new Map([[0,subject],[1,relation],[2,object]]);
-  const filled=Surface.fillTemplate(template,rows,rows,channels,roles,(_c,v)=>attachedPhrase(state,v));
-  if(!filled.tokens||filled.unresolved.length) return null;
-  return {tokens:filled.tokens,expression:Surface.renderTokens(filled.tokens),template,roles};
+  return families.sort((a,b)=>b.rows.length-a.rows.length);
+}
+function renderCanonicalFact(state, es, subject, relation, object, currentEpisode) {
+  const qa=questionAnswerRows(es), relationRows=qa.filter(row=>same(row.relation,relation)&&Array.isArray(row.a.input_tokens));
+  if(relationRows.length<2) return null;
+  const candidates=[];
+  for(const family of coherentAnswerFamilies(relationRows)) {
+    const rows=family.rows;
+    const implicitSubject=implicitArgumentRole(rows,'subject');
+    const implicitObject=implicitArgumentRole(rows,'object');
+    if(implicitSubject&&currentEpisode) {
+      const expected=implicitSubject==='answer_target'?currentEpisode.source:currentEpisode.target;
+      if(expected===undefined||!same(subject,expected)) continue;
+    }
+    if(implicitObject&&currentEpisode) {
+      const expected=implicitObject==='answer_target'?currentEpisode.source:currentEpisode.target;
+      if(expected===undefined||!same(object,expected)) continue;
+    }
+    const projected=rows.map(row=>{
+      const channels=new Map();
+      if(!implicitSubject) channels.set(0,row.subject);
+      if(!implicitObject) channels.set(2,row.object);
+      return {...row.a,channels,output_tokens:Surface.compactTokens(row.a.input_tokens)};
+    });
+    const template=Surface.buildTemplate(projected.map(e=>e.output_tokens)); if(!template) continue;
+    const roles=Surface.inferOutputRoles(projected,template);
+    const channels=new Map([[0,subject],[2,object]]);
+    const filled=Surface.fillTemplate(template,projected,projected,channels,roles,(_c,v)=>attachedPhrase(state,v));
+    if(!filled.tokens||filled.unresolved.length) continue;
+    candidates.push({tokens:filled.tokens,expression:Surface.renderTokens(filled.tokens),template,roles,support:rows.length,implicit_subject:implicitSubject,implicit_object:implicitObject});
+  }
+  candidates.sort((a,b)=>b.support-a.support||a.expression.length-b.expression.length);
+  return candidates[0]||null;
 }
 function respond(state, originalContact) {
   if(!originalContact||typeof originalContact!=='object'||!originalContact.surface) return false;
@@ -229,7 +270,7 @@ function respond(state, originalContact) {
   const es=episodes(state); if(es.length<2) return false;
   const resolved=resolveQuestion(state,es,seq); if(!resolved) return false;
   const found=currentObjects(state,resolved.subject,resolved.relation); if(found.objects.length!==1) return false;
-  const rendered=renderCanonicalFact(state,es,resolved.subject,resolved.relation,found.objects[0]); if(!rendered) return false;
+  const rendered=renderCanonicalFact(state,es,resolved.subject,resolved.relation,found.objects[0],resolved.currentEpisode); if(!rendered) return false;
   seq.output_tokens=rendered.tokens;
   seq.expression=rendered.expression;
   seq.unresolved_output_positions=[];
