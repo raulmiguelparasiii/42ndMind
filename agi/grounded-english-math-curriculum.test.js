@@ -80,8 +80,6 @@ for (let round = 0; round < 3; round++) {
   }
 }
 
-// School one ordinary English definition construction. The definitions themselves
-// are grounded rules in M, not parser instructions. Thresholds and labels vary.
 const definitions = [
   ['tiny', 0, 5, 3],
   ['small', 5, 10, 7],
@@ -92,20 +90,15 @@ const definitions = [
 for (let i = 0; i < definitions.length; i++) {
   const [concept, low, high, example] = definitions[i];
   assert(example > low && example < high, 'teacher category example violates its mathematical definition');
-
   Mind.C(M, {
     surface: { input: `${concept} means greater than ${low} and less than ${high}.`, output: 'noted.' },
     relations: { rules: [categoryRule(`english-school-definition:${i + 1}`, concept, low, high)] },
   });
-
   paired(M, `${example} is greater than ${low}.`, 'noted.', [example, REL_GREATER, low]);
   paired(M, `${example} is less than ${high}.`, 'noted.', [example, REL_LESS, high]);
   paired(M, `what category is ${example}?`, `it is ${concept}.`, [example, REL_CATEGORY, concept]);
 }
 
-// Ground only the identities of the held-out numeral symbols through an unrelated
-// relation. This is prerequisite vocabulary, not target comparison teaching.
-// No target greater/less/category relation appears in these contacts.
 for (const value of [TARGET, TARGET_LOW, TARGET_HIGH])
   paired(M, `${value} is a number.`, 'noted.', [value, REL_NUMBER_KIND, 'number']);
 
@@ -115,8 +108,6 @@ assert(!has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT), 'target category existed b
 assert(!(M.knowledge?.rules || []).some(rule => JSON.stringify(rule).includes(TARGET_CONCEPT)),
   'target definition existed before raw English');
 
-// From here onward the teacher supplies ZERO semantic triples, rules, channels,
-// math labels, or parser hints. M sees only ordinary English surface contact.
 Mind.C(M, { surface: { input: `${TARGET_CONCEPT} means greater than ${TARGET_LOW} and less than ${TARGET_HIGH}.`, output: 'noted.' } });
 
 const learnedDefinition = (M.knowledge?.rules || []).find(rule => {
@@ -134,6 +125,14 @@ assert.strictEqual(learnedDefinition.provenance?.kind, 'surface_definition_induc
 
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${TARGET} is greater than ${TARGET_LOW}.`, output: 'noted.' } });
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${TARGET} is less than ${TARGET_HIGH}.`, output: 'noted.' } });
+
+const targetProposals = (M.knowledge?.facts || []).filter(f => f.relation === 'ρ:proposes_relation' && f.object &&
+  (f.object.subject === TARGET || f.object.object === TARGET_LOW || f.object.object === TARGET_HIGH));
+const targetExpressions = (M.knowledge?.facts || []).filter(f => f.relation === 'ρ:surface_expression' &&
+  [TARGET, TARGET_LOW, TARGET_HIGH].includes(f.subject));
+const targetCurrent = (M.knowledge?.current?.facts || []).filter(f => f.subject === TARGET &&
+  [REL_GREATER, REL_LESS, REL_CATEGORY, REL_NUMBER_KIND].includes(f.relation));
+console.log('GROUNDED ENGLISH DIAGNOSTIC', JSON.stringify({ targetProposals, targetExpressions, targetCurrent }, null, 2));
 
 assert(has(M, TARGET, REL_GREATER, TARGET_LOW), 'raw English did not recover the grounded meaning of greater than');
 assert(has(M, TARGET, REL_LESS, TARGET_HIGH), 'raw English did not recover the grounded meaning of less than');
