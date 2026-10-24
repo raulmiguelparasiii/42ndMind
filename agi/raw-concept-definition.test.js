@@ -44,13 +44,22 @@ function definitionRule(id, concept, a, b) {
     categorical: true,
   };
 }
+function tripleParts(triple) {
+  if (Array.isArray(triple) && triple.length === 3)
+    return { subject: triple[0], relation: triple[1], object: triple[2] };
+  if (triple && typeof triple === 'object' &&
+      Object.prototype.hasOwnProperty.call(triple, 'subject') &&
+      Object.prototype.hasOwnProperty.call(triple, 'relation') &&
+      Object.prototype.hasOwnProperty.call(triple, 'object')) return triple;
+  return null;
+}
 function has(M, s, r, o) {
   return (M.knowledge?.current?.facts || []).some(f => f.subject === s && f.relation === r && f.object === o);
 }
 
 const M = Mind.one(1, 1);
 
-// School only the *surface form of defining a concept*. Each training definition
+// School only the surface form of defining a concept. Each training definition
 // is grounded by a structured rule, while all constants vary independently.
 for (let i = 0; i < concepts.length; i++) {
   Mind.C(M, {
@@ -69,25 +78,18 @@ Mind.C(M, {
   surface: { input: `${targetConcept} ${DEF} ${targetA} ${JOIN} ${targetB}.`, output: 'noted.' },
 });
 
-const learnedRule = (M.knowledge?.rules || []).find(rule =>
-  rule.active !== false && Array.isArray(rule.premises) && rule.premises.length === 2 &&
-  Array.isArray(rule.conclusion) && rule.conclusion[1] === REL_KIND && rule.conclusion[2] === targetConcept &&
-  rule.premises.some(p => p[1] === REL_A && p[2] === targetA) &&
-  rule.premises.some(p => p[1] === REL_B && p[2] === targetB));
-if (!learnedRule) {
-  const facts = M.knowledge?.facts || [];
-  const contactRules = facts.filter(f => f.relation === 'ρ:contact_rule');
-  const inputTokens = facts.filter(f => f.relation === 'ρ:input_tokens').map(f => ({ episode: f.subject, tokens: f.object }));
-  const defines = facts.filter(f => f.relation === 'ρ:defines_rule');
-  console.log('RAW CONCEPT DEFINITION DIAGNOSTIC', JSON.stringify({
-    contact_rule_count: contactRules.length,
-    contact_rules: contactRules.map(f => ({ episode: f.subject, rule: f.object?.rule })),
-    input_tokens: inputTokens,
-    defines_rule_facts: defines,
-    knowledge_rules: (M.knowledge?.rules || []).map(r => ({ id: r.id, premises: r.premises, conclusion: r.conclusion, active: r.active, provenance: r.provenance })),
-  }, null, 2));
-}
+const learnedRule = (M.knowledge?.rules || []).find(rule => {
+  if (rule.active === false || !Array.isArray(rule.premises) || rule.premises.length !== 2) return false;
+  const conclusion = tripleParts(rule.conclusion);
+  const premises = rule.premises.map(tripleParts);
+  return conclusion && premises.every(Boolean) &&
+    conclusion.relation === REL_KIND && conclusion.object === targetConcept &&
+    premises.some(p => p.relation === REL_A && p.object === targetA) &&
+    premises.some(p => p.relation === REL_B && p.object === targetB);
+});
 assert(learnedRule, 'raw definition did not create the new concept rule in canonical M');
+assert.strictEqual(learnedRule.provenance?.kind, 'surface_definition_induction',
+  'target rule did not retain raw-definition provenance');
 
 // The target entity is never mentioned in the definition. Its ordinary facts
 // arrive later, and the newly learned concept must change what M can infer.
