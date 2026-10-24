@@ -10,6 +10,8 @@ on:
       - 'agi/mind-relational.js'
       - 'agi/surface-template.js'
       - 'agi/one-live-blueprint.js'
+      - 'agi/ordered-surface-contact.js'
+      - 'agi/raw-proposal-expression-grounding.js'
       - '.github/workflows/agi-prose-learning.yml'
   workflow_dispatch:
 
@@ -25,5 +27,40 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Reject prose fixture leakage from cognition and adapters
+        run: |
+          if grep -F \
+            -e 'rho_prose_origin_q7' \
+            -e 'rho_prose_material_m4' \
+            -e 'rho_prose_use_v9' \
+            -e 'oriva_prose_target' \
+            -e 'selune_prose_origin' \
+            -e 'varin_prose_material' \
+            -e 'lumet_prose_use' \
+            -e 'tressa_prose_material' \
+            agi/mind.js agi/mind-relational.js agi/one-live-blueprint.js \
+            agi/surface-template.js agi/ordered-surface-contact.js \
+            agi/raw-proposal-expression-grounding.js; then
+            echo 'prose fixture leaked into runtime code'
+            exit 1
+          fi
       - name: Raw prose learning falsification
         run: node agi/raw-prose-learning.test.js
+      - name: Raw language acquisition regression
+        run: node agi/raw-language-acquisition.test.js
+      - name: Compound raw language regression
+        run: node agi/compound-raw-language-acquisition.test.js
+      - name: Open discourse regression
+        run: node agi/open-discourse.test.js
+      - name: Contextual dialogue regression
+        run: node agi/contextual-dialogue.test.js
+      - name: Variable-length language regression
+        run: node agi/variable-length-language.test.js
+      - name: Grounded surface reference regression
+        run: node agi/surface-reference-integration.test.js
+      - name: Cross-modal phrase grounding regression
+        run: node agi/crossmodal-phrase-grounding.test.js
+      - name: Long-life surface access regression
+        run: node agi/long-life-surface-access.test.js
+      - name: Public one-M entrypoint regression
+        run: node agi/public-entrypoint.test.js
