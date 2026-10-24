@@ -22,6 +22,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      # Foundational one-M/one-C invariants run first. A representation or temporal
+      # regression should fail before expensive language/topology certifications.
+      - name: Contact before meaning
+        run: node agi/contact-before-meaning.test.js
+      - name: Internal evidence recurrence
+        run: node agi/internal-evidence-recurrence.test.js
+      - name: Temporal relation counterevidence
+        run: node agi/temporal-relation-counterevidence.test.js
+      - name: Temporal expectation lifecycle
+        run: node agi/temporal-expectation-lifecycle.test.js
+      - name: Action warrant reopening
+        run: node agi/action-warrant-reopening.test.js
+      - name: Grounded expression action realization
+        run: node agi/grounded-expression-action.test.js
+      - name: Ordered relation route upgrade
+        run: node agi/ordered-relation-route-upgrade.test.js
+      - name: Generic occurrence temporal completion
+        run: node agi/generic-occurrence-temporal-completion.test.js
+
       - name: Raw prose learning
         run: node agi/raw-prose-learning.test.js
       - name: Sourced prose provenance
@@ -44,20 +64,6 @@ jobs:
         run: node agi/structural-relation-transfer.test.js
       - name: Topology and dynamics integration
         run: node agi/topology-dynamics-integration.test.js
-      - name: Internal evidence recurrence
-        run: node agi/internal-evidence-recurrence.test.js
-      - name: Temporal relation counterevidence
-        run: node agi/temporal-relation-counterevidence.test.js
-      - name: Temporal expectation lifecycle
-        run: node agi/temporal-expectation-lifecycle.test.js
-      - name: Action warrant reopening
-        run: node agi/action-warrant-reopening.test.js
-      - name: Grounded expression action realization
-        run: node agi/grounded-expression-action.test.js
-      - name: Ordered relation route upgrade
-        run: node agi/ordered-relation-route-upgrade.test.js
-      - name: Generic occurrence temporal completion
-        run: node agi/generic-occurrence-temporal-completion.test.js
       - name: Blueprint end to end
         run: node agi/blueprint-e2e.test.js
       - name: Position-free conversational surface
