@@ -21,7 +21,7 @@ const COMMAND_A = 'raise';
 const COMMAND_B = 'lower';
 const FILLERS = ['look', 'ready', 'again', 'okay'];
 const CONCERN_BASE = 50;
-const TRAINING_ROUNDS = 18;
+const TRAINING_ROUNDS = 12;
 
 for (const file of [
   'mind.js',
@@ -39,13 +39,10 @@ const M = Mind.one(2, 1);
 assert.strictEqual(M.whole, 1);
 
 function neutralFrame(concern = CONCERN_BASE) {
-  // One ordinary external receptor plus one concern channel. The receptor varies
-  // independently so a constant sensor state cannot identify either command.
   const t = M.contacts.length;
   return [((t * 7) % 11) / 10, concern];
 }
 
-// Expose both already-existing physical actions without language.
 for (let i = 0; i < 4; i++) Mind.C(M, { frame: neutralFrame() });
 const ACTION_A = M.motor;
 const ACTION_B = ACTION_A === 0 ? 1 : 0;
@@ -59,25 +56,16 @@ function hear(raw) {
   Mind.C(M, { surface: { input: raw } });
 }
 
-function consequenceFor(intendedAction, actualAction) {
-  // The physical world confirms fulfillment after the action. M receives only the
-  // resulting numeric contact, never the intendedAction variable or this rule.
-  return actualAction === intendedAction ? CONCERN_BASE - 12 : CONCERN_BASE + 12;
+function hasLivedExpression(raw) {
+  const term = `surface:${raw}`;
+  const facts = M.knowledge?.facts || [];
+  const occurrences = new Set(facts.filter(f =>
+    f.relation === 'ρ:instantiates' && f.object?.ref === term).map(f => String(f.subject)));
+  return facts.some(f => occurrences.has(String(f.subject)) && f.relation === 'ρ:kind' && f.object === 'lived_occurrence');
 }
 
-function demonstrate(raw, intendedAction, filler) {
-  // Arrange a real successful interaction: hear -> act -> consequence. Targeting
-  // the motor is teacher/world staging outside M, analogous to a caregiver making
-  // the referent/action clear. No internal semantic fact is inserted.
-  moveMotorTo(intendedAction);
-  hear(raw);
-  const acted = M.motor;
-  Mind.C(M, { frame: neutralFrame(consequenceFor(intendedAction, acted)) });
-  assert.strictEqual(acted, intendedAction, 'training interaction failed to enact intended action');
-
-  // Break phase-only recurrence with unrelated language and physical variation.
-  hear(filler);
-  Mind.C(M, { frame: neutralFrame(CONTEXT_CONCERN[filler]) });
+function consequenceFor(intendedAction, actualAction) {
+  return actualAction === intendedAction ? CONCERN_BASE - 12 : CONCERN_BASE + 12;
 }
 
 const CONTEXT_CONCERN = {
@@ -86,6 +74,26 @@ const CONTEXT_CONCERN = {
   again: CONCERN_BASE + 5,
   okay: CONCERN_BASE - 4,
 };
+
+function demonstrate(raw, intendedAction, filler) {
+  // Arrange a real successful interaction: hear -> act -> consequence. Targeting
+  // the motor is teacher/world staging outside M, analogous to a caregiver making
+  // the referent/action clear. No internal semantic fact is inserted.
+  moveMotorTo(intendedAction);
+  hear(raw);
+
+  // Fail at the first missing prerequisite rather than spending a full curriculum
+  // before discovering that unheard language never entered the lived substrate.
+  assert(hasLivedExpression(raw), 'unknown raw command never became lived relational material');
+
+  const acted = M.motor;
+  Mind.C(M, { frame: neutralFrame(consequenceFor(intendedAction, acted)) });
+  assert.strictEqual(acted, intendedAction, 'training interaction failed to enact intended action');
+
+  // Break phase-only recurrence with unrelated language and physical variation.
+  hear(filler);
+  Mind.C(M, { frame: neutralFrame(CONTEXT_CONCERN[filler]) });
+}
 
 for (let round = 0; round < TRAINING_ROUNDS; round++) {
   demonstrate(COMMAND_A, ACTION_A, FILLERS[round % FILLERS.length]);
@@ -96,22 +104,11 @@ for (let round = 0; round < TRAINING_ROUNDS; round++) {
 assert.strictEqual((M.knowledge?.facts || []).some(f =>
   (f.subject === `surface:${COMMAND_A}` || f.subject === `surface:${COMMAND_B}`) && f.relation === 'ρ:expresses'), false,
   'test accidentally pre-grounded a command through an explicit semantic expression link');
-
-// The raw words themselves must have become ordinary lived material. This is the
-// prerequisite that the pre-existing architecture currently lacks.
-function hasLivedExpression(raw) {
-  const term = `surface:${raw}`;
-  const facts = M.knowledge?.facts || [];
-  const occurrences = new Set(facts.filter(f =>
-    f.relation === 'ρ:instantiates' && f.object?.ref === term).map(f => String(f.subject)));
-  return facts.some(f => occurrences.has(String(f.subject)) && f.relation === 'ρ:kind' && f.object === 'lived_occurrence');
-}
-assert(hasLivedExpression(COMMAND_A), 'unknown raw command never became lived relational material');
-assert(hasLivedExpression(COMMAND_B), 'second unknown raw command never became lived relational material');
+assert(hasLivedExpression(COMMAND_A));
+assert(hasLivedExpression(COMMAND_B));
 
 function probe(raw, expectedAction, startingAction) {
   moveMotorTo(startingAction);
-  // A surface-only distractor breaks any immediate action->command phase pattern.
   hear('wait');
   assert.strictEqual(M.motor, startingAction);
   hear(raw);
@@ -122,8 +119,6 @@ function probe(raw, expectedAction, startingAction) {
 probe(COMMAND_A, ACTION_A, ACTION_B);
 probe(COMMAND_B, ACTION_B, ACTION_A);
 
-// Verify that successful behavior came through M-owned temporal relation anatomy,
-// not a hidden command table.
 const facts = M.knowledge?.facts || [];
 const learnedOrdered = new Set(facts.filter(f =>
   f.relation === 'ρ:kind' && f.object === 'learned_ordered_relation').map(f => String(f.subject)));
