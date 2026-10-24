@@ -8,6 +8,8 @@
 // claim occurrence and reopen any world-fact route born from this same sourced
 // episode. Source identity carries no fixed reliability or truth weight here.
 
+const SurfaceStructure = require('./surface-structure-grounding.js');
+
 function stable(v) {
   if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
   if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
@@ -15,10 +17,6 @@ function stable(v) {
 }
 function same(a, b) { return stable(a) === stable(b); }
 function ref(id) { return { ref: String(id) }; }
-function episodeNumber(id) {
-  const n = Number(String(id).split(':').at(-1));
-  return Number.isFinite(n) ? n : -1;
-}
 
 function sourceFrom(contact) {
   if (!contact || typeof contact !== 'object') return undefined;
@@ -28,44 +26,28 @@ function sourceFrom(contact) {
   return undefined;
 }
 
-function latestSurfaceEpisode(state) {
-  let best = null;
-  for (const fact of state.knowledge?.facts || []) {
-    if (fact.relation !== 'ρ:input_raw' || typeof fact.subject !== 'string' ||
-        !fact.subject.startsWith('sequence-contact:')) continue;
-    if (!best || episodeNumber(fact.subject) > episodeNumber(best.id))
-      best = { id: fact.subject, raw: fact.object };
-  }
-  return best;
-}
-
 function relationalUpdate(state, originalContact) {
   const source = sourceFrom(originalContact);
   if (source === undefined) return null;
-  const episode = latestSurfaceEpisode(state);
+  const episode = SurfaceStructure.latestSurfaceEpisode(state);
   if (!episode) return null;
 
-  const allFacts = state.knowledge?.facts || [];
-  const proposals = allFacts.filter(f =>
-    f.subject === episode.id && f.relation === 'ρ:proposes_relation' && f.object && typeof f.object === 'object' &&
-    Object.prototype.hasOwnProperty.call(f.object, 'subject') &&
-    Object.prototype.hasOwnProperty.call(f.object, 'relation') &&
-    Object.prototype.hasOwnProperty.call(f.object, 'object'));
+  const proposals = SurfaceStructure.proposalsForEpisode(state, episode.id)
+    .map(row => row.triple)
+    .sort((a, b) => stable(a).localeCompare(stable(b)));
   if (!proposals.length) return null;
 
+  // Rules are current cognitive structure rather than lifetime occurrence history;
+  // scanning them does not recreate the book/life fact stream.
   const activeSurfaceRoutes = (state.knowledge?.rules || []).filter(rule =>
     rule.active !== false && rule.provenance?.kind === 'surface_induction');
-  const supportedHere = new Set(allFacts
-    .filter(f => f.subject === episode.id && f.relation === 'ρ:supports' && f.object?.ref !== undefined)
-    .map(f => String(f.object.ref)));
+  const supportedHere = new Set(SurfaceStructure.supportsForEpisode(state, episode.id));
 
   const facts = [];
-  const ordered = proposals.slice().sort((a, b) => stable(a.object).localeCompare(stable(b.object)));
-  for (let i = 0; i < ordered.length; i++) {
-    const triple = ordered[i].object;
+  for (let i = 0; i < proposals.length; i++) {
+    const triple = proposals[i];
     const claimId = `sourced-claim:${episode.id}:${i + 1}`;
-    const already = allFacts.some(f => f.subject === claimId && f.relation === 'ρ:kind' && f.object === 'sourced_claim_occurrence');
-    if (!already) facts.push(
+    facts.push(
       [claimId, 'ρ:kind', 'sourced_claim_occurrence'],
       [claimId, 'ρ:epistemic_status', 'claim_with_provenance'],
       [claimId, 'ρ:claim_subject', triple.subject],
@@ -73,7 +55,7 @@ function relationalUpdate(state, originalContact) {
       [claimId, 'ρ:claim_object', triple.object],
       [claimId, 'ρ:claimed_by', source],
       [claimId, 'ρ:source_episode', ref(episode.id)],
-      [claimId, 'ρ:source_surface', episode.raw],
+      [claimId, 'ρ:source_surface', episode.input_raw],
       [episode.id, 'ρ:expressed_claim', ref(claimId)],
       ['self', 'ρ:encountered_claim', ref(claimId)],
     );
