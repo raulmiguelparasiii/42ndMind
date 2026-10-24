@@ -29,6 +29,8 @@ jobs:
         run: node agi-prose-randomized-certification.test.js
       - name: Prose-to-reasoning gate
         run: node agi-prose-reasoning-certification.test.js
+      - name: Novel raw construction learning gate
+        run: node agi/raw-paraphrase-learning.test.js
       - name: Long-life surface access gate
         run: node agi/long-life-surface-access.test.js
       - name: Compound raw-language acquisition gate
