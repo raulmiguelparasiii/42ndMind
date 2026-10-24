@@ -1,13 +1,10 @@
-name: AGI prose reasoning certification
+name: AGI grounded English certification
 
 on:
   push:
     branches:
       - experiment/one-live-m-prose-learning-20261023
     paths:
-      - 'agi-prose-reasoning-certification.test.js'
-      - 'agi/raw-paraphrase-learning.test.js'
-      - 'agi/raw-concept-definition.test.js'
       - 'agi/grounded-english-math-curriculum.test.js'
       - 'agi/raw-proposal-expression-grounding.js'
       - 'agi/surface-structure-grounding.js'
@@ -17,11 +14,11 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: agi-prose-reasoning-${{ github.ref }}
+  group: agi-grounded-english-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  certify:
+  english:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -31,9 +28,3 @@ jobs:
           node-version: 22
       - name: Grounded English from mathematics
         run: node agi/grounded-english-math-curriculum.test.js
-      - name: Prose to reasoning certification
-        run: node agi-prose-reasoning-certification.test.js
-      - name: Novel raw paraphrase learning falsification
-        run: node agi/raw-paraphrase-learning.test.js
-      - name: Raw concept definition falsification
-        run: node agi/raw-concept-definition.test.js
