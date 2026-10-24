@@ -528,14 +528,24 @@ function completionUpdate(state) {
   return { relations: { facts } };
 }
 
+// Lifecycle settlement is live and event-local. C calls this only after the
+// current top-level reality contact has already been normalized onto one lived
+// order. An unresolved expectation therefore asks only whether *this* event can
+// bear on it. If not, nothing is written and the expectation remains ordinary M
+// content for the next event. No historical successor search, predictor state,
+// focus state, or copied temporal frontier is required.
 function lifecycleUpdate(state) {
-  const observations = orderedLivedOccurrences(state);
-  if (!observations.length) return null;
   const facts = state.knowledge?.facts || [];
+  const currentOrder = state.structure?.lived_contact_order;
+  if (!Number.isFinite(currentOrder)) return null;
+
   const expectations = new Map();
   const resolved = new Set();
   const termKinds = new Map();
   const occurrenceKinds = new Map();
+  const livedOccurrences = new Set();
+  const atCurrentOrder = new Set();
+  const instantiatedTerms = new Map();
 
   function expectation(id) {
     const key = String(id);
@@ -548,6 +558,8 @@ function lifecycleUpdate(state) {
     map.get(id).add(String(value));
   }
 
+  // One pass over canonical M reconstructs only the unresolved expectation
+  // anatomy and this event's occurrence anatomy. It does not rebuild lived order.
   for (const fact of facts) {
     const subject = String(fact.subject);
     if (fact.relation === 'ρ:kind' && fact.object === 'temporal_expectation') expectation(subject).kind = true;
@@ -563,72 +575,68 @@ function lifecycleUpdate(state) {
     }
 
     if (fact.relation === 'ρ:instantiation_kind' && fact.object !== undefined) addKind(termKinds, subject, fact.object);
-    if (fact.relation === 'ρ:kind' && fact.object !== 'lived_occurrence' && fact.object !== undefined)
-      addKind(occurrenceKinds, subject, fact.object);
+    if (fact.relation === 'ρ:kind') {
+      if (fact.object === 'lived_occurrence') livedOccurrences.add(subject);
+      else if (fact.object !== undefined) addKind(occurrenceKinds, subject, fact.object);
+    } else if (fact.relation === 'ρ:lived_order' && fact.object === currentOrder) {
+      atCurrentOrder.add(subject);
+    } else if (fact.relation === 'ρ:instantiates' && fact.object?.ref !== undefined) {
+      instantiatedTerms.set(subject, String(fact.object.ref));
+    }
   }
+
+  const currentOccurrences = [...atCurrentOrder].filter(id => livedOccurrences.has(id)).sort();
+  if (!currentOccurrences.length) return null;
+  const observedTerms = new Set(currentOccurrences
+    .map(id => instantiatedTerms.get(id)).filter(term => term !== undefined));
+  const observedKinds = new Set();
+  for (const occurrence of currentOccurrences)
+    for (const kind of occurrenceKinds.get(occurrence) || []) observedKinds.add(kind);
+  const observed = normalizedTerms([...observedTerms]);
 
   const updates = [];
   for (const x of expectations.values()) {
-    if (!x.kind || !Number.isFinite(x.after) || resolved.has(x.id)) continue;
+    if (!x.kind || !Number.isFinite(x.after) || x.after >= currentOrder || resolved.has(x.id)) continue;
     const expected = normalizedTerms(x.terms);
     if (!expected.length) continue;
 
-    // Unknown contact is not a lifecycle event for this expectation. Walk forward
-    // through exact retained lived order until reality supplies at least one term
-    // or occurrence-kind that can actually bear on the expectation. This keeps an
-    // unfinished relation live across unrelated contact without modality branches,
-    // a second predictor state, or a stored attention/workspace object.
-    let successor = null;
-    let fulfilled = [], unmet = [], unknown = [];
-    for (const event of observations) {
-      if (event.order <= x.after) continue;
-      const observedTerms = new Set(event.relations);
-      const observedKinds = new Set();
-      for (const occurrence of event.occurrences || [])
-        for (const kind of occurrenceKinds.get(String(occurrence)) || []) observedKinds.add(kind);
-
-      const eventFulfilled = [], eventUnmet = [], eventUnknown = [];
-      for (const term of expected) {
-        if (observedTerms.has(term)) { eventFulfilled.push(term); continue; }
-        const kinds = termKinds.get(term);
-        if (kinds && [...kinds].some(kind => observedKinds.has(kind))) eventUnmet.push(term);
-        else eventUnknown.push(term);
-      }
-
-      if (!eventFulfilled.length && !eventUnmet.length) continue;
-      successor = event;
-      fulfilled = eventFulfilled;
-      unmet = eventUnmet;
-      unknown = eventUnknown;
-      break;
+    const fulfilled = [], unmet = [], unknown = [];
+    for (const term of expected) {
+      if (observedTerms.has(term)) { fulfilled.push(term); continue; }
+      const kinds = termKinds.get(term);
+      if (kinds && [...kinds].some(kind => observedKinds.has(kind))) unmet.push(term);
+      else unknown.push(term);
     }
-    if (!successor) continue;
+
+    // This event is unrelated to the expectation. Its occurrence remains exact M
+    // material, while the unfinished relation simply continues into the next C.
+    if (!fulfilled.length && !unmet.length) continue;
 
     let result;
     if (fulfilled.length === expected.length) result = 'fulfilled';
     else if (!fulfilled.length && unmet.length && !unknown.length) result = 'violated';
     else result = 'partial';
 
-    const evaluation = `temporal-expectation-evaluation:${x.after}:${successor.order}:${digest([
-      x.id, expected, successor.relations, result,
+    const evaluation = `temporal-expectation-evaluation:${x.after}:${currentOrder}:${digest([
+      x.id, expected, observed, result,
     ])}`;
     const evaluationStructure = { kind: 'temporal_expectation_evaluation', result };
     const evaluationTerm = `relation:temporal-evaluation:${digest(evaluationStructure)}`;
     updates.push(
-      ...internalRelationalOccurrenceFacts(evaluationTerm, evaluationStructure, evaluation, successor.order),
+      ...internalRelationalOccurrenceFacts(evaluationTerm, evaluationStructure, evaluation, currentOrder),
       [evaluation, 'ρ:evaluates_expectation', ref(x.id)],
       [evaluation, 'ρ:predecessor_lived_order', x.after],
-      [evaluation, 'ρ:successor_lived_order', successor.order],
+      [evaluation, 'ρ:successor_lived_order', currentOrder],
       [evaluation, 'ρ:evaluation_result', result],
       [evaluation, 'ρ:expected_terms', expected.map(ref)],
-      [evaluation, 'ρ:observed_terms', successor.relations.map(ref)],
+      [evaluation, 'ρ:observed_terms', observed.map(ref)],
       [evaluation, 'ρ:fulfilled_terms', fulfilled.map(ref)],
       [evaluation, 'ρ:unmet_terms', unmet.map(ref)],
       [evaluation, 'ρ:unknown_terms', unknown.map(ref)],
-      [evaluation, 'ρ:based_on_occurrences', (successor.occurrences || []).map(ref)],
+      [evaluation, 'ρ:based_on_occurrences', currentOccurrences.map(ref)],
       [x.id, 'ρ:resolved_by', ref(evaluation)],
-      [x.id, 'ρ:resolved_at_lived_order', successor.order],
-      [`lived-contact:${successor.order}`, 'ρ:evaluates_temporal_expectation', ref(evaluation)],
+      [x.id, 'ρ:resolved_at_lived_order', currentOrder],
+      [`lived-contact:${currentOrder}`, 'ρ:evaluates_temporal_expectation', ref(evaluation)],
     );
     for (const relation of normalizedTerms(x.relations))
       updates.push([evaluation, 'ρ:evaluates_ordered_relation', ref(relation)]);
