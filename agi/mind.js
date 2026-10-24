@@ -8,6 +8,7 @@
 // M; none owns a second truth or memory state.
 
 const Relational = require('./mind-relational.js');
+const OrderedSurface = require('./ordered-surface-contact.js');
 const Continuous = require('./continuous-relational-contact.js');
 const MultiSourceContinuous = require('./multisource-continuous-relations.js');
 const EmpiricalRelations = require('./empirical-relation-occurrences.js');
@@ -203,6 +204,17 @@ function realizeCurrentExpectedAction(state) {
 }
 
 function C(state, realityContact) {
+  // Long raw text is an ordered receptor stream. Segmenting punctuation/newline
+  // boundaries is S-boundary transport only: the exact unsplit contact is first
+  // retained in M, and every segment then re-enters this exact same C. No surface
+  // word or proposition is interpreted by the segmenter.
+  const expanded = OrderedSurface.expand(state, realityContact);
+  if (expanded) {
+    Relational.C(state, expanded.container);
+    for (const contact of expanded.contacts) C(state, contact);
+    return state;
+  }
+
   const temporalCheckpoint = 8;
   const temporalCache = ensureTemporalSearchCache(state, temporalCheckpoint);
 
