@@ -1,0 +1,84 @@
+name: AGI prose branch full regression
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-prose-learning-20261023
+    paths:
+      - 'agi/**'
+      - '.github/workflows/agi-prose-full-regression.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: agi-prose-full-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Raw prose learning
+        run: node agi/raw-prose-learning.test.js
+      - name: Sourced prose provenance
+        run: node agi/sourced-prose-provenance.test.js
+      - name: Long-life surface access
+        run: node agi/long-life-surface-access.test.js
+      - name: Compound raw-language acquisition
+        run: node agi/compound-raw-language-acquisition.test.js
+      - name: Recursive structural composition
+        run: node agi/recursive-structural-composition.test.js
+      - name: Embedded local structural completion
+        run: node agi/embedded-structural-completion.test.js
+      - name: Large connected structural world
+        run: node agi/large-connected-structural-world.test.js
+      - name: Structural schema refinement
+        run: node agi/structural-schema-refinement.test.js
+      - name: Structural schema corrigibility
+        run: node agi/structural-schema-corrigibility.test.js
+      - name: Structural relation transfer
+        run: node agi/structural-relation-transfer.test.js
+      - name: Topology and dynamics integration
+        run: node agi/topology-dynamics-integration.test.js
+      - name: Internal evidence recurrence
+        run: node agi/internal-evidence-recurrence.test.js
+      - name: Temporal relation counterevidence
+        run: node agi/temporal-relation-counterevidence.test.js
+      - name: Temporal expectation lifecycle
+        run: node agi/temporal-expectation-lifecycle.test.js
+      - name: Action warrant reopening
+        run: node agi/action-warrant-reopening.test.js
+      - name: Grounded expression action realization
+        run: node agi/grounded-expression-action.test.js
+      - name: Ordered relation route upgrade
+        run: node agi/ordered-relation-route-upgrade.test.js
+      - name: Generic occurrence temporal completion
+        run: node agi/generic-occurrence-temporal-completion.test.js
+      - name: Blueprint end to end
+        run: node agi/blueprint-e2e.test.js
+      - name: Position-free conversational surface
+        run: node agi/free-surface.test.js
+      - name: Concurrent whole life
+        run: node agi/whole-life.test.js
+      - name: Conversation growth
+        run: node agi/conversation-growth.test.js
+      - name: Randomized late-relation generality
+        run: node agi/randomized-generality.test.js
+      - name: Canonical-M language grounding
+        run: node agi/canonical-language-bridge.test.js
+      - name: Public entrypoint whole-life
+        run: node agi/public-entrypoint.test.js
+      - name: Variable-length language
+        run: node agi/variable-length-language.test.js
+      - name: Contextual dialogue
+        run: node agi/contextual-dialogue.test.js
+      - name: Raw-language acquisition
+        run: node agi/raw-language-acquisition.test.js
+      - name: Open multi-relation discourse
+        run: node agi/open-discourse.test.js
+      - name: High-dimensional continuous sensing
+        run: node agi/high-dimensional-continuous.test.js
