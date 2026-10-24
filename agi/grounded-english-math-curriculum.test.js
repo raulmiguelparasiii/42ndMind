@@ -66,10 +66,14 @@ function tripleParts(triple) {
 
 const M = Mind.one(1, 1);
 
-const comparisonPairs = [
-  [8, 2], [13, 4], [21, 6], [34, 11], [55, 18], [72, 31], [90, 44], [101, 63],
-];
-for (let round = 0; round < 3; round++) {
+// Cross the mathematically true examples so surface roles are identifiable from
+// evidence rather than accidental one-to-one correlation. Each greater value is
+// observed with several lesser values, and each lesser value with several greater
+// values. The inverse English construction is grounded from the same true contacts.
+const greaterValues = [8, 13, 21, 34];
+const lesserValues = [2, 4, 6];
+const comparisonPairs = greaterValues.flatMap(greater => lesserValues.map(lesser => [greater, lesser]));
+for (let round = 0; round < 2; round++) {
   for (const [greater, lesser] of comparisonPairs) {
     assert(greater > lesser, 'teacher attempted to ground a false greater-than example');
     assert(lesser < greater, 'teacher attempted to ground a false less-than example');
@@ -100,15 +104,6 @@ for (let i = 0; i < definitions.length; i++) {
 for (const value of [TARGET, TARGET_LOW, TARGET_HIGH])
   paired(M, `${value} is a number.`, 'noted.', [value, REL_NUMBER_KIND, 'number']);
 
-const groundedBeforeTarget = (M.knowledge?.facts || []).filter(f => f.relation === 'ρ:grounded_surface_relation_alignment');
-console.log('GROUNDED TEACHER ALIGNMENTS', JSON.stringify({
-  total: groundedBeforeTarget.length,
-  greater: groundedBeforeTarget.filter(f => f.object?.relation === REL_GREATER).length,
-  less: groundedBeforeTarget.filter(f => f.object?.relation === REL_LESS).length,
-  number_kind: groundedBeforeTarget.filter(f => f.object?.relation === REL_NUMBER_KIND).length,
-  greater_samples: groundedBeforeTarget.filter(f => f.object?.relation === REL_GREATER).slice(0, 2),
-}, null, 2));
-
 assert(!has(M, TARGET, REL_GREATER, TARGET_LOW), 'target greater-than fact existed before raw English');
 assert(!has(M, TARGET, REL_LESS, TARGET_HIGH), 'target less-than fact existed before raw English');
 assert(!has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT), 'target category existed before raw English');
@@ -133,14 +128,6 @@ assert.strictEqual(learnedDefinition.provenance?.kind, 'surface_definition_induc
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${TARGET} is greater than ${TARGET_LOW}.`, output: 'noted.' } });
 for (let i = 0; i < 3; i++) Mind.C(M, { surface: { input: `${TARGET} is less than ${TARGET_HIGH}.`, output: 'noted.' } });
 
-const targetProposals = (M.knowledge?.facts || []).filter(f => f.relation === 'ρ:proposes_relation' && f.object &&
-  (f.object.subject === TARGET || f.object.object === TARGET_LOW || f.object.object === TARGET_HIGH));
-const targetExpressions = (M.knowledge?.facts || []).filter(f => f.relation === 'ρ:surface_expression' &&
-  [TARGET, TARGET_LOW, TARGET_HIGH].includes(f.subject));
-const targetCurrent = (M.knowledge?.current?.facts || []).filter(f => f.subject === TARGET &&
-  [REL_GREATER, REL_LESS, REL_CATEGORY, REL_NUMBER_KIND].includes(f.relation));
-console.log('GROUNDED ENGLISH DIAGNOSTIC', JSON.stringify({ targetProposals, targetExpressions, targetCurrent }, null, 2));
-
 assert(has(M, TARGET, REL_GREATER, TARGET_LOW), 'raw English did not recover the grounded meaning of greater than');
 assert(has(M, TARGET, REL_LESS, TARGET_HIGH), 'raw English did not recover the grounded meaning of less than');
 assert(has(M, TARGET, REL_CATEGORY, TARGET_CONCEPT),
@@ -163,6 +150,7 @@ for (const forbidden of [
 console.log(JSON.stringify({
   teacher_grounding_source: 'mathematically_checked_relational_contact',
   ordinary_english_schooling: true,
+  crossed_math_examples_remove_role_correlation: true,
   heldout_numerals_grounded_only_by_unrelated_number_identity: true,
   target_definition_semantic_rules_supplied: 0,
   target_premise_semantic_triples_supplied: 0,
