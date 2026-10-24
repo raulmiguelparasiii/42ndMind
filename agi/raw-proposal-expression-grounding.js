@@ -15,23 +15,7 @@ function stable(v) {
   if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
   return JSON.stringify(v);
 }
-function same(a, b) { return stable(a) === stable(b); }
 function unique(xs) { const m = new Map(); for (const x of xs || []) m.set(stable(x), x); return [...m.values()]; }
-function episodeNumber(id) {
-  const n = Number(String(id).split(':').at(-1));
-  return Number.isFinite(n) ? n : -1;
-}
-
-function latestSurfaceEpisode(state) {
-  let best = null;
-  for (const fact of state.knowledge?.facts || []) {
-    if (fact.relation !== 'ρ:input_tokens' || !Array.isArray(fact.object) ||
-        typeof fact.subject !== 'string' || !fact.subject.startsWith('sequence-contact:')) continue;
-    if (!best || episodeNumber(fact.subject) > episodeNumber(best.id))
-      best = { id: fact.subject, tokens: fact.object.slice() };
-  }
-  return best;
-}
 
 function exactSpan(tokens, value) {
   if (!Array.isArray(tokens) || !['string', 'number', 'boolean'].includes(typeof value)) return undefined;
@@ -48,34 +32,43 @@ function exactSpan(tokens, value) {
   return variants.length === 1 ? variants[0] : undefined;
 }
 
+function structuralProposals(update, episodeId) {
+  return (update?.relations?.facts || [])
+    .filter(f => Array.isArray(f) && f.length === 3 && String(f[0]) === String(episodeId) &&
+      f[1] === 'ρ:proposes_relation' && f[2] && typeof f[2] === 'object' &&
+      Object.prototype.hasOwnProperty.call(f[2], 'subject') &&
+      Object.prototype.hasOwnProperty.call(f[2], 'relation') &&
+      Object.prototype.hasOwnProperty.call(f[2], 'object'))
+    .map(f => ({ episode: String(f[0]), triple: f[2] }));
+}
+
 function relationalUpdate(state) {
   const structural = SurfaceStructure.relationalUpdate(state);
-  const episode = latestSurfaceEpisode(state);
+  const episode = SurfaceStructure.latestSurfaceEpisode(state);
   const facts = [...(structural?.relations?.facts || [])];
   const rules = [...(structural?.relations?.rules || [])];
   if (!episode) return facts.length || rules.length ? { relations: { facts, rules } } : null;
 
-  const proposals = (state.knowledge?.facts || []).filter(f =>
-    f.subject === episode.id && f.relation === 'ρ:proposes_relation' && f.object && typeof f.object === 'object' &&
-    Object.prototype.hasOwnProperty.call(f.object, 'subject') &&
-    Object.prototype.hasOwnProperty.call(f.object, 'relation') &&
-    Object.prototype.hasOwnProperty.call(f.object, 'object'));
-  const existing = state.knowledge?.facts || [];
+  // Existing proposals are retrieved from the append-synchronized zero-authority
+  // projection. Proposals created by the structural update in this same call are
+  // included directly because they have not entered canonical M yet.
+  const proposals = unique([
+    ...SurfaceStructure.proposalsForEpisode(state, episode.id),
+    ...structuralProposals(structural, episode.id),
+  ].map(row => row.triple));
+
   for (const proposal of proposals) {
-    for (const [role, value] of [['subject', proposal.object.subject], ['object', proposal.object.object]]) {
-      const tokens = exactSpan(episode.tokens, value);
-      if (!tokens) continue;
-      const attachment = {
+    for (const [role, value] of [['subject', proposal.subject], ['object', proposal.object]]) {
+      const tokens = exactSpan(episode.input_tokens, value);
+      if (!tokens || SurfaceStructure.hasExpressionAttachment(state, value, episode.id, tokens)) continue;
+      facts.push([value, 'ρ:surface_expression', {
         tokens,
         source_episode: episode.id,
         source_role: role,
         source: 'raw_surface_proposal_endpoint',
         exact_contact: true,
         semantic_authority: 'none',
-      };
-      const already = existing.some(f => same(f.subject, value) && f.relation === 'ρ:surface_expression' &&
-        f.object?.source_episode === episode.id && same(f.object?.tokens, tokens));
-      if (!already) facts.push([value, 'ρ:surface_expression', attachment]);
+      }]);
     }
   }
   if (!facts.length && !rules.length) return null;
