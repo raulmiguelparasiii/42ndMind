@@ -35,12 +35,11 @@ function step(state, contact) {
   const episodeEnd = state.knowledge?.episodes?.length || episodeStart;
   const field = AffectedField.derive(state, { episodeStart, episodeEnd, query });
 
-  // Expression is downstream of the already-derived live relation. Language may
-  // learn how to express that relation, but it does not get to choose a different
-  // thought when the field already identifies one uniquely. The legacy dialogue
-  // induction remains only as a transitional fallback where live interpretation
-  // is still absent.
-  if (!SurfaceDialogue.respond(state, contact, field)) TurnCompletion.respond(state, contact);
+  // Expression is downstream of the already-derived live relation when the
+  // individual has learned that this surface contact is asking for one. A mere
+  // referential cue can make a relation live without licensing an utterance; this
+  // prevents novel forms from being answered by blindly restating the cue.
+  if (!SurfaceDialogue.respond(state, contact, query ? field : null)) TurnCompletion.respond(state, contact);
 
   return {
     state,
