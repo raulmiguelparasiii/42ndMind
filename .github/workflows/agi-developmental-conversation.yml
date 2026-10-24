@@ -8,6 +8,9 @@ on:
       - 'agi/develop-and-converse.js'
       - '.github/workflows/agi-developmental-conversation.yml'
   workflow_dispatch:
+concurrency:
+  group: agi-developmental-conversation
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
