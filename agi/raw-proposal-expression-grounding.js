@@ -1,12 +1,14 @@
 'use strict';
 
-// Zero-state expression attachment for endpoints already proposed by the existing
-// raw surface learner. This helper does not infer a relation or warrant a claim.
-// It only preserves that the exact subject/object span used by an M-owned proposal
-// physically occurred in the same surface episode, so later expression can reuse
-// that observed surface form. All durable attachments remain ordinary M facts.
+// Zero-state surface bridge after the canonical raw surface learner runs.
+// Exact proposal endpoint expressions remain ordinary M facts. Separately, a raw
+// construction may align with a uniquely known current M fact across diverse
+// examples; that structure may later propose a new binding through the same
+// surface_induction route anatomy. Neither path owns truth, grammar state, memory,
+// or a semantic dictionary.
 
 const Surface = require('./surface-template.js');
+const SurfaceStructure = require('./surface-structure-grounding.js');
 
 function stable(v) {
   if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
@@ -47,17 +49,18 @@ function exactSpan(tokens, value) {
 }
 
 function relationalUpdate(state) {
+  const structural = SurfaceStructure.relationalUpdate(state);
   const episode = latestSurfaceEpisode(state);
-  if (!episode) return null;
+  const facts = [...(structural?.relations?.facts || [])];
+  const rules = [...(structural?.relations?.rules || [])];
+  if (!episode) return facts.length || rules.length ? { relations: { facts, rules } } : null;
+
   const proposals = (state.knowledge?.facts || []).filter(f =>
     f.subject === episode.id && f.relation === 'ρ:proposes_relation' && f.object && typeof f.object === 'object' &&
     Object.prototype.hasOwnProperty.call(f.object, 'subject') &&
     Object.prototype.hasOwnProperty.call(f.object, 'relation') &&
     Object.prototype.hasOwnProperty.call(f.object, 'object'));
-  if (!proposals.length) return null;
-
   const existing = state.knowledge?.facts || [];
-  const facts = [];
   for (const proposal of proposals) {
     for (const [role, value] of [['subject', proposal.object.subject], ['object', proposal.object.object]]) {
       const tokens = exactSpan(episode.tokens, value);
@@ -75,7 +78,8 @@ function relationalUpdate(state) {
       if (!already) facts.push([value, 'ρ:surface_expression', attachment]);
     }
   }
-  return facts.length ? { relations: { facts } } : null;
+  if (!facts.length && !rules.length) return null;
+  return { relations: { facts, ...(rules.length ? { rules } : {}) } };
 }
 
 module.exports = { relationalUpdate };
