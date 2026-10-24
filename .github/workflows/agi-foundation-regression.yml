@@ -1,0 +1,47 @@
+name: AGI foundation regression
+
+on:
+  push:
+    branches:
+      - experiment/one-live-m-prose-learning-20261023
+    paths:
+      - 'agi/mind.js'
+      - 'agi/mind-relational.js'
+      - 'agi/generic-lived-occurrences.js'
+      - 'agi/relation-sequence-recompression.js'
+      - 'agi/contact-before-meaning.test.js'
+      - 'agi/internal-evidence-recurrence.test.js'
+      - 'agi/temporal-relation-counterevidence.test.js'
+      - 'agi/temporal-expectation-lifecycle.test.js'
+      - 'agi/action-warrant-reopening.test.js'
+      - 'agi/grounded-expression-action.test.js'
+      - 'agi/ordered-relation-route-upgrade.test.js'
+      - 'agi/generic-occurrence-temporal-completion.test.js'
+      - '.github/workflows/agi-foundation-regression.yml'
+  workflow_dispatch:
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Contact before meaning
+        run: node agi/contact-before-meaning.test.js
+      - name: Internal evidence recurrence
+        run: node agi/internal-evidence-recurrence.test.js
+      - name: Temporal relation counterevidence
+        run: node agi/temporal-relation-counterevidence.test.js
+      - name: Temporal expectation lifecycle
+        run: node agi/temporal-expectation-lifecycle.test.js
+      - name: Action warrant reopening
+        run: node agi/action-warrant-reopening.test.js
+      - name: Grounded expression action realization
+        run: node agi/grounded-expression-action.test.js
+      - name: Ordered relation route upgrade
+        run: node agi/ordered-relation-route-upgrade.test.js
+      - name: Generic occurrence temporal completion
+        run: node agi/generic-occurrence-temporal-completion.test.js
