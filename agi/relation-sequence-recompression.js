@@ -572,25 +572,40 @@ function lifecycleUpdate(state) {
     if (!x.kind || !Number.isFinite(x.after) || resolved.has(x.id)) continue;
     const expected = normalizedTerms(x.terms);
     if (!expected.length) continue;
-    const successor = observations.find(event => event.order > x.after);
-    if (!successor) continue;
 
-    const observedTerms = new Set(successor.relations);
-    const observedKinds = new Set();
-    for (const occurrence of successor.occurrences || [])
-      for (const kind of occurrenceKinds.get(String(occurrence)) || []) observedKinds.add(kind);
+    // Unknown contact is not a lifecycle event for this expectation. Walk forward
+    // through exact retained lived order until reality supplies at least one term
+    // or occurrence-kind that can actually bear on the expectation. This keeps an
+    // unfinished relation live across unrelated contact without modality branches,
+    // a second predictor state, or a stored attention/workspace object.
+    let successor = null;
+    let fulfilled = [], unmet = [], unknown = [];
+    for (const event of observations) {
+      if (event.order <= x.after) continue;
+      const observedTerms = new Set(event.relations);
+      const observedKinds = new Set();
+      for (const occurrence of event.occurrences || [])
+        for (const kind of occurrenceKinds.get(String(occurrence)) || []) observedKinds.add(kind);
 
-    const fulfilled = [], unmet = [], unknown = [];
-    for (const term of expected) {
-      if (observedTerms.has(term)) { fulfilled.push(term); continue; }
-      const kinds = termKinds.get(term);
-      if (kinds && [...kinds].some(kind => observedKinds.has(kind))) unmet.push(term);
-      else unknown.push(term);
+      const eventFulfilled = [], eventUnmet = [], eventUnknown = [];
+      for (const term of expected) {
+        if (observedTerms.has(term)) { eventFulfilled.push(term); continue; }
+        const kinds = termKinds.get(term);
+        if (kinds && [...kinds].some(kind => observedKinds.has(kind))) eventUnmet.push(term);
+        else eventUnknown.push(term);
+      }
+
+      if (!eventFulfilled.length && !eventUnmet.length) continue;
+      successor = event;
+      fulfilled = eventFulfilled;
+      unmet = eventUnmet;
+      unknown = eventUnknown;
+      break;
     }
+    if (!successor) continue;
 
     let result;
     if (fulfilled.length === expected.length) result = 'fulfilled';
-    else if (!fulfilled.length && !unmet.length) result = 'unevaluable';
     else if (!fulfilled.length && unmet.length && !unknown.length) result = 'violated';
     else result = 'partial';
 
