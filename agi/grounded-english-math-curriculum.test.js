@@ -24,9 +24,12 @@ const REL_GREATER = id('relation_greater');
 const REL_LESS = id('relation_less');
 const REL_CATEGORY = id('relation_category');
 const TARGET_CONCEPT = 'midrange';
-const TARGET = 15;
-const TARGET_LOW = 10;
-const TARGET_HIGH = 20;
+// The target comparison itself is held out, while each numeral has already been
+// grounded in unrelated mathematical examples. This isolates English relation
+// transfer from the separate problem of learning a brand-new numeral symbol.
+const TARGET = 13;
+const TARGET_LOW = 2;
+const TARGET_HIGH = 34;
 
 for (const file of [
   'mind.js', 'mind-relational.js', 'surface-template.js', 'surface-structure-grounding.js',
