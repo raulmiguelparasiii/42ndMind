@@ -201,7 +201,9 @@ const server = http.createServer(async (req, res) => {
         source = req.headers['x-source'];
       }
       if (typeof textInput !== 'string' || !textInput.length) return json(res, 400, { error: 'text is required' });
-      const surface = { input: textInput };
+      // /say is transport that is physically directed at this individual. Source
+      // remains unknown unless supplied; target does not.
+      const surface = { input: textInput, target: 'self' };
       if (source !== undefined && source !== null && String(source).length) surface.source = String(source);
       return json(res, 200, await transact({ surface }));
     }
