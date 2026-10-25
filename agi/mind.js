@@ -42,13 +42,8 @@ function unansweredSurface(contact) {
 function budgetWholeRecompression(state, contact) {
   const frame = frameFrom(contact);
   if (!frame || !state?.structure) return;
-
-  // Preserve one early developmental global search once four experiences exist.
-  // After that, use deterministic checkpoints whose spacing scales with raw
-  // receptor dimensionality. This changes search scheduling, never retained M.
   const experiences = state.experiences?.length || 0;
   if (experiences < 4) return;
-
   const dimensions = Math.max(1, frame.length - (state.concern_count || 0));
   const interval = Math.max(16, dimensions * dimensions);
   const nextExperience = experiences + 1;
@@ -87,16 +82,11 @@ function numericallySame(a, b) {
   return Math.abs(a - b) <= 1e-9 * scale;
 }
 
-// Quantitative realization is a disposable confluence check over the same
-// active M-owned relations. Helper execution order is not semantic authority:
-// a completion is accepted only when both orderings reach the same value. If
-// independent warranted routes disagree, the target remains explicitly open.
 function settleQuantitativeCompletion(state) {
   if (!state.current?.completed) return;
   const base = cloneCurrent(state.current);
   const unaryFirst = completionProjection(state, [Continuous, MultiSourceContinuous]);
   const jointFirst = completionProjection(state, [MultiSourceContinuous, Continuous]);
-
   const completed = { ...base.completed };
   const inferred = new Set(base.inferred || []);
   const unresolved = new Set([...(base.unresolved || []), ...(unaryFirst.unresolved || []), ...(jointFirst.unresolved || [])]);
@@ -104,7 +94,6 @@ function settleQuantitativeCompletion(state) {
     ...Object.keys(unaryFirst.completed || {}),
     ...Object.keys(jointFirst.completed || {}),
   ]);
-
   for (const feature of keys) {
     if (Object.prototype.hasOwnProperty.call(base.completed, feature)) continue;
     const hasA = Object.prototype.hasOwnProperty.call(unaryFirst.completed || {}, feature);
@@ -120,16 +109,12 @@ function settleQuantitativeCompletion(state) {
       unresolved.add(feature);
     }
   }
-
   state.current.completed = completed;
   state.current.inferred = [...inferred].sort();
   state.current.unresolved = [...unresolved]
     .filter(feature => !Object.prototype.hasOwnProperty.call(completed, feature)).sort();
 }
 
-// Temporal-search scheduling metadata is rebuildable from M and therefore has
-// zero semantic authority. New cognition uses generic lived_occurrence/lived_order.
-// A legacy fallback keeps older serialized relation-only states readable.
 function livedEventCountFromM(state) {
   const facts = state.knowledge?.facts || [];
   const lived = new Set(facts
@@ -139,7 +124,6 @@ function livedEventCountFromM(state) {
   for (const fact of facts) if (fact.relation === 'ρ:lived_order' && lived.has(String(fact.subject)) && Number.isFinite(fact.object))
     orders.add(fact.object);
   if (orders.size) return orders.size;
-
   const legacy = new Set(facts
     .filter(f => f.relation === 'ρ:kind' && f.object === 'relation_occurrence')
     .map(f => String(f.subject)));
@@ -158,23 +142,16 @@ function ensureTemporalSearchCache(state, checkpoint) {
   return state.structure;
 }
 
-// Action realization is physical transduction, not a planner. The expectation,
-// action-term identity, and actuator grounding are all already ordinary M facts.
-// This function only resolves the *current lived order* to one actuator when M
-// itself leaves exactly one action index available. Historical expectations are
-// ignored, and independently grounded embodied continuation is not overwritten.
 function currentExpectedActuator(state) {
   const order = state.structure?.lived_contact_order;
   if (!Number.isFinite(order)) return null;
   const facts = state.knowledge?.facts || [];
-
   const expectationIds = new Set(facts
     .filter(f => f.relation === 'ρ:kind' && f.object === 'temporal_expectation')
     .map(f => String(f.subject)));
   const currentExpectations = new Set([...expectationIds].filter(id => facts.some(f =>
     String(f.subject) === id && f.relation === 'ρ:after_lived_order' && f.object === order)));
   if (!currentExpectations.size) return null;
-
   const actionTerms = new Set(facts
     .filter(f => f.relation === 'ρ:kind' && f.object === 'action_term')
     .map(f => String(f.subject)));
@@ -183,7 +160,6 @@ function currentExpectedActuator(state) {
     .map(f => String(f.object.ref))
     .filter(term => actionTerms.has(term)));
   if (!expectedTerms.size) return null;
-
   const indexes = new Set();
   for (const term of expectedTerms) {
     const grounded = new Set(facts
@@ -198,12 +174,16 @@ function currentExpectedActuator(state) {
 function realizeCurrentExpectedAction(state) {
   const actuator = currentExpectedActuator(state);
   if (!Number.isInteger(actuator)) return;
-
-  // A grounded canonical continuation is independent live support. Temporal
-  // completion may replace only ungrounded physical variation, not erase a
-  // contradictory action already grounded by the same canonical M/C.
   if (state.current?.continuation?.grounded === true && Number.isInteger(state.motor) && state.motor !== actuator) return;
   state.motor = actuator;
+}
+
+function structuralContact(realityContact, situated) {
+  const rawFacts = !Array.isArray(realityContact) && realityContact && typeof realityContact === 'object' &&
+    Array.isArray(realityContact.relations?.facts) ? realityContact.relations.facts : [];
+  const situatedFacts = Array.isArray(situated?.relations?.facts) ? situated.relations.facts : [];
+  if (!rawFacts.length && !situatedFacts.length) return realityContact;
+  return { relations: { facts: [...rawFacts, ...situatedFacts] } };
 }
 
 function C(state, realityContact) {
@@ -216,17 +196,9 @@ function C(state, realityContact) {
   budgetWholeRecompression(state, realityContact);
   Relational.C(state, realityContact);
 
-  // Contact precedes meaning. Every top-level R becomes ordinary lived M material
-  // before language, quantitative, structural, action, or semantic helpers run.
-  // Those helpers may later enrich this same lived order but cannot decide whether
-  // the contact happened or whether it is available for future relation discovery.
   const boundary = GenericOccurrences.beginContact(state, realityContact);
   if (boundary?.update) Relational.C(state, boundary.update);
 
-  // Raw proposal formation already happened inside Relational.C. Preserve exact
-  // observed endpoint expressions for later rendering, learn explicit relational
-  // definitions from already-grounded rule/surface structure, and preserve sourced
-  // prose as claims-with-provenance rather than direct actuality.
   if (realityContact && typeof realityContact === 'object' && realityContact.surface) {
     const definitionUpdate = RawConceptDefinition.relationalUpdate(state, realityContact);
     if (definitionUpdate) Relational.C(state, definitionUpdate);
@@ -238,61 +210,36 @@ function C(state, realityContact) {
 
   const hasFrame = !!frameFrom(realityContact);
   if (hasFrame) {
-    // The canonical embodied learner already updated inside Relational.C above.
-    // These adapters only expose learned structure through ordinary M relations.
     const empirical = EmpiricalRelations.relationalUpdate(state);
     if (empirical) Relational.C(state, empirical);
-
     for (const proposer of [Continuous, MultiSourceContinuous]) {
       const update = proposer.relationalUpdate(state);
       if (update) Relational.C(state, update);
     }
-
-    // Surface meaning is learned from the same lived contact only after learned
-    // relations have exposed first-class occurrences in M. Grounding is agnostic
-    // to which learner produced the generic occurrence.
     const grounding = SurfaceRelationGrounding.relationalUpdate(state, realityContact);
     if (grounding) Relational.C(state, grounding);
-
     settleQuantitativeCompletion(state);
   }
 
-  // A grounded expression in the current lived utterance becomes ordinary M
-  // occurrence content before any renderer acts. This is reference, not world
-  // assertion: the occurrence points to an already-grounded relation term.
   const mention = SurfaceRelationGrounding.mentionUpdate(state, realityContact);
   if (mention) Relational.C(state, mention);
 
-  // Interpretations produced during this update are normalized onto the boundary
-  // that already existed before interpretation. No helper can create a second
-  // lived order or make an uninterpreted contact disappear from experience.
   const lived = GenericOccurrences.relationalUpdate(state, realityContact, boundary);
   if (lived?.update) Relational.C(state, lived.update);
 
-  // The reality contact itself remains first-class after its more specific
-  // occurrences have been normalized. This situates every modality relative to
-  // the same self, actual source/target when present, prior lived contact, and
-  // grounded referents before any temporal consequence is completed.
   const situated = SituatedContact.relationalUpdate(state, realityContact);
   if (situated) Relational.C(state, situated);
 
-  // Recurrent symbolic relation graphs can propose endpoint-independent schema
-  // candidates. The zero-state helper reads only M/contact structure; its result
-  // is ordinary proposal content and never inserts an unobserved world relation.
-  const structural = StructuralAbstraction.relationalUpdate(state, realityContact);
+  // Structural discovery sees the actual contacted relations and the ordinary
+  // relations that situate this same event. Thus source/target/aboutness/context
+  // can become learned structure through recurrence rather than through a special
+  // conversation, attention, or "wonder" mechanism.
+  const structural = StructuralAbstraction.relationalUpdate(state, structuralContact(realityContact, situated));
   if (structural) Relational.C(state, structural);
 
   if (lived?.occurrence_count > 0) {
-    // Resolve older open expectations from the exact first later lived event.
-    // The evaluation itself is ordinary M evidence; no predictor/status state is
-    // retained outside the one relational history.
     const lifecycle = RelationSequence.lifecycleUpdate(state);
     if (lifecycle) Relational.C(state, lifecycle);
-
-    // Ordered recompression is proposal search, not epistemic authority. Count one
-    // event for one lived order regardless of how many modalities occurred there.
-    // Exact occurrences are already M content; the cache only decides when another
-    // zero-authority whole-history search is worth running.
     if (temporalCache) {
       temporalCache.lived_sequence_event_count++;
       if (temporalCache.lived_sequence_event_count >= temporalCache.next_lived_sequence_search_at) {
@@ -302,10 +249,6 @@ function C(state, realityContact) {
           temporalCache.next_lived_sequence_search_at += temporalCheckpoint;
       }
     }
-
-    // Learned order constrains the present through the same zero-state view. The
-    // result is ordinary M expectation content linked to exact prefix occurrences;
-    // it never creates a lived occurrence for an unseen next event.
     const temporalCompletion = RelationSequence.completionUpdate(state);
     if (temporalCompletion) {
       Relational.C(state, temporalCompletion);
@@ -313,14 +256,7 @@ function C(state, realityContact) {
     }
   }
 
-  // Expression choice is derived only after canonical M has settled. A learned
-  // multi-relation discourse structure may replace a narrower surface completion
-  // only when it is the stronger structural match to the whole current input.
   if (unansweredSurface(realityContact)) Discourse.arbitrate(state);
-
-  // Lexical meaning recall is likewise only a current view of canonical
-  // ρ:expresses facts. It runs last so no surface renderer becomes semantic
-  // authority over the M-owned relation.
   SurfaceRelationGrounding.groundCurrent(state, realityContact);
   return state;
 }
