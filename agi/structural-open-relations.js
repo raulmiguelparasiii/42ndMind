@@ -166,12 +166,33 @@ function candidateMappings(schemaEdges, component) {
   return out;
 }
 
+function fullyMatches(schema, component) {
+  if (component.length !== schema.edges.length) return false;
+  const schemaSet = new Set(schema.edges.map(edge => stable(edge)));
+  for (const { mapping } of candidateMappings(schema.edges, component)) {
+    const represented = new Set(component.map(edge => stable([
+      edge.labelKey, mapping.get(edge.from.key), mapping.get(edge.to.key),
+    ])));
+    if (represented.size === schemaSet.size && [...schemaSet].every(key => represented.has(key))) return true;
+  }
+  return false;
+}
+
 function partialViews(schema, edges) {
   const labels = new Set(schema.edges.map(edge => edge[0]));
   const filtered = edges.filter(edge => labels.has(edge.labelKey));
   const targetSize = schema.edges.length - 1;
   if (targetSize < 1 || filtered.length < targetSize) return [];
-  return rawComponents(filtered).flatMap(component => connectedViewsOfSize(component, targetSize));
+  const out = [];
+  for (const component of rawComponents(filtered)) {
+    // A present event that can already realize the complete learned schema is not
+    // incomplete. Never manufacture an unknown by arbitrarily deleting one of
+    // its observed edges and reconsidering the remainder as a partial event.
+    const fullViews = connectedViewsOfSize(component, schema.edges.length);
+    if (fullViews.some(view => fullyMatches(schema, view))) continue;
+    out.push(...connectedViewsOfSize(component, targetSize));
+  }
+  return out;
 }
 
 function missingOpenPatterns(schema, component) {
@@ -187,7 +208,7 @@ function missingOpenPatterns(schema, component) {
     const label = decodeLabel(labelKey);
     if (!label || !Object.prototype.hasOwnProperty.call(label, 'relation')) continue;
     const fromKnown = roleToNode.has(fromRole), toKnown = roleToNode.has(toRole);
-    if (fromKnown === toKnown) continue; // exactly one endpoint must be grounded
+    if (fromKnown === toKnown) continue;
     const knownRole = fromKnown ? fromRole : toRole;
     const unboundRole = fromKnown ? toRole : fromRole;
     const knownNode = roleToNode.get(knownRole);
@@ -296,10 +317,6 @@ function relationalUpdate(state, contact) {
   if (!Number.isInteger(order) || order < 1) return null;
   const edges = contactEdges(contact);
   if (!edges.length) return null;
-
-  // Resolve older open structure from actual present evidence first. New open
-  // structure is then derived from the current partial fit and cannot resolve
-  // itself in the same pass.
   const facts = resolutionFacts(state, edges, order);
   facts.push(...openFacts(state, edges, order));
   return facts.length ? { relations: { facts } } : null;
