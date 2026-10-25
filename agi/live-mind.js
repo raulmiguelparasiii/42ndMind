@@ -20,9 +20,43 @@ const WholeBeing = require('./whole-being.js');
 
 function one(actionCount, concernCount = 1) { return Mind.one(actionCount, concernCount); }
 
+function liveField(state, episodeStart, episodeEnd) {
+  // Live participation comes from reality contact, grounded reference, actual
+  // dependency, and unfinished consequence. Parser-derived query guesses are not
+  // allowed to decide what becomes causally live. SurfaceQuery is retained only
+  // as a diagnostic view while the transitional language path still exists.
+  return AffectedField.derive(state, { episodeStart, episodeEnd });
+}
+
+function settleWhole(state, episodeStart, episodeEnd, field, maxPasses = 8) {
+  let end = episodeEnd;
+  let currentField = field;
+  let being = WholeBeing.derive(state, currentField);
+
+  for (let pass = 0; pass < maxPasses; pass++) {
+    const pressure = WholeBeing.relationalUpdate(state, being);
+    if (!pressure) break;
+
+    const before = state.knowledge?.facts?.length || 0;
+    Relational.C(state, { relations: pressure });
+    const after = state.knowledge?.facts?.length || 0;
+    end = state.knowledge?.episodes?.length || end;
+    currentField = liveField(state, episodeStart, end);
+    being = WholeBeing.derive(state, currentField);
+
+    // relationalUpdate emits only canonical novelty. This is merely a defensive
+    // bound against malformed future helpers; it is not a convergence evaluator.
+    if (after === before) break;
+  }
+
+  return { field: currentField, being, episodeEnd: end };
+}
+
 function step(state, contact) {
   const episodeStart = state.knowledge?.episodes?.length || 0;
 
+  // Reality first enters the same canonical M. Social/source enrichment may add
+  // more ordinary relations, but nothing here chooses an answer or a task.
   Mind.C(state, contact);
   SurfaceAgency.record(state, contact);
   const social = SurfaceSocial.relationalUpdate(state, contact);
@@ -30,33 +64,29 @@ function step(state, contact) {
   const stabilized = ClaimStability.relationalUpdate(state);
   if (stabilized) Relational.C(state, stabilized);
 
-  // Surface interpretation may contribute only an open relational cue. It is
-  // deliberately separated from answer lookup/rendering so language cannot own
-  // the judgment. The field is derived from canonical M plus exactly the
-  // relation episodes created during this top-level contact.
+  // Keep the old parser interpretation visible for diagnosis only. It no longer
+  // roots the live relational state.
   const query = SurfaceQuery.interpret(state, contact);
   let episodeEnd = state.knowledge?.episodes?.length || episodeStart;
-  let field = AffectedField.derive(state, { episodeStart, episodeEnd, query });
+  let field = liveField(state, episodeStart, episodeEnd);
 
-  // Transitional expression transport still runs after the current relational
-  // field has been determined. Whole-being settlement is read after transport so
-  // a surface position that was actually completed in this same turn is not
-  // falsely preserved as an unsolved constraint.
+  // Let the contact reverberate through grounded reference, dependency, and the
+  // whole-being constraint before any expression transport is attempted. Thus a
+  // heard event affects the being first; speech, when it occurs, is downstream of
+  // that changed being rather than a request/response routine preceding it.
+  let settled = settleWhole(state, episodeStart, episodeEnd, field);
+  field = settled.field;
+  let being = settled.being;
+  episodeEnd = settled.episodeEnd;
+
+  // Transitional language transport. It still does not own semantic authority.
+  // Any completion it produces is read back through B(M)=1 below so same-turn
+  // resolution becomes part of the same canonical life instead of disappearing.
   if (!SurfaceDialogue.respond(state, contact)) TurnCompletion.respond(state, contact);
 
-  // B(M)=1 is recomputed from the same M and live field on every step. Current
-  // unresolved subsets with a grounded relational context are then re-entered as
-  // ordinary canonical M formations. This is not a drive/priority object: it is
-  // the unsolved constraint itself becoming part of the same being whose next
-  // settlement must remain accountable to it.
-  let being = WholeBeing.derive(state, field);
-  const pressure = WholeBeing.relationalUpdate(state, being);
-  if (pressure) {
-    Relational.C(state, { relations: pressure });
-    episodeEnd = state.knowledge?.episodes?.length || episodeEnd;
-    field = AffectedField.derive(state, { episodeStart, episodeEnd, query });
-    being = WholeBeing.derive(state, field);
-  }
+  settled = settleWhole(state, episodeStart, episodeEnd, field);
+  field = settled.field;
+  being = settled.being;
 
   if (being.whole !== 1 || field.whole !== 1) throw new Error('live settlement left the one-whole invariant');
 
