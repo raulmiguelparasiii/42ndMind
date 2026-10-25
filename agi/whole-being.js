@@ -56,17 +56,52 @@ function physicalResiduals(state) {
   return out;
 }
 
-function completionResiduals(state) {
+function nonempty(value) {
+  if (Array.isArray(value)) return value.length > 0;
+  if (value && typeof value === 'object') return Object.keys(value).length > 0;
+  return value !== null && value !== undefined && value !== false && value !== '';
+}
+
+// Unknown/unresolved coordinates belong to the same 1 regardless of which live
+// representation exposed them. Do not enumerate subsystem-specific paths here.
+// Current M is small and ephemeral; recursively reading it adds no persistent
+// workspace and prevents a local helper from hiding an unresolved subset merely
+// by nesting it under its own structure.
+function currentResiduals(state) {
   const out = [];
-  const direct = Array.isArray(state?.current?.unresolved) ? state.current.unresolved : [];
-  for (const feature of direct) out.push({
-    kind: 'unresolved_completion', feature: clone(feature), source: 'M.current.unresolved',
-  });
-  const continuation = Array.isArray(state?.current?.continuation?.unresolved)
-    ? state.current.continuation.unresolved : [];
-  for (const feature of continuation) out.push({
-    kind: 'unresolved_continuation', feature: clone(feature), source: 'M.current.continuation.unresolved',
-  });
+  const seen = new Set();
+  function visit(value, path) {
+    if (!value || typeof value !== 'object') return;
+    if (seen.has(value)) return;
+    seen.add(value);
+    if (Array.isArray(value)) {
+      value.forEach((item, i) => visit(item, `${path}[${i}]`));
+      return;
+    }
+    for (const [key, child] of Object.entries(value)) {
+      const next = path ? `${path}.${key}` : key;
+      if (/^unresolved(?:_|$)/.test(key) && nonempty(child)) {
+        if (Array.isArray(child)) {
+          for (const item of child) out.push({
+            kind: 'unresolved_current_subset',
+            path: next,
+            value: clone(item),
+            source: `M.current.${next}`,
+          });
+        } else {
+          out.push({
+            kind: 'unresolved_current_subset',
+            path: next,
+            value: clone(child),
+            source: `M.current.${next}`,
+          });
+        }
+        continue;
+      }
+      visit(child, next);
+    }
+  }
+  visit(state?.current, '');
   return out;
 }
 
@@ -97,7 +132,7 @@ function derive(state, field = null) {
   if (!state || state.whole !== 1) throw new Error('whole-being constraint requires one canonical M');
   const residuals = [
     ...physicalResiduals(state),
-    ...completionResiduals(state),
+    ...currentResiduals(state),
     ...relationalResiduals(state, field),
   ];
   return {
@@ -112,4 +147,4 @@ function derive(state, field = null) {
   };
 }
 
-module.exports = { derive, futureBearingFacts };
+module.exports = { derive, futureBearingFacts, currentResiduals };
