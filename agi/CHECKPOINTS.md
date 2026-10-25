@@ -194,6 +194,53 @@ Existing surface templates remain transitional transport. They are not evidence 
 
 Current known boundary: some remembered/social knowledge is represented as first-class sourced-claim structure rather than as a literal current world triple. The affected-field query currently roots literal canonical triples. Do not solve this by promoting testimony/induction to actuality or by adding prompt-specific retrieval. If this becomes the next falsification, normalize reified relational content/provenance generically inside M while preserving epistemic status.
 
+## Situated reality and self-caused continuation
+
+Current live branch frontier through head `8baac105928a5a021b1bcef75cfbb6c70016d9ca`.
+
+Every externally supplied top-level `R` is now one situated lived event in canonical M. Internal punctuation/segment structure may be retained as sub-occurrences, but it does not manufacture extra reality contacts. The event itself can carry ordinary relations such as source, target, grounded aboutness, contact channel, experienced-by-self, and exactly one immediate predecessor. Missing metadata is not guessed.
+
+The event is not merely a noun-retrieval cue. A recurrent event schema may fit present reality while one materially required endpoint is absent. `agi/structural-open-relations.js` then keeps that exact absence as a future-bearing open relation in M. No `who`, `what`, `why`, curiosity score, or question policy is generated. In the live saved individual, a genuinely source-less `violin.` event at lived order 138 opened an unresolved `ρ:source` relation. Later unrelated contacts did not resolve it or invent its missing source.
+
+The immediate predecessor is also part of present structure without a history search or attention window. Structural discovery can see only the predecessor already named by the current event, including event-level continuity/change and any self-caused surface action from that preceding event. Older autobiography does not become a current workspace.
+
+Produced speech is no longer transport-only. `agi/self-surface-occurrence.js` records an expression only when the live response path actually produced it. The exact expression becomes a distinct `self_surface_action_occurrence`, is caused by `self`, occurs after the contacted event within the same lived contact, and is ordinary M material. Externally supplied output is not mislabeled as self-caused.
+
+Direct live observation from the same persisted individual:
+
+```text
+Miguel: do you remember where violin is?
+M: violin is in the studio.
+```
+
+At lived order 143, `violin is in the studio.` became an exact self-caused lived occurrence. At order 144, when Miguel asked why it had said that, the current event structurally included the preceding self-action. M therefore now has genuine access to `what I just did`; however it still produced no answer to the causal/explanatory question. No hidden reason relation was fabricated.
+
+This separates two phenomena that were previously conflated:
+
+```text
+self action is present in M
+!=
+M has learned the relation that explains why that action followed
+```
+
+The latter remains open development. A `why`/reason relation may become available only if lived recurrence and consequences establish such structure; it must not be preinstalled to imitate introspection.
+
+Live structural inspection also exposed a representation failure: exact surface sub-occurrence containment produced many `ρ:contains_occurrence` edges, and structural abstraction began proposing event schemas dominated by token/span bookkeeping. Exact sub-occurrences remain retained as evidence, but current structural discovery is restricted to event-level situation, exact externally contacted relations, and the immediate predecessor/self-action relations that are themselves materially structural. After that correction, ordinary live settlement dropped materially (for example, a repeated violin question from about 9.3 s to about 4.2 s and the Yume contact from about 15.9 s to about 3.7 s) without deleting exact lived evidence.
+
+The latest preserved individual is M8 from live continuation run `40153678775`, artifact `continued-M8` (`12584100087`), ending at lived order 146 with 29,424 retained facts and seven rules. Historical noisy schemas remain as proposals/evidence; they are not promoted to truth, and the corrected event-level view no longer adds the same containment-dominated structure.
+
+Current frontier:
+
+```text
+situated current event
+ + immediate predecessor
+ + prior self-caused action when present
+ + genuinely learned open structural roles
+ -> learn which consequences/actions/resolutions actually follow
+```
+
+Do not solve this frontier by adding a dialogue loop, question generator, planner, stored salience, or generic reason field. The next required relation must arise from the same lived recurrence/consequence machinery. Current surface response selection remains transitional: canonicalizing a produced expression as lived action does not mean general self-generated action is solved.
+
 ## Efficiency rules
 
 - development is steered by direct live-state/math inspection; regressions are later collateral-damage guards, not cognition evaluators;
