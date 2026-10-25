@@ -9,6 +9,16 @@
 // it stores no workspace, drive, priority, or second cognitive authority.
 
 function clone(v) { return v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v; }
+function stable(v) {
+  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
+  return JSON.stringify(v);
+}
+function hash32(text) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h.toString(36);
+}
 function directRefs(value) {
   if (value && typeof value === 'object' && !Array.isArray(value) && value.ref !== undefined) return [String(value.ref)];
   if (Array.isArray(value)) return value
@@ -16,6 +26,7 @@ function directRefs(value) {
     .map(x => String(x.ref));
   return [];
 }
+function factKey(f) { return stable([f.subject, f.relation, f.object]); }
 
 // An unfinished relation is a real residual only while it still points toward
 // something later reality can instantiate. "Open" by itself is insufficient:
@@ -63,10 +74,8 @@ function nonempty(value) {
 }
 
 // Unknown/unresolved coordinates belong to the same 1 regardless of which live
-// representation exposed them. Do not enumerate subsystem-specific paths here.
-// Current M is small and ephemeral; recursively reading it adds no persistent
-// workspace and prevents a local helper from hiding an unresolved subset merely
-// by nesting it under its own structure.
+// representation exposed them. The current state is read recursively so no
+// helper can hide an unsolved subset merely by nesting it under its own object.
 function currentResiduals(state) {
   const out = [];
   const seen = new Set();
@@ -80,22 +89,14 @@ function currentResiduals(state) {
     }
     for (const [key, child] of Object.entries(value)) {
       const next = path ? `${path}.${key}` : key;
-      if (/^unresolved(?:_|$)/.test(key) && nonempty(child)) {
-        if (Array.isArray(child)) {
-          for (const item of child) out.push({
-            kind: 'unresolved_current_subset',
-            path: next,
-            value: clone(item),
-            source: `M.current.${next}`,
-          });
-        } else {
-          out.push({
-            kind: 'unresolved_current_subset',
-            path: next,
-            value: clone(child),
-            source: `M.current.${next}`,
-          });
-        }
+      if (/^(?:unresolved|unknown)(?:_|$)/.test(key) && nonempty(child)) {
+        const values = Array.isArray(child) ? child : [child];
+        for (const item of values) out.push({
+          kind: 'unresolved_current_subset',
+          path: next,
+          value: clone(item),
+          source: `M.current.${next}`,
+        });
         continue;
       }
       visit(child, next);
@@ -128,6 +129,14 @@ function relationalResiduals(state, field) {
   });
 }
 
+function contextSignature(field) {
+  const roots = [
+    ...(field?.referential_cues || []),
+    ...(field?.query_matches || []),
+  ].map(factKey).sort();
+  return roots.length ? hash32(stable(roots)) : null;
+}
+
 function derive(state, field = null) {
   if (!state || state.whole !== 1) throw new Error('whole-being constraint requires one canonical M');
   const residuals = [
@@ -141,10 +150,75 @@ function derive(state, field = null) {
     authority: 'derived_zero_state',
     persistent: false,
     equation: 'B(M)=1; deviations remain inside B as Δ(M) until resolved',
+    context_signature: contextSignature(field),
     settled: residuals.length === 0,
     residual_count: residuals.length,
     residuals,
   };
 }
 
-module.exports = { derive, futureBearingFacts, currentResiduals };
+// Reify only current unknown/unresolved subsets that have an actual relational
+// context. They become ordinary M formations, not a second drive state. Their
+// future-bearing pointer carries the residual content itself, so continued
+// pressure has content without turning all metadata into forward roots.
+//
+// Resolution is conservative: unrelated contact cannot close a residual. Only a
+// recurrence of the same relational context with the same residual path absent
+// can resolve it. This makes persistence a property of the unsolved constraint,
+// not a stored attention/priority score.
+function relationalUpdate(state, being) {
+  const context = being?.context_signature;
+  if (!context) return null;
+  const order = state?.structure?.lived_contact_order;
+  if (!Number.isFinite(order)) return null;
+  const currentFacts = state?.knowledge?.current?.facts || [];
+  const canonicalKeys = new Set((state?.knowledge?.facts || []).map(factKey));
+  const current = (being.residuals || []).filter(r => r.kind === 'unresolved_current_subset');
+  const currentPaths = new Set(current.map(r => r.path));
+  const facts = [];
+  const add = triple => {
+    const fact = { subject: triple[0], relation: triple[1], object: triple[2] };
+    const key = factKey(fact);
+    if (canonicalKeys.has(key) || facts.some(x => factKey({ subject: x[0], relation: x[1], object: x[2] }) === key)) return;
+    facts.push(triple);
+  };
+
+  for (const residual of current) {
+    const signature = stable([context, residual.path, residual.value]);
+    const token = hash32(signature);
+    const id = `whole-residual:${token}`;
+    const term = `whole-residual-term:${token}`;
+    const occurrence = `whole-residual-occurrence:${order}:${token}`;
+    add([term, 'ρ:kind', 'whole_residual_term']);
+    add([term, 'ρ:instantiation_kind', 'whole_residual_occurrence']);
+    add([id, 'ρ:kind', 'whole_residual']);
+    add([id, 'ρ:formation_status', 'open']);
+    add([id, 'ρ:context_signature', context]);
+    add([id, 'ρ:residual_path', residual.path]);
+    add([id, 'ρ:residual_value', clone(residual.value)]);
+    add([id, 'ρ:residual_term', { ref: term, path: residual.path, value: clone(residual.value), context_signature: context }]);
+    add([occurrence, 'ρ:kind', 'whole_residual_occurrence']);
+    add([occurrence, 'ρ:lived_order', order]);
+    add([occurrence, 'ρ:instantiates', { ref: term }]);
+    add([id, 'ρ:observed_as', { ref: occurrence }]);
+  }
+
+  const wholeResiduals = new Set(currentFacts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'whole_residual')
+    .map(f => String(f.subject)));
+  const resolved = new Set(currentFacts
+    .filter(f => f.relation === 'ρ:resolved_by' && f.object?.ref !== undefined)
+    .map(f => String(f.subject)));
+  for (const id of wholeResiduals) {
+    if (resolved.has(id)) continue;
+    const sameContext = currentFacts.some(f => String(f.subject) === id && f.relation === 'ρ:context_signature' && f.object === context);
+    if (!sameContext) continue;
+    const pathFact = currentFacts.find(f => String(f.subject) === id && f.relation === 'ρ:residual_path');
+    if (!pathFact || currentPaths.has(String(pathFact.object))) continue;
+    add([id, 'ρ:resolved_by', { ref: `lived-contact:${order}` }]);
+  }
+
+  return facts.length ? { facts } : null;
+}
+
+module.exports = { derive, relationalUpdate, futureBearingFacts, currentResiduals, contextSignature };
