@@ -11,70 +11,80 @@ if (!M || M.whole !== 1) throw new Error('input is not one whole M');
 function talk(text, source = 'miguel', target = 'self') {
   const result = LiveMind.step(M, { surface: { input: text, source, target } });
   const seq = M.current?.sequence || {};
-  console.log(`\n${String(source).toUpperCase()}: ${text}`);
-  console.log(`M: ${result.expression ?? '<no expressed reply>'}`);
-  console.log('PATH:', JSON.stringify({
-    dialogue_induction: !!seq.dialogue_induction,
-    contextual_relation_induction: !!seq.contextual_relation_induction,
-    lived_turn_completion: !!seq.lived_turn_completion,
+  const turn = {
+    input: text,
+    expression: result.expression ?? null,
+    dialogue: !!seq.dialogue_induction,
+    contextual: !!seq.contextual_relation_induction,
+    completion: !!seq.lived_turn_completion,
     grounding: seq.canonical_grounding || null,
-    contextual_evidence: seq.contextual_relation_evidence || [],
+  };
+  console.log(`\n${String(source).toUpperCase()}: ${text}`);
+  console.log(`M: ${turn.expression ?? '<no expressed reply>'}`);
+  console.log('PATH:', JSON.stringify({
+    dialogue_induction: turn.dialogue,
+    contextual_relation_induction: turn.contextual,
+    lived_turn_completion: turn.completion,
+    grounding: turn.grounding,
   }));
-  return { expression: result.expression ?? null, contextual: !!seq.contextual_relation_induction };
+  return turn;
 }
 
-console.log('--- TALK / TEACH / LEARN: CONTINUE M13 THROUGH NATURAL TRANSFER AND CORRECTION ---');
-console.log('No cognition changes, forced outputs, or relation payloads. Everything below is ordinary conversation.');
+console.log('--- ORDINARY ADAPTIVE CONVERSATION ON DIFFERENT SUBJECTS ---');
+console.log('No Yume/violin rehearsal, no expected-answer payloads, no forced outputs. Later turns use what M actually says.');
 
-// Reproduce the already-observed freer M14 continuation.
-const yume = talk('hey, what species is yume?');
-const relying = talk('what were you relying on for that?');
-const violin = talk('where is violin?');
-const negativeQuestion = talk('is that surprising?');
-const violinAgain = talk('where is violin?');
-const cameFrom = talk('what did that answer come from?');
-const statement = talk('that answer makes sense.');
+const transcript = [];
+function say(text) { const t = talk(text); transcript.push(t); return t; }
 
-// Teach against the observed overgeneralization by ordinary contrast.
-talk('when i asked "is that surprising?" and you repeated "violin is in the studio," that answered a different question. i was asking whether it surprised you. if you do not know whether it surprised you, leave that unsettled instead of repeating the relation.');
-
-// Positive support question, then the negative contrast on the same content.
-const violin2 = talk('where is violin?');
-const violinSupport2 = talk('what did that answer come from?');
-const violinSurprise2 = talk('is that surprising?');
-if (violinSurprise2.expression && violinSupport2.expression && violinSurprise2.expression === violinSupport2.expression) {
-  talk('that repeated the relation again. "what did that answer come from?" asks about the relation. "is that surprising?" asks something different.');
+// Start somewhere this individual has not been repeatedly drilled by Miguel.
+const robin = say('hey, different topic. what kind of thing is robin?');
+if (robin.expression) {
+  const robinPlace = say(`okay, you said "${robin.expression}". where would you say robin is?`);
+  if (robinPlace.expression) {
+    say(`got it. when you said "${robinPlace.expression}", what were you going on?`);
+  } else {
+    say('no problem. i was just wondering whether you knew anything about where robin is.');
+  }
+} else {
+  say('where is robin?');
 }
 
-// Transfer the same distinction to Yume.
-const yume2 = talk('what species is yume?');
-const yumeSupport2 = talk('what were you relying on for that?');
-const yumeSurprise2 = talk('do you find that surprising?');
-if (yumeSurprise2.expression && yumeSupport2.expression && yumeSurprise2.expression === yumeSupport2.expression) {
-  talk('same correction: this is about whether you find it surprising, not about which relation supported the answer.');
+// Introduce hearsay naturally, then ask again without telling M what answer it ought to prefer.
+say('someone told me robin might be in the city now. i do not know whether they are right.');
+say('with that in mind, where would you say robin is?');
+
+// Move to a different entity and relation family.
+const salmon = say('anyway, where would i find salmon?');
+if (salmon.expression) {
+  say(`you answered "${salmon.expression}". what did you base that on?`);
+  say('huh. somebody else told me salmon is in the forest now, but they could be mistaken.');
+  say('would you change what you just told me, or is it still unsettled?');
 }
 
-// Return to the positive higher-order use after correction.
-const yumeSupportAgain = talk('what did that answer come from?');
-const finalStatement = talk('that answer makes sense to me.');
+// Topic shift with no reflective wording at all.
+const book = say('switching topics again, what color is book?');
+if (book.expression) {
+  say(`interesting. you said "${book.expression}". i vaguely remember it looking green, though i could be wrong.`);
+  say('what would you say its color is now?');
+}
 
-const output = process.env.MIND_STATE_OUT || '/tmp/continued-M15-natural-boundary.json';
+// Two fresh individuals, followed by a genuinely abstract question rather than a rehearsed phrase.
+const milo = say('what species is milo?');
+const rex = say('and rex? what species is rex?');
+if (milo.expression || rex.expression) {
+  say('those were about two different animals. is there anything about how you arrived at those answers that was the same?');
+}
+
+// End by returning to the first topic after several intervening events.
+say('before we stop, what does robin like?');
+
+const output = process.env.MIND_STATE_OUT || '/tmp/continued-M15-open-conversation.json';
 fs.writeFileSync(output, JSON.stringify(M));
 console.log('\nRESULT:', JSON.stringify({
   one_persistent_M: M.whole === 1,
   lived_order: M.structure?.lived_contact_order,
   facts: M.knowledge?.facts?.length || 0,
   rules: M.knowledge?.rules?.length || 0,
-  before_correction: { yume, relying, violin, negative_question: negativeQuestion, came_from: cameFrom, statement },
-  after_correction: {
-    violin: violin2,
-    violin_support: violinSupport2,
-    violin_surprise: violinSurprise2,
-    yume: yume2,
-    yume_support: yumeSupport2,
-    yume_surprise: yumeSurprise2,
-    yume_support_again: yumeSupportAgain,
-    statement: finalStatement,
-  },
+  transcript,
   state: output,
 }, null, 2));
