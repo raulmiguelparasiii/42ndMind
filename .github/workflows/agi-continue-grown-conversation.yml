@@ -38,22 +38,22 @@ jobs:
       - name: Recover the newest saved individual
         uses: actions/download-artifact@v4
         with:
-          name: continued-M6
+          name: continued-M7
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40152824650
+          run-id: 40153527838
       - name: Continue ordinary situated contact with the same individual
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M6.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M7.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M7.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M8.json
         run: |
           set -euo pipefail
           node agi/continue-grown-conversation-4.js
       - name: Preserve the same individual again
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M7
-          path: ${{ runner.temp }}/continued-M7.json
+          name: continued-M8
+          path: ${{ runner.temp }}/continued-M8.json
           retention-days: 30
           compression-level: 9
