@@ -4,9 +4,16 @@
 //
 // Some communicative acts are first learned procedurally: one utterance is
 // repeatedly followed by another between reversed speaker/addressee roles before
-// either utterance has a propositional meaning.  This helper reads that lived
-// recurrence from M and may reproduce a uniquely stable reply.  It owns no phrase
+// either utterance has a propositional meaning. This helper reads that lived
+// recurrence from M and may reproduce a uniquely stable reply. It owns no phrase
 // table or dialogue memory and contains no English-specific cue.
+//
+// A second form of recurrence is contextual rather than constant: a surface cue
+// can repeatedly ask for the relation that grounded the immediately preceding
+// self-action even when that relation differs from case to case. The cue is not
+// predeclared. It is induced only after the same surface span recurs across at
+// least two different relation types and the observed reply re-expresses the
+// preceding action's actual M-owned grounding each time.
 
 const Surface = require('./surface-template.js');
 const Dialogue = require('./surface-dialogue.js');
@@ -18,6 +25,9 @@ function stable(v){
 }
 function same(a,b){ return stable(a)===stable(b); }
 function unique(xs){ const m=new Map(); for(const x of xs||[]) m.set(stable(x),x); return [...m.values()]; }
+function semanticRelations(e){
+  return (e?.relations||[]).filter(r=>r.source==='simultaneous_relational_contact'||r.source==='self_surface_action_grounding');
+}
 function direct(e){ return (e?.relations||[]).some(r=>r.source==='simultaneous_relational_contact'); }
 function tokenSet(xs){ return new Set(Surface.compactTokens(xs||[]).map(stable)); }
 function similarity(a0,b0){
@@ -29,10 +39,112 @@ function reversed(a,b){
   return a.source!==undefined&&a.target!==undefined&&b.source!==undefined&&b.target!==undefined&&
     same(a.source,b.target)&&same(a.target,b.source);
 }
+function lexical(token){ return /[\p{L}\p{N}]/u.test(String(token)); }
+function spans(tokens,maxLength=3){
+  const compact=Surface.compactTokens(tokens||[]),out=[],seen=new Set();
+  for(let start=0;start<compact.length;start++){
+    if(!lexical(compact[start])) continue;
+    for(let length=1;length<=maxLength&&start+length<=compact.length;length++){
+      const part=compact.slice(start,start+length); if(part.some(x=>!lexical(x))) break;
+      const key=stable(part); if(seen.has(key)) continue; seen.add(key);
+      out.push({key,tokens:part,length});
+    }
+  }
+  return out;
+}
+function containsSpan(tokens,phrase){
+  const input=Surface.compactTokens(tokens||[]),p=Surface.compactTokens(phrase||[]);
+  if(!p.length||p.length>input.length) return false;
+  outer: for(let i=0;i+p.length<=input.length;i++){
+    for(let j=0;j<p.length;j++) if(!same(input[i+j],p[j])) continue outer;
+    return true;
+  }
+  return false;
+}
+function sameRelation(a,b){
+  return !!a&&!!b&&same(a.subject,b.subject)&&same(a.relation,b.relation)&&same(a.object,b.object);
+}
+
+// Learn a deictic/contextual surface role from ordinary lived conversation. The
+// relation itself is deliberately allowed to vary. What must recur is structural:
+// a question follows one of this individual's grounded utterances, contains the
+// same surface span, and the observed answer re-expresses the relation that had
+// actually grounded that preceding utterance. Requiring relation-type diversity
+// prevents an ordinary fixed-predicate question from being misread as contextual.
+function contextualRelationCues(es){
+  const rows=Dialogue.questionAnswerRows(es);
+  const positions=new Map(es.map((e,i)=>[String(e.id),i]));
+  const evidence=new Map();
+  for(const row of rows){
+    const at=positions.get(String(row.q.id));
+    if(!Number.isInteger(at)||at<=0) continue;
+    const prior=es[at-1];
+    if(!prior?.lived_self_action||!reversed(prior,row.q)) continue;
+    const priorRelations=semanticRelations(prior);
+    if(priorRelations.length!==1) continue;
+    const previous=priorRelations[0];
+    const answered={subject:row.subject,relation:row.relation,object:row.object};
+    if(!sameRelation(previous,answered)) continue;
+    for(const span of spans(row.q.input_tokens)){
+      if(!evidence.has(span.key)) evidence.set(span.key,{tokens:span.tokens,length:span.length,examples:[]});
+      evidence.get(span.key).examples.push({row,previous});
+    }
+  }
+
+  const cues=[];
+  for(const e of evidence.values()){
+    const examples=e.examples;
+    const triples=unique(examples.map(x=>[x.previous.subject,x.previous.relation,x.previous.object]));
+    const predicates=unique(examples.map(x=>x.previous.relation));
+    if(examples.length<2||triples.length<2||predicates.length<2) continue;
+    cues.push({...e,support:examples.length,triple_diversity:triples.length,predicate_diversity:predicates.length});
+  }
+  return cues.sort((a,b)=>b.length-a.length||b.predicate_diversity-a.predicate_diversity||b.support-a.support||stable(a.tokens).localeCompare(stable(b.tokens)));
+}
+
+function contextualRelationReply(state,es,current){
+  if(es.length<3||!Array.isArray(current?.input_tokens)) return false;
+  const historical=es.slice(0,-1);
+  const cues=contextualRelationCues(historical).filter(c=>containsSpan(current.input_tokens,c.tokens));
+  if(!cues.length) return false;
+  const bestLength=cues[0].length;
+  const strongest=cues.filter(c=>c.length===bestLength);
+  const previous=historical.at(-1);
+  if(!previous?.lived_self_action||!reversed(previous,current)) return false;
+  const relations=semanticRelations(previous);
+  if(relations.length!==1) return false;
+  const r=relations[0];
+
+  // The historical self-action already identifies the exact support object. Check
+  // that this relation remains represented in M before speaking; contextual
+  // language learning never upgrades a stale or absent relation by itself.
+  const present=Dialogue.currentObjects(state,r.subject,r.relation);
+  if(!present.objects.some(x=>same(x,r.object))) return false;
+  const rendered=Dialogue.renderCanonicalFact(state,es,r.subject,r.relation,r.object,current);
+  if(!rendered) return false;
+
+  const seq=state.current?.sequence; if(!seq||seq.expression) return false;
+  seq.output_tokens=rendered.tokens;
+  seq.expression=rendered.expression;
+  seq.unresolved_output_positions=[];
+  seq.contextual_relation_induction=true;
+  seq.contextual_relation_evidence=strongest.map(c=>({surface:Surface.renderTokens(c.tokens),support:c.support,predicate_diversity:c.predicate_diversity,triple_diversity:c.triple_diversity}));
+  seq.output_template=rendered.template;
+  seq.output_roles=rendered.roles;
+  seq.canonical_grounding={subject:r.subject,relation:r.relation,object:r.object,source:present.epistemic_status==='current_fact'?'M.knowledge.current.facts':'M.sourced_claims',authority:'canonical_M',status:present.epistemic_status};
+  return true;
+}
+
 function respond(state,contact){
   if(!contact?.surface||state.current?.sequence?.expression) return false;
   const es=Dialogue.episodes(state); if(es.length<3) return false;
   const current=es.at(-1); if(!current||!Array.isArray(current.input_tokens)) return false;
+
+  // Context-dependent recurrence is checked before constant turn completion, but
+  // only after SurfaceDialogue has already declined the turn. Thus ordinary
+  // learned fixed-predicate questions retain their existing path.
+  if(contextualRelationReply(state,es,current)) return true;
+
   const pairs=[];
   for(let i=0;i+1<es.length-1;i++){
     const a=es[i],b=es[i+1];
@@ -58,4 +170,4 @@ function respond(state,contact){
   return true;
 }
 
-module.exports={respond};
+module.exports={respond,contextualRelationCues};
