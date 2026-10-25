@@ -20,6 +20,7 @@ on:
       - 'agi/continue-grown-conversation-4.js'
       - 'agi/converse-reflective-bridge.js'
       - 'agi/converse-support-edge-probe.js'
+      - 'agi/converse-teach-reflection.js'
       - '.github/workflows/agi-continue-grown-conversation.yml'
   workflow_dispatch:
 concurrency:
@@ -37,25 +38,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Recover the reflective saved individual
+      - name: Recover the support-edge saved individual
         uses: actions/download-artifact@v4
         with:
-          name: continued-M8-reflective-bridge
+          name: continued-M9-support-edge-probe
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40165569406
-      - name: Probe reflective support participation
+          run-id: 40165870540
+      - name: Teach reflective support through ordinary conversation
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M8-reflective-bridge.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M9-support-edge-probe.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M9-support-edge-probe.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M10-taught-reflection.json
         run: |
           set -euo pipefail
-          node agi/converse-support-edge-probe.js
-      - name: Preserve the support-edge continuation
+          node agi/converse-teach-reflection.js
+      - name: Preserve the taught continuation
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M9-support-edge-probe
-          path: ${{ runner.temp }}/continued-M9-support-edge-probe.json
+          name: continued-M10-taught-reflection
+          path: ${{ runner.temp }}/continued-M10-taught-reflection.json
           retention-days: 30
           compression-level: 9
