@@ -11,11 +11,10 @@
 // A second form of recurrence is contextual rather than constant: a surface cue
 // can repeatedly ask for the relation that grounded the immediately preceding
 // self-action even when that relation differs from case to case. The cue is not
-// predeclared. It is induced only after the same surface span recurs across at
-// least two different relation types and the observed reply re-expresses the
-// preceding action's actual M-owned grounding each time. Answered counterexamples
-// remain ordinary evidence too: a span that also participates in a different
-// answered relation is too ambiguous to carry this contextual role by itself.
+// predeclared. It is induced only after the same surface span and terminal surface
+// form recur across at least two different relation types and the observed reply
+// re-expresses the preceding action's actual M-owned grounding each time. Answered
+// counterexamples remain ordinary evidence too.
 
 const Surface = require('./surface-template.js');
 const Dialogue = require('./surface-dialogue.js');
@@ -54,8 +53,13 @@ function spans(tokens,maxLength=3){
   }
   return out;
 }
+function compact(tokens){ return Surface.compactTokens(tokens||[]); }
+function terminalSurface(tokens){
+  const xs=compact(tokens);
+  return xs.length ? xs.at(-1) : undefined;
+}
 function containsSpan(tokens,phrase){
-  const input=Surface.compactTokens(tokens||[]),p=Surface.compactTokens(phrase||[]);
+  const input=compact(tokens),p=compact(phrase);
   if(!p.length||p.length>input.length) return false;
   outer: for(let i=0;i+p.length<=input.length;i++){
     for(let j=0;j<p.length;j++) if(!same(input[i+j],p[j])) continue outer;
@@ -71,16 +75,16 @@ function rowKey(row){ return `${String(row.q.id)}|${String(row.a.id)}`; }
 // Learn a deictic/contextual surface role from ordinary lived conversation. The
 // relation itself is deliberately allowed to vary. What must recur is structural:
 // a question follows one of this individual's grounded utterances, contains the
-// same surface span, and the observed answer re-expresses the relation that had
-// actually grounded that preceding utterance. Requiring relation-type diversity
-// prevents an ordinary fixed-predicate question from being misread as contextual.
+// same surface span, has the same terminal surface form, and the observed answer
+// re-expresses the relation that had actually grounded that preceding utterance.
+// Requiring relation-type diversity prevents an ordinary fixed-predicate question
+// from being misread as contextual.
 //
-// Positive recurrence alone is not enough. The same retained answered exchanges
-// provide counterevidence: if a candidate span also occurs in a different answered
-// question/answer structure, that span is not specific enough to carry this role.
-// This is how broad fragments such as common function words can be narrowed away
-// by experience without a stopword list, parser, confidence score, or hard-coded
-// phrase.
+// The terminal form is learned as part of the recurrence rather than interpreted.
+// In a text modality punctuation can therefore become discriminative because life
+// made it discriminative; no token is assigned a built-in "question" meaning.
+// Positive recurrence alone is still insufficient: an answered exchange with the
+// same span AND terminal but a different structure is direct counterevidence.
 function contextualRelationCues(es){
   const rows=Dialogue.questionAnswerRows(es);
   const positions=new Map(es.map((e,i)=>[String(e.id),i]));
@@ -95,9 +99,11 @@ function contextualRelationCues(es){
     const previous=priorRelations[0];
     const answered={subject:row.subject,relation:row.relation,object:row.object};
     if(!sameRelation(previous,answered)) continue;
+    const terminal=terminalSurface(row.q.input_tokens);
     for(const span of spans(row.q.input_tokens)){
-      if(!evidence.has(span.key)) evidence.set(span.key,{tokens:span.tokens,length:span.length,examples:[]});
-      evidence.get(span.key).examples.push({row,previous});
+      const key=stable([span.tokens,terminal]);
+      if(!evidence.has(key)) evidence.set(key,{tokens:span.tokens,length:span.length,terminal,examples:[]});
+      evidence.get(key).examples.push({row,previous});
     }
   }
 
@@ -109,7 +115,7 @@ function contextualRelationCues(es){
     if(examples.length<2||triples.length<2||predicates.length<2) continue;
 
     const positive=new Set(examples.map(x=>rowKey(x.row)));
-    const answeredExposures=rows.filter(row=>containsSpan(row.q.input_tokens,e.tokens));
+    const answeredExposures=rows.filter(row=>same(terminalSurface(row.q.input_tokens),e.terminal)&&containsSpan(row.q.input_tokens,e.tokens));
     const counterexamples=answeredExposures.filter(row=>!positive.has(rowKey(row)));
     if(counterexamples.length) continue;
 
@@ -127,7 +133,8 @@ function contextualRelationCues(es){
 function contextualRelationReply(state,es,current){
   if(es.length<3||!Array.isArray(current?.input_tokens)) return false;
   const historical=es.slice(0,-1);
-  const cues=contextualRelationCues(historical).filter(c=>containsSpan(current.input_tokens,c.tokens));
+  const terminal=terminalSurface(current.input_tokens);
+  const cues=contextualRelationCues(historical).filter(c=>same(c.terminal,terminal)&&containsSpan(current.input_tokens,c.tokens));
   if(!cues.length) return false;
   const bestLength=cues[0].length;
   const strongest=cues.filter(c=>c.length===bestLength);
@@ -150,7 +157,7 @@ function contextualRelationReply(state,es,current){
   seq.expression=rendered.expression;
   seq.unresolved_output_positions=[];
   seq.contextual_relation_induction=true;
-  seq.contextual_relation_evidence=strongest.map(c=>({surface:Surface.renderTokens(c.tokens),support:c.support,predicate_diversity:c.predicate_diversity,triple_diversity:c.triple_diversity,answered_exposures:c.answered_exposures}));
+  seq.contextual_relation_evidence=strongest.map(c=>({surface:Surface.renderTokens(c.tokens),terminal:c.terminal,support:c.support,predicate_diversity:c.predicate_diversity,triple_diversity:c.triple_diversity,answered_exposures:c.answered_exposures}));
   seq.output_template=rendered.template;
   seq.output_roles=rendered.roles;
   seq.canonical_grounding={subject:r.subject,relation:r.relation,object:r.object,source:present.epistemic_status==='current_fact'?'M.knowledge.current.facts':'M.sourced_claims',authority:'canonical_M',status:present.epistemic_status};
