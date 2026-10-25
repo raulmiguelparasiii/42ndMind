@@ -52,7 +52,7 @@ function step(state, contact) {
   let being = WholeBeing.derive(state, field);
   const pressure = WholeBeing.relationalUpdate(state, being);
   if (pressure) {
-    Relational.C(state, pressure);
+    Relational.C(state, { relations: pressure });
     episodeEnd = state.knowledge?.episodes?.length || episodeEnd;
     field = AffectedField.derive(state, { episodeStart, episodeEnd, query });
     being = WholeBeing.derive(state, field);
