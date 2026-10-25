@@ -197,6 +197,7 @@ const PRIOR_ACTION_RELATIONS = new Set([
   'ρ:exact_expression',
   'ρ:after_within_contact',
   'ρ:within_lived_contact',
+  'ρ:produced_from',
 ]);
 
 // The present event already contains an explicit pointer to exactly one immediate
@@ -231,7 +232,10 @@ function immediatePredecessorFacts(state, situatedFacts) {
   for (const action of selfActions) {
     // Containment itself is not passed to structural abstraction. The action is
     // connected to the event by followed/after relations, which are actual event
-    // structure rather than representational bookkeeping.
+    // structure rather than representational bookkeeping. The factual production
+    // dependency is event structure too: exposing it here lets recurrence learn
+    // from what the individual actually relied on without interpreting that edge
+    // as a reason, truth score, or dialogue intent.
     for (const fact of currentFacts) if (String(fact.subject) === action && PRIOR_ACTION_RELATIONS.has(fact.relation))
       out.push([fact.subject, fact.relation, fact.object]);
     for (const fact of currentFacts) if (String(fact.subject) === 'self' && fact.relation === 'ρ:caused' && fact.object?.ref === action)
