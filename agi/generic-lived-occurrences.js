@@ -83,12 +83,10 @@ function contactedTriples(contact) {
   return triples.filter(x => !(preNormalized.has(stable(x[0])) && OCCURRENCE_ANATOMY.has(x[1])));
 }
 
-// Phase 1: establish reality contact as lived material immediately after the
-// canonical contact has entered M. This is intentionally pre-semantic. Exact raw
-// content is retained before interpretation. The raw occurrence is not yet put
-// into the generic temporal term stream because a more specific occurrence may
-// be formed from the same contact later in this C update. If none is formed,
-// Phase 2 promotes this raw occurrence as the contact's generic lived material.
+// Phase 1: establish exact reality contact immediately after canonical contact has
+// entered M. The raw occurrence is already the event identity, but Phase 2 waits
+// until interpretation has had a chance to expose more specific occurrences before
+// declaring which terms represent this contact to generic temporal recompression.
 function beginContact(state, originalContact) {
   if (!state || state.whole !== 1) return null;
 
@@ -140,9 +138,11 @@ function beginContact(state, originalContact) {
 
 // Phase 2: after ordinary C helpers have had a chance to derive meaning or other
 // structure, normalize those M-owned results onto the SAME lived order. No second
-// contact is created. If nothing more specific emerged, promote the already-
-// retained raw contact occurrence so unknown experience can still recur and be
-// discovered by the same generic relation machinery.
+// contact is created. The raw event always remains lived. If more specific lived
+// occurrences represent the contact, ρ:represented_by records that zero-authority
+// representational relation so temporal recompression does not count the envelope
+// as an additional simultaneous semantic term. If none exists, raw contact itself
+// remains the generic temporal content and unfamiliar experience stays learnable.
 function relationalUpdate(state, originalContact, suppliedBoundary = null) {
   if (!state || state.whole !== 1) return null;
   const boundary = suppliedBoundary || beginContact(state, originalContact);
@@ -181,8 +181,7 @@ function relationalUpdate(state, originalContact, suppliedBoundary = null) {
 
   // Already-normalized generic occurrences supplied by another zero-state bridge
   // remain valid current-life events. The raw contact occurrence itself is skipped
-  // here because it is the fallback representation, not an extra simultaneous
-  // semantic term beside a more specific occurrence.
+  // here because it is the containing event identity, not a more specific reading.
   for (const [subject, subjectFacts] of bySubject) {
     if (subject === boundary.contactOccurrence) continue;
     const isLived = subjectFacts.some(f => f.relation === 'ρ:kind' && f.object === 'lived_occurrence');
@@ -260,13 +259,16 @@ function relationalUpdate(state, originalContact, suppliedBoundary = null) {
     }
   }
 
-  // If the contact produced no more specific first-class lived occurrence, the
-  // exact raw contact itself is the event available to future recurrence/search.
-  // This keeps unfamiliar experience learnable without duplicating already-
-  // interpreted experience into both a wrapper term and its derived meaning.
-  if (!occurrenceIds.size) {
-    if (!hasFact(state, boundary.contactOccurrence, 'ρ:kind', x => x === 'lived_occurrence'))
-      facts.push([boundary.contactOccurrence, 'ρ:kind', 'lived_occurrence']);
+  // The exact raw contact always remains lived M material. When specific terms
+  // represent this event, record that representation explicitly instead of
+  // erasing the event or allowing its envelope term to double-count temporally.
+  if (!hasFact(state, boundary.contactOccurrence, 'ρ:kind', x => x === 'lived_occurrence'))
+    facts.push([boundary.contactOccurrence, 'ρ:kind', 'lived_occurrence']);
+
+  if (occurrenceIds.size) {
+    for (const occurrence of [...occurrenceIds].sort())
+      facts.push([boundary.contactOccurrence, 'ρ:represented_by', ref(occurrence)]);
+  } else {
     occurrenceIds.add(boundary.contactOccurrence);
   }
 
