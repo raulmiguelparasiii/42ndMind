@@ -17,6 +17,7 @@ const MultiSourceContinuous = require('./multisource-continuous-relations.js');
 const EmpiricalRelations = require('./empirical-relation-occurrences.js');
 const SurfaceRelationGrounding = require('./surface-relation-grounding.js');
 const GenericOccurrences = require('./generic-lived-occurrences.js');
+const SituatedContact = require('./situated-reality-contact.js');
 const StructuralAbstraction = require('./structural-relational-abstraction.js');
 const RelationSequence = require('./relation-sequence-recompression.js');
 const Discourse = require('./discourse-arbiter.js');
@@ -275,6 +276,13 @@ function C(state, realityContact) {
   // lived order or make an uninterpreted contact disappear from experience.
   const lived = GenericOccurrences.relationalUpdate(state, realityContact, boundary);
   if (lived?.update) Relational.C(state, lived.update);
+
+  // The reality contact itself remains first-class after its more specific
+  // occurrences have been normalized. This situates every modality relative to
+  // the same self, actual source/target when present, prior lived contact, and
+  // grounded referents before any temporal consequence is completed.
+  const situated = SituatedContact.relationalUpdate(state, realityContact);
+  if (situated) Relational.C(state, situated);
 
   // Recurrent symbolic relation graphs can propose endpoint-independent schema
   // candidates. The zero-state helper reads only M/contact structure; its result
