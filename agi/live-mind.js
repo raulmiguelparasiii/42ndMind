@@ -17,6 +17,7 @@ const TurnCompletion = require('./surface-turn-completion.js');
 const SurfaceQuery = require('./surface-query.js');
 const AffectedField = require('./affected-relational-field.js');
 const WholeBeing = require('./whole-being.js');
+const SituatedContact = require('./situated-reality-contact.js');
 
 function one(actionCount, concernCount = 1) { return Mind.one(actionCount, concernCount); }
 
@@ -63,6 +64,13 @@ function step(state, contact) {
   if (social) Relational.C(state, social);
   const stabilized = ClaimStability.relationalUpdate(state);
   if (stabilized) Relational.C(state, stabilized);
+
+  // The event itself now remains first-class. Everything that happened during
+  // this contact is situated relative to the same self, its actual source/target
+  // when known, the immediately previous lived contact, and grounded referents.
+  // This runs for every live contact modality, not only conversational surface.
+  const situated = SituatedContact.relationalUpdate(state, contact);
+  if (situated) Relational.C(state, situated);
 
   // Keep the old parser interpretation visible for diagnosis only. It no longer
   // roots the live relational state.
