@@ -3,16 +3,17 @@
 // Persistent event-driven host for one developing M.
 //
 // This file is transport + durability only. It owns no cognition, scheduler,
-// semantic store, planner, clock, or shadow memory. A reality contact arrives,
-// the canonical C settles that contact synchronously into the same M, M is saved
-// atomically, and the process returns to the OS event loop until reality changes.
+// semantic store, planner, clock, or shadow memory. A reality contact reaches
+// the same live composition used by direct inspection, settles synchronously
+// into the canonical M, M is saved atomically, and the process returns to the OS
+// event loop until reality changes.
 
 const fsp = require('node:fs/promises');
 const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const Mind = require('./mind.js');
+const Mind = require('./live-mind.js');
 
 const cloudPort = process.env.PORT === undefined ? 4242 : Number(process.env.PORT);
 const host = process.env.MIND_HOST || (process.env.RAILWAY_ENVIRONMENT_ID ? '0.0.0.0' : '127.0.0.1');
@@ -23,9 +24,7 @@ const concernCount = integerEnv('MIND_CONCERNS', 1, 0, 1024);
 const maxBodyBytes = integerEnv('MIND_MAX_BODY_BYTES', 64 * 1024 * 1024, 1024, 1024 * 1024 * 1024);
 const token = process.env.MIND_TOKEN || '';
 
-if (!isLoopback(host) && !token) {
-  throw new Error('MIND_TOKEN is required when MIND_HOST is not loopback');
-}
+if (!isLoopback(host) && !token) throw new Error('MIND_TOKEN is required when MIND_HOST is not loopback');
 
 let M = null;
 let serial = Promise.resolve();
@@ -38,9 +37,7 @@ function integerEnv(name, fallback, min, max) {
     throw new Error(`${name} must be an integer in [${min}, ${max}]`);
   return value;
 }
-function isLoopback(value) {
-  return value === '127.0.0.1' || value === '::1' || value === 'localhost';
-}
+function isLoopback(value) { return value === '127.0.0.1' || value === '::1' || value === 'localhost'; }
 function json(res, status, body) {
   const data = Buffer.from(JSON.stringify(body));
   res.writeHead(status, {
@@ -82,14 +79,11 @@ async function body(req) {
   return Buffer.concat(chunks);
 }
 function view(state, includeState = false) {
-  const facts = state?.knowledge?.facts?.length || 0;
-  const rules = state?.knowledge?.rules?.length || 0;
-  const episodes = state?.knowledge?.episodes?.length || state?.experiences?.length || 0;
   const result = {
     whole: state?.whole,
-    facts,
-    rules,
-    episodes,
+    facts: state?.knowledge?.facts?.length || 0,
+    rules: state?.knowledge?.rules?.length || 0,
+    episodes: state?.knowledge?.episodes?.length || state?.experiences?.length || 0,
     motor: state?.motor,
     current: state?.current ?? null,
   };
@@ -132,8 +126,7 @@ async function saveAtomic() {
       await dir.sync();
       await dir.close();
     } catch (_) {
-      // Directory fsync is unavailable on some platforms; atomic rename still
-      // preserves the all-or-nothing state-file boundary.
+      // Atomic rename remains the durability boundary where directory fsync is unavailable.
     }
   } finally {
     if (handle) await handle.close().catch(() => {});
@@ -173,7 +166,7 @@ const page = `<!doctype html>
 <script>
 const out=document.querySelector('#out');
 function headers(type='application/json'){const h={'content-type':type};const t=document.querySelector('#token').value;if(t)h.authorization='Bearer '+t;return h}
-async function show(r){const txt=await r.text();out.textContent=txt; if(!r.ok) throw new Error(txt)}
+async function show(r){const txt=await r.text();out.textContent=txt;if(!r.ok)throw new Error(txt)}
 document.querySelector('#say').onclick=async()=>{try{const text=document.querySelector('#input').value;const source=document.querySelector('#source').value;await show(await fetch('/say',{method:'POST',headers:headers(),body:JSON.stringify({text,source:source||undefined})}))}catch(e){out.textContent=String(e)}};
 document.querySelector('#sendContact').onclick=async()=>{try{await show(await fetch('/contact',{method:'POST',headers:headers(),body:document.querySelector('#contact').value}))}catch(e){out.textContent=String(e)}};
 document.querySelector('#snapshot').onclick=async()=>{try{await show(await fetch('/state',{headers:headers()}))}catch(e){out.textContent=String(e)}};
@@ -183,8 +176,7 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     if (req.method === 'GET' && url.pathname === '/') return text(res, 200, page, 'text/html; charset=utf-8');
-    if (req.method === 'GET' && url.pathname === '/health')
-      return json(res, 200, { alive: true, whole: M?.whole });
+    if (req.method === 'GET' && url.pathname === '/health') return json(res, 200, { alive: true, whole: M?.whole });
     if (!authorized(req)) return json(res, 401, { error: 'unauthorized' });
 
     if (req.method === 'GET' && url.pathname === '/state')
@@ -192,8 +184,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url.pathname === '/contact') {
       const raw = await body(req);
-      const contact = JSON.parse(raw.toString('utf8'));
-      return json(res, 200, await transact(contact));
+      return json(res, 200, await transact(JSON.parse(raw.toString('utf8'))));
     }
 
     if (req.method === 'POST' && url.pathname === '/say') {
@@ -209,8 +200,7 @@ const server = http.createServer(async (req, res) => {
         textInput = raw.toString('utf8');
         source = req.headers['x-source'];
       }
-      if (typeof textInput !== 'string' || !textInput.length)
-        return json(res, 400, { error: 'text is required' });
+      if (typeof textInput !== 'string' || !textInput.length) return json(res, 400, { error: 'text is required' });
       const surface = { input: textInput };
       if (source !== undefined && source !== null && String(source).length) surface.source = String(source);
       return json(res, 200, await transact({ surface }));
@@ -240,16 +230,7 @@ process.on('unhandledRejection', error => { console.error(error); void shutdown(
 (async () => {
   const { born } = await loadOrBirth();
   server.listen(port, host, () => {
-    console.log(JSON.stringify({
-      live: true,
-      born,
-      whole: M.whole,
-      host,
-      port,
-      state_path: statePath,
-      tick_loop: false,
-      scheduler: false,
-    }));
+    console.log(JSON.stringify({ live: true, born, whole: M.whole, host, port, state_path: statePath, tick_loop: false, scheduler: false }));
   });
 })().catch(error => {
   console.error(error);
