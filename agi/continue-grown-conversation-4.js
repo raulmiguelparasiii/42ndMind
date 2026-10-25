@@ -112,8 +112,7 @@ function situatedSnapshot(result) {
   };
 }
 
-function talk(text, source) {
-  if (arguments.length < 2) source = 'miguel';
+function talk(text, source = 'miguel') {
   const started = performance.now();
   const surface = { input: text, target: 'self' };
   if (source !== null && source !== undefined) surface.source = source;
@@ -126,15 +125,39 @@ function talk(text, source) {
   return reply;
 }
 
-console.log('--- CONTINUING THE SAME INDIVIDUAL NATURALLY ---');
-const reply = talk('do you remember where violin is?');
-talk(reply
-  ? `you said "${reply}". what made that the thing to say?`
-  : 'you went quiet again. what is unresolved for you right now?');
-talk('yume crossed my mind again.');
-talk('violin.', null);
+console.log('--- GUIDED ORDINARY CONVERSATION: CAN M LEARN HOW TO SETTLE CLAIMS BETTER? ---');
 
-const output = process.env.MIND_STATE_OUT || '/tmp/continued-M9.json';
+// Start from something this individual has previously been able to answer. No
+// hidden support is disclosed to it; the diagnostic trace below is observer-only.
+const first = talk('hey. do you remember where violin is?');
+
+talk(first
+  ? `okay. you answered "${first}". when i ask what led you to an answer, i mean what you were actually relying on, not just another sentence that sounds right. what were you relying on there?`
+  : 'you went quiet. if you do not know what to say, it is okay to leave something unsettled instead of guessing.');
+
+// Ordinary testimony now conflicts with the earlier remembered answer. The point
+// is not to install a rule, but to let M experience provenance, conflict, and the
+// later consequences of how it handles them.
+talk('i might be wrong, but i think violin is in the kitchen now.');
+talk('so where would you say violin is?');
+
+talk('notice that i just told you something that may conflict with what you already had. being recent does not make my claim true. what matters is what actually supports each possibility and what later contact with reality shows.');
+talk('with that in mind, what are you actually sure of about violin right now?');
+talk('and what would help settle the part you are not sure about?');
+
+// Give the same lesson a different referent. This is the important transfer probe:
+// no violin-specific phrase should be enough to answer it.
+talk('let us try the same kind of thing with something else. i might be mistaken, but i think yume is a dog.');
+talk('what species would you say yume is?');
+talk('what made you trust that answer more than the conflicting thing i just said?');
+
+// Finally ask M to abstract the conversational experience itself. A genuine
+// learning path need not produce polished language immediately, but transfer or a
+// changed settlement should be visible somewhere in its own action/state.
+talk('after this conversation, if two claims conflict, what should you do differently before settling on one?');
+talk('now tell me one thing you are unsure about, and what could make it clearer.');
+
+const output = process.env.MIND_STATE_OUT || '/tmp/continued-M7-guided.json';
 fs.writeFileSync(output, JSON.stringify(M));
 console.log(JSON.stringify({
   one_persistent_M: M.whole === 1,
