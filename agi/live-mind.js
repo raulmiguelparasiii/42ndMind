@@ -14,6 +14,7 @@ const SurfaceAgency = require('./surface-agency.js');
 const SurfaceSocial = require('./surface-social-grounding.js');
 const ClaimStability = require('./claim-stability.js');
 const TurnCompletion = require('./surface-turn-completion.js');
+const SelfSurfaceOccurrence = require('./self-surface-occurrence.js');
 const SurfaceQuery = require('./surface-query.js');
 const AffectedField = require('./affected-relational-field.js');
 const WholeBeing = require('./whole-being.js');
@@ -80,11 +81,21 @@ function step(state, contact) {
   let being = settled.being;
   episodeEnd = settled.episodeEnd;
 
-  // Transitional language transport. It still does not own semantic authority.
-  // Any completion it produces is read back through B(M)=1 below so same-turn
-  // resolution becomes part of the same canonical life instead of disappearing.
+  // Transitional language transport may discover an expression, but an expression
+  // that actually occurs can no longer remain outside the individual's life. The
+  // zero-state normalizer below records only what M already produced: exact surface
+  // content, self-causation, and its within-contact temporal relation. It chooses
+  // no response and supplies no semantic or motivational authority.
   if (!SurfaceDialogue.respond(state, contact)) TurnCompletion.respond(state, contact);
+  const selfExpression = SelfSurfaceOccurrence.relationalUpdate(state);
+  if (selfExpression) Relational.C(state, selfExpression);
 
+  // The self-caused occurrence is now part of the same canonical settlement, so
+  // recompute the live field from the full episode range before the whole-being
+  // pass. This lets consequences of what the individual itself did participate in
+  // the same turn rather than becoming invisible transport output.
+  episodeEnd = state.knowledge?.episodes?.length || episodeEnd;
+  field = liveField(state, episodeStart, episodeEnd);
   settled = settleWhole(state, episodeStart, episodeEnd, field);
   field = settled.field;
   being = settled.being;
