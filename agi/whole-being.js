@@ -189,6 +189,7 @@ function relationalUpdate(state, being) {
     const id = `whole-residual:${token}`;
     const term = `whole-residual-term:${token}`;
     const occurrence = `whole-residual-occurrence:${order}:${token}`;
+    const livedContact = `lived-contact:${order}`;
     add([term, 'ρ:kind', 'whole_residual_term']);
     add([term, 'ρ:instantiation_kind', 'whole_residual_occurrence']);
     add([id, 'ρ:kind', 'whole_residual']);
@@ -198,8 +199,12 @@ function relationalUpdate(state, being) {
     add([id, 'ρ:residual_value', clone(residual.value)]);
     add([id, 'ρ:residual_term', { ref: term, path: residual.path, value: clone(residual.value), context_signature: context }]);
     add([occurrence, 'ρ:kind', 'whole_residual_occurrence']);
-    add([occurrence, 'ρ:lived_order', order]);
+    add([occurrence, 'ρ:kind', 'lived_occurrence']);
     add([occurrence, 'ρ:instantiates', { ref: term }]);
+    add([occurrence, 'ρ:order', order]);
+    add([occurrence, 'ρ:lived_order', order]);
+    add([occurrence, 'ρ:grounded_by', { ref: livedContact }]);
+    add([livedContact, 'ρ:contains_occurrence', { ref: occurrence }]);
     add([id, 'ρ:observed_as', { ref: occurrence }]);
   }
 
