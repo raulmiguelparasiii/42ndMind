@@ -40,25 +40,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Recover the contextually taught individual
+      - name: Recover the corrected context learner
         uses: actions/download-artifact@v4
         with:
-          name: continued-M11-contextual-teaching
+          name: continued-M12-contextual-correction
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40180777732
-      - name: Continue contextual learning through correction and contrast
+          run-id: 40181247688
+      - name: Retest contextual learning after learned boundary correction
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M11-contextual-teaching.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M12-contextual-correction.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M12-contextual-correction.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M13-contextual-boundary.json
         run: |
           set -euo pipefail
           node agi/converse-contextual-correction.js
-      - name: Preserve the corrected continuation
+      - name: Preserve the boundary-corrected continuation
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M12-contextual-correction
-          path: ${{ runner.temp }}/continued-M12-contextual-correction.json
+          name: continued-M13-contextual-boundary
+          path: ${{ runner.temp }}/continued-M13-contextual-boundary.json
           retention-days: 30
           compression-level: 9
