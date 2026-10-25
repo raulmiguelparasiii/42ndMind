@@ -38,6 +38,7 @@ function situatedSnapshot(result) {
 
   const schemaIds = subjectsOfKind(facts, 'structural_relation_schema_candidate');
   const proposalIds = subjectsOfKind(facts, 'structural_relation_proposal');
+  const openIds = subjectsOfKind(facts, 'structural_open_relation');
   const schemas = schemaIds.map(id => ({
     id,
     evidence_orders: [...new Set(values(facts, id, 'ρ:supported_by')
@@ -46,6 +47,21 @@ function situatedSnapshot(result) {
       try { return JSON.parse(edge[0]).relation; } catch { return null; }
     }).filter(Boolean),
   }));
+  const openRelations = openIds.map(id => {
+    const term = values(facts, id, 'ρ:unresolved_relation')[0]?.ref;
+    const relationObject = term ? values(facts, term, 'ρ:relation_object')[0] : null;
+    return {
+      id,
+      status: values(facts, id, 'ρ:resolved_by').length ? 'resolved' : 'open',
+      term,
+      relation: relationObject?.relation,
+      known_side: relationObject?.known_side,
+      known_endpoint: relationObject?.known_endpoint,
+      unbound_role: relationObject?.unbound_role,
+      based_on_contact: relationObject?.based_on_contact,
+      live_now: (field.continuing_subjects || []).includes(id),
+    };
+  });
 
   return {
     lived_order: order,
@@ -60,15 +76,17 @@ function situatedSnapshot(result) {
     residual_count: result.being?.residual_count ?? null,
     structural_schemas: schemas,
     open_structural_proposals: proposalIds.length,
+    structural_open_relations: openRelations,
   };
 }
 
-function talk(text) {
+function talk(text, source = 'miguel') {
   const started = performance.now();
-  const contact = { surface: { input: text, source: 'miguel', target: 'self' } };
-  const result = LiveMind.step(M, contact);
+  const surface = { input: text, target: 'self' };
+  if (source !== undefined) surface.source = source;
+  const result = LiveMind.step(M, { surface });
   const reply = result.expression ?? null;
-  console.log(`\nMIGUEL: ${text}`);
+  console.log(`\n${source === undefined ? 'UNKNOWN SOURCE' : String(source).toUpperCase()}: ${text}`);
   console.log(`M: ${reply ?? '<no expressed reply>'}`);
   console.log(`elapsed_ms: ${Math.round((performance.now() - started) * 10) / 10}`);
   console.log('LIVE:', JSON.stringify(situatedSnapshot(result)));
@@ -79,6 +97,10 @@ console.log('--- ORDINARY SITUATED CONTACT WITH THE SAME PERSISTED INDIVIDUAL --
 talk('hey. yume crossed my mind again.');
 talk('violin.');
 talk('yume.');
+// The interface genuinely lacks a source for this contact. Nothing is hidden from
+// M and nothing is fabricated; this is the live case where a learned event role
+// can remain unbound.
+talk('violin.', undefined);
 
 const output = process.env.MIND_STATE_OUT || '/tmp/continued-M6.json';
 fs.writeFileSync(output, JSON.stringify(M));
