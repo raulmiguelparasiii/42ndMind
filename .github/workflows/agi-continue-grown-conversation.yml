@@ -15,6 +15,7 @@ on:
       - 'agi/affected-relational-field.js'
       - 'agi/whole-being.js'
       - 'agi/situated-reality-contact.js'
+      - 'agi/self-surface-occurrence.js'
       - 'agi/live-mind.js'
       - 'agi/continue-grown-conversation-4.js'
       - '.github/workflows/agi-continue-grown-conversation.yml'
@@ -37,22 +38,22 @@ jobs:
       - name: Recover the newest saved individual
         uses: actions/download-artifact@v4
         with:
-          name: continued-M5
+          name: continued-M6
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40149755969
+          run-id: 40152824650
       - name: Continue ordinary situated contact with the same individual
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M5.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M6.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M6.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M7.json
         run: |
           set -euo pipefail
           node agi/continue-grown-conversation-4.js
       - name: Preserve the same individual again
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M6
-          path: ${{ runner.temp }}/continued-M6.json
+          name: continued-M7
+          path: ${{ runner.temp }}/continued-M7.json
           retention-days: 30
           compression-level: 9
