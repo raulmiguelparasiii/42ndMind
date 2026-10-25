@@ -162,10 +162,10 @@ function derive(state, field = null) {
 // future-bearing pointer carries the residual content itself, so continued
 // pressure has content without turning all metadata into forward roots.
 //
-// Resolution is conservative: unrelated contact cannot close a residual. Only a
-// recurrence of the same relational context without the exact same unresolved
-// constraint can resolve it. A changed value therefore closes the old residual
-// and opens the new one instead of leaving stale pressure behind.
+// Both the unresolved state and its later resolution are lived internal
+// occurrences on the actual contact order. The existing recurrence/sequence
+// machinery can therefore discover what evidence/actions tend to accompany a
+// constraint and what later consequences actually resolve it.
 function relationalUpdate(state, being) {
   const context = being?.context_signature;
   if (!context) return null;
@@ -222,7 +222,22 @@ function relationalUpdate(state, being) {
     const valueFact = currentFacts.find(f => String(f.subject) === id && f.relation === 'ρ:residual_value');
     if (!pathFact || !valueFact) continue;
     if (currentKeys.has(stable([pathFact.object, valueFact.object]))) continue;
-    add([id, 'ρ:resolved_by', { ref: `lived-contact:${order}` }]);
+
+    const token = id.startsWith('whole-residual:') ? id.slice('whole-residual:'.length) : hash32(id);
+    const term = `whole-residual-resolution-term:${token}`;
+    const occurrence = `whole-residual-resolution-occurrence:${order}:${token}`;
+    const livedContact = `lived-contact:${order}`;
+    add([term, 'ρ:kind', 'whole_residual_resolution_term']);
+    add([term, 'ρ:resolves', { ref: id }]);
+    add([term, 'ρ:instantiation_kind', 'whole_residual_resolution_occurrence']);
+    add([occurrence, 'ρ:kind', 'whole_residual_resolution_occurrence']);
+    add([occurrence, 'ρ:kind', 'lived_occurrence']);
+    add([occurrence, 'ρ:instantiates', { ref: term }]);
+    add([occurrence, 'ρ:order', order]);
+    add([occurrence, 'ρ:lived_order', order]);
+    add([occurrence, 'ρ:grounded_by', { ref: livedContact }]);
+    add([livedContact, 'ρ:contains_occurrence', { ref: occurrence }]);
+    add([id, 'ρ:resolved_by', { ref: occurrence }]);
   }
 
   return facts.length ? { facts } : null;
