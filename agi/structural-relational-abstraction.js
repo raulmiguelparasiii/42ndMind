@@ -15,7 +15,7 @@ function unique(xs) { const m = new Map(); for (const x of xs || []) m.set(stabl
 
 const REPRESENTATION_PREDICATES = new Set(['ρ:kind', 'ρ:instantiates', 'ρ:order', 'ρ:lived_order']);
 const MAX_COMPONENT_EDGES = 8;
-const INDEX_VERSION = 2;
+const INDEX_VERSION = 3;
 
 function endpoint(v) {
   if (typeof v === 'string') return { value: v, form: 'value', key: stable(v) };
@@ -164,10 +164,12 @@ function rebuildIndex(state, throughOrder) {
       const signature = oneValue(facts, 'ρ:structural_signature', x => typeof x === 'string');
       const binding = oneValue(facts, 'ρ:binding_signature', x => typeof x === 'string');
       const edges = oneValue(facts, 'ρ:canonical_edges', Array.isArray);
+      const order = oneValue(facts, 'ρ:lived_order', Number.isFinite);
       if (!signature || !binding || !edges) continue;
-      if (!bySignature[signature]) bySignature[signature] = { ids: [], bindings: [], edges };
+      if (!bySignature[signature]) bySignature[signature] = { ids: [], bindings: [], orders: [], edges };
       bySignature[signature].ids.push(id);
       bySignature[signature].bindings.push(binding);
+      if (Number.isFinite(order)) bySignature[signature].orders.push(order);
     } else if (kind === 'structural_relation_schema_candidate') {
       const signature = oneValue(facts, 'ρ:schema_signature', x => typeof x === 'string');
       const edges = oneValue(facts, 'ρ:schema_edges', Array.isArray);
@@ -180,6 +182,7 @@ function rebuildIndex(state, throughOrder) {
   for (const record of Object.values(bySignature)) {
     record.ids = unique(record.ids.map(String)).sort();
     record.bindings = unique(record.bindings.map(String)).sort();
+    record.orders = unique(record.orders.filter(Number.isFinite)).sort((a, b) => a - b);
   }
   return { version: INDEX_VERSION, indexed_through_order: throughOrder, by_signature: bySignature, schemas };
 }
@@ -209,7 +212,8 @@ function recordComponents(state, components, order, cache, facts, metadata = {})
   for (const component of components) {
     const canonical = canonicalComponent(component);
     let record = cache.by_signature[canonical.signature];
-    if (!record) record = cache.by_signature[canonical.signature] = { ids: [], bindings: [], edges: canonical.edges };
+    if (!record) record = cache.by_signature[canonical.signature] = { ids: [], bindings: [], orders: [], edges: canonical.edges };
+    if (!Array.isArray(record.orders)) record.orders = [];
 
     // Exact raw/derived grounding already remains in M. The same concrete binding
     // is not new endpoint-independent evidence.
@@ -219,8 +223,10 @@ function recordComponents(state, components, order, cache, facts, metadata = {})
       occurrence = patternOccurrenceId(order, component);
       record.ids.push(occurrence);
       record.bindings.push(canonical.binding_signature);
+      record.orders.push(order);
       record.ids = unique(record.ids.map(String)).sort();
       record.bindings = unique(record.bindings.map(String)).sort();
+      record.orders = unique(record.orders.filter(Number.isFinite)).sort((a, b) => a - b);
       facts.push(
         [occurrence, 'ρ:kind', 'structural_pattern_occurrence'],
         [occurrence, 'ρ:structural_signature', canonical.signature],
@@ -232,10 +238,15 @@ function recordComponents(state, components, order, cache, facts, metadata = {})
       for (const instance of instanceIds) facts.push([occurrence, 'ρ:derived_from_schema_instance', ref(instance)]);
     }
 
-    if (record.bindings.length < 2) continue;
+    // Recurrence is recurrence across reality contacts. Multiple bindings or
+    // bounded views inside one lived event may be useful local structure, but one
+    // encounter cannot manufacture the independent evidence needed to generalize.
+    if (record.orders.length < 2) continue;
     const id = schemaId(canonical.signature);
+    let created = false;
     if (!cache.schemas[id]) {
       cache.schemas[id] = { id, signature: canonical.signature, edges: canonical.edges, depth, composedFrom };
+      created = true;
       facts.push(
         [id, 'ρ:kind', 'structural_relation_schema_candidate'],
         [id, 'ρ:schema_signature', canonical.signature],
@@ -245,8 +256,9 @@ function recordComponents(state, components, order, cache, facts, metadata = {})
         ['self', 'ρ:structural_schema_candidate', ref(id)],
       );
       for (const source of composedFrom) facts.push([id, 'ρ:composed_from_schema', ref(source)]);
+      for (const evidenceId of record.ids) facts.push([id, 'ρ:supported_by', ref(evidenceId)]);
     }
-    if (occurrence) facts.push([id, 'ρ:supported_by', ref(occurrence)]);
+    if (!created && occurrence) facts.push([id, 'ρ:supported_by', ref(occurrence)]);
   }
   return components;
 }
