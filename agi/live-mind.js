@@ -17,7 +17,6 @@ const TurnCompletion = require('./surface-turn-completion.js');
 const SurfaceQuery = require('./surface-query.js');
 const AffectedField = require('./affected-relational-field.js');
 const WholeBeing = require('./whole-being.js');
-const SituatedContact = require('./situated-reality-contact.js');
 
 function one(actionCount, concernCount = 1) { return Mind.one(actionCount, concernCount); }
 
@@ -56,21 +55,15 @@ function settleWhole(state, episodeStart, episodeEnd, field, maxPasses = 8) {
 function step(state, contact) {
   const episodeStart = state.knowledge?.episodes?.length || 0;
 
-  // Reality first enters the same canonical M. Social/source enrichment may add
-  // more ordinary relations, but nothing here chooses an answer or a task.
+  // Reality enters the one canonical C first. That C now retains the contact as
+  // a situated lived occurrence before temporal continuation, so live dialogue
+  // does not own a second event model or a later attention/salience patch.
   Mind.C(state, contact);
   SurfaceAgency.record(state, contact);
   const social = SurfaceSocial.relationalUpdate(state, contact);
   if (social) Relational.C(state, social);
   const stabilized = ClaimStability.relationalUpdate(state);
   if (stabilized) Relational.C(state, stabilized);
-
-  // The event itself now remains first-class. Everything that happened during
-  // this contact is situated relative to the same self, its actual source/target
-  // when known, the immediately previous lived contact, and grounded referents.
-  // This runs for every live contact modality, not only conversational surface.
-  const situated = SituatedContact.relationalUpdate(state, contact);
-  if (situated) Relational.C(state, situated);
 
   // Keep the old parser interpretation visible for diagnosis only. It no longer
   // roots the live relational state.
