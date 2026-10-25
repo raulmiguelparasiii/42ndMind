@@ -8,6 +8,11 @@
 // do not replace it. This helper owns no attention, salience, dialogue state,
 // memory, or policy. It only exposes relations already true of the present event
 // so the same one-M closure can make them participate.
+//
+// GenericOccurrences alone decides whether the raw whole-contact occurrence also
+// enters the generic lived-term stream. When a more specific occurrence exists,
+// the raw event remains fully retained/situated but must not become an additional
+// simultaneous semantic term and interfere with already learned temporal order.
 
 function ref(id) { return { ref: String(id) }; }
 function clone(v) { return v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v; }
@@ -114,9 +119,9 @@ function relationalUpdate(state, contact) {
     facts.push([subject, relation, object]);
   }
 
-  // There is one semantic event. The boundary only points to it and groups all
-  // occurrences at this lived order; situation belongs to the event occurrence.
-  add(occurrence, 'ρ:kind', 'lived_occurrence');
+  // There is one situated event. GenericOccurrences has already decided whether
+  // its raw occurrence is itself the generic lived term or only the exact event
+  // container around more specific lived occurrences. Do not override that choice.
   add(occurrence, 'ρ:kind', 'situated_reality_contact_occurrence');
   add(contactId, 'ρ:situated_occurrence', ref(occurrence));
   add(occurrence, 'ρ:experienced_by', ref('self'));
