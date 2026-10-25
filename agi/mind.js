@@ -199,6 +199,11 @@ const PRIOR_ACTION_RELATIONS = new Set([
   'ρ:within_lived_contact',
   'ρ:produced_from',
 ]);
+const RELATION_TERM_ANATOMY = new Set([
+  'ρ:relation_subject',
+  'ρ:relation_predicate',
+  'ρ:relation_object',
+]);
 
 // The present event already contains an explicit pointer to exactly one immediate
 // predecessor. Expose only that predecessor's situated anatomy to structural
@@ -228,6 +233,7 @@ function immediatePredecessorFacts(state, situatedFacts) {
   const selfActions = new Set(currentFacts
     .filter(f => f.relation === 'ρ:kind' && f.object === 'self_surface_action_occurrence' && contained.has(String(f.subject)))
     .map(f => String(f.subject)));
+  const actionSupports = new Set();
 
   for (const action of selfActions) {
     // Containment itself is not passed to structural abstraction. The action is
@@ -236,9 +242,26 @@ function immediatePredecessorFacts(state, situatedFacts) {
     // dependency is event structure too: exposing it here lets recurrence learn
     // from what the individual actually relied on without interpreting that edge
     // as a reason, truth score, or dialogue intent.
-    for (const fact of currentFacts) if (String(fact.subject) === action && PRIOR_ACTION_RELATIONS.has(fact.relation))
+    for (const fact of currentFacts) if (String(fact.subject) === action && PRIOR_ACTION_RELATIONS.has(fact.relation)) {
       out.push([fact.subject, fact.relation, fact.object]);
+      if (fact.relation === 'ρ:produced_from' && fact.object?.ref !== undefined)
+        actionSupports.add(String(fact.object.ref));
+    }
     for (const fact of currentFacts) if (String(fact.subject) === 'self' && fact.relation === 'ρ:caused' && fact.object?.ref === action)
+      out.push([fact.subject, fact.relation, fact.object]);
+  }
+
+  // A production-support reference is useful to general structural learning only
+  // if its ordinary M-owned relation anatomy remains connected to it. Expose that
+  // already-retained descriptor for relation terms; do not add an interpretation
+  // such as reason, warrant, truth, confidence, or goal. The same graph shape is
+  // available to any future action whose production dependency points at a
+  // first-class relation term.
+  for (const support of actionSupports) {
+    const isRelationTerm = currentFacts.some(f => String(f.subject) === support &&
+      f.relation === 'ρ:kind' && f.object === 'relation_term');
+    if (!isRelationTerm) continue;
+    for (const fact of currentFacts) if (String(fact.subject) === support && RELATION_TERM_ANATOMY.has(fact.relation))
       out.push([fact.subject, fact.relation, fact.object]);
   }
   return out;
