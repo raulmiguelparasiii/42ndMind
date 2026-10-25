@@ -21,11 +21,48 @@ function episodeNumber(id) {
   const n = Number(String(id).split(':').at(-1));
   return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
 }
+function directRef(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) && value.ref !== undefined
+    ? String(value.ref) : null;
+}
+function subjectRows(facts) {
+  const by = new Map();
+  for (const fact of facts) {
+    const id = String(fact.subject);
+    if (!by.has(id)) by.set(id, []);
+    by.get(id).push(fact);
+  }
+  return by;
+}
+function oneObject(rows, relation) {
+  return (rows || []).find(f => f.relation === relation)?.object;
+}
+function supportRelation(rowsBySubject, support) {
+  const rows = rowsBySubject.get(String(support)) || [];
+  const kinds = rows.filter(f => f.relation === 'ρ:kind').map(f => f.object);
+  if (kinds.includes('relation_term')) {
+    const subject = oneObject(rows, 'ρ:relation_subject');
+    const relation = oneObject(rows, 'ρ:relation_predicate');
+    const object = oneObject(rows, 'ρ:relation_object');
+    return subject !== undefined && relation !== undefined && object !== undefined
+      ? { subject, relation, object, source: 'self_surface_action_grounding' } : null;
+  }
+  if (kinds.includes('sourced_claim_occurrence')) {
+    const subject = oneObject(rows, 'ρ:claim_subject');
+    const relation = oneObject(rows, 'ρ:claim_relation');
+    const object = oneObject(rows, 'ρ:claim_object');
+    return subject !== undefined && relation !== undefined && object !== undefined
+      ? { subject, relation, object, source: 'self_surface_action_grounding' } : null;
+  }
+  return null;
+}
 function episodes(state) {
+  const facts = state.knowledge?.facts || [];
+  const rowsBySubject = subjectRows(facts);
   const groups = new Map();
-  for (const f of state.knowledge?.facts || []) {
+  for (const f of facts) {
     if (typeof f.subject !== 'string' || !f.subject.startsWith('sequence-contact:')) continue;
-    if (!groups.has(f.subject)) groups.set(f.subject, { id: f.subject, relations: [] });
+    if (!groups.has(f.subject)) groups.set(f.subject, { id: f.subject, relations: [], sort_order: episodeNumber(f.subject) });
     const e = groups.get(f.subject);
     if (f.relation === 'ρ:input_tokens' && Array.isArray(f.object)) e.input_tokens = f.object.slice();
     else if (f.relation === 'ρ:input_raw') e.input_raw = String(f.object);
@@ -37,10 +74,58 @@ function episodes(state) {
       Object.prototype.hasOwnProperty.call(f.object, 'object')) e.relations.push({ ...f.object });
   }
   for (const e of groups.values()) e.relations.sort((a,b)=>(a.order ?? 0)-(b.order ?? 0));
-  return [...groups.values()].sort((a,b)=>episodeNumber(a.id)-episodeNumber(b.id));
+
+  // Speech caused by this same individual is already canonical lived material.
+  // Project it into the same zero-authority linguistic view used for heard speech
+  // instead of requiring a second externally supplied contact. The projection
+  // neither rewrites history nor adds facts to M: exact tokens come from the
+  // self-action occurrence, speaker/addressee roles come from its situated event,
+  // and semantic content comes only from the action's actual M-owned production
+  // support. Thus language acquisition can learn from speaking as well as hearing.
+  const selfActionIds = new Set(facts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'self_surface_action_occurrence')
+    .map(f => String(f.subject)));
+  const projected = [];
+  for (const action of selfActionIds) {
+    const rows = rowsBySubject.get(action) || [];
+    const tokens = oneObject(rows, 'ρ:exact_tokens');
+    if (!Array.isArray(tokens) || !tokens.length) continue;
+    const expression = oneObject(rows, 'ρ:exact_expression');
+    const contact = directRef(oneObject(rows, 'ρ:within_lived_contact'));
+    const surfaceEpisode = contact ? oneObject(rowsBySubject.get(contact), 'ρ:surface_episode') : null;
+    const base = surfaceEpisode ? episodeNumber(surfaceEpisode) : Number.MAX_SAFE_INTEGER;
+    if (!Number.isFinite(base) || base === Number.MAX_SAFE_INTEGER) continue;
+
+    const event = directRef(oneObject(rows, 'ρ:after_within_contact'));
+    const eventRows = event ? (rowsBySubject.get(event) || []) : [];
+    const eventSource = oneObject(eventRows, 'ρ:source');
+    const eventTarget = oneObject(eventRows, 'ρ:target');
+    const supports = rows.filter(f => f.relation === 'ρ:produced_from')
+      .map(f => directRef(f.object)).filter(Boolean);
+    const relations = supports.map(s => supportRelation(rowsBySubject, s)).filter(Boolean);
+
+    const e = {
+      id: `self-surface-action:${action}`,
+      sort_order: base + 0.5,
+      input_tokens: tokens.slice(),
+      input_raw: expression === undefined ? Surface.renderTokens(tokens) : String(expression),
+      source: 'self',
+      relations,
+      lived_self_action: action,
+    };
+    // A response generated inside an event addressed to self is outwardly directed
+    // to that event's source. If the situated event does not establish those roles,
+    // leave target unknown rather than inventing conversational agency.
+    if (same(eventTarget, 'self') && eventSource !== undefined) e.target = eventSource;
+    projected.push(e);
+  }
+
+  return [...groups.values(), ...projected]
+    .sort((a,b)=>(a.sort_order ?? episodeNumber(a.id))-(b.sort_order ?? episodeNumber(b.id)) || String(a.id).localeCompare(String(b.id)));
 }
 function contactRelations(e) {
-  return (e?.relations || []).filter(r => r.source === 'simultaneous_relational_contact');
+  return (e?.relations || []).filter(r =>
+    r.source === 'simultaneous_relational_contact' || r.source === 'self_surface_action_grounding');
 }
 function lexical(token) { return /[\p{L}\p{N}]/u.test(String(token)); }
 function spans(tokens, maxLength = 3) {
