@@ -174,6 +174,15 @@ function realizeCurrentExpectedAction(state) {
   state.motor = actuator;
 }
 
+const CURRENT_EVENT_STRUCTURAL_RELATIONS = new Set([
+  'ρ:situated_occurrence',
+  'ρ:source',
+  'ρ:target',
+  'ρ:about',
+  'ρ:contact_channel',
+  'ρ:experienced_by',
+  'ρ:previous_lived_contact',
+]);
 const PRIOR_EVENT_RELATIONS = new Set([
   'ρ:source',
   'ρ:target',
@@ -220,7 +229,9 @@ function immediatePredecessorFacts(state, situatedFacts) {
     .map(f => String(f.subject)));
 
   for (const action of selfActions) {
-    out.push([previousOccurrence, 'ρ:contains_occurrence', { ref: action }]);
+    // Containment itself is not passed to structural abstraction. The action is
+    // connected to the event by followed/after relations, which are actual event
+    // structure rather than representational bookkeeping.
     for (const fact of currentFacts) if (String(fact.subject) === action && PRIOR_ACTION_RELATIONS.has(fact.relation))
       out.push([fact.subject, fact.relation, fact.object]);
     for (const fact of currentFacts) if (String(fact.subject) === 'self' && fact.relation === 'ρ:caused' && fact.object?.ref === action)
@@ -233,9 +244,10 @@ function structuralContact(state, realityContact, situated) {
   const rawFacts = !Array.isArray(realityContact) && realityContact && typeof realityContact === 'object' &&
     Array.isArray(realityContact.relations?.facts) ? realityContact.relations.facts : [];
   const situatedFacts = Array.isArray(situated?.relations?.facts) ? situated.relations.facts : [];
+  const eventFacts = situatedFacts.filter(f => Array.isArray(f) && CURRENT_EVENT_STRUCTURAL_RELATIONS.has(f[1]));
   const predecessorFacts = immediatePredecessorFacts(state, situatedFacts);
-  if (!rawFacts.length && !situatedFacts.length && !predecessorFacts.length) return realityContact;
-  return { relations: { facts: [...rawFacts, ...situatedFacts, ...predecessorFacts] } };
+  if (!rawFacts.length && !eventFacts.length && !predecessorFacts.length) return realityContact;
+  return { relations: { facts: [...rawFacts, ...eventFacts, ...predecessorFacts] } };
 }
 
 function C(state, realityContact) {
@@ -283,10 +295,9 @@ function C(state, realityContact) {
   if (situated) Relational.C(state, situated);
 
   const structuralView = structuralContact(state, realityContact, situated);
-  // Structural discovery sees the actual contacted relations, the ordinary
-  // relations that situate this event, and only the immediately preceding event
-  // already named by present reality. Thus continuity/change can become learned
-  // structure without an attention state, dialogue model, or memory search.
+  // Structural discovery sees event-level situation, exact external relations,
+  // and only the immediate predecessor already named by present reality. Token
+  // span containment remains retained evidence in M but cannot dominate schemas.
   const structural = StructuralAbstraction.relationalUpdate(state, structuralView);
   if (structural) Relational.C(state, structural);
 
