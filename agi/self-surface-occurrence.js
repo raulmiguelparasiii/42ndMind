@@ -8,6 +8,12 @@
 // present situated reality contact. This lets the same recurrence, structural,
 // temporal, consequence, and resolution machinery learn from what the individual
 // itself did instead of leaving speech outside its life history.
+//
+// When the producing path exposes an exact canonical grounding, retain only that
+// objective production dependency too. This is not a "reason" or "why" field and
+// grants no new warrant: it points the action at the M-owned relation or sourced
+// claim that actually supplied its content. Later life must still learn what such
+// support means, whether it was reliable, and what consequences followed.
 
 const crypto = require('crypto');
 
@@ -16,6 +22,7 @@ function stable(v) {
   if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
   return JSON.stringify(v);
 }
+function same(a, b) { return stable(a) === stable(b); }
 function digest(v) { return crypto.createHash('sha256').update(stable(v)).digest('hex').slice(0, 24); }
 function ref(id) { return { ref: String(id) }; }
 function factKey(subject, relation, object) { return stable([subject, relation, object]); }
@@ -32,6 +39,81 @@ function currentSituatedOccurrence(state, contactId, order) {
   return facts.find(f => grounded.has(String(f.subject)) &&
     f.relation === 'ρ:lived_order' && f.object === order &&
     String(f.subject).startsWith('reality-contact-occurrence:'))?.subject || null;
+}
+
+function factsBySubject(state) {
+  const groups = new Map();
+  for (const fact of state.knowledge?.facts || []) {
+    const id = String(fact.subject);
+    if (!groups.has(id)) groups.set(id, []);
+    groups.get(id).push(fact);
+  }
+  return groups;
+}
+function oneValue(facts, relation) {
+  return (facts || []).find(f => f.relation === relation)?.object;
+}
+
+// Relation terms are descriptions, not copied truth. Reuse any existing exact
+// first-class relation term before minting a content-addressed descriptor. The
+// action points to this term only after the exact triple is independently verified
+// in canonical current M.
+function canonicalRelationTerm(state, descriptor, add) {
+  const matches = [];
+  for (const [id, facts] of factsBySubject(state)) {
+    if (!facts.some(f => f.relation === 'ρ:kind' && f.object === 'relation_term')) continue;
+    if (!same(oneValue(facts, 'ρ:relation_subject'), descriptor.subject)) continue;
+    if (!same(oneValue(facts, 'ρ:relation_predicate'), descriptor.relation)) continue;
+    if (!same(oneValue(facts, 'ρ:relation_object'), descriptor.object)) continue;
+    matches.push(id);
+  }
+  if (matches.length) return matches.sort()[0];
+
+  const term = `relation-term:${digest(descriptor)}`;
+  add(term, 'ρ:kind', 'relation_term');
+  add(term, 'ρ:relation_subject', descriptor.subject);
+  add(term, 'ρ:relation_predicate', descriptor.relation);
+  add(term, 'ρ:relation_object', descriptor.object);
+  return term;
+}
+
+function matchingSourcedClaims(state, descriptor) {
+  const matches = [];
+  for (const [id, facts] of factsBySubject(state)) {
+    if (!facts.some(f => f.relation === 'ρ:kind' && f.object === 'sourced_claim_occurrence')) continue;
+    if (oneValue(facts, 'ρ:epistemic_status') !== 'claim_with_provenance') continue;
+    if (!same(oneValue(facts, 'ρ:claim_subject'), descriptor.subject)) continue;
+    if (!same(oneValue(facts, 'ρ:claim_relation'), descriptor.relation)) continue;
+    if (!same(oneValue(facts, 'ρ:claim_object'), descriptor.object)) continue;
+    matches.push(id);
+  }
+  return matches.sort();
+}
+
+function productionSupports(state, sequence, add) {
+  const grounding = sequence?.canonical_grounding;
+  if (!grounding || grounding.authority !== 'canonical_M' ||
+      grounding.subject === undefined || grounding.relation === undefined || grounding.object === undefined)
+    return [];
+
+  const descriptor = {
+    subject: grounding.subject,
+    relation: grounding.relation,
+    object: grounding.object,
+  };
+
+  if (grounding.status === 'current_fact') {
+    const current = state.knowledge?.current?.facts || [];
+    const exists = current.some(f => same(f.subject, descriptor.subject) &&
+      same(f.relation, descriptor.relation) && same(f.object, descriptor.object));
+    if (!exists) return [];
+    return [canonicalRelationTerm(state, descriptor, add)];
+  }
+
+  if (grounding.status === 'remembered_claim')
+    return matchingSourcedClaims(state, descriptor);
+
+  return [];
 }
 
 function relationalUpdate(state) {
@@ -85,6 +167,14 @@ function relationalUpdate(state) {
   add(contactId, 'ρ:contains_occurrence', ref(occurrence));
   add(contactedOccurrence, 'ρ:contains_occurrence', ref(occurrence));
   add(contactedOccurrence, 'ρ:followed_within_contact_by', ref(occurrence));
+
+  // Preserve the support that actually supplied the produced content, but do not
+  // interpret it as a reason, goal, truth value, or explanation. If the responder
+  // used a current canonical fact, point to a first-class descriptor for that same
+  // relation. If it used testimony, point to the actual sourced claim occurrence
+  // instead so testimony is never silently upgraded to actuality.
+  for (const support of productionSupports(state, sequence, add))
+    add(occurrence, 'ρ:produced_from', ref(support));
 
   return facts.length ? { relations: { facts } } : null;
 }
