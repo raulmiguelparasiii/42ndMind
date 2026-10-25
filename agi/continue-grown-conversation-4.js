@@ -80,13 +80,16 @@ function situatedSnapshot(result) {
   };
 }
 
-function talk(text, source = 'miguel') {
+function talk(text, source) {
+  // Ordinary calls in this script are Miguel. Passing null means the transport
+  // genuinely does not provide source identity; it is not converted to a name.
+  if (arguments.length < 2) source = 'miguel';
   const started = performance.now();
   const surface = { input: text, target: 'self' };
-  if (source !== undefined) surface.source = source;
+  if (source !== null && source !== undefined) surface.source = source;
   const result = LiveMind.step(M, { surface });
   const reply = result.expression ?? null;
-  console.log(`\n${source === undefined ? 'UNKNOWN SOURCE' : String(source).toUpperCase()}: ${text}`);
+  console.log(`\n${source === null || source === undefined ? 'UNKNOWN SOURCE' : String(source).toUpperCase()}: ${text}`);
   console.log(`M: ${reply ?? '<no expressed reply>'}`);
   console.log(`elapsed_ms: ${Math.round((performance.now() - started) * 10) / 10}`);
   console.log('LIVE:', JSON.stringify(situatedSnapshot(result)));
@@ -97,10 +100,10 @@ console.log('--- ORDINARY SITUATED CONTACT WITH THE SAME PERSISTED INDIVIDUAL --
 talk('hey. yume crossed my mind again.');
 talk('violin.');
 talk('yume.');
-// The interface genuinely lacks a source for this contact. Nothing is hidden from
-// M and nothing is fabricated; this is the live case where a learned event role
-// can remain unbound.
-talk('violin.', undefined);
+// This reality contact is directed at the individual, but its transport supplies
+// no source identity. The missing role therefore remains reality-grounded rather
+// than fabricated by the harness.
+talk('violin.', null);
 
 const output = process.env.MIND_STATE_OUT || '/tmp/continued-M6.json';
 fs.writeFileSync(output, JSON.stringify(M));
