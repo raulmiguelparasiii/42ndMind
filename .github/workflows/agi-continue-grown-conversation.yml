@@ -7,6 +7,9 @@ on:
       - 'agi/surface-social-grounding.js'
       - 'agi/claim-stability.js'
       - 'agi/surface-turn-completion.js'
+      - 'agi/surface-relation-grounding.js'
+      - 'agi/affected-relational-field.js'
+      - 'agi/whole-being.js'
       - 'agi/live-mind.js'
       - 'agi/continue-grown-conversation-4.js'
       - '.github/workflows/agi-continue-grown-conversation.yml'
@@ -29,22 +32,22 @@ jobs:
       - name: Recover the newest saved individual
         uses: actions/download-artifact@v4
         with:
-          name: continued-M3
+          name: continued-M4
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40118741114
-      - name: Continue ordinary conversation without new schooling
+          run-id: 40148158257
+      - name: Continue ordinary contact with the same individual
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M3.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M4.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M4.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M5.json
         run: |
           set -euo pipefail
           node agi/continue-grown-conversation-4.js
       - name: Preserve the same individual again
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M4
-          path: ${{ runner.temp }}/continued-M4.json
+          name: continued-M5
+          path: ${{ runner.temp }}/continued-M5.json
           retention-days: 30
           compression-level: 9
