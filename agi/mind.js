@@ -18,6 +18,7 @@ const SurfaceRelationGrounding = require('./surface-relation-grounding.js');
 const GenericOccurrences = require('./generic-lived-occurrences.js');
 const SituatedContact = require('./situated-reality-contact.js');
 const StructuralAbstraction = require('./structural-relational-abstraction.js');
+const StructuralOpen = require('./structural-open-relations.js');
 const RelationSequence = require('./relation-sequence-recompression.js');
 const Discourse = require('./discourse-arbiter.js');
 
@@ -34,11 +35,6 @@ function unansweredSurface(contact) {
     (contact.surface.output === undefined || contact.surface.output === null));
 }
 
-// Whole-history categorical recompression is an expensive proposal search, not
-// epistemic authority. Exact contact enters M every update; existing learned
-// patterns refresh incrementally; continuous numerical relation discovery has its
-// own evidence cadence. Therefore rescanning almost the same entire life every
-// sqrt(n) steps adds cost without adding authority.
 function budgetWholeRecompression(state, contact) {
   const frame = frameFrom(contact);
   if (!frame || !state?.structure) return;
@@ -230,12 +226,20 @@ function C(state, realityContact) {
   const situated = SituatedContact.relationalUpdate(state, realityContact);
   if (situated) Relational.C(state, situated);
 
+  const structuralView = structuralContact(realityContact, situated);
   // Structural discovery sees the actual contacted relations and the ordinary
   // relations that situate this same event. Thus source/target/aboutness/context
   // can become learned structure through recurrence rather than through a special
   // conversation, attention, or "wonder" mechanism.
-  const structural = StructuralAbstraction.relationalUpdate(state, structuralContact(realityContact, situated));
+  const structural = StructuralAbstraction.relationalUpdate(state, structuralView);
   if (structural) Relational.C(state, structural);
+
+  // A recurrent schema can also be materially present while one of its endpoint
+  // roles is not yet supplied by reality. Keep that exact absence as an ordinary
+  // future-bearable relation term in M. This is structural incompleteness, not a
+  // question policy: no word such as who/what/why is generated here.
+  const openStructure = StructuralOpen.relationalUpdate(state, structuralView);
+  if (openStructure) Relational.C(state, openStructure);
 
   if (lived?.occurrence_count > 0) {
     const lifecycle = RelationSequence.lifecycleUpdate(state);
