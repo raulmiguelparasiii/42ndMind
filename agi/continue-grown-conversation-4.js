@@ -9,12 +9,7 @@ const M = JSON.parse(fs.readFileSync(input, 'utf8'));
 if (!M || M.whole !== 1) throw new Error('input is not one whole M');
 
 function compactFact(fact) {
-  return {
-    subject: fact.subject,
-    relation: fact.relation,
-    object: fact.object,
-    derived_from: fact.derived_from,
-  };
+  return { subject: fact.subject, relation: fact.relation, object: fact.object, derived_from: fact.derived_from };
 }
 function values(facts, subject, relation) {
   return facts.filter(f => String(f.subject) === String(subject) && f.relation === relation).map(f => f.object);
@@ -22,22 +17,39 @@ function values(facts, subject, relation) {
 function subjectsOfKind(facts, kind) {
   return [...new Set(facts.filter(f => f.relation === 'ρ:kind' && f.object === kind).map(f => String(f.subject)))];
 }
+function livedOrderOf(facts, subject) {
+  return values(facts, subject, 'ρ:lived_order').find(Number.isFinite);
+}
 
 function situatedSnapshot(result) {
   const field = result.field || {};
   const order = M.structure?.lived_contact_order;
   const contactId = `lived-contact:${order}`;
   const facts = M.knowledge?.current?.facts || [];
-  const occurrence = facts.find(f => String(f.subject).startsWith('reality-contact-occurrence:') &&
-    f.relation === 'ρ:lived_order' && f.object === order)?.subject;
+  const occurrence = values(facts, contactId, 'ρ:situated_occurrence')[0]?.ref ||
+    facts.find(f => String(f.subject).startsWith('reality-contact-occurrence:') && f.relation === 'ρ:lived_order' && f.object === order)?.subject;
+  const previousContact = occurrence ? values(facts, occurrence, 'ρ:previous_lived_contact')[0]?.ref : null;
+  const previousOccurrence = previousContact ? values(facts, previousContact, 'ρ:situated_occurrence')[0]?.ref : null;
+
+  const selfActionIds = subjectsOfKind(facts, 'self_surface_action_occurrence');
+  const currentSelfActions = selfActionIds.filter(id => livedOrderOf(facts, id) === order);
+  const previousSelfActions = previousOccurrence ? values(facts, previousOccurrence, 'ρ:contains_occurrence')
+    .map(x => x?.ref).filter(id => id && selfActionIds.includes(String(id))).map(String) : [];
+  function actionView(id) {
+    return {
+      id,
+      expression: values(facts, id, 'ρ:exact_expression')[0],
+      surface: values(facts, id, 'ρ:surface_content')[0],
+      after: values(facts, id, 'ρ:after_within_contact')[0],
+      caused_by_self: facts.some(f => String(f.subject) === 'self' && f.relation === 'ρ:caused' && f.object?.ref === id),
+    };
+  }
+
   const eventRelations = facts.filter(f => String(f.subject) === contactId || (occurrence && String(f.subject) === String(occurrence)))
-    .filter(f => ['ρ:kind','ρ:lived_order','ρ:contact_channel','ρ:previous_lived_contact','ρ:source','ρ:target','ρ:about','ρ:contains_occurrence','ρ:experienced_by'].includes(f.relation));
+    .filter(f => ['ρ:kind','ρ:lived_order','ρ:contact_channel','ρ:previous_lived_contact','ρ:source','ρ:target','ρ:about','ρ:contains_occurrence','ρ:experienced_by','ρ:followed_within_contact_by'].includes(f.relation));
   const cues = [...new Set((field.referential_cues || []).map(f => String(f.subject)))];
-  const yume = (field.affected_facts || []).filter(f => String(f.subject) === 'yume').map(compactFact);
-  const violin = (field.affected_facts || []).filter(f => String(f.subject) === 'violin').map(compactFact);
 
   const schemaIds = subjectsOfKind(facts, 'structural_relation_schema_candidate');
-  const proposalIds = subjectsOfKind(facts, 'structural_relation_proposal');
   const openIds = subjectsOfKind(facts, 'structural_open_relation');
   const schemas = schemaIds.map(id => ({
     id,
@@ -53,11 +65,8 @@ function situatedSnapshot(result) {
     return {
       id,
       status: values(facts, id, 'ρ:resolved_by').length ? 'resolved' : 'open',
-      term,
       relation: relationObject?.relation,
-      known_side: relationObject?.known_side,
       known_endpoint: relationObject?.known_endpoint,
-      unbound_role: relationObject?.unbound_role,
       based_on_contact: relationObject?.based_on_contact,
       live_now: (field.continuing_subjects || []).includes(id),
     };
@@ -67,22 +76,21 @@ function situatedSnapshot(result) {
     lived_order: order,
     contact: contactId,
     occurrence,
+    previous_contact: previousContact,
+    previous_occurrence: previousOccurrence,
     event_relations: eventRelations.map(compactFact),
+    current_self_actions: currentSelfActions.map(actionView),
+    previous_self_actions: previousSelfActions.map(actionView),
     referential_subjects: cues,
-    yume_live: yume,
-    violin_live: violin,
     participating_rules: (field.rules || []).map(r => String(r.id)),
     affected_count: (field.affected_facts || []).length,
     residual_count: result.being?.residual_count ?? null,
     structural_schemas: schemas,
-    open_structural_proposals: proposalIds.length,
     structural_open_relations: openRelations,
   };
 }
 
 function talk(text, source) {
-  // Ordinary calls in this script are Miguel. Passing null means the transport
-  // genuinely does not provide source identity; it is not converted to a name.
   if (arguments.length < 2) source = 'miguel';
   const started = performance.now();
   const surface = { input: text, target: 'self' };
@@ -96,16 +104,15 @@ function talk(text, source) {
   return reply;
 }
 
-console.log('--- ORDINARY SITUATED CONTACT WITH THE SAME PERSISTED INDIVIDUAL ---');
-talk('hey. yume crossed my mind again.');
-talk('violin.');
-talk('yume.');
-// This reality contact is directed at the individual, but its transport supplies
-// no source identity. The missing role therefore remains reality-grounded rather
-// than fabricated by the harness.
+console.log('--- CONTINUING THE SAME INDIVIDUAL NATURALLY ---');
+const reply = talk('do you remember where violin is?');
+talk(reply
+  ? `you said "${reply}". what made that the thing to say?`
+  : 'you went quiet again. what is unresolved for you right now?');
+talk('yume crossed my mind again.');
 talk('violin.', null);
 
-const output = process.env.MIND_STATE_OUT || '/tmp/continued-M6.json';
+const output = process.env.MIND_STATE_OUT || '/tmp/continued-M7.json';
 fs.writeFileSync(output, JSON.stringify(M));
 console.log(JSON.stringify({
   one_persistent_M: M.whole === 1,
