@@ -2,11 +2,13 @@
 
 // Zero-state structural incompleteness over canonical M.
 //
-// A learned structural schema may fit the present situated event except for one
-// relation whose one endpoint is not yet bound by reality. That is not a failed
-// lookup and not a question generator: it is an ordinary open relation in M.
-// The opening of that relation and its later binding are distinct lived events,
-// allowing the existing temporal machinery to learn what tends to resolve it.
+// Historical structural-open formations may still be resolved when later reality
+// actually supplies their missing binding. New structural schema candidates do
+// not, however, create unfinished obligations merely because a partial event fits
+// them. Structural schemas are deliberately proposals: proposal != warrant that
+// reality owes M a missing endpoint. A genuinely future-bearing expectation must
+// be learned through ordinary recurrence/consequence before it can pressure the
+// same one M.
 
 const crypto = require('crypto');
 const RNF = require('../relational-normal-form.js');
@@ -268,6 +270,9 @@ function resolutionFacts(state, edges, order) {
   return facts;
 }
 
+// Kept as audit evidence for the earlier experiment. A partial schema match can
+// describe a possible missing relation, but this function is intentionally not
+// called by relationalUpdate while structural schemas remain proposal-only.
 function openFacts(state, edges, order) {
   const facts = [];
   const existing = new Set((state.knowledge?.facts || []).map(f => stable([f.subject, f.relation, f.object])));
@@ -296,11 +301,9 @@ function openFacts(state, edges, order) {
         awaits: ref(bindingTerm),
       };
       const triples = [
-        // Future binding term: this is what the open formation is waiting for.
         [bindingTerm, 'ρ:kind', 'relation_term'],
         [bindingTerm, 'ρ:relation_object', relationObject],
         [bindingTerm, 'ρ:instantiation_kind', 'structural_relation_binding'],
-        // Present open-state term: distinct from its future resolution.
         [openStateTerm, 'ρ:kind', 'relation_term'],
         [openStateTerm, 'ρ:relation_object', openStateObject],
         [openStateTerm, 'ρ:instantiation_kind', 'structural_open_relation_occurrence'],
@@ -311,8 +314,6 @@ function openFacts(state, edges, order) {
         [formation, 'ρ:based_on_contact', ref(`lived-contact:${order}`)],
         [formation, 'ρ:grounded_by_schema', ref(pattern.schema)],
         ['self', 'ρ:has_open_relation', ref(formation)],
-        // The uncertainty arising is itself lived material. Temporal learning can
-        // now relate this occurrence to whatever experience/action later binds it.
         [occurrence, 'ρ:kind', 'structural_open_relation_occurrence'],
         [occurrence, 'ρ:kind', 'lived_occurrence'],
         [occurrence, 'ρ:instantiates', ref(openStateTerm)],
@@ -336,8 +337,12 @@ function relationalUpdate(state, contact) {
   if (!Number.isInteger(order) || order < 1) return null;
   const edges = contactEdges(contact);
   if (!edges.length) return null;
+
+  // Resolution of already-recorded historical opens is still ordinary reality
+  // bearing on history. But a current schema candidate remains only a proposal;
+  // it cannot manufacture a new unfinished need. Future open relations must come
+  // from independently learned future-bearing expectation/consequence structure.
   const facts = resolutionFacts(state, edges, order);
-  facts.push(...openFacts(state, edges, order));
   return facts.length ? { relations: { facts } } : null;
 }
 
