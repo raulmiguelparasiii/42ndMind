@@ -2,11 +2,12 @@
 
 // Zero-state situating of one already-lived reality contact inside canonical M.
 //
-// The contact itself is the event. Surface expressions, embodied relations,
+// The reality-contact occurrence is the event. The lived-contact subject is only
+// its temporal/container boundary. Surface expressions, embodied relations,
 // actions, and later abstractions are occurrences contained by that event; they
 // do not replace it. This helper owns no attention, salience, dialogue state,
-// memory, or policy. It only exposes relations that are already true of the
-// present event so the same one-M closure can make them participate.
+// memory, or policy. It only exposes relations already true of the present event
+// so the same one-M closure can make them participate.
 
 function ref(id) { return { ref: String(id) }; }
 function clone(v) { return v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v; }
@@ -113,41 +114,23 @@ function relationalUpdate(state, contact) {
     facts.push([subject, relation, object]);
   }
 
-  // The raw reality contact is always itself a first-class lived occurrence.
-  // More specific occurrences enrich it rather than replacing it.
+  // There is one semantic event. The boundary only points to it and groups all
+  // occurrences at this lived order; situation belongs to the event occurrence.
   add(occurrence, 'ρ:kind', 'lived_occurrence');
   add(occurrence, 'ρ:kind', 'situated_reality_contact_occurrence');
   add(contactId, 'ρ:situated_occurrence', ref(occurrence));
   add(occurrence, 'ρ:experienced_by', ref('self'));
 
-  for (const channel of channels(contact)) {
-    add(contactId, 'ρ:contact_channel', channel);
-    add(occurrence, 'ρ:contact_channel', channel);
-  }
+  for (const channel of channels(contact)) add(occurrence, 'ρ:contact_channel', channel);
+  if (previous) add(occurrence, 'ρ:previous_lived_contact', ref(previous));
+  if (source !== undefined) add(occurrence, 'ρ:source', source);
+  if (target !== undefined) add(occurrence, 'ρ:target', target);
+  for (const referent of about) add(occurrence, 'ρ:about', ref(referent));
 
-  if (previous) {
-    add(contactId, 'ρ:previous_lived_contact', ref(previous));
-    add(occurrence, 'ρ:previous_lived_contact', ref(previous));
-  }
-  if (source !== undefined) {
-    add(contactId, 'ρ:source', source);
-    add(occurrence, 'ρ:source', source);
-  }
-  if (target !== undefined) {
-    add(contactId, 'ρ:target', target);
-    add(occurrence, 'ρ:target', target);
-  }
-  for (const referent of about) {
-    add(contactId, 'ρ:about', ref(referent));
-    add(occurrence, 'ρ:about', ref(referent));
-  }
-
-  // Preserve the event/sub-occurrence relation explicitly. This is what makes
-  // the present reality contact larger than a noun lookup: expressions, learned
-  // relations, actions, residuals, etc. are things that happened *within this
-  // event* and can later be related to its source, context, and consequences.
+  // More specific occurrences are parts of this event. The contact boundary is
+  // not a sub-occurrence and the event never contains itself.
   for (const subject of occurrenceSubjects) {
-    if (subject === occurrence) continue;
+    if (subject === occurrence || subject === contactId) continue;
     add(occurrence, 'ρ:contains_occurrence', ref(subject));
   }
 
