@@ -177,12 +177,17 @@ function derive(state, options = {}) {
       // A current contact can refer to an already-canonical relation without
       // asserting it anew. If the object itself has ordinary relation anatomy and
       // exactly matches an M fact, use that fact only as a zero-authority cue into
-      // M. This lets present reality engage what it is about while preserving the
-      // canonical fact's own warrant and provenance.
+      // M. The subject of that exact relation has thereby also been touched by
+      // present reality; treating it like any other grounded referent lets its
+      // own direct relations participate without a modality- or dialogue-specific
+      // reflection path.
       const mentioned = relationalObject(raw.object);
       if (mentioned) {
         const existing = index.byKey.get(factKey(mentioned));
-        if (existing) cue(existing);
+        if (existing) {
+          cue(existing);
+          referencedSubjects.add(String(existing.subject));
+        }
       }
 
       // A direct fact about a rule can change which closure is current. Treat the
@@ -194,13 +199,26 @@ function derive(state, options = {}) {
     for (const id of episode.rules || []) if (byRule.has(String(id))) rootRuleIds.add(String(id));
   }
 
-  // A grounded mention disturbs the already-known referent through its direct
-  // canonical facts. Derived conclusions are deliberately not rooted here: they
-  // must re-enter through their real support routes below. Thus mention of Yume,
-  // for example, can make an observed Yume fact live and only then propagate into
-  // whatever further relations actually depend on it.
+  // A grounded mention or an exact current relational cue disturbs the known
+  // subject through its direct canonical facts. Derived conclusions are not
+  // rooted here: they must re-enter through their real support routes below.
+  // While doing this, retain only bounded references to first-class relation
+  // terms. A relation term is the already-M-owned anatomy of a relation, so one
+  // dereference exposes what that relation consists of without recursively
+  // traversing arbitrary connected memory.
+  const referencedRelationTerms = new Set();
   if (referencedSubjects.size) for (const fact of currentFacts) {
     if (!referencedSubjects.has(String(fact.subject))) continue;
+    if (typeof fact.derived_from === 'string') continue;
+    cue(fact);
+    for (const ref of directRefs(fact.object)) {
+      const isRelationTerm = currentFacts.some(candidate => String(candidate.subject) === ref &&
+        candidate.relation === 'ρ:kind' && candidate.object === 'relation_term');
+      if (isRelationTerm) referencedRelationTerms.add(ref);
+    }
+  }
+  if (referencedRelationTerms.size) for (const fact of currentFacts) {
+    if (!referencedRelationTerms.has(String(fact.subject))) continue;
     if (typeof fact.derived_from === 'string') continue;
     cue(fact);
   }
