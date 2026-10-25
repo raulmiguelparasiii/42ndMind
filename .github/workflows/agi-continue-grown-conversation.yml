@@ -35,25 +35,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Recover the clean saved individual
+      - name: Recover the corrected saved individual
         uses: actions/download-artifact@v4
         with:
-          name: continued-M5
+          name: continued-M6-corrected
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40149755969
-      - name: Continue ordinary situated contact with the corrected architecture
+          run-id: 40157200997
+      - name: Continue guided ordinary conversation
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M5.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M6-corrected.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M6-corrected.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M7-guided.json
         run: |
           set -euo pipefail
           node agi/continue-grown-conversation-4.js
-      - name: Preserve the corrected clean lineage
+      - name: Preserve the guided continuation
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M6-corrected
-          path: ${{ runner.temp }}/continued-M6-corrected.json
+          name: continued-M7-guided
+          path: ${{ runner.temp }}/continued-M7-guided.json
           retention-days: 30
           compression-level: 9
