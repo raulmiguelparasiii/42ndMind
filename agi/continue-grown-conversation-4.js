@@ -21,6 +21,26 @@ function livedOrderOf(facts, subject) {
   return values(facts, subject, 'ρ:lived_order').find(Number.isFinite);
 }
 
+function supportView(facts, id) {
+  const kinds = values(facts, id, 'ρ:kind');
+  if (kinds.includes('relation_term')) return {
+    id,
+    kind: 'relation_term',
+    subject: values(facts, id, 'ρ:relation_subject')[0],
+    relation: values(facts, id, 'ρ:relation_predicate')[0],
+    object: values(facts, id, 'ρ:relation_object')[0],
+  };
+  if (kinds.includes('sourced_claim_occurrence')) return {
+    id,
+    kind: 'sourced_claim_occurrence',
+    epistemic_status: values(facts, id, 'ρ:epistemic_status')[0],
+    subject: values(facts, id, 'ρ:claim_subject')[0],
+    relation: values(facts, id, 'ρ:claim_relation')[0],
+    object: values(facts, id, 'ρ:claim_object')[0],
+  };
+  return { id, kind: kinds };
+}
+
 function situatedSnapshot(result) {
   const field = result.field || {};
   const order = M.structure?.lived_contact_order;
@@ -36,12 +56,14 @@ function situatedSnapshot(result) {
   const previousSelfActions = previousOccurrence ? values(facts, previousOccurrence, 'ρ:contains_occurrence')
     .map(x => x?.ref).filter(id => id && selfActionIds.includes(String(id))).map(String) : [];
   function actionView(id) {
+    const supports = values(facts, id, 'ρ:produced_from').map(x => x?.ref).filter(Boolean).map(String);
     return {
       id,
       expression: values(facts, id, 'ρ:exact_expression')[0],
       surface: values(facts, id, 'ρ:surface_content')[0],
       after: values(facts, id, 'ρ:after_within_contact')[0],
       caused_by_self: facts.some(f => String(f.subject) === 'self' && f.relation === 'ρ:caused' && f.object?.ref === id),
+      produced_from: supports.map(support => supportView(facts, support)),
     };
   }
 
@@ -112,7 +134,7 @@ talk(reply
 talk('yume crossed my mind again.');
 talk('violin.', null);
 
-const output = process.env.MIND_STATE_OUT || '/tmp/continued-M7.json';
+const output = process.env.MIND_STATE_OUT || '/tmp/continued-M9.json';
 fs.writeFileSync(output, JSON.stringify(M));
 console.log(JSON.stringify({
   one_persistent_M: M.whole === 1,
