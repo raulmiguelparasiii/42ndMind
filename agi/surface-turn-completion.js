@@ -13,7 +13,9 @@
 // self-action even when that relation differs from case to case. The cue is not
 // predeclared. It is induced only after the same surface span recurs across at
 // least two different relation types and the observed reply re-expresses the
-// preceding action's actual M-owned grounding each time.
+// preceding action's actual M-owned grounding each time. Answered counterexamples
+// remain ordinary evidence too: a span that also participates in a different
+// answered relation is too ambiguous to carry this contextual role by itself.
 
 const Surface = require('./surface-template.js');
 const Dialogue = require('./surface-dialogue.js');
@@ -64,6 +66,7 @@ function containsSpan(tokens,phrase){
 function sameRelation(a,b){
   return !!a&&!!b&&same(a.subject,b.subject)&&same(a.relation,b.relation)&&same(a.object,b.object);
 }
+function rowKey(row){ return `${String(row.q.id)}|${String(row.a.id)}`; }
 
 // Learn a deictic/contextual surface role from ordinary lived conversation. The
 // relation itself is deliberately allowed to vary. What must recur is structural:
@@ -71,6 +74,13 @@ function sameRelation(a,b){
 // same surface span, and the observed answer re-expresses the relation that had
 // actually grounded that preceding utterance. Requiring relation-type diversity
 // prevents an ordinary fixed-predicate question from being misread as contextual.
+//
+// Positive recurrence alone is not enough. The same retained answered exchanges
+// provide counterevidence: if a candidate span also occurs in a different answered
+// question/answer structure, that span is not specific enough to carry this role.
+// This is how broad fragments such as common function words can be narrowed away
+// by experience without a stopword list, parser, confidence score, or hard-coded
+// phrase.
 function contextualRelationCues(es){
   const rows=Dialogue.questionAnswerRows(es);
   const positions=new Map(es.map((e,i)=>[String(e.id),i]));
@@ -97,7 +107,19 @@ function contextualRelationCues(es){
     const triples=unique(examples.map(x=>[x.previous.subject,x.previous.relation,x.previous.object]));
     const predicates=unique(examples.map(x=>x.previous.relation));
     if(examples.length<2||triples.length<2||predicates.length<2) continue;
-    cues.push({...e,support:examples.length,triple_diversity:triples.length,predicate_diversity:predicates.length});
+
+    const positive=new Set(examples.map(x=>rowKey(x.row)));
+    const answeredExposures=rows.filter(row=>containsSpan(row.q.input_tokens,e.tokens));
+    const counterexamples=answeredExposures.filter(row=>!positive.has(rowKey(row)));
+    if(counterexamples.length) continue;
+
+    cues.push({
+      ...e,
+      support:examples.length,
+      triple_diversity:triples.length,
+      predicate_diversity:predicates.length,
+      answered_exposures:answeredExposures.length,
+    });
   }
   return cues.sort((a,b)=>b.length-a.length||b.predicate_diversity-a.predicate_diversity||b.support-a.support||stable(a.tokens).localeCompare(stable(b.tokens)));
 }
@@ -128,7 +150,7 @@ function contextualRelationReply(state,es,current){
   seq.expression=rendered.expression;
   seq.unresolved_output_positions=[];
   seq.contextual_relation_induction=true;
-  seq.contextual_relation_evidence=strongest.map(c=>({surface:Surface.renderTokens(c.tokens),support:c.support,predicate_diversity:c.predicate_diversity,triple_diversity:c.triple_diversity}));
+  seq.contextual_relation_evidence=strongest.map(c=>({surface:Surface.renderTokens(c.tokens),support:c.support,predicate_diversity:c.predicate_diversity,triple_diversity:c.triple_diversity,answered_exposures:c.answered_exposures}));
   seq.output_template=rendered.template;
   seq.output_roles=rendered.roles;
   seq.canonical_grounding={subject:r.subject,relation:r.relation,object:r.object,source:present.epistemic_status==='current_fact'?'M.knowledge.current.facts':'M.sourced_claims',authority:'canonical_M',status:present.epistemic_status};
