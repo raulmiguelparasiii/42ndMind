@@ -23,6 +23,7 @@ on:
       - 'agi/converse-teach-reflection.js'
       - 'agi/converse-contextual-teaching.js'
       - 'agi/converse-contextual-correction.js'
+      - 'agi/converse-natural-context-probe.js'
       - '.github/workflows/agi-continue-grown-conversation.yml'
   workflow_dispatch:
 concurrency:
@@ -40,25 +41,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Recover the corrected context learner
+      - name: Recover the boundary-corrected individual
         uses: actions/download-artifact@v4
         with:
-          name: continued-M12-contextual-correction
+          name: continued-M13-contextual-boundary
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40181247688
-      - name: Retest contextual learning after learned boundary correction
+          run-id: 40181555925
+      - name: Continue in freer ordinary conversation
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M12-contextual-correction.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M13-contextual-boundary.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M13-contextual-boundary.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M14-natural-context.json
         run: |
           set -euo pipefail
-          node agi/converse-contextual-correction.js
-      - name: Preserve the boundary-corrected continuation
+          node agi/converse-natural-context-probe.js
+      - name: Preserve the natural continuation
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M13-contextual-boundary
-          path: ${{ runner.temp }}/continued-M13-contextual-boundary.json
+          name: continued-M14-natural-context
+          path: ${{ runner.temp }}/continued-M14-natural-context.json
           retention-days: 30
           compression-level: 9
