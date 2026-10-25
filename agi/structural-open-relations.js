@@ -5,9 +5,8 @@
 // A learned structural schema may fit the present situated event except for one
 // relation whose one endpoint is not yet bound by reality. That is not a failed
 // lookup and not a question generator: it is an ordinary open relation in M.
-// The formation remains future-bearable through the same relation-term anatomy
-// used by other temporal material, and resolves only when later reality supplies
-// the missing binding for the same known endpoint.
+// The opening of that relation and its later binding are distinct lived events,
+// allowing the existing temporal machinery to learn what tends to resolve it.
 
 const crypto = require('crypto');
 const RNF = require('../relational-normal-form.js');
@@ -185,9 +184,6 @@ function partialViews(schema, edges) {
   if (targetSize < 1 || filtered.length < targetSize) return [];
   const out = [];
   for (const component of rawComponents(filtered)) {
-    // A present event that can already realize the complete learned schema is not
-    // incomplete. Never manufacture an unknown by arbitrarily deleting one of
-    // its observed edges and reconsidering the remainder as a partial event.
     const fullViews = connectedViewsOfSize(component, schema.edges.length);
     if (fullViews.some(view => fullyMatches(schema, view))) continue;
     out.push(...connectedViewsOfSize(component, targetSize));
@@ -278,8 +274,11 @@ function openFacts(state, edges, order) {
   for (const schema of schemas(state)) for (const view of partialViews(schema, edges)) {
     for (const pattern of missingOpenPatterns(schema, view)) {
       const identity = [order, pattern.schema, pattern.missing_edge, pattern.known_side, pattern.known_endpoint];
-      const term = `structural-open-relation-term:${digest(identity)}`;
-      const formation = `structural-open-relation:${order}:${digest(identity)}`;
+      const suffix = digest(identity);
+      const bindingTerm = `structural-open-relation-term:${suffix}`;
+      const openStateTerm = `structural-open-state-term:${suffix}`;
+      const formation = `structural-open-relation:${order}:${suffix}`;
+      const occurrence = `structural-open-occurrence:${order}:${suffix}`;
       const relationObject = {
         kind: 'structural_open_relation',
         relation: pattern.relation,
@@ -291,16 +290,36 @@ function openFacts(state, edges, order) {
         schema: ref(pattern.schema),
         based_on_contact: ref(`lived-contact:${order}`),
       };
+      const openStateObject = {
+        ...relationObject,
+        kind: 'structural_open_state',
+        awaits: ref(bindingTerm),
+      };
       const triples = [
-        [term, 'ρ:kind', 'relation_term'],
-        [term, 'ρ:relation_object', relationObject],
-        [term, 'ρ:instantiation_kind', 'structural_relation_binding'],
+        // Future binding term: this is what the open formation is waiting for.
+        [bindingTerm, 'ρ:kind', 'relation_term'],
+        [bindingTerm, 'ρ:relation_object', relationObject],
+        [bindingTerm, 'ρ:instantiation_kind', 'structural_relation_binding'],
+        // Present open-state term: distinct from its future resolution.
+        [openStateTerm, 'ρ:kind', 'relation_term'],
+        [openStateTerm, 'ρ:relation_object', openStateObject],
+        [openStateTerm, 'ρ:instantiation_kind', 'structural_open_relation_occurrence'],
         [formation, 'ρ:kind', 'structural_open_relation'],
         [formation, 'ρ:formation_status', 'open'],
-        [formation, 'ρ:unresolved_relation', ref(term)],
+        [formation, 'ρ:open_state_term', ref(openStateTerm)],
+        [formation, 'ρ:unresolved_relation', ref(bindingTerm)],
         [formation, 'ρ:based_on_contact', ref(`lived-contact:${order}`)],
         [formation, 'ρ:grounded_by_schema', ref(pattern.schema)],
         ['self', 'ρ:has_open_relation', ref(formation)],
+        // The uncertainty arising is itself lived material. Temporal learning can
+        // now relate this occurrence to whatever experience/action later binds it.
+        [occurrence, 'ρ:kind', 'structural_open_relation_occurrence'],
+        [occurrence, 'ρ:kind', 'lived_occurrence'],
+        [occurrence, 'ρ:instantiates', ref(openStateTerm)],
+        [occurrence, 'ρ:lived_order', order],
+        [occurrence, 'ρ:grounded_by', ref(`lived-contact:${order}`)],
+        [`lived-contact:${order}`, 'ρ:contains_occurrence', ref(occurrence)],
+        [formation, 'ρ:observed_as', ref(occurrence)],
       ];
       for (const triple of triples) {
         const key = stable(triple);
