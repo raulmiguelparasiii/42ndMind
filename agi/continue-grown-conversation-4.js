@@ -16,6 +16,12 @@ function compactFact(fact) {
     derived_from: fact.derived_from,
   };
 }
+function values(facts, subject, relation) {
+  return facts.filter(f => String(f.subject) === String(subject) && f.relation === relation).map(f => f.object);
+}
+function subjectsOfKind(facts, kind) {
+  return [...new Set(facts.filter(f => f.relation === 'ρ:kind' && f.object === kind).map(f => String(f.subject)))];
+}
 
 function situatedSnapshot(result) {
   const field = result.field || {};
@@ -29,6 +35,18 @@ function situatedSnapshot(result) {
   const cues = [...new Set((field.referential_cues || []).map(f => String(f.subject)))];
   const yume = (field.affected_facts || []).filter(f => String(f.subject) === 'yume').map(compactFact);
   const violin = (field.affected_facts || []).filter(f => String(f.subject) === 'violin').map(compactFact);
+
+  const schemaIds = subjectsOfKind(facts, 'structural_relation_schema_candidate');
+  const proposalIds = subjectsOfKind(facts, 'structural_relation_proposal');
+  const schemas = schemaIds.map(id => ({
+    id,
+    evidence_orders: [...new Set(values(facts, id, 'ρ:supported_by')
+      .flatMap(x => x?.ref ? values(facts, x.ref, 'ρ:lived_order') : []))].sort((a, b) => a - b),
+    edge_relations: (values(facts, id, 'ρ:schema_edges')[0] || []).map(edge => {
+      try { return JSON.parse(edge[0]).relation; } catch { return null; }
+    }).filter(Boolean),
+  }));
+
   return {
     lived_order: order,
     contact: contactId,
@@ -40,6 +58,8 @@ function situatedSnapshot(result) {
     participating_rules: (field.rules || []).map(r => String(r.id)),
     affected_count: (field.affected_facts || []).length,
     residual_count: result.being?.residual_count ?? null,
+    structural_schemas: schemas,
+    open_structural_proposals: proposalIds.length,
   };
 }
 
@@ -64,6 +84,7 @@ const output = process.env.MIND_STATE_OUT || '/tmp/continued-M6.json';
 fs.writeFileSync(output, JSON.stringify(M));
 console.log(JSON.stringify({
   one_persistent_M: M.whole === 1,
+  lived_order: M.structure?.lived_contact_order,
   facts: M.knowledge?.facts?.length || 0,
   rules: M.knowledge?.rules?.length || 0,
   state: output,
