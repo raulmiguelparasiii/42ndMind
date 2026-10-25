@@ -88,6 +88,8 @@ The human labels memory/remember/recollect/attention/focus are not implementatio
 16. A named cognitive phenomenon is never sufficient reason to add a named faculty.
 17. A current relational field must be disposable and recomputable from canonical M plus the contact boundary.
 18. Backward support is context, not a new forward root. Never let support fan outward into unrelated M.
+19. Proposal is not obligation. A provisional structural completion may propose a relation, but it cannot by itself create a future-bearing need, unknown, purpose, or whole-being residual.
+20. An action's production support is historical causation, not automatically a reason, justification, truth value, or explanation.
 
 ## Current diagnosis from ordinary conversation
 
@@ -194,40 +196,75 @@ Existing surface templates remain transitional transport. They are not evidence 
 
 Current known boundary: some remembered/social knowledge is represented as first-class sourced-claim structure rather than as a literal current world triple. The affected-field query currently roots literal canonical triples. Do not solve this by promoting testimony/induction to actuality or by adding prompt-specific retrieval. If this becomes the next falsification, normalize reified relational content/provenance generically inside M while preserving epistemic status.
 
-## Situated reality and self-caused continuation
+## Situated reality, self-action support, and provisionality correction
 
-Current live branch frontier through head `8baac105928a5a021b1bcef75cfbb6c70016d9ca`.
+Current corrected live frontier through head `4c8469c80e219d379b29519f752649e873ab20f0`.
 
-Every externally supplied top-level `R` is now one situated lived event in canonical M. Internal punctuation/segment structure may be retained as sub-occurrences, but it does not manufacture extra reality contacts. The event itself can carry ordinary relations such as source, target, grounded aboutness, contact channel, experienced-by-self, and exactly one immediate predecessor. Missing metadata is not guessed.
-
-The event is not merely a noun-retrieval cue. A recurrent event schema may fit present reality while one materially required endpoint is absent. `agi/structural-open-relations.js` then keeps that exact absence as a future-bearing open relation in M. No `who`, `what`, `why`, curiosity score, or question policy is generated. In the live saved individual, a genuinely source-less `violin.` event at lived order 138 opened an unresolved `ρ:source` relation. Later unrelated contacts did not resolve it or invent its missing source.
-
-The immediate predecessor is also part of present structure without a history search or attention window. Structural discovery can see only the predecessor already named by the current event, including event-level continuity/change and any self-caused surface action from that preceding event. Older autobiography does not become a current workspace.
+Every externally supplied top-level `R` is one situated lived event in canonical M. Internal punctuation/segment structure may be retained as sub-occurrences, but it does not manufacture extra reality contacts. The event itself can carry ordinary relations such as source, target, grounded aboutness, contact channel, experienced-by-self, and exactly one immediate predecessor. Missing metadata is not guessed.
 
 Produced speech is no longer transport-only. `agi/self-surface-occurrence.js` records an expression only when the live response path actually produced it. The exact expression becomes a distinct `self_surface_action_occurrence`, is caused by `self`, occurs after the contacted event within the same lived contact, and is ordinary M material. Externally supplied output is not mislabeled as self-caused.
 
-Direct live observation from the same persisted individual:
+The same normalizer now preserves the exact M-owned support that actually supplied a produced utterance when that support is available. For a current canonical fact, the action points through `ρ:produced_from` to the existing first-class `relation_term` describing that exact relation. For testimony, it points to the actual `sourced_claim_occurrence` instead; testimony is never silently upgraded to actuality. This relation records production history only. It does not mean `because`, `reason`, `justified_by`, `true`, `wanted`, or `explains`.
+
+Direct corrected-lineage observation from clean M5:
 
 ```text
 Miguel: do you remember where violin is?
 M: violin is in the studio.
 ```
 
-At lived order 143, `violin is in the studio.` became an exact self-caused lived occurrence. At order 144, when Miguel asked why it had said that, the current event structurally included the preceding self-action. M therefore now has genuine access to `what I just did`; however it still produced no answer to the causal/explanatory question. No hidden reason relation was fabricated.
-
-This separates two phenomena that were previously conflated:
+At lived order 135, the self-produced utterance was recorded as a self-caused lived occurrence and carried:
 
 ```text
-self action is present in M
-!=
-M has learned the relation that explains why that action followed
+self-surface-action-occurrence:135:...
+  ρ:produced_from -> contact-relation-term:c0d507a480fd02e9d009f867
+
+contact-relation-term:c0d507a480fd02e9d009f867
+  ρ:relation_subject   violin
+  ρ:relation_predicate ρd:09aa
+  ρ:relation_object    studio
 ```
 
-The latter remains open development. A `why`/reason relation may become available only if lived recurrence and consequences establish such structure; it must not be preinstalled to imitate introspection.
+The relation term already existed in M; it was reused rather than copied into a new explanatory store. At lived order 136, when Miguel asked what made that the thing to say, M still produced no answer. Therefore retaining the actual production dependency did not install a parser-driven `why` routine or fabricate introspection.
 
-Live structural inspection also exposed a representation failure: exact surface sub-occurrence containment produced many `ρ:contains_occurrence` edges, and structural abstraction began proposing event schemas dominated by token/span bookkeeping. Exact sub-occurrences remain retained as evidence, but current structural discovery is restricted to event-level situation, exact externally contacted relations, and the immediate predecessor/self-action relations that are themselves materially structural. After that correction, ordinary live settlement dropped materially (for example, a repeated violin question from about 9.3 s to about 4.2 s and the Yume contact from about 15.9 s to about 3.7 s) without deleting exact lived evidence.
+### Retraction: schema completion is not an unfinished need
 
-The latest preserved individual is M8 from live continuation run `40153678775`, artifact `continued-M8` (`12584100087`), ending at lived order 146 with 29,424 retained facts and seven rules. Historical noisy schemas remain as proposals/evidence; they are not promoted to truth, and the corrected event-level view no longer adds the same containment-dominated structure.
+An earlier experiment incorrectly allowed a partial match to a `structural_relation_schema_candidate` to create a `structural_open_relation`. That was epistemically too strong. Structural candidates are deliberately `formation_status = proposal`; the existing structural-transfer and corrigibility architecture already requires that they may propose a missing relation without promoting it to current truth.
+
+The live M8/M9 experiment falsified the stronger interpretation decisively. A source-less `violin.` contact caused weak event-schema candidates to manufacture many speculative missing `ρ:about` relations and drove whole-being residuals sharply upward. A mere recurring shape was being treated as if reality owed M all of its absent endpoints.
+
+That route is retired. `agi/structural-open-relations.js` no longer creates new open formations from partial schema matches. Historical experimental opens can still be resolved if later reality actually supplies their binding, preserving history without granting them new authority. `agi/structural-proposal-not-obligation.test.js` now guards the invariant:
+
+```text
+recurrent structure
+ -> provisional structural schema
+ -> missing relation may be proposed
+ != missing relation is current truth
+ != missing relation is an unfinished cognitive obligation
+```
+
+The contaminated M6-M9 experimental continuation is audit evidence only. The live lineage was resumed from clean M5, before any structural-open formations existed, under the corrected architecture.
+
+Corrected live continuation run `40156909317` produced artifact `continued-M6-corrected` (`12584513947`). It ended at lived order 138 with 27,132 retained facts and seven rules. The same source-less `violin.` event then produced zero `structural_open_relation` formations; no speculative source/about obligation was manufactured.
+
+### Reasoning / derivation boundary
+
+Do not add a reasoning engine, English `why` parser, truth reward, curiosity reward, generic reason field, or hidden search policy.
+
+Derivation is ordinary canonical relational settlement in M. The developmental material now available is:
+
+```text
+materially consequential unresolved relation
+ -> contacted evidence / M-owned support
+ -> derivation or settlement through canonical C
+ -> self action produced from actual support
+ -> experienced consequence
+ -> fulfillment, failure, contradiction, reopening, or further settlement
+```
+
+A future tendency to seek truth should arise from those lived trajectories. If evidence-supported settlement repeatedly resolves materially consequential uncertainty and enables successful action, while unsupported settlement is contradicted, reopened, or produces adverse consequences, M can learn the practical relation between better grounding and what happens. That is a possible developmental basis for truth-seeking without installing `truth` as a reward or desire.
+
+Unknown by itself is not pain, desire, importance, or purpose. A proposed relation by itself is not something M must answer. A relation becomes motivationally consequential only when the same life has learned or experienced consequences that make it so.
 
 Current frontier:
 
@@ -235,11 +272,12 @@ Current frontier:
 situated current event
  + immediate predecessor
  + prior self-caused action when present
- + genuinely learned open structural roles
- -> learn which consequences/actions/resolutions actually follow
+ + exact support actually used by that action
+ + genuinely future-bearing consequences already warranted in M
+ -> learn support/action/consequence/settlement trajectories
 ```
 
-Do not solve this frontier by adding a dialogue loop, question generator, planner, stored salience, or generic reason field. The next required relation must arise from the same lived recurrence/consequence machinery. Current surface response selection remains transitional: canonicalizing a produced expression as lived action does not mean general self-generated action is solved.
+This is the route by which reasoning, evidence seeking, self-explanation, and eventually deliberate improvement should become learnable phenomena rather than parser features.
 
 ## Efficiency rules
 
