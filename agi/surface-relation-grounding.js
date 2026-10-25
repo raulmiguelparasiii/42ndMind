@@ -204,19 +204,36 @@ function currentMeaningIndex(state) {
   return meanings;
 }
 
+// Canonical entities and values may already have an exact learned surface
+// expression without being relation terms. Rebuild that grounding from M each
+// contact. Matching a heard expression to this retained grounding is reference,
+// not a new assertion about the referent.
+function currentSurfaceReferentIndex(state) {
+  const referents = new Map();
+  for (const fact of state.knowledge?.current?.facts || []) {
+    if (fact.relation !== 'ρ:surface_expression' || !fact.object || !Array.isArray(fact.object.tokens)) continue;
+    const tokens = Surface.compactTokens(fact.object.tokens);
+    if (!tokens.length) continue;
+    const key = stable(tokens);
+    if (!referents.has(key)) referents.set(key, new Set());
+    referents.get(key).add(String(fact.subject));
+  }
+  return referents;
+}
+
 // Every heard lexical expression is first ordinary lived material, even before
-// the mind knows what it means. A learned meaning only enriches that same event
-// with ρ:refers_to. This keeps acquisition direction correct: expression contact
-// exists first; semantic reference can emerge later from retained experience.
+// the mind knows what it means. Any meaning already grounded in canonical M then
+// enriches that same occurrence with ρ:refers_to. Relation meanings and ordinary
+// referents use the same relation because reference itself is the common fact.
 function mentionUpdate(state, originalContact, options = {}) {
   if (!originalContact || typeof originalContact !== 'object' || !originalContact.surface) return null;
   const episode = latestSurfaceEpisode(state);
   if (!episode) return null;
   const meanings = currentMeaningIndex(state);
+  const referents = currentSurfaceReferentIndex(state);
   const facts = [];
 
   for (const candidate of expressionCandidates(episode.tokens, options)) {
-    const relationTerms = meanings.get(candidate.surface) || new Set();
     const occurrence = `surface-expression-occurrence:${episode.id}:${candidate.start}:${candidate.length}`;
     facts.push(
       [occurrence, 'ρ:kind', 'surface_expression_occurrence'],
@@ -230,7 +247,12 @@ function mentionUpdate(state, originalContact, options = {}) {
       [episode.id, 'ρ:contains_expression', ref(occurrence)],
       ['self', 'ρ:experienced', occurrence],
     );
-    for (const relationTerm of relationTerms) facts.push([occurrence, 'ρ:refers_to', ref(relationTerm)]);
+
+    const references = new Set([
+      ...(meanings.get(candidate.surface) || []),
+      ...(referents.get(stable(candidate.tokens)) || []),
+    ]);
+    for (const target of references) facts.push([occurrence, 'ρ:refers_to', ref(target)]);
   }
 
   return facts.length ? { relations: { facts } } : null;
