@@ -5,11 +5,13 @@ const fs = require('fs');
 const path = require('path');
 const Mind = require('./mind.js');
 
-// Stabilization gate for the foundational contact-before-meaning invariant.
-// Exact R must enter M before interpretation. If no more specific occurrence is
-// formed, the raw contact must itself remain generic lived material. If a more
-// specific occurrence exists, the raw provenance wrapper must not become a second
-// simultaneous semantic term and perturb already learned temporal relations.
+// Stabilization guard for the foundational contact-before-meaning invariant.
+// Exact R must enter M before interpretation. Every top-level reality contact is
+// itself a lived event even when more-specific occurrences are also formed from
+// it. Those specific occurrences enrich the contact; they do not replace the fact
+// that the whole contact happened. The raw event and its sub-occurrences must
+// remain distinguishable by instantiation kind so existing temporal relations are
+// not falsely satisfied or contradicted by the contact event that contains them.
 
 for (const file of ['mind.js', 'generic-lived-occurrences.js', 'relation-sequence-recompression.js']) {
   const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
@@ -82,8 +84,11 @@ function livedAt(M, order) {
     'repeated valid contact did not retain two distinct lived instances');
 }
 
-// Specific occurrence: preserve raw contact/provenance, but do not let its wrapper
-// alter the semantic event used by the already existing generic temporal learner.
+// Specific occurrence: the whole contacted event and its more-specific occurrence
+// must both remain lived at the same order. They are not competing semantic
+// copies: the raw event instantiates reality_contact_occurrence, while the
+// specific occurrence retains its own instantiation kind. Existing A->B temporal
+// learning must therefore continue to resolve through A/B rather than the wrapper.
 {
   const M = Mind.one(1, 1);
   const A = 'fixture:contact-before-meaning:A';
@@ -118,27 +123,29 @@ function livedAt(M, order) {
   assert(atA.includes(a.occurrence), 'specific A occurrence was not retained as lived material');
   const rawAtA = [...subjectsOfKind(M, 'reality_contact_occurrence')]
     .filter(id => values(M, id, 'ρ:lived_order').includes(a.order));
-  assert.strictEqual(rawAtA.length, 1, 'A contact lost its raw provenance occurrence');
-  assert(!subjectsOfKind(M, 'lived_occurrence').has(rawAtA[0]),
-    'raw contact wrapper duplicated a more specific lived occurrence');
-  assert.deepStrictEqual(atA, [a.occurrence],
-    'specific A event was polluted by a second generic wrapper term');
+  assert.strictEqual(rawAtA.length, 1, 'A contact lost its raw event occurrence');
+  assert(subjectsOfKind(M, 'lived_occurrence').has(rawAtA[0]),
+    'whole A reality contact disappeared when a specific occurrence existed');
+  assert(atA.includes(rawAtA[0]),
+    'whole A event is not present in the same lived order as its specific occurrence');
+  assert.strictEqual(atA.length, 2,
+    'A lived order contains something other than the whole event and its specific occurrence');
 
   const b = event(B);
   const evaluationIds = [...subjectsOfKind(M, 'temporal_expectation_evaluation')];
   const fulfilled = evaluationIds.filter(id => values(M, id, 'ρ:evaluation_result').includes('fulfilled'));
   assert(fulfilled.length >= 1,
-    'raw contact provenance interfered with an existing A->B temporal relation');
+    'whole reality contact interfered with an existing A->B temporal relation');
   assert(fulfilled.some(id => values(M, id, 'ρ:successor_lived_order').includes(b.order)),
     'A->B fulfillment was not evaluated at the specific B lived order');
 }
 
 console.log(JSON.stringify({
   exact_contact_precedes_interpretation: true,
-  uninterpreted_valid_contact_remains_generic_lived_material: true,
+  every_valid_contact_remains_lived_material: true,
   repeated_valid_contact_reuses_raw_term: true,
-  raw_provenance_is_retained_when_specific_occurrence_exists: true,
-  raw_wrapper_does_not_duplicate_specific_semantic_event: true,
+  whole_contact_remains_lived_when_specific_occurrence_exists: true,
+  whole_event_and_specific_occurrence_keep_distinct_kinds: true,
   existing_temporal_relation_survives_contact_before_meaning: true,
   modality_specific_semantic_gate_added: false,
   parallel_memory_authority_added: false,
