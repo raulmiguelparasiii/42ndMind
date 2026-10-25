@@ -5,10 +5,10 @@
 //
 // This module owns no cognition. It writes nothing to M, stores no activation,
 // and has no truth/status authority. Present contact, present referential cues,
-// present query cues, and still-unresolved consequences may be forward roots.
-// Older facts may enter only as support for conclusions affected by those roots.
-// Support-only facts never become new forward roots, which prevents this view
-// from becoming a persistent workspace or connected-component scan over M.
+// optional diagnostic query cues, and still-unresolved consequences may be
+// forward roots. Older facts may enter only as support for conclusions affected
+// by those roots. Support-only facts never become new forward roots, which keeps
+// this from becoming a persistent workspace or connected-component scan over M.
 
 function stable(v) {
   if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
@@ -146,8 +146,17 @@ function derive(state, options = {}) {
   const rootRuleIds = new Set();
   const contactFacts = [];
   const referentialCues = [];
+  const referentialCueKeys = new Set();
+  const referencedSubjects = new Set();
 
   function root(fact) { rootKeys.add(factKey(fact)); }
+  function cue(fact) {
+    const key = factKey(fact);
+    rootKeys.add(key);
+    if (referentialCueKeys.has(key)) return;
+    referentialCueKeys.add(key);
+    referentialCues.push(fact);
+  }
 
   for (const episode of episodes) {
     for (const raw of episode.facts || []) {
@@ -156,6 +165,13 @@ function derive(state, options = {}) {
       if (canonical) {
         root(canonical);
         contactFacts.push(canonical);
+
+        // Reference is itself lived contact. If this occurrence points at an
+        // already-canonical referent, present reality has touched that referent.
+        // Record only the target here; its own direct M facts become roots below.
+        // No fact about the referent is fabricated by the mention.
+        if (canonical.relation === 'ρ:refers_to' && canonical.object?.ref !== undefined)
+          referencedSubjects.add(String(canonical.object.ref));
       }
 
       // A current contact can refer to an already-canonical relation without
@@ -166,10 +182,7 @@ function derive(state, options = {}) {
       const mentioned = relationalObject(raw.object);
       if (mentioned) {
         const existing = index.byKey.get(factKey(mentioned));
-        if (existing) {
-          root(existing);
-          referentialCues.push(existing);
-        }
+        if (existing) cue(existing);
       }
 
       // A direct fact about a rule can change which closure is current. Treat the
@@ -181,12 +194,26 @@ function derive(state, options = {}) {
     for (const id of episode.rules || []) if (byRule.has(String(id))) rootRuleIds.add(String(id));
   }
 
+  // A grounded mention disturbs the already-known referent through its direct
+  // canonical facts. Derived conclusions are deliberately not rooted here: they
+  // must re-enter through their real support routes below. Thus mention of Yume,
+  // for example, can make an observed Yume fact live and only then propagate into
+  // whatever further relations actually depend on it.
+  if (referencedSubjects.size) for (const fact of currentFacts) {
+    if (!referencedSubjects.has(String(fact.subject))) continue;
+    if (typeof fact.derived_from === 'string') continue;
+    cue(fact);
+  }
+
   // Still-unresolved consequences re-enter from canonical M itself. Only the
   // specific future-bearable relation facts are roots; the rest of the subject's
   // metadata/provenance does not become a workspace merely because it is open.
   const continuing = continuingFacts(currentFacts);
   for (const fact of continuing) root(fact);
 
+  // Query matching remains available only as an explicit diagnostic option.
+  // The live mind does not need this parser-derived root to be affected by a
+  // grounded reality contact.
   const matchedQuery = [];
   if (options.query) for (const fact of currentFacts) if (queryMatches(fact, options.query)) {
     root(fact);
