@@ -163,9 +163,9 @@ function derive(state, field = null) {
 // pressure has content without turning all metadata into forward roots.
 //
 // Resolution is conservative: unrelated contact cannot close a residual. Only a
-// recurrence of the same relational context with the same residual path absent
-// can resolve it. This makes persistence a property of the unsolved constraint,
-// not a stored attention/priority score.
+// recurrence of the same relational context without the exact same unresolved
+// constraint can resolve it. A changed value therefore closes the old residual
+// and opens the new one instead of leaving stale pressure behind.
 function relationalUpdate(state, being) {
   const context = being?.context_signature;
   if (!context) return null;
@@ -174,7 +174,7 @@ function relationalUpdate(state, being) {
   const currentFacts = state?.knowledge?.current?.facts || [];
   const canonicalKeys = new Set((state?.knowledge?.facts || []).map(factKey));
   const current = (being.residuals || []).filter(r => r.kind === 'unresolved_current_subset');
-  const currentPaths = new Set(current.map(r => r.path));
+  const currentKeys = new Set(current.map(r => stable([r.path, r.value])));
   const facts = [];
   const add = triple => {
     const fact = { subject: triple[0], relation: triple[1], object: triple[2] };
@@ -214,7 +214,9 @@ function relationalUpdate(state, being) {
     const sameContext = currentFacts.some(f => String(f.subject) === id && f.relation === 'ρ:context_signature' && f.object === context);
     if (!sameContext) continue;
     const pathFact = currentFacts.find(f => String(f.subject) === id && f.relation === 'ρ:residual_path');
-    if (!pathFact || currentPaths.has(String(pathFact.object))) continue;
+    const valueFact = currentFacts.find(f => String(f.subject) === id && f.relation === 'ρ:residual_value');
+    if (!pathFact || !valueFact) continue;
+    if (currentKeys.has(stable([pathFact.object, valueFact.object]))) continue;
     add([id, 'ρ:resolved_by', { ref: `lived-contact:${order}` }]);
   }
 
