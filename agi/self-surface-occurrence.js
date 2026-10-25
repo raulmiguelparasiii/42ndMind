@@ -83,6 +83,7 @@ function relationalUpdate(state) {
 
   add('self', 'ρ:caused', ref(occurrence));
   add(contactId, 'ρ:contains_occurrence', ref(occurrence));
+  add(contactedOccurrence, 'ρ:contains_occurrence', ref(occurrence));
   add(contactedOccurrence, 'ρ:followed_within_contact_by', ref(occurrence));
 
   return facts.length ? { relations: { facts } } : null;
