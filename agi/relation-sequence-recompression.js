@@ -40,10 +40,17 @@ function orderedLivedOccurrences(state) {
     else if (f.relation === 'ρ:instantiates' && f.object && f.object.ref !== undefined) o.term = String(f.object.ref);
     else if (f.relation === 'ρ:lived_order' && Number.isFinite(f.object)) o.livedOrder = f.object;
     else if (f.relation === 'ρ:order' && Number.isFinite(f.object)) o.localOrder = f.object;
+    else if (f.relation === 'ρ:represented_by' && f.object?.ref !== undefined) o.representedEnvelope = true;
   }
 
   const occurrences = [...groups.entries()].flatMap(([id, o]) => {
     if (!o.term) return [];
+    // The whole reality-contact occurrence remains lived M material. When generic
+    // normalization has recorded that more specific occurrences represent it,
+    // however, its raw contact term is an envelope rather than an additional
+    // simultaneous semantic term. Excluding only that zero-authority projection
+    // prevents one event from counting twice without deleting any experience.
+    if (o.representedEnvelope) return [];
     if (o.lived && Number.isFinite(o.livedOrder)) return [{ id, term: o.term, order: o.livedOrder }];
     // Backward compatibility only: new cognition uses lived_occurrence/lived_order.
     if (o.legacyRelation && Number.isFinite(o.localOrder)) return [{ id, term: o.term, order: o.localOrder }];
@@ -544,6 +551,7 @@ function lifecycleUpdate(state) {
   const termKinds = new Map();
   const occurrenceKinds = new Map();
   const livedOccurrences = new Set();
+  const representedEnvelopes = new Set();
   const atCurrentOrder = new Set();
   const instantiatedTerms = new Map();
 
@@ -582,10 +590,13 @@ function lifecycleUpdate(state) {
       atCurrentOrder.add(subject);
     } else if (fact.relation === 'ρ:instantiates' && fact.object?.ref !== undefined) {
       instantiatedTerms.set(subject, String(fact.object.ref));
+    } else if (fact.relation === 'ρ:represented_by' && fact.object?.ref !== undefined) {
+      representedEnvelopes.add(subject);
     }
   }
 
-  const currentOccurrences = [...atCurrentOrder].filter(id => livedOccurrences.has(id)).sort();
+  const currentOccurrences = [...atCurrentOrder]
+    .filter(id => livedOccurrences.has(id) && !representedEnvelopes.has(id)).sort();
   if (!currentOccurrences.length) return null;
   const observedTerms = new Set(currentOccurrences
     .map(id => instantiatedTerms.get(id)).filter(term => term !== undefined));
