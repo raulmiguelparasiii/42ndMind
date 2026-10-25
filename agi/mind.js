@@ -174,12 +174,68 @@ function realizeCurrentExpectedAction(state) {
   state.motor = actuator;
 }
 
-function structuralContact(realityContact, situated) {
+const PRIOR_EVENT_RELATIONS = new Set([
+  'ρ:source',
+  'ρ:target',
+  'ρ:about',
+  'ρ:contact_channel',
+  'ρ:experienced_by',
+  'ρ:previous_lived_contact',
+  'ρ:followed_within_contact_by',
+]);
+const PRIOR_ACTION_RELATIONS = new Set([
+  'ρ:surface_content',
+  'ρ:exact_expression',
+  'ρ:after_within_contact',
+  'ρ:within_lived_contact',
+]);
+
+// The present event already contains an explicit pointer to exactly one immediate
+// predecessor. Expose only that predecessor's situated anatomy to structural
+// discovery. This is not retrieval or an attention window: no search chooses an
+// old memory, and no earlier history enters. It lets recurrence discover objective
+// continuity/change such as same source/target with a changing referent, and lets
+// a self-caused action from the preceding event remain structurally consequential.
+function immediatePredecessorFacts(state, situatedFacts) {
+  const previous = situatedFacts.find(f => Array.isArray(f) && f[1] === 'ρ:previous_lived_contact' && f[2]?.ref !== undefined);
+  if (!previous) return [];
+  const previousContact = String(previous[2].ref);
+  const currentFacts = state.knowledge?.current?.facts || [];
+  const occurrence = currentFacts.find(f => String(f.subject) === previousContact &&
+    f.relation === 'ρ:situated_occurrence' && f.object?.ref !== undefined)?.object?.ref;
+  if (!occurrence) return [];
+  const previousOccurrence = String(occurrence);
+  const out = [[previousContact, 'ρ:situated_occurrence', { ref: previousOccurrence }]];
+
+  for (const fact of currentFacts) {
+    if (String(fact.subject) === previousOccurrence && PRIOR_EVENT_RELATIONS.has(fact.relation))
+      out.push([fact.subject, fact.relation, fact.object]);
+  }
+
+  const contained = new Set(currentFacts
+    .filter(f => String(f.subject) === previousOccurrence && f.relation === 'ρ:contains_occurrence' && f.object?.ref !== undefined)
+    .map(f => String(f.object.ref)));
+  const selfActions = new Set(currentFacts
+    .filter(f => f.relation === 'ρ:kind' && f.object === 'self_surface_action_occurrence' && contained.has(String(f.subject)))
+    .map(f => String(f.subject)));
+
+  for (const action of selfActions) {
+    out.push([previousOccurrence, 'ρ:contains_occurrence', { ref: action }]);
+    for (const fact of currentFacts) if (String(fact.subject) === action && PRIOR_ACTION_RELATIONS.has(fact.relation))
+      out.push([fact.subject, fact.relation, fact.object]);
+    for (const fact of currentFacts) if (String(fact.subject) === 'self' && fact.relation === 'ρ:caused' && fact.object?.ref === action)
+      out.push([fact.subject, fact.relation, fact.object]);
+  }
+  return out;
+}
+
+function structuralContact(state, realityContact, situated) {
   const rawFacts = !Array.isArray(realityContact) && realityContact && typeof realityContact === 'object' &&
     Array.isArray(realityContact.relations?.facts) ? realityContact.relations.facts : [];
   const situatedFacts = Array.isArray(situated?.relations?.facts) ? situated.relations.facts : [];
-  if (!rawFacts.length && !situatedFacts.length) return realityContact;
-  return { relations: { facts: [...rawFacts, ...situatedFacts] } };
+  const predecessorFacts = immediatePredecessorFacts(state, situatedFacts);
+  if (!rawFacts.length && !situatedFacts.length && !predecessorFacts.length) return realityContact;
+  return { relations: { facts: [...rawFacts, ...situatedFacts, ...predecessorFacts] } };
 }
 
 function C(state, realityContact) {
@@ -226,11 +282,11 @@ function C(state, realityContact) {
   const situated = SituatedContact.relationalUpdate(state, realityContact);
   if (situated) Relational.C(state, situated);
 
-  const structuralView = structuralContact(realityContact, situated);
-  // Structural discovery sees the actual contacted relations and the ordinary
-  // relations that situate this same event. Thus source/target/aboutness/context
-  // can become learned structure through recurrence rather than through a special
-  // conversation, attention, or "wonder" mechanism.
+  const structuralView = structuralContact(state, realityContact, situated);
+  // Structural discovery sees the actual contacted relations, the ordinary
+  // relations that situate this event, and only the immediately preceding event
+  // already named by present reality. Thus continuity/change can become learned
+  // structure without an attention state, dialogue model, or memory search.
   const structural = StructuralAbstraction.relationalUpdate(state, structuralView);
   if (structural) Relational.C(state, structural);
 
