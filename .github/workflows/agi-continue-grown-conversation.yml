@@ -5,6 +5,7 @@ on:
     paths:
       - 'agi/mind.js'
       - 'agi/generic-lived-occurrences.js'
+      - 'agi/structural-relational-abstraction.js'
       - 'agi/surface-dialogue.js'
       - 'agi/surface-social-grounding.js'
       - 'agi/claim-stability.js'
