@@ -18,6 +18,7 @@ on:
       - 'agi/self-surface-occurrence.js'
       - 'agi/live-mind.js'
       - 'agi/continue-grown-conversation-4.js'
+      - 'agi/converse-reflective-bridge.js'
       - '.github/workflows/agi-continue-grown-conversation.yml'
   workflow_dispatch:
 concurrency:
@@ -35,25 +36,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Recover the corrected saved individual
+      - name: Recover the guided saved individual
         uses: actions/download-artifact@v4
         with:
-          name: continued-M6-corrected
+          name: continued-M7-guided
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40157200997
-      - name: Continue guided ordinary conversation
+          run-id: 40158769147
+      - name: Continue reflective bridge conversation
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M6-corrected.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M7-guided.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M7-guided.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M8-reflective-bridge.json
         run: |
           set -euo pipefail
-          node agi/continue-grown-conversation-4.js
-      - name: Preserve the guided continuation
+          node agi/converse-reflective-bridge.js
+      - name: Preserve the reflective continuation
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M7-guided
-          path: ${{ runner.temp }}/continued-M7-guided.json
+          name: continued-M8-reflective-bridge
+          path: ${{ runner.temp }}/continued-M8-reflective-bridge.json
           retention-days: 30
           compression-level: 9
