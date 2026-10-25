@@ -22,6 +22,7 @@ on:
       - 'agi/converse-support-edge-probe.js'
       - 'agi/converse-teach-reflection.js'
       - 'agi/converse-contextual-teaching.js'
+      - 'agi/converse-contextual-correction.js'
       - '.github/workflows/agi-continue-grown-conversation.yml'
   workflow_dispatch:
 concurrency:
@@ -39,25 +40,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Recover the taught saved individual
+      - name: Recover the contextually taught individual
         uses: actions/download-artifact@v4
         with:
-          name: continued-M10-taught-reflection
+          name: continued-M11-contextual-teaching
           path: ${{ runner.temp }}/continued
           github-token: ${{ github.token }}
           repository: raulmiguelparasiii/42ndMind
-          run-id: 40180453137
-      - name: Teach contextual relation use through ordinary conversation
+          run-id: 40180777732
+      - name: Continue contextual learning through correction and contrast
         env:
-          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M10-taught-reflection.json
-          MIND_STATE_OUT: ${{ runner.temp }}/continued-M11-contextual-teaching.json
+          MIND_STATE_IN: ${{ runner.temp }}/continued/continued-M11-contextual-teaching.json
+          MIND_STATE_OUT: ${{ runner.temp }}/continued-M12-contextual-correction.json
         run: |
           set -euo pipefail
-          node agi/converse-contextual-teaching.js
-      - name: Preserve the contextual continuation
+          node agi/converse-contextual-correction.js
+      - name: Preserve the corrected continuation
         uses: actions/upload-artifact@v4
         with:
-          name: continued-M11-contextual-teaching
-          path: ${{ runner.temp }}/continued-M11-contextual-teaching.json
+          name: continued-M12-contextual-correction
+          path: ${{ runner.temp }}/continued-M12-contextual-correction.json
           retention-days: 30
           compression-level: 9
