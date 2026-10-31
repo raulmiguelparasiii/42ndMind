@@ -1,11 +1,8 @@
 {
-  "self_build_world": 1,
+  "adaptive_field_world": 1,
   "step": 128,
-  "viability": 0.9,
-  "situation": 0,
-  "hidden": [
-    0,
-    1
-  ],
-  "rng": 3087159816
+  "phase": 9.328509782303506,
+  "x": -0.14588667344318415,
+  "y": 0.6854036873124062,
+  "viability": 0.4848531317012621
 }
