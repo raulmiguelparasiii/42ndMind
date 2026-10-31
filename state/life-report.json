@@ -1,30 +1,15 @@
 {
   "whole": 1,
   "alive": true,
-  "viability": 0.94,
-  "need": 0.06,
-  "want": 0.06,
-  "action": 1,
-  "experiences_total": 65,
-  "experiences_added": 65,
-  "relations_total": 2,
-  "relations_added": 2,
-  "learned_exact_relations": [
-    {
-      "context": [
-        0
-      ],
-      "action": 0,
-      "seen": 34,
-      "mean_delta": 0.067941
-    },
-    {
-      "context": [
-        1
-      ],
-      "action": 1,
-      "seen": 31,
-      "mean_delta": 0.06
-    }
-  ]
+  "viability": 0.9,
+  "need": 0.09999999999999998,
+  "want": 0.09999999999999998,
+  "nodes_at_start": 1,
+  "nodes_now": 12,
+  "nodes_built_this_run": 11,
+  "depth_at_start": 0,
+  "depth_now": 6,
+  "recursively_self_built": true,
+  "compressed_trace_length": 14,
+  "world_step": 128
 }

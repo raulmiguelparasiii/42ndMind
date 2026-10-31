@@ -1,6 +1,11 @@
 {
-  "infant_core": 1,
+  "self_build_world": 1,
   "step": 128,
-  "viability": 0.94,
-  "situation": 1
+  "viability": 0.9,
+  "situation": 0,
+  "hidden": [
+    0,
+    1
+  ],
+  "rng": 3087159816
 }
