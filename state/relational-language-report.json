@@ -1,0 +1,11 @@
+{
+  "experiences": 0,
+  "ordinary_symbols": 0,
+  "temporal_symbols": 0,
+  "speech_temporal_relations": 0,
+  "top_speech_temporal_relations": [],
+  "active_speech_world_relations": 0,
+  "top_speech_world_relations": [],
+  "internal_symbols_grounded_in_both_speech_and_world": 0,
+  "grounded_symbol_examples": []
+}
