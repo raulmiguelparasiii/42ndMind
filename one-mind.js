@@ -1,166 +1,160 @@
 'use strict';
 
-// One continuing artificial life.
-// Birth: exactly one internal node: the whole itself.
-// Everything else must be made from lived contact.
+// 42ndMind minimal developmental core.
+//
+// Birth contains one undifferentiated adaptive cell. There are no symbols,
+// concepts, parser, rules, planner, ontology, task vocabulary, or seeded
+// knowledge. Reality supplies only primitive continuous contact and viability.
+//
+// One law: represent what is contacted with the field that already exists;
+// unresolved residual reality changes that same field. If the residual cannot
+// be absorbed by the existing field, it differentiates into another cell.
+// Every cell obeys the same law.
 
 const EPS = 1e-12;
+const ETA = 0.08;
+const GROW = 0.12;
 
-function stable(v) {
-  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
-  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k)+':'+stable(v[k])).join(',') + '}';
-  return JSON.stringify(v);
+function norm(v) {
+  let s = 0;
+  for (const x of v) s += x * x;
+  return Math.sqrt(s);
 }
+function dot(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+  return s;
+}
+function unit(v) {
+  const n = norm(v);
+  if (n <= EPS) return v.map(() => 0);
+  return v.map(x => x / n);
+}
+function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
 
-function one(actionCount = 2) {
-  if (!Number.isInteger(actionCount) || actionCount < 1) throw new Error('actionCount');
+function one() {
   return {
     whole: 1,
     alive: true,
-    action_count: actionCount,
     viability: 1,
     need: 0,
     want: 0,
-    sense: null,
-    action: null,
-    previous: null,
-    variation: -1,
-    nodes: [{ id: 0, parts: [], raw: null, depth: 0 }],
-    trace: [],
+    contact: null,
+    action: 0,
+    age: 0,
+
+    // The entire developing substrate. Exactly one cell exists at birth.
+    // `direction:null` means it has not yet differentiated around any contact.
+    field: [{ direction: null, activity: 0, born: 0 }],
+
+    // Developmental observables, not a second cognitive mechanism.
+    residual: 1,
+    growth: 0,
   };
 }
 
-function R(x) {
-  if (!x || !Array.isArray(x.sense)) throw new Error('R.sense');
-  if (!Number.isFinite(x.viability) || x.viability < 0 || x.viability > 1) throw new Error('R.viability');
-  for (const v of x.sense) if (!(v === null || typeof v === 'boolean' || typeof v === 'string' || Number.isFinite(v))) throw new Error('primitive sense only');
-  return { sense: x.sense.slice(), viability: x.viability };
+function reality(R) {
+  if (!R || !Array.isArray(R.sense) || R.sense.length < 1) throw new Error('R.sense must be a nonempty numeric array');
+  if (!R.sense.every(Number.isFinite)) throw new Error('R.sense must contain only finite numbers');
+  if (!Number.isFinite(R.viability) || R.viability < 0 || R.viability > 1) throw new Error('R.viability must be in [0,1]');
+  return { sense: R.sense.slice(), viability: R.viability };
 }
 
-function internRaw(M, raw) {
-  const key = stable(raw);
-  let n = M.nodes.find(x => x.raw && stable(x.raw) === key);
-  if (n) return n.id;
-  n = { id: M.nodes.length, parts: [], raw, depth: 1 };
-  M.nodes.push(n);
-  return n.id;
+function padOrReject(M, x) {
+  if (M.contact === null) return;
+  if (M.contact.length !== x.length) throw new Error('embodiment dimension changed during one life');
 }
 
-function nonoverlap(seq, a, b) {
-  let n = 0;
-  for (let i = 0; i < seq.length - 1;) {
-    if (seq[i] === a && seq[i+1] === b) { n++; i += 2; }
-    else i++;
+function represent(M, x) {
+  const formed = M.field.filter(c => Array.isArray(c.direction));
+  const reconstruction = Array(x.length).fill(0);
+  const activity = [];
+
+  for (const cell of formed) {
+    const a = dot(cell.direction, x);
+    activity.push(a);
+    for (let j = 0; j < x.length; j++) reconstruction[j] += a * cell.direction[j];
   }
-  return n;
+
+  const residual = x.map((v, j) => v - reconstruction[j]);
+  return { formed, activity, reconstruction, residual };
 }
 
-function replacePair(seq, a, b, id) {
-  const out = [];
-  for (let i = 0; i < seq.length;) {
-    if (i + 1 < seq.length && seq[i] === a && seq[i+1] === b) { out.push(id); i += 2; }
-    else out.push(seq[i++]);
+function absorb(M, x) {
+  // First contact differentiates the one cell already present at birth.
+  if (M.field[0].direction === null) {
+    M.field[0].direction = unit(x);
+    M.field[0].activity = dot(M.field[0].direction, x);
+    M.residual = 0;
+    return;
   }
-  return out;
+
+  let view = represent(M, x);
+  const xNorm = Math.max(EPS, norm(x));
+  let ratio = norm(view.residual) / xNorm;
+
+  // The same local plasticity law applies to every existing cell.
+  // Each cell bends only toward the reality left unexplained by the field.
+  for (let i = 0; i < view.formed.length; i++) {
+    const cell = view.formed[i];
+    const a = view.activity[i];
+    const changed = cell.direction.map((w, j) => w + ETA * a * view.residual[j]);
+    cell.direction = unit(changed);
+  }
+
+  view = represent(M, x);
+  ratio = norm(view.residual) / xNorm;
+
+  // Persistent unresolved reality differentiates the same field. The newborn
+  // cell is literally the normalized residual the prior whole could not carry.
+  if (ratio > GROW) {
+    M.field.push({ direction: unit(view.residual), activity: 0, born: M.age });
+    M.growth += 1;
+    view = represent(M, x);
+    ratio = norm(view.residual) / xNorm;
+  }
+
+  const formed = M.field.filter(c => Array.isArray(c.direction));
+  const finalView = represent(M, x);
+  for (let i = 0; i < formed.length; i++) formed[i].activity = finalView.activity[i];
+  M.residual = ratio;
 }
 
-function grow(M) {
-  // One law of self-construction: recurrent structure may become one reusable
-  // internal thing. Created things are eligible immediately, so growth recurses.
-  for (;;) {
-    const counts = new Map();
-    for (let i = 0; i < M.trace.length - 1; i++) {
-      const a = M.trace[i], b = M.trace[i+1], k = `${a},${b}`;
-      if (!counts.has(k)) counts.set(k, { a, b });
-    }
-    let best = null;
-    for (const p of counts.values()) {
-      const occurrences = nonoverlap(M.trace, p.a, p.b);
-      const gain = occurrences - 1;
-      if (gain <= 0) continue;
-      if (!best || gain > best.gain || (gain === best.gain && (p.a < best.a || (p.a === best.a && p.b < best.b)))) best = { ...p, occurrences, gain };
-    }
-    if (!best) return;
-
-    let n = M.nodes.find(x => x.raw === null && x.parts.length === 2 && x.parts[0] === best.a && x.parts[1] === best.b);
-    if (!n) {
-      const da = M.nodes[best.a].depth, db = M.nodes[best.b].depth;
-      n = { id: M.nodes.length, parts: [best.a, best.b], raw: null, depth: 1 + Math.max(da, db) };
-      M.nodes.push(n);
-    }
-    const next = replacePair(M.trace, best.a, best.b, n.id);
-    if (next.length === M.trace.length) return;
-    M.trace = next;
+function express(M) {
+  // One primitive motor surface. There is no action policy. Motor expression is
+  // simply the current state of the same field exposed through the body.
+  let s = 0;
+  for (let i = 0; i < M.field.length; i++) {
+    const a = Number.isFinite(M.field[i].activity) ? M.field[i].activity : 0;
+    s += a / (i + 1);
   }
+  return Math.tanh(s);
 }
 
-function livedLeaves(M) {
-  return M.nodes.filter(n => n.raw && n.raw.kind === 'lived');
-}
-
-function choose(M, sense) {
-  const key = stable(sense);
-  const stats = Array.from({ length: M.action_count }, () => ({ n: 0, sum: 0 }));
-  for (const n of livedLeaves(M)) {
-    const x = n.raw;
-    if (stable(x.before) !== key) continue;
-    stats[x.action].n++;
-    stats[x.action].sum += x.delta;
-  }
-  let best = null;
-  const unknown = [];
-  for (let a = 0; a < M.action_count; a++) {
-    if (!stats[a].n) unknown.push(a);
-    else {
-      const mean = stats[a].sum / stats[a].n;
-      if (mean > EPS && (!best || mean > best.mean)) best = { action: a, mean };
-    }
-  }
-  if (best) return best.action;
-  if (unknown.length) {
-    M.variation = (M.variation + 1) % M.action_count;
-    for (let k = 0; k < M.action_count; k++) {
-      const a = (M.variation + k) % M.action_count;
-      if (unknown.includes(a)) { M.variation = a; return a; }
-    }
-  }
-  let least = 0, score = -Infinity;
-  for (let a = 0; a < M.action_count; a++) {
-    const mean = stats[a].sum / stats[a].n;
-    if (mean > score) { score = mean; least = a; }
-  }
-  return least;
-}
-
-function C(M, reality) {
-  if (!M || M.whole !== 1 || !Array.isArray(M.nodes) || M.nodes[0]?.id !== 0) throw new Error('one M required');
+function C(M, incoming) {
+  if (!M || M.whole !== 1 || !Array.isArray(M.field) || M.field.length < 1) throw new Error('C requires one whole M');
   if (!M.alive) return M;
-  const now = R(reality);
 
-  if (M.previous && Number.isInteger(M.action)) {
-    const raw = {
-      kind: 'lived',
-      before: M.previous.sense.slice(),
-      action: M.action,
-      after: now.sense.slice(),
-      delta: Number((now.viability - M.previous.viability).toFixed(12)),
-    };
-    M.trace.push(internRaw(M, raw));
-    grow(M);
-  }
-
-  M.sense = now.sense.slice();
-  M.viability = now.viability;
-  M.need = 1 - now.viability;
+  const R = reality(incoming);
+  M.viability = R.viability;
+  M.need = 1 - R.viability;
   M.want = M.need;
-  M.previous = now;
 
-  if (now.viability <= 0) {
+  if (R.viability <= 0) {
     M.alive = false;
-    M.action = null;
+    M.action = 0;
     return M;
   }
-  M.action = M.want > EPS ? choose(M, now.sense) : null;
+
+  // Need is one primitive interoceptive magnitude inside the same contact.
+  // It has no semantic label or reward value inside the field.
+  const x = R.sense.concat([M.need]);
+  padOrReject(M, x);
+  M.contact = x.slice();
+  M.age += 1;
+
+  absorb(M, x);
+  M.action = clamp(express(M), -1, 1);
   return M;
 }
 
