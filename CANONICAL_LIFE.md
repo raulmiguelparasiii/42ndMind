@@ -1,29 +1,59 @@
-# Canonical continuous life
+# Canonical minimal developing mind
 
-The canonical object is one persistent artificial individual, `M`.
-
-At birth its internal constructed structure contains exactly one node: the whole itself.
+The canonical runtime is `one-mind.js`. It begins with one undifferentiated adaptive cell and no learned content.
 
 ```text
 M.whole = 1
-M.nodes = [{ id: 0, depth: 0 }]
+M.field = [ one undifferentiated cell ]
 ```
 
-There is no seeded language, ontology, planner, logic system, Stone model, semantic dictionary, reward table, task library, or adult knowledge in the live core.
+`whole = 1` means one continuing individual. The single birth cell is the entire initial cognitive substrate.
 
-Reality supplies primitive contact and the individual's present viability. Continued existence therefore has a real boundary: viability `0` ends this M. Deficit is immediately present as `need = want = 1 - viability`.
+## What is absent at birth
 
-The only developmental law is generic self-construction from lived recurrence. A lived transition becomes anonymous raw material. When a sequence of existing internal things recurs, M may compress that recurrence into one new anonymous internal thing. Newly constructed things are immediately eligible to participate in later construction. This permits recursive growth without pre-naming the concepts that will appear.
+There is no parser, token system, grammar, language, ontology, concept list, world model, planner, reward table, task solver, Stone knowledge, OneLogic knowledge, semantic dictionary, or hand-written survival mapping in the live core.
 
-The canonical falsification is stronger than memory accumulation:
+The embodiment supplies only raw finite continuous sensory magnitudes and present viability. The body may expose one primitive continuous motor surface.
+
+## Need and want
+
+Reality determines viability `v` in `[0,1]`.
 
 ```text
-birth depth 0
- -> lived structure depth 1
- -> constructed reusable structure depth 2
- -> construction using constructed structure depth 3+
+need = 1 - v
+want = need
 ```
 
-If depth never exceeds 1, M only recorded experience. If it never exceeds 2, M formed a chunk but did not recursively build with its own result. Canonical self-building requires depth 3 or greater during lived contact.
+Viability is not awarded by M. If reality reaches `v = 0`, that continuing M ends.
 
-`continuous-life.js` is external reality only. It contains a hidden action/consequence law that M does not receive. The same serialized M continues across runs through `state/canonical-mind.json`.
+## The one developmental law
+
+The existing field tries to carry current reality. Whatever component of reality the field cannot carry is the residual.
+
+Each existing cell obeys the same content-neutral plasticity rule: it bends toward unresolved residual reality.
+
+If the residual remains materially outside the span of the existing field, the field differentiates once. The new cell is initialized directly from that residual. It has no supplied label or meaning.
+
+So development has the form:
+
+```text
+one undifferentiated field
+        + reality contact
+        -> differentiated field
+        + further reality
+        -> further differentiation when existing capacity is insufficient
+```
+
+This is structural plasticity. Internal dimensionality can increase during one life. Growth is driven by reality that the current whole cannot represent, rather than by a parser discovering preselected tokens or patterns.
+
+## Action
+
+There is no action-selection module. The current field state is exposed directly through one primitive continuous motor boundary. The external world determines what that motor expression physically causes and how it affects viability.
+
+## What the current result establishes
+
+The current falsification asks only whether a one-cell M actually differentiates when exposed to continuous reality that one cell cannot represent. A passing run must begin with exactly one cell and end with more than one reality-derived cell.
+
+That demonstrates live structural growth from one adaptive substrate. It does not establish language, reasoning, human-level intelligence, consciousness, or AGI.
+
+`continuous-life.js` persists the same M across runs in `state/canonical-mind.json`. Its world contains continuous dynamics and viability consequences only. No semantic labels or desired internal structures are transmitted to M.
