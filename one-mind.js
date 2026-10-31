@@ -1,181 +1,166 @@
 'use strict';
 
-// 42ndMind infant core.
-//
-// M is one continuing being. It begins with no learned relations.
-// Reality supplies only raw sensation plus the being's present viability.
-// Viability 1 means intact; viability 0 means the being can no longer continue.
-// Need is the live deficit from 1. Want is that same deficit acting through M's
-// learned action/consequence relations. Nothing semantic is seeded.
-//
-// Conceptually:
-//
-//   M.whole = 1
-//   need(M) = 1 - viability(M)
-//   want(M) = need(M)
-//   M' = C(M, R)
-//
-// C contains no language, planner, reward table, goal list, world model,
-// Stone, OneLogic, or task-specific knowledge. M learns only from what happens
-// to this same being after its own primitive actions.
+// One continuing artificial life.
+// Birth: exactly one internal node: the whole itself.
+// Everything else must be made from lived contact.
 
 const EPS = 1e-12;
 
-function stable(value) {
-  if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
-  if (value && typeof value === 'object') {
-    return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + stable(value[k])).join(',') + '}';
-  }
-  return JSON.stringify(value);
+function stable(v) {
+  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k)+':'+stable(v[k])).join(',') + '}';
+  return JSON.stringify(v);
 }
 
 function one(actionCount = 2) {
-  if (!Number.isInteger(actionCount) || actionCount < 1) {
-    throw new Error('actionCount must be a positive integer');
-  }
-
+  if (!Number.isInteger(actionCount) || actionCount < 1) throw new Error('actionCount');
   return {
     whole: 1,
     alive: true,
     action_count: actionCount,
-
-    // Nothing has been experienced yet.
     viability: 1,
     need: 0,
     want: 0,
     sense: null,
     action: null,
     previous: null,
-
-    // Growth exists only as retained lived consequence and relations derived
-    // from it. Both begin empty.
-    experience: [],
-    relations: [],
-
-    // Unguided primitive variation before reality has taught a useful relation.
     variation: -1,
+    nodes: [{ id: 0, parts: [], raw: null, depth: 0 }],
+    trace: [],
   };
 }
 
-function contact(R) {
-  if (!R || typeof R !== 'object') throw new Error('R must be an object');
-  if (!Array.isArray(R.sense)) throw new Error('R.sense must be an array');
-  if (!R.sense.every(v => v === null || typeof v === 'boolean' || typeof v === 'string' || Number.isFinite(v))) {
-    throw new Error('R.sense may contain only finite primitive values or null');
+function R(x) {
+  if (!x || !Array.isArray(x.sense)) throw new Error('R.sense');
+  if (!Number.isFinite(x.viability) || x.viability < 0 || x.viability > 1) throw new Error('R.viability');
+  for (const v of x.sense) if (!(v === null || typeof v === 'boolean' || typeof v === 'string' || Number.isFinite(v))) throw new Error('primitive sense only');
+  return { sense: x.sense.slice(), viability: x.viability };
+}
+
+function internRaw(M, raw) {
+  const key = stable(raw);
+  let n = M.nodes.find(x => x.raw && stable(x.raw) === key);
+  if (n) return n.id;
+  n = { id: M.nodes.length, parts: [], raw, depth: 1 };
+  M.nodes.push(n);
+  return n.id;
+}
+
+function nonoverlap(seq, a, b) {
+  let n = 0;
+  for (let i = 0; i < seq.length - 1;) {
+    if (seq[i] === a && seq[i+1] === b) { n++; i += 2; }
+    else i++;
   }
-  if (!Number.isFinite(R.viability) || R.viability < 0 || R.viability > 1) {
-    throw new Error('R.viability must be a finite number in [0,1]');
+  return n;
+}
+
+function replacePair(seq, a, b, id) {
+  const out = [];
+  for (let i = 0; i < seq.length;) {
+    if (i + 1 < seq.length && seq[i] === a && seq[i+1] === b) { out.push(id); i += 2; }
+    else out.push(seq[i++]);
   }
-  return { sense: R.sense.slice(), viability: R.viability };
+  return out;
 }
 
-function relationKey(context, action) {
-  return `${context === null ? '*' : stable(context)}|${action}`;
-}
+function grow(M) {
+  // One law of self-construction: recurrent structure may become one reusable
+  // internal thing. Created things are eligible immediately, so growth recurses.
+  for (;;) {
+    const counts = new Map();
+    for (let i = 0; i < M.trace.length - 1; i++) {
+      const a = M.trace[i], b = M.trace[i+1], k = `${a},${b}`;
+      if (!counts.has(k)) counts.set(k, { a, b });
+    }
+    let best = null;
+    for (const p of counts.values()) {
+      const occurrences = nonoverlap(M.trace, p.a, p.b);
+      const gain = occurrences - 1;
+      if (gain <= 0) continue;
+      if (!best || gain > best.gain || (gain === best.gain && (p.a < best.a || (p.a === best.a && p.b < best.b)))) best = { ...p, occurrences, gain };
+    }
+    if (!best) return;
 
-function observeRelation(M, context, action, delta) {
-  const key = relationKey(context, action);
-  let r = M.relations.find(x => x.key === key);
-  if (!r) {
-    r = {
-      key,
-      context: context === null ? null : context.slice(),
-      action,
-      seen: 0,
-      delta_sum: 0,
-      mean_delta: 0,
-    };
-    M.relations.push(r);
+    let n = M.nodes.find(x => x.raw === null && x.parts.length === 2 && x.parts[0] === best.a && x.parts[1] === best.b);
+    if (!n) {
+      const da = M.nodes[best.a].depth, db = M.nodes[best.b].depth;
+      n = { id: M.nodes.length, parts: [best.a, best.b], raw: null, depth: 1 + Math.max(da, db) };
+      M.nodes.push(n);
+    }
+    const next = replacePair(M.trace, best.a, best.b, n.id);
+    if (next.length === M.trace.length) return;
+    M.trace = next;
   }
-  r.seen += 1;
-  r.delta_sum += delta;
-  r.mean_delta = r.delta_sum / r.seen;
 }
 
-function learn(M, before, action, after) {
-  const delta = after.viability - before.viability;
-  M.experience.push({
-    sense: before.sense.slice(),
-    action,
-    viability_before: before.viability,
-    viability_after: after.viability,
-    delta_viability: delta,
-  });
-
-  // Retain only the raw situation/action/consequence relation actually lived.
-  // No semantic categories or hand-authored generalization are supplied.
-  observeRelation(M, before.sense, action, delta);
-}
-
-function estimate(M, sense, action) {
-  const exact = M.relations.find(r => r.key === relationKey(sense, action));
-  return exact ? { delta: exact.mean_delta, seen: exact.seen } : null;
+function livedLeaves(M) {
+  return M.nodes.filter(n => n.raw && n.raw.kind === 'lived');
 }
 
 function choose(M, sense) {
-  const known = [];
-  const unknown = [];
-
-  for (let action = 0; action < M.action_count; action++) {
-    const e = estimate(M, sense, action);
-    if (e) known.push({ action, ...e });
-    else unknown.push(action);
+  const key = stable(sense);
+  const stats = Array.from({ length: M.action_count }, () => ({ n: 0, sum: 0 }));
+  for (const n of livedLeaves(M)) {
+    const x = n.raw;
+    if (stable(x.before) !== key) continue;
+    stats[x.action].n++;
+    stats[x.action].sum += x.delta;
   }
-
-  // Reuse an experienced action that has actually increased this being's
-  // viability in the present raw situation.
-  const helpful = known.filter(x => x.delta > EPS).sort((a, b) =>
-    b.delta - a.delta || b.seen - a.seen || a.action - b.action
-  );
-  if (helpful.length) return helpful[0].action;
-
-  // If this situation is still unresolved, try an action whose consequence here
-  // has never been lived. Variation only breaks symmetry among unknown actions.
-  if (unknown.length) {
-    M.variation = (M.variation + 1) % M.action_count;
-    for (let offset = 0; offset < M.action_count; offset++) {
-      const candidate = (M.variation + offset) % M.action_count;
-      if (unknown.includes(candidate)) {
-        M.variation = candidate;
-        return candidate;
-      }
+  let best = null;
+  const unknown = [];
+  for (let a = 0; a < M.action_count; a++) {
+    if (!stats[a].n) unknown.push(a);
+    else {
+      const mean = stats[a].sum / stats[a].n;
+      if (mean > EPS && (!best || mean > best.mean)) best = { action: a, mean };
     }
   }
-
-  // If every available action has been tried and all currently appear harmful,
-  // use the least harmful lived relation. There is still no external reward.
-  known.sort((a, b) => b.delta - a.delta || b.seen - a.seen || a.action - b.action);
-  return known[0].action;
+  if (best) return best.action;
+  if (unknown.length) {
+    M.variation = (M.variation + 1) % M.action_count;
+    for (let k = 0; k < M.action_count; k++) {
+      const a = (M.variation + k) % M.action_count;
+      if (unknown.includes(a)) { M.variation = a; return a; }
+    }
+  }
+  let least = 0, score = -Infinity;
+  for (let a = 0; a < M.action_count; a++) {
+    const mean = stats[a].sum / stats[a].n;
+    if (mean > score) { score = mean; least = a; }
+  }
+  return least;
 }
 
-function C(M, realityContact) {
-  if (!M || M.whole !== 1) throw new Error('C requires one whole M');
+function C(M, reality) {
+  if (!M || M.whole !== 1 || !Array.isArray(M.nodes) || M.nodes[0]?.id !== 0) throw new Error('one M required');
   if (!M.alive) return M;
-
-  const now = contact(realityContact);
+  const now = R(reality);
 
   if (M.previous && Number.isInteger(M.action)) {
-    learn(M, M.previous, M.action, now);
+    const raw = {
+      kind: 'lived',
+      before: M.previous.sense.slice(),
+      action: M.action,
+      after: now.sense.slice(),
+      delta: Number((now.viability - M.previous.viability).toFixed(12)),
+    };
+    M.trace.push(internRaw(M, raw));
+    grow(M);
   }
 
   M.sense = now.sense.slice();
   M.viability = now.viability;
   M.need = 1 - now.viability;
   M.want = M.need;
+  M.previous = now;
 
-  // At zero viability there is no later cognition to schedule. The same M has
-  // reached its actual continuation boundary.
-  if (M.viability <= 0) {
+  if (now.viability <= 0) {
     M.alive = false;
     M.action = null;
-    M.previous = now;
     return M;
   }
-
-  // When intact there is no survival deficit. If reality later pulls viability
-  // below 1, want becomes positive again immediately on contact.
   M.action = M.want > EPS ? choose(M, now.sense) : null;
-  M.previous = now;
   return M;
 }
 
