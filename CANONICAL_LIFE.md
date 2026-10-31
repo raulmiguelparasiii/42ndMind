@@ -1,48 +1,77 @@
-# Canonical continuous life
+# Canonical infant core
 
-The central experiment is one persistent individual, not repeated fresh benchmark minds.
+The canonical 42ndMind is one persistent individual, `M`, beginning with no learned relations or adult knowledge.
 
-`M_(t+1) = C(M_t ⊕ R_(t+1))`
+```text
+M.whole = 1
+need(M) = 1 - viability(M)
+want(M) = need(M)
+M' = C(M, R)
+```
 
-## Method
+`whole = 1` means all retained experience and learned relation belongs to one continuing being. It is not a collection of agents or cognitive modules.
 
-- Keep one canonical serialized `M` and continue that same state across runs.
-- Keep `C` unchanged while observing development. `C` is the developmental authority; a test is not.
-- Let the individual receive broad mixed reality contact before diagnosing local failures.
-- Preserve learned structure unless later reality and `C` reorganize it. Do not reset the individual merely because the implementation or environment is being studied.
-- Use diagnostic clones or fresh minds only as controls after a substantial failure has already appeared in the canonical life.
-- A microtest may reproduce and localize an observed failure. It must not define what `C` is required to believe or be used as a reason to hand-author cognition.
-- Change generic representation only after the lived result demonstrates that reality cannot currently be represented adequately.
-- Do not add language, grammar, mathematics, Stone, OneLogic, planning, or benchmark-specific semantics to `C`.
+## Birth state
 
-## Reality-grounded relational language
+`one(actionCount)` creates the smallest live state currently used by the project:
 
-The working target is an internal relational structure in `M` whose content is grounded by repeated contact with reality. Human language, mathematics, and other symbolic systems should be able to attach to and express that structure; they do not define it.
+- one identity (`whole = 1`);
+- a finite primitive action surface supplied by embodiment;
+- viability initially at `1`;
+- no need and no want while fully viable;
+- no sensations yet;
+- no experience;
+- no learned relations.
 
-For language contact, surface tokens arrive sequentially through one perceptual token channel. Repeated occurrences of the same token therefore retain the same perceptual identity. Order is temporal contact, not a different token identity or a sentence-position channel.
+There is no seeded language, Stone, OneLogic, planner, reward table, goal list, ontology, semantic dictionary, world model, or task solver in the canonical mind.
 
-The current canonical-life environment deliberately supplies no lexical categories, grammar labels, semantic roles, sentence positions, or desired internal concepts. Speakers and world dynamics exist only in the external W/S/A environment.
+## Reality contact
 
-## Observation before diagnosis
+Reality enters as:
 
-A canonical-life run has no cognitive pass/fail threshold. It records:
+```text
+R = { sense: [...raw primitive values...], viability: v }
+```
 
-- what relational patterns and internal handles exist after continued life;
-- which existing relations retain identity and gain support;
-- which relations disappear or are corrected;
-- how much action is supplied by learned completion versus unguided motor variation;
-- what word/world relations arise from communication embedded in lived scenes;
-- what temporal structure appears;
-- what remains unresolved.
+with `0 <= v <= 1`.
 
-Only after that whole-life result is visible should a narrow diagnostic be constructed, and only for a failure that materially limits the developing mind.
+The external world/body determines `v`. M cannot declare itself healthy. At `v = 0`, the same individual can no longer continue.
 
-## Persistence
+The live deficit is:
 
-`continuous-life.js` reads and writes:
+```text
+need = 1 - v
+want = need
+```
+
+`want` is therefore endogenous to the current state of the being. It is not an external reward signal.
+
+## Development
+
+When M acts and later receives reality again, it retains the lived relation:
+
+```text
+(raw situation, primitive action) -> change in this being's viability
+```
+
+The relation begins nonexistent and is created only by lived consequence. Repeated experience updates the same relation. There are no hand-authored semantic categories and no automatic transfer from one raw situation to a different one.
+
+When want is positive:
+
+1. if M has lived an action in the present raw situation that increased its viability, it can reuse that action;
+2. otherwise it tries an action whose consequence in this situation is still unknown;
+3. if every action has been tried and all appear harmful, it uses the least harmful relation it has actually lived.
+
+The developmental target is to add richer generic relation formation only when continued life exposes a representational failure. Do not add adult faculties as separate modules.
+
+## Canonical life harness
+
+`continuous-life.js` supplies a deliberately tiny external world. Existing costs viability. Two raw situations exist, and a different primitive action helps in each. M is never told that mapping. It must discover it from its own consequences.
+
+The harness persists:
 
 - `state/canonical-mind.json`
 - `state/canonical-world.json`
 - `state/life-report.json`
 
-The first run creates the individual. Later runs continue the same `M`; they do not replay schooling or reconstruct knowledge from a benchmark fixture.
+Legacy canonical states from the earlier architecture are not loaded into this infant core. Git history preserves them.
