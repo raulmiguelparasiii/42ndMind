@@ -1,59 +1,46 @@
-# Canonical minimal developing mind
+# Canonical host life
 
-The canonical runtime is `one-mind.js`. It begins with one undifferentiated adaptive cell and no learned content.
+`M.whole = 1` means one continuing individual. It does not count cells, symbols, modules, or body parts.
+
+At birth the learned field is empty. The body already exists and exposes raw computational reality to the same individual.
 
 ```text
 M.whole = 1
-M.field = [ one undifferentiated cell ]
+M.field = []
+W <-> body <-> M
 ```
 
-`whole = 1` means one continuing individual. The single birth cell is the entire initial cognitive substrate.
+The canonical cognitive runtime remains `one-mind.js`, exposing only `one(...)` and `C(M,R)`. It contains no parser, language model, semantic dictionary, planner, task solver, Stone/OneLogic seed, world labels, reward table, or adult knowledge.
 
-## What is absent at birth
+## Body and reality
 
-There is no parser, token system, grammar, language, ontology, concept list, world model, planner, reward table, task solver, Stone knowledge, OneLogic knowledge, semantic dictionary, or hand-written survival mapping in the live core.
+`continuous-life.js` runs against the actual host process and repository. Its sensory stream is raw bytes/magnitudes drawn from the process, `/proc`, host memory state, repository paths/source, and the individual's own persistent body files. The body also exposes primitive actuators that can alter its actually allocated memory, persistent byte files, read position, selected source, and sensory span.
 
-The embodiment supplies only raw finite continuous sensory magnitudes and present viability. The body may expose one primitive continuous motor surface.
+These actuator meanings are not sent to M. They are body anatomy, analogous to muscles and receptors. Additional sensory or motor channels may be attached later without changing `C`; existing learned directions are zero-padded for previously uncontacted channels.
 
-## Need and want
+## Injury, need, and death
 
-Reality determines viability `v` in `[0,1]`.
+The body owns finite host resources. Pressure is measured from resources it actually occupies or requires, including owned memory and persistent writable body files.
+
+M receives those primitive pressure magnitudes as interoception. Its current need is the magnitude of the live pressure vector.
+
+Crossing a body continuation boundary sets the body dead and M receives no later cognition. The current harness uses explicit finite limits on owned memory and persistent body files so death is a real termination condition of this instantiated body rather than a reward score.
+
+## One developmental law
+
+Current contact differentiates anonymous internal directions only when the existing field leaves substantial residual reality.
+
+Motor expression contains small endogenous variation. On the next contact the same being observes whether bodily pressure rose or fell. Only the perturbation that preceded that consequence is retained or suppressed in the anonymous structures active during that contact:
 
 ```text
-need = 1 - v
-want = need
+relief = previous_need - current_need
+plastic_change ~ active_structure * previous_perturbation * relief
 ```
 
-Viability is not awarded by M. If reality reaches `v = 0`, that continuing M ends.
+This is primitive bodily consequence plasticity. There is no action-value table or separate planner. The law does not know what memory, files, text, source code, or any host actuator means.
 
-## The one developmental law
+## Current host falsification
 
-The existing field tries to carry current reality. Whatever component of reality the field cannot carry is the residual.
+The same frozen `one-mind.js` was run in the real host body with two opposite wirings of the memory actuator. With ordinary wiring it learned to keep owned memory pressure near zero. With the motor wiring reversed, the same M source again adapted and survived. An ablation with consequence plasticity removed accumulated substantially more memory pressure and died under the reversed body after crossing the real body limit.
 
-Each existing cell obeys the same content-neutral plasticity rule: it bends toward unresolved residual reality.
-
-If the residual remains materially outside the span of the existing field, the field differentiates once. The new cell is initialized directly from that residual. It has no supplied label or meaning.
-
-So development has the form:
-
-```text
-one undifferentiated field
-        + reality contact
-        -> differentiated field
-        + further reality
-        -> further differentiation when existing capacity is insufficient
-```
-
-This is structural plasticity. Internal dimensionality can increase during one life. Growth is driven by reality that the current whole cannot represent, rather than by a parser discovering preselected tokens or patterns.
-
-## Action
-
-There is no action-selection module. The current field state is exposed directly through one primitive continuous motor boundary. The external world determines what that motor expression physically causes and how it affects viability.
-
-## What the current result establishes
-
-The current falsification asks only whether a one-cell M actually differentiates when exposed to continuous reality that one cell cannot represent. A passing run must begin with exactly one cell and end with more than one reality-derived cell.
-
-That demonstrates live structural growth from one adaptive substrate. It does not establish language, reasoning, human-level intelligence, consciousness, or AGI.
-
-`continuous-life.js` persists the same M across runs in `state/canonical-mind.json`. Its world contains continuous dynamics and viability consequences only. No semantic labels or desired internal structures are transmitted to M.
+This establishes a live causal survival preference in the current host embodiment: bodily relief changes future expression, and removing that causal plasticity changes survival. It does not by itself establish adult capabilities. Those must develop through the same frozen law and real body rather than being added as cognitive modules.
