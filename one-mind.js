@@ -1,161 +1,52 @@
 'use strict';
 
-// 42ndMind minimal developmental core.
-//
-// Birth contains one undifferentiated adaptive cell. There are no symbols,
-// concepts, parser, rules, planner, ontology, task vocabulary, or seeded
-// knowledge. Reality supplies only primitive continuous contact and viability.
-//
-// One law: represent what is contacted with the field that already exists;
-// unresolved residual reality changes that same field. If the residual cannot
-// be absorbed by the existing field, it differentiates into another cell.
-// Every cell obeys the same law.
-
-const EPS = 1e-12;
-const ETA = 0.08;
-const GROW = 0.12;
-
-function norm(v) {
-  let s = 0;
-  for (const x of v) s += x * x;
-  return Math.sqrt(s);
-}
-function dot(a, b) {
-  let s = 0;
-  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
-  return s;
-}
-function unit(v) {
-  const n = norm(v);
-  if (n <= EPS) return v.map(() => 0);
-  return v.map(x => x / n);
-}
-function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
-
-function one() {
-  return {
-    whole: 1,
-    alive: true,
-    viability: 1,
-    need: 0,
-    want: 0,
-    contact: null,
-    action: 0,
-    age: 0,
-
-    // The entire developing substrate. Exactly one cell exists at birth.
-    // `direction:null` means it has not yet differentiated around any contact.
-    field: [{ direction: null, activity: 0, born: 0 }],
-
-    // Developmental observables, not a second cognitive mechanism.
-    residual: 1,
-    growth: 0,
-  };
-}
-
-function reality(R) {
-  if (!R || !Array.isArray(R.sense) || R.sense.length < 1) throw new Error('R.sense must be a nonempty numeric array');
-  if (!R.sense.every(Number.isFinite)) throw new Error('R.sense must contain only finite numbers');
-  if (!Number.isFinite(R.viability) || R.viability < 0 || R.viability > 1) throw new Error('R.viability must be in [0,1]');
-  return { sense: R.sense.slice(), viability: R.viability };
-}
-
-function padOrReject(M, x) {
-  if (M.contact === null) return;
-  if (M.contact.length !== x.length) throw new Error('embodiment dimension changed during one life');
-}
-
-function represent(M, x) {
-  const formed = M.field.filter(c => Array.isArray(c.direction));
-  const reconstruction = Array(x.length).fill(0);
-  const activity = [];
-
-  for (const cell of formed) {
-    const a = dot(cell.direction, x);
-    activity.push(a);
-    for (let j = 0; j < x.length; j++) reconstruction[j] += a * cell.direction[j];
+// 42ndMind experimental newborn: one continuing M, one local plasticity law.
+// No parser, symbols, planner, ontology, task vocabulary, reward table, or adult knowledge.
+const EPS=1e-12, GROW=0.22, ETA=0.08, MAX_FIELD=96;
+function clamp(x,a=-1,b=1){return Math.max(a,Math.min(b,x));}
+function dot(a,b){let s=0,n=Math.min(a.length,b.length);for(let i=0;i<n;i++)s+=a[i]*b[i];return s;}
+function norm(a){return Math.sqrt(dot(a,a));}
+function unit(a){const n=norm(a);return n<EPS?a.map(()=>0):a.map(v=>v/n);}
+function pad(a,n){while(a.length<n)a.push(0);}
+function one(motorWidth=8){return{whole:1,alive:true,age:0,need:0,contact:[],motor:Array(motorWidth).fill(0),field:[],growth:0,residual:1,variation:.3141592653589793,previous:null,previous_perturb:Array(motorWidth).fill(0),relief:0};}
+function pressure(p){if(!Array.isArray(p)||!p.length||!p.every(Number.isFinite))throw Error('pressure');let s=0;for(const v of p){const z=Math.max(0,v);s+=z*z;}return Math.sqrt(s/p.length);}
+function width(M,n){for(const c of M.field)pad(c.w,n);pad(M.contact,n);if(M.previous)pad(M.previous.contact,n);}
+function activities(M,x){return M.field.map(c=>Math.tanh(dot(c.w,x)));}
+function residual(M,x){const r=x.slice();for(const c of M.field){const a=dot(c.w,r);for(let j=0;j<r.length;j++)r[j]-=a*c.w[j];}return r;}
+function grow(M,x){
+  let r=residual(M,x), ratio=norm(r)/Math.max(EPS,norm(x));
+  if((!M.field.length || ratio>GROW) && M.field.length<Math.min(MAX_FIELD,x.length)){
+    M.field.push({w:unit(r),motor:M.motor.map(()=>0),born:M.age});M.growth++;
+    r=residual(M,x);ratio=norm(r)/Math.max(EPS,norm(x));
   }
-
-  const residual = x.map((v, j) => v - reconstruction[j]);
-  return { formed, activity, reconstruction, residual };
+  M.residual=ratio;
 }
-
-function absorb(M, x) {
-  // First contact differentiates the one cell already present at birth.
-  if (M.field[0].direction === null) {
-    M.field[0].direction = unit(x);
-    M.field[0].activity = dot(M.field[0].direction, x);
-    M.residual = 0;
-    return;
-  }
-
-  let view = represent(M, x);
-  const xNorm = Math.max(EPS, norm(x));
-  let ratio = norm(view.residual) / xNorm;
-
-  // The same local plasticity law applies to every existing cell.
-  // Each cell bends only toward the reality left unexplained by the field.
-  for (let i = 0; i < view.formed.length; i++) {
-    const cell = view.formed[i];
-    const a = view.activity[i];
-    const changed = cell.direction.map((w, j) => w + ETA * a * view.residual[j]);
-    cell.direction = unit(changed);
-  }
-
-  view = represent(M, x);
-  ratio = norm(view.residual) / xNorm;
-
-  // Persistent unresolved reality differentiates the same field. The newborn
-  // cell is literally the normalized residual the prior whole could not carry.
-  if (ratio > GROW) {
-    M.field.push({ direction: unit(view.residual), activity: 0, born: M.age });
-    M.growth += 1;
-    view = represent(M, x);
-    ratio = norm(view.residual) / xNorm;
-  }
-
-  const formed = M.field.filter(c => Array.isArray(c.direction));
-  const finalView = represent(M, x);
-  for (let i = 0; i < formed.length; i++) formed[i].activity = finalView.activity[i];
-  M.residual = ratio;
+function learnConsequence(M,newNeed){
+  if(!M.previous)return;
+  const relief=M.previous.need-newNeed; M.relief=relief;
+  const a=activities(M,M.previous.contact);
+  // Same local consequence law on every anonymous degree of freedom:
+  // perturbations followed by bodily relief become easier to express in the
+  // same lived context; perturbations followed by injury become harder.
+  for(let i=0;i<M.field.length;i++)for(let k=0;k<M.motor.length;k++)
+    M.field[i].motor[k]=clamp(M.field[i].motor[k]+ETA*relief*a[i]*M.previous_perturb[k]);
 }
-
-function express(M) {
-  // One primitive motor surface. There is no action policy. Motor expression is
-  // simply the current state of the same field exposed through the body.
-  let s = 0;
-  for (let i = 0; i < M.field.length; i++) {
-    const a = Number.isFinite(M.field[i].activity) ? M.field[i].activity : 0;
-    s += a / (i + 1);
+function express(M,x){
+  const a=activities(M,x), out=Array(M.motor.length).fill(0), perturb=Array(M.motor.length).fill(0);
+  for(let i=0;i<M.field.length;i++)for(let k=0;k<out.length;k++)out[k]+=a[i]*M.field[i].motor[k];
+  M.variation=Math.sin(M.variation*91.733+M.age*0.137+0.12345);
+  const amp=0.08+0.42*Math.min(1,M.need);
+  for(let k=0;k<out.length;k++){
+    perturb[k]=amp*Math.sin(M.variation*17.17+k*2.3999632297+M.age*0.31);
+    out[k]=clamp(Math.tanh(out[k])+perturb[k]);
   }
-  return Math.tanh(s);
+  M.previous_perturb=perturb; return out;
 }
-
-function C(M, incoming) {
-  if (!M || M.whole !== 1 || !Array.isArray(M.field) || M.field.length < 1) throw new Error('C requires one whole M');
-  if (!M.alive) return M;
-
-  const R = reality(incoming);
-  M.viability = R.viability;
-  M.need = 1 - R.viability;
-  M.want = M.need;
-
-  if (R.viability <= 0) {
-    M.alive = false;
-    M.action = 0;
-    return M;
-  }
-
-  // Need is one primitive interoceptive magnitude inside the same contact.
-  // It has no semantic label or reward value inside the field.
-  const x = R.sense.concat([M.need]);
-  padOrReject(M, x);
-  M.contact = x.slice();
-  M.age += 1;
-
-  absorb(M, x);
-  M.action = clamp(express(M), -1, 1);
-  return M;
+function C(M,R){
+  if(!M||M.whole!==1||!M.alive)return M;
+  if(!R||!Array.isArray(R.sense)||!R.sense.every(Number.isFinite))throw Error('sense');
+  if(R.alive===false){M.alive=false;M.motor.fill(0);return M;}
+  const n=pressure(R.pressure), x=R.sense.concat(R.pressure.map(v=>Math.max(0,v)));
+  width(M,x.length); learnConsequence(M,n); M.age++;M.need=n;M.contact=x.slice();grow(M,x);M.motor=express(M,x);M.previous={contact:x.slice(),need:n};return M;
 }
-
-module.exports = { one, C };
+module.exports={one,C};
