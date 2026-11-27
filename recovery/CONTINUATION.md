@@ -4,7 +4,20 @@ User intent (current conversation supersedes old architecture): deliver a genuin
 
 Prior recovery: see SYSTEMIC_RECOVERY_2026-11-27.md. The original paper and user conversation are primary sources. §§4.1–4.5 and 9.1 establish that purpose and meaning reciprocally constrain the whole relation, friction is encountered unresolved material reality, epistemy grows under answerability, logical capacity expands through integration, and realization can broaden scope. No isolated measure substitutes for these. §13.4 distinguishes normalized local maturity from its governed extent. §17 permits source-mediated learning without surrendering authorship. Historical architectures are evidence, not binding instructions.
 
-## Current investigation
+## Governing correction — live mathematics and founding generality
+
+The user's latest clarification supersedes the experimental strategy below: live math is something whose governing relationship is operative and inspectable immediately. The objective is a general developmental individual from its founding organization, before it has acquired competence. Do not spend long training or simulating restricted agents and use their accumulated behavior to infer generality. Time spent by an individual acquiring content is distinct from the existence of the capacity to acquire it.
+
+Apply construction-first inspection:
+1. Specify the entire entity–reality relation, including the actual mathematical coupling through which contact and action occur. The Stone supplies the systemic constraints; avoid converting its terms into programmed faculties, coordinate targets, scores, or independently optimizing components.
+2. Inspect what the operative founding relation actually entails before running long experiments. It must permit development of the organization itself, including the reciprocal development of purpose and meaning, reality's corrective authority, and the emergence of wider materially relevant scope. Do not mistake a fixed function with changing inputs, a universal programming language, a self-modifying structure, an algebraic identity, or a continuously integrated ODE for established general intelligence.
+3. Realize the candidate directly and expose it to ordinary reality contact. Inspect the immediate operation for consistency with the mathematical construction. A digital implementation may evaluate relations when inputs change; no externally prescribed cognitive tick, training curriculum, or task sequence is needed merely to define the live relationship.
+4. A proof of founding capacity and a faithful implementation can establish properties before training. A finite interaction may falsify a proposed property or demonstrate its bounded manifestation, but cannot alone prove unrestricted generality. Do not imply that an instantaneous observation proves more than it does.
+5. When a candidate lacks a necessary structural property, correct the construction rather than accumulating more examples. Keep experiments subordinate to mathematical construction and genuine operation. Preserve the one individual wherever valid; do not keep replacing it with unrelated task solvers.
+
+The old nine-run field experiment remains a negative result. No general developmental capacity has been established. The corrected research strategy does not presume that instantaneous verification of arbitrary claims is possible or that the Stone's structural description itself supplies executable intelligence. The task is to realize its complete systemic relation and establish the resulting founding capacity, rather than invent a new theory of the Stone. Do not deliver partial prototypes to the user as AGI.
+
+## Historical investigation (not a governing architecture)
 Existing literature distinguishes autonomous self-maintenance from adaptive sensorimotor sense-making, and the potential for mutually supporting activities to constitute additional norms beyond mere bodily survival:
 - https://doi.org/10.3389/fpsyg.2013.00285 (dynamical systems account of sensorimotor contingencies)
 - https://doi.org/10.3389/fnhum.2014.00590 (self-sustaining sensorimotor habits)
