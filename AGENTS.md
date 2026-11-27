@@ -2,6 +2,17 @@
 
 Read this fully before changing the project.
 
+## Current governing direction — 2026-11-27
+
+**Interpret the author's intent, not merely the wording.** The author sometimes mixes up terms, uses approximate descriptions, and has difficulty articulating a developing idea. Use their words as context to infer the intended referent and objective in light of the whole conversation, the latest Philosopher's Stone, and relevant project evidence. Illustrations, analogies, tentative guesses, and particular notation are not implementation requirements. Do not turn a single example into a research direction. Resolve the intended meaning before choosing an implementation, and distinguish inferred intent from actual requirements. Where an interpretation is materially uncertain, preserve the uncertainty rather than inventing a requirement or repeatedly asking for information already supplied.
+
+**Current objective:** realize one intrinsically operative mathematical mind whose relationship with reality itself constitutes sensing, acting, and growth. The mathematical organization is the living system, rather than a description of an agent that must then be assembled out of separately prescribed cognitive routines. Purpose and meaning are systemic constraints, with accountability governing their relation to reality. Their reciprocal development, epistemy, logical capacity, friction, and realization belong to the same whole entity–reality relationship described by the current Stone. The individual does not need to be taught the mathematics that constitutes it. A formula must be operative and directly inspectable in contact with reality; acquired competence may develop over time. Do not confuse an immediately inspectable mathematical relation with an established proof of AGI. The task is to construct and establish genuine general developmental capacity, not to present a narrow demonstrator as the completed deliverable.
+
+The older sections below, including particular equations, interfaces, runtime files, representations, supplied seeds, training arrangements and architecture choices, document prior work. They are not binding where they conflict with the current objective or more recent Stone and author guidance. Do not preserve a historical implementation solely because this file once prescribed it. Preserve valid achievements and evidence at their warranted scope.
+
+Work on request directly, without scheduling recurring research tasks. Do not repeatedly package intermediate experiments as AGI. Inspect actual operation, correct the construction where warranted, and report honestly what is and is not established. Leave persisted individuals and unrelated code intact unless the work actually warrants a change and the author has authorized it.
+
+
 ## Goal and one law
 
 Build one developing artificial mind from one compact reality-governed law, not a collection of cognitive modules:
